@@ -1,6 +1,7 @@
 import { InfiniteCanvas } from './components/Canvas/InfiniteCanvas';
 import { Toolbar } from './components/Tools/Toolbar';
 import { PropertyPanel } from './components/Tools/PropertyPanel';
+import { MathTestPanel } from './components/UI/MathTestPanel';
 
 function App() {
   return (
@@ -15,8 +16,16 @@ function App() {
           <InfiniteCanvas className="absolute inset-0" />
         </div>
         
-        {/* 右侧属性面板 */}
-        <PropertyPanel />
+        {/* 右侧面板 */}
+        <div className="w-64 bg-white border-l border-gray-200 overflow-y-auto">
+          {/* 数学库测试面板 */}
+          <div className="p-4 border-b border-gray-200">
+            <MathTestPanel />
+          </div>
+          
+          {/* 属性面板 */}
+          <PropertyPanel />
+        </div>
       </div>
     </div>
   );
