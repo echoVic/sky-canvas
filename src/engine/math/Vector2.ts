@@ -67,6 +67,11 @@ export class Vector2 {
     return this;
   }
 
+  // 别名方法，为了兼容性
+  multiplyScalar(scalar: number): Vector2 {
+    return this.multiply(scalar);
+  }
+
   divide(scalar: number): Vector2 {
     if (scalar === 0) throw new Error('Division by zero');
     return new Vector2(this.x / scalar, this.y / scalar);
@@ -82,6 +87,11 @@ export class Vector2 {
   // 向量属性
   length(): number {
     return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  // 别名方法，为了兼容性
+  magnitude(): number {
+    return this.length();
   }
 
   lengthSquared(): number {

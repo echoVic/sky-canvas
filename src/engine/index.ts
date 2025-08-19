@@ -10,6 +10,18 @@ export * from './renderers';
 // 导出数学库
 export * from './math';
 
+// 导出场景管理
+export * from './scene/SceneNode';
+export * from './scene/Scene';
+export * from './scene/Viewport';
+
+// 导出事件系统
+export * from './events/EventSystem';
+export * from './events/GestureRecognizer';
+
+// 导出交互系统
+export * from './interaction';
+
 // 导出便利函数
 import { RenderEngine } from './RenderEngine';
 import { Circle, Line, Rectangle, Text } from './core/shapes';
