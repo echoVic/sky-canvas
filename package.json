@@ -1,0 +1,59 @@
+{
+  "name": "sky-canvas",
+  "version": "1.0.0",
+  "description": "🎨 一个基于 React + TypeScript + Vite 构建的现代化无限画布绘图应用",
+  "type": "module",
+  "author": "echoVic",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/echoVic/sky-canvas.git"
+  },
+  "homepage": "https://github.com/echoVic/sky-canvas#readme",
+  "bugs": {
+    "url": "https://github.com/echoVic/sky-canvas/issues"
+  },
+  "keywords": [
+    "canvas",
+    "drawing",
+    "react",
+    "typescript",
+    "vite",
+    "infinite-canvas",
+    "graphics",
+    "editor"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@types/node": "^24.3.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^4.1.12",
+    "zustand": "^5.0.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^4.5.14"
+  }
+}
