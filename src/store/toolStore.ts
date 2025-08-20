@@ -7,12 +7,16 @@ interface ToolStore {
   brushSize: number;
   brushOpacity: number;
   color: string;
+  fontSize: number;
+  fontFamily: string;
   
   // Actions
   setCurrentTool: (tool: ToolType) => void;
   setBrushSize: (size: number) => void;
   setBrushOpacity: (opacity: number) => void;
   setColor: (color: string) => void;
+  setFontSize: (size: number) => void;
+  setFontFamily: (family: string) => void;
 }
 
 const defaultTools: Tool[] = [
@@ -22,7 +26,7 @@ const defaultTools: Tool[] = [
   { type: ToolType.BRUSH, name: '画笔', icon: '🖌️', shortcut: 'B' },
   { type: ToolType.ERASER, name: '橡皮擦', icon: '🧽', shortcut: 'E' },
   { type: ToolType.TEXT, name: '文字', icon: '📝', shortcut: 'T' },
-  { type: ToolType.SHAPE, name: '形状', icon: '⬜', shortcut: 'R' }
+  { type: ToolType.RECTANGLE, name: '矩形', icon: '⬜', shortcut: 'R' }
 ];
 
 export const useToolStore = create<ToolStore>((set) => ({
@@ -31,9 +35,13 @@ export const useToolStore = create<ToolStore>((set) => ({
   brushSize: 5,
   brushOpacity: 1,
   color: '#000000',
+  fontSize: 16,
+  fontFamily: 'Arial',
   
   setCurrentTool: (tool: ToolType) => set({ currentTool: tool }),
   setBrushSize: (size: number) => set({ brushSize: Math.max(1, Math.min(100, size)) }),
   setBrushOpacity: (opacity: number) => set({ brushOpacity: Math.max(0, Math.min(1, opacity)) }),
-  setColor: (color: string) => set({ color })
+  setColor: (color: string) => set({ color }),
+  setFontSize: (size: number) => set({ fontSize: Math.max(8, Math.min(72, size)) }),
+  setFontFamily: (family: string) => set({ fontFamily: family })
 }));

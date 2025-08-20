@@ -27,7 +27,10 @@ export enum ToolType {
   BRUSH = 'brush',
   ERASER = 'eraser',
   TEXT = 'text',
-  SHAPE = 'shape'
+  RECTANGLE = 'rectangle',
+  CIRCLE = 'circle',
+  LINE = 'line',
+  TRIANGLE = 'triangle'
 }
 
 export interface Tool {
