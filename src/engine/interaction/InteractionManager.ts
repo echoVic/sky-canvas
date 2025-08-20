@@ -130,7 +130,8 @@ export class SelectTool implements InteractionTool {
     return false;
   }
 
-  onGesture(event: GestureEvent): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onGesture(_event: GestureEvent): boolean {
     return false;
   }
 
@@ -205,7 +206,7 @@ export class PanTool implements InteractionTool {
     return false;
   }
 
-  onMouseUp(event: MouseEvent): boolean {
+  onMouseUp(_event: MouseEvent): boolean {
     if (this._isPanning) {
       this._isPanning = false;
       this._lastPosition = null;
@@ -266,11 +267,13 @@ export class ZoomTool implements InteractionTool {
     return true;
   }
 
-  onMouseMove(event: MouseEvent): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onMouseMove(_event: MouseEvent): boolean {
     return false;
   }
 
-  onMouseUp(event: MouseEvent): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onMouseUp(_event: MouseEvent): boolean {
     return false;
   }
 
@@ -310,6 +313,7 @@ export class InteractionManager extends EventDispatcher {
   private _enabled: boolean = true;
 
   // 事件监听器
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _eventListeners: { [key: string]: (event: any) => void } = {};
 
   constructor() {

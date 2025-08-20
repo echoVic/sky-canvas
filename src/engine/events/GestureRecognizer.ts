@@ -1,4 +1,4 @@
-import { Point } from '../../types';
+// import { Point } from '../../types'; // 未使用，暂时注释
 import { Vector2 } from '../math';
 import { EventType, GestureEvent, TouchEvent, EventFactory, EventDispatcher } from './EventSystem';
 
@@ -447,7 +447,7 @@ export class GestureRecognizer extends EventDispatcher {
     );
     
     // 添加手势类型信息
-    (event as any).gestureType = type;
+    (event as GestureEvent & { gestureType: GestureType }).gestureType = type;
     
     this.dispatchEvent(event);
   }
@@ -470,8 +470,8 @@ export class GestureRecognizer extends EventDispatcher {
     );
     
     // 添加手势类型信息
-    (event as any).gestureType = GestureType.SWIPE;
-    (event as any).swipeDirection = direction;
+    (event as GestureEvent & { gestureType: GestureType; swipeDirection: Vector2 }).gestureType = GestureType.SWIPE;
+    (event as GestureEvent & { gestureType: GestureType; swipeDirection: Vector2 }).swipeDirection = direction;
     
     this.dispatchEvent(event);
   }

@@ -25,6 +25,13 @@ export class RenderEngine {
       case 'canvas2d':
         this.renderer = RendererFactory.createCanvasRenderer();
         break;
+      case 'webgl':
+      case 'webgl2':
+        this.renderer = RendererFactory.createWebGLRenderer();
+        break;
+      case 'webgpu':
+        this.renderer = RendererFactory.createWebGPURenderer();
+        break;
       default:
         throw new Error(`Unknown renderer type: ${rendererType}`);
     }
@@ -33,10 +40,13 @@ export class RenderEngine {
   /**
    * 初始化渲染引擎
    */
-  initialize(canvas: HTMLCanvasElement): void {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Failed to get 2D rendering context');
+  async initialize(canvas: HTMLCanvasElement): Promise<void> {
+    // 如果渲染器有自己的初始化方法，调用它
+    if (this.renderer.initialize) {
+      const success = await this.renderer.initialize(canvas);
+      if (!success) {
+        throw new Error('Failed to initialize renderer');
+      }
     }
 
     // 设置高DPI支持
@@ -49,12 +59,28 @@ export class RenderEngine {
     canvas.style.width = displayWidth + 'px';
     canvas.style.height = displayHeight + 'px';
 
-    this.context = {
-      canvas,
-      ctx,
-      viewport: { x: 0, y: 0, width: displayWidth, height: displayHeight },
-      devicePixelRatio
-    };
+    // 为Canvas2D渲染器创建上下文
+    if (this.renderer instanceof CanvasRenderer) {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Failed to get 2D rendering context');
+      }
+
+      this.context = {
+        canvas,
+        ctx,
+        viewport: { x: 0, y: 0, width: displayWidth, height: displayHeight },
+        devicePixelRatio
+      };
+    } else {
+      // 对于WebGL/WebGPU渲染器，创建基础上下文
+      this.context = {
+        canvas,
+        ctx: null as unknown as CanvasRenderingContext2D, // WebGL/WebGPU不需要2D上下文
+        viewport: { x: 0, y: 0, width: displayWidth, height: displayHeight },
+        devicePixelRatio
+      };
+    }
 
     // 设置初始视口
     this.renderer.setViewport(this.context.viewport);

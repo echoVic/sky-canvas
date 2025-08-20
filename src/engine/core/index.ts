@@ -70,6 +70,10 @@ export abstract class BaseRenderer implements Renderer {
   abstract clear(): void;
   abstract getCapabilities(): RendererCapabilities;
   
+  // 可选的初始化方法，子类可以重写
+  initialize?(canvas: HTMLCanvasElement): boolean | Promise<boolean>;
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   update(deltaTime: number): void {
     // 更新所有可绘制对象
     this.drawables.forEach(drawable => {
@@ -164,3 +168,4 @@ export abstract class BaseRenderer implements Renderer {
 // 导出基础图形和命令
 export * from './commands';
 export * from './shapes';
+

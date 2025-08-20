@@ -94,7 +94,7 @@ export class SelectionManager extends EventDispatcher {
     const removed: ISceneNode[] = [];
 
     switch (currentMode) {
-      case SelectionMode.SINGLE:
+      case SelectionMode.SINGLE: {
         // 清除现有选择
         removed.push(...this._selectedNodes);
         this._selectedNodes.clear();
@@ -104,6 +104,7 @@ export class SelectionManager extends EventDispatcher {
         this._selectedNodes.add(nodeToSelect);
         added.push(nodeToSelect);
         break;
+      }
 
       case SelectionMode.MULTIPLE:
         // 清除现有选择，添加所有新节点
@@ -351,6 +352,7 @@ export class SelectionManager extends EventDispatcher {
     added: ISceneNode[], 
     removed: ISceneNode[]
   ): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const event = new EventImpl(EventType.SELECTION_CHANGE) as any;
     event.selectionEvent = {
       type,
@@ -373,6 +375,7 @@ export class SelectionManager extends EventDispatcher {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deserialize(data: any, nodeMap: Map<string, ISceneNode>): void {
     this.clearSelection();
     

@@ -311,4 +311,21 @@ export class Matrix3x3 {
     }
     return result;
   }
+
+  // 创建单位矩阵
+  static identity(): Matrix3x3 {
+    return new Matrix3x3();
+  }
+
+  // 创建正交投影矩阵
+  static orthographic(left: number, right: number, bottom: number, top: number): Matrix3x3 {
+    const width = right - left;
+    const height = top - bottom;
+    
+    return new Matrix3x3(
+      2 / width, 0, -(right + left) / width,
+      0, 2 / height, -(top + bottom) / height,
+      0, 0, 1
+    );
+  }
 }

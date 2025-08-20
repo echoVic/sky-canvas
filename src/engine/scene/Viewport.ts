@@ -296,9 +296,6 @@ export class Viewport {
 
   // 私有方法
   private updateTransform(): void {
-    const centerX = this._bounds.width / 2;
-    const centerY = this._bounds.height / 2;
-
     // 创建变换：平移到中心 -> 缩放 -> 旋转 -> 平移偏移
     this._transform = new Transform();
     this._transform.setPosition(-this._pan.x * this._zoom, -this._pan.y * this._zoom);
