@@ -1,7 +1,8 @@
 // 导出核心数学库
-export { Vector2 } from './Vector2';
 export { Matrix3x3 } from './Matrix3x3';
+export { Rectangle } from './Rectangle';
 export { Transform } from './Transform';
+export { Vector2 } from './Vector2';
 
 // 导出兼容的工具类
 import { Point, Rect } from '../../types';
