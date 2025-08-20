@@ -49,34 +49,35 @@ export const ProfessionalToolbar: React.FC = () => {
   const { zoomIn, zoomOut, resetView, zoom } = useCanvasStore();
   const { undo, redo, canUndo, canRedo } = useHistoryStore();
 
+  // 工具分组
   const toolGroups = [
     {
-      name: '选择工具',
+      name: '选择',
       tools: [
-        { type: ToolType.SELECT, icon: MousePointer2, name: '选择', shortcut: 'V' },
-        { type: ToolType.PAN, icon: Hand, name: '平移', shortcut: 'H' },
+        { type: ToolType.SELECT, icon: MousePointer, label: '选择' },
+        { type: ToolType.PAN, icon: Hand, label: '平移' }
       ]
     },
     {
-      name: '绘制工具', 
+      name: '绘制',
       tools: [
-        { type: ToolType.BRUSH, icon: Paintbrush, name: '画笔', shortcut: 'B' },
-        { type: ToolType.ERASER, icon: Eraser, name: '橡皮擦', shortcut: 'E' },
+        { type: ToolType.BRUSH, icon: Brush, label: '画笔' },
+        { type: ToolType.ERASER, icon: Eraser, label: '橡皮擦' }
       ]
     },
     {
-      name: '形状工具',
+      name: '形状',
       tools: [
-        { type: ToolType.RECTANGLE, icon: Square, name: '矩形', shortcut: 'R' },
-        { type: ToolType.CIRCLE, icon: Circle, name: '圆形', shortcut: 'O' },
-        { type: ToolType.LINE, icon: Minus, name: '直线', shortcut: 'L' },
-        { type: ToolType.TRIANGLE, icon: Triangle, name: '三角形', shortcut: 'T' },
+        { type: ToolType.RECTANGLE, icon: Square, label: '矩形' },
+        { type: ToolType.CIRCLE, icon: Circle, label: '圆形' },
+        { type: ToolType.LINE, icon: Minus, label: '直线' },
+        { type: ToolType.TRIANGLE, icon: Triangle, label: '三角形' }
       ]
     },
     {
-      name: '文字工具',
+      name: '文字',
       tools: [
-        { type: ToolType.TEXT, icon: Type, name: '文字', shortcut: 'T' },
+        { type: ToolType.TEXT, icon: Type, label: '文字' }
       ]
     }
   ];
@@ -96,33 +97,35 @@ export const ProfessionalToolbar: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white border-b border-gray-200 shadow-sm">
-      <div className="flex items-center gap-4 px-6 py-3">
-        {/* 工具组 */}
-        {toolGroups.map((group, groupIndex) => (
-          <React.Fragment key={group.name}>
-            <div className="flex flex-col gap-1">
-              <div className="text-xs text-gray-500 font-medium px-1">{group.name}</div>
-              <ButtonGroup variant="flat" size="sm">
-                {group.tools.map((tool) => {
-                  const IconComponent = tool.icon;
-                  return (
-                    <Tooltip key={tool.type} content={`${tool.name} (${tool.shortcut})`}>
-                      <Button
-                        isIconOnly
-                        variant={currentTool === tool.type ? "solid" : "flat"}
-                        color={currentTool === tool.type ? "primary" : "default"}
-                        onPress={() => setCurrentTool(tool.type)}
-                        className="h-11 w-11"
-                      >
-                        <IconComponent size={20} />
-                      </Button>
-                    </Tooltip>
-                  );
-                })}
-              </ButtonGroup>
+    <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200/60 px-6 py-4 shadow-sm">
+      <div className="flex items-center justify-between max-w-7xl mx-auto">
+        {/* 左侧工具组 */}
+        <div className="flex items-center space-x-8">
+          {toolGroups.map((group, groupIndex) => (
+            <div key={group.name} className="flex items-center space-x-2">
+              {groupIndex > 0 && (
+                <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent mx-4" />
+              )}
+              <div className="flex items-center space-x-1 bg-white/60 backdrop-blur-sm rounded-xl p-1 shadow-sm border border-white/20">
+                {group.tools.map((tool) => (
+                  <Button
+                    key={tool.type}
+                    variant={currentTool === tool.type ? "default" : "ghost"}
+                    size="sm"
+                    className={`h-10 w-10 p-0 rounded-lg transition-all duration-200 ${
+                      currentTool === tool.type 
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 scale-105" 
+                        : "hover:bg-white/80 hover:shadow-sm hover:scale-105"
+                    }`}
+                    onClick={() => setCurrentTool(tool.type)}
+                  >
+                    <tool.icon className="h-4 w-4" />
+                  </Button>
+                ))}
+              </div>
+              <span className="text-xs font-medium text-gray-600 ml-2">{group.name}</span>
             </div>
-            {groupIndex < toolGroups.length - 1 && (
+          ))}
               <Divider orientation="vertical" className="h-16" />
             )}
           </React.Fragment>

@@ -417,21 +417,27 @@ export const AdvancedCanvas: React.FC<AdvancedCanvasProps> = ({ className = '' }
   }, [redrawCanvas, zoom, pan]);
 
   return (
-    <div className={`relative ${className}`}>
-      <canvas
-        ref={canvasRef}
-        className="block w-full h-full cursor-crosshair border border-gray-200 rounded-lg"
-        onPointerDown={startDrawing}
-        onPointerMove={continueDrawing}
-        onPointerUp={stopDrawing}
-        onPointerLeave={stopDrawing}
-        style={{ 
-          touchAction: 'none',
-          cursor: currentTool === ToolType.BRUSH ? 'crosshair' : 
-                 currentTool === ToolType.TEXT ? 'text' :
-                 currentTool === ToolType.PAN ? 'move' : 'crosshair'
-        }}
-      />
+    <div className={`relative ${className} bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl border border-gray-200/50 overflow-hidden`}>
+      {/* 画布容器 */}
+      <div className="relative w-full h-full bg-white rounded-2xl shadow-inner">
+        <canvas
+          ref={canvasRef}
+          className="block w-full h-full rounded-2xl"
+          onPointerDown={startDrawing}
+          onPointerMove={continueDrawing}
+          onPointerUp={stopDrawing}
+          onPointerLeave={stopDrawing}
+          style={{ 
+            touchAction: 'none',
+            cursor: currentTool === ToolType.BRUSH ? 'crosshair' : 
+                   currentTool === ToolType.TEXT ? 'text' :
+                   currentTool === ToolType.PAN ? 'move' : 'crosshair'
+          }}
+        />
+        
+        {/* 画布装饰边框 */}
+        <div className="absolute inset-0 rounded-2xl border-2 border-gradient-to-r from-blue-200/30 via-purple-200/30 to-pink-200/30 pointer-events-none" />
+      </div>
       
       {/* 文字输入框 */}
       {editingText && (
