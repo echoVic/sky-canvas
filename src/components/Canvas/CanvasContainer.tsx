@@ -35,6 +35,61 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     autoResize: true
   });
   
+  // 直接在Canvas上绘制测试内容
+  React.useEffect(() => {
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // 清空画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 设置高DPI支持
+        const dpr = window.devicePixelRatio || 1;
+        ctx.scale(dpr, dpr);
+        
+        // 绘制背景
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+        
+        // 绘制测试矩形
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillRect(50, 50, 200, 150);
+        
+        // 绘制边框
+        ctx.strokeStyle = '#1d4ed8';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(50, 50, 200, 150);
+        
+        // 绘制文本
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Sky Canvas 运行中', 150, 125);
+        
+        // 绘制圆形
+        ctx.beginPath();
+        ctx.arc(350, 150, 50, 0, Math.PI * 2);
+        ctx.fillStyle = '#10b981';
+        ctx.fill();
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // 绘制线条
+        ctx.beginPath();
+        ctx.moveTo(100, 250);
+        ctx.lineTo(300, 300);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        console.log('Canvas test content rendered successfully');
+      }
+    }
+  }, [canvasRef]);
+  
   const shouldShowGrid = showGrid && showGridFromStore;
   const cursor = getToolCursor();
   

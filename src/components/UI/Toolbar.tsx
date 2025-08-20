@@ -37,8 +37,8 @@ const ToolButton: React.FC<ToolButtonProps> = ({
 );
 
 export const Toolbar: React.FC = () => {
-  const { currentTool, tools, selectTool } = useTools();
   const { showToolbar } = useAppStore();
+  const { currentTool, tools, selectTool } = useTools();
   
   if (!showToolbar) return null;
   

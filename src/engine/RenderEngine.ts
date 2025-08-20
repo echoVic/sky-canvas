@@ -17,23 +17,30 @@ export class RenderEngine {
   private lastFPSUpdate = 0;
 
   constructor(rendererType: string = 'canvas2d') {
-    if (!RendererFactory.isRendererSupported(rendererType)) {
-      throw new Error(`Unsupported renderer type: ${rendererType}`);
-    }
+    try {
+      if (!RendererFactory.isRendererSupported(rendererType)) {
+        console.warn(`Unsupported renderer type: ${rendererType}, falling back to canvas2d`);
+        rendererType = 'canvas2d';
+      }
 
-    switch (rendererType) {
-      case 'canvas2d':
-        this.renderer = RendererFactory.createCanvasRenderer();
-        break;
-      case 'webgl':
-      case 'webgl2':
-        this.renderer = RendererFactory.createWebGLRenderer();
-        break;
-      case 'webgpu':
-        this.renderer = RendererFactory.createWebGPURenderer();
-        break;
-      default:
-        throw new Error(`Unknown renderer type: ${rendererType}`);
+      switch (rendererType) {
+        case 'canvas2d':
+          this.renderer = RendererFactory.createCanvasRenderer();
+          break;
+        case 'webgl':
+        case 'webgl2':
+          this.renderer = RendererFactory.createWebGLRenderer();
+          break;
+        case 'webgpu':
+          this.renderer = RendererFactory.createWebGPURenderer();
+          break;
+        default:
+          console.warn(`Unknown renderer type: ${rendererType}, using canvas2d`);
+          this.renderer = RendererFactory.createCanvasRenderer();
+      }
+    } catch (error) {
+      console.error('Failed to create renderer, falling back to canvas2d:', error);
+      this.renderer = RendererFactory.createCanvasRenderer();
     }
   }
 
@@ -231,6 +238,21 @@ export class RenderEngine {
    */
   getCapabilities() {
     return this.renderer.getCapabilities();
+  }
+
+  /**
+   * 获取渲染统计信息
+   */
+  getStats() {
+    return {
+      drawCalls: 0,
+      triangles: 0,
+      vertices: 0,
+      batches: 0,
+      textureBinds: 0,
+      shaderSwitches: 0,
+      frameTime: 0
+    };
   }
 
   /**

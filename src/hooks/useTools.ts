@@ -1,5 +1,4 @@
 import { useCallback, useEffect } from 'react';
-import { useAppStore } from '../store/appStore';
 import { useToolStore } from '../store/toolStore';
 import { ToolType } from '../types';
 
@@ -16,18 +15,11 @@ export const useTools = () => {
     setColor
   } = useToolStore();
   
-  const { renderEngine } = useAppStore();
-  
   // 切换工具
   const selectTool = useCallback((toolType: ToolType) => {
     setCurrentTool(toolType);
-    
-    // 通知渲染引擎工具变化
-    if (renderEngine) {
-      // 这里可以添加工具切换的逻辑
-      console.log(`Tool changed to: ${toolType}`);
-    }
-  }, [setCurrentTool, renderEngine]);
+    console.log(`Tool changed to: ${toolType}`);
+  }, [setCurrentTool]);
   
   // 获取当前工具信息
   const getCurrentTool = useCallback(() => {

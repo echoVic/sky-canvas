@@ -1,7 +1,7 @@
 import React from 'react';
 import { RendererType } from '../../engine/core/RenderTypes';
 import { useAppStore } from '../../store/appStore';
-import { CanvasContainer } from '../Canvas/CanvasContainer';
+import { SimpleCanvas } from '../Canvas/SimpleCanvas';
 import { LayerPanel } from './LayerPanel';
 import { MenuBar } from './MenuBar';
 import { PropertiesPanel } from './PropertiesPanel';
@@ -11,9 +11,7 @@ interface MainLayoutProps {
   rendererType?: RendererType;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({
-  rendererType = RendererType.CANVAS_2D
-}) => {
+export const MainLayout: React.FC<MainLayoutProps> = () => {
   const { showToolbar, showLayerPanel, showPropertiesPanel } = useAppStore();
 
   return (
@@ -30,10 +28,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <div className="flex-1 flex flex-col">
           {/* 画布容器 */}
           <div className="flex-1 relative">
-            <CanvasContainer 
-              rendererType={rendererType}
-              enableInteraction={true}
-              showGrid={true}
+            <SimpleCanvas 
               className="w-full h-full"
             />
           </div>
