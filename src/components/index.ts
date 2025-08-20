@@ -1,10 +1,11 @@
 // Canvas components
 export { CanvasContainer } from './Canvas/CanvasContainer';
 
-// UI components
+// UI Components
 export { LayerPanel } from './UI/LayerPanel';
 export { MainLayout } from './UI/MainLayout';
 export { MenuBar } from './UI/MenuBar';
+export { PluginManager } from './UI/PluginManager';
 export { PropertiesPanel } from './UI/PropertiesPanel';
 export { Toolbar } from './UI/Toolbar';
 

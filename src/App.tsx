@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from './components/UI/MainLayout';
+import { PluginManager } from './components/UI/PluginManager';
 import { AdvancedRenderingExample } from './examples/AdvancedRenderingExample';
 import InteractiveCanvasExample from './examples/InteractiveCanvasExample';
 import { RendererType } from './engine/core/RenderTypes';
+import { getGlobalPluginSystem } from './engine/plugins';
 
-type ViewMode = 'canvas' | 'rendering' | 'interactive';
+type ViewMode = 'canvas' | 'rendering' | 'interactive' | 'plugins';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('canvas');
   const [rendererType, setRendererType] = useState<RendererType>(RendererType.CANVAS_2D);
+  const [showPluginManager, setShowPluginManager] = useState(false);
+
+  // 初始化插件系统
+  useEffect(() => {
+    const pluginSystem = getGlobalPluginSystem();
+    console.log('Plugin system initialized:', pluginSystem);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -47,6 +56,12 @@ function App() {
             >
               渲染系统
             </button>
+            <button
+              onClick={() => setShowPluginManager(true)}
+              className="px-4 py-2 rounded-lg font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+            >
+              插件管理
+            </button>
           </div>
           
           {/* 渲染器类型选择 */}
@@ -82,6 +97,12 @@ function App() {
           <AdvancedRenderingExample />
         )}
       </div>
+
+      {/* 插件管理器 */}
+      <PluginManager 
+        isOpen={showPluginManager} 
+        onClose={() => setShowPluginManager(false)} 
+      />
     </div>
   );
 }
