@@ -70,6 +70,9 @@ export abstract class BaseRenderer implements Renderer {
   abstract clear(): void;
   abstract getCapabilities(): RendererCapabilities;
   
+  // 获取渲染上下文（可选实现）
+  getContext?(): RenderContext | null;
+  
   // 可选的初始化方法，子类可以重写
   initialize?(canvas: HTMLCanvasElement): boolean | Promise<boolean>;
   

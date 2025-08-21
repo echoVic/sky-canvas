@@ -50,12 +50,13 @@ export interface Layer {
   zIndex: number;
 }
 
-// 渲染相关类型
+// 渲染上下文类型
 export interface RenderContext {
   canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
+  ctx: CanvasRenderingContext2D | GPUCanvasContext | WebGLRenderingContext; // 支持多种渲染上下文
   viewport: Rect;
   devicePixelRatio: number;
+  present?: () => void; // WebGPU渲染通道提交方法
 }
 
 // 历史记录类型

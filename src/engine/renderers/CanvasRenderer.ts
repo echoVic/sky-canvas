@@ -11,6 +11,12 @@ export class CanvasRenderer extends BaseRenderer {
     this.currentContext = context;
     const { ctx, viewport, devicePixelRatio } = context;
     
+    // 确保是Canvas2D上下文
+    if (!(ctx instanceof CanvasRenderingContext2D)) {
+      console.error('CanvasRenderer requires CanvasRenderingContext2D');
+      return;
+    }
+    
     // 清空画布
     this.clear();
 
@@ -20,7 +26,7 @@ export class CanvasRenderer extends BaseRenderer {
     ctx.translate(-viewport.x, -viewport.y);
 
     // 应用全局渲染状态
-    this.applyRenderState(ctx, this.renderState);
+    this.applyRenderState(ctx as CanvasRenderingContext2D, this.renderState);
 
     // 绘制所有可见的对象
     for (const drawable of this.drawables) {
@@ -42,10 +48,12 @@ export class CanvasRenderer extends BaseRenderer {
     if (!this.currentContext) return;
     
     const { ctx, canvas } = this.currentContext;
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
   }
 
   getCapabilities(): RendererCapabilities {
@@ -56,6 +64,10 @@ export class CanvasRenderer extends BaseRenderer {
       maxTextureSize: 4096,
       supportedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']
     };
+  }
+
+  getContext(): RenderContext | null {
+    return this.currentContext;
   }
 
   // 渲染循环管理
@@ -85,71 +97,79 @@ export class CanvasRenderer extends BaseRenderer {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
-    ctx.save();
-    
-    if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
-    
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.stroke();
-    
-    ctx.restore();
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
+      
+      if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
+      
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      
+      ctx.restore();
+    }
   }
 
   drawRect(x: number, y: number, width: number, height: number, filled = false, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
-    ctx.save();
-    
-    if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
-    
-    if (filled) {
-      ctx.fillRect(x, y, width, height);
-    } else {
-      ctx.strokeRect(x, y, width, height);
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
+      
+      if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
+      
+      if (filled) {
+        ctx.fillRect(x, y, width, height);
+      } else {
+        ctx.strokeRect(x, y, width, height);
+      }
+      
+      ctx.restore();
     }
-    
-    ctx.restore();
   }
 
   drawCircle(center: Point, radius: number, filled = false, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
-    ctx.save();
-    
-    if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
-    
-    ctx.beginPath();
-    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-    
-    if (filled) {
-      ctx.fill();
-    } else {
-      ctx.stroke();
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
+      
+      if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
+      
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+      
+      if (filled) {
+        ctx.fill();
+      } else {
+        ctx.stroke();
+      }
+      
+      ctx.restore();
     }
-    
-    ctx.restore();
   }
 
   drawText(text: string, position: Point, style?: Partial<RenderState> & { font?: string; textAlign?: CanvasTextAlign; textBaseline?: CanvasTextBaseline }): void {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
-    ctx.save();
-    
-    if (style) {
-      this.applyRenderState(ctx, { ...this.renderState, ...style });
-      if (style.font) ctx.font = style.font;
-      if (style.textAlign) ctx.textAlign = style.textAlign;
-      if (style.textBaseline) ctx.textBaseline = style.textBaseline;
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
+      
+      if (style) {
+        this.applyRenderState(ctx, { ...this.renderState, ...style });
+        if (style.font) ctx.font = style.font;
+        if (style.textAlign) ctx.textAlign = style.textAlign;
+        if (style.textBaseline) ctx.textBaseline = style.textBaseline;
+      }
+      
+      ctx.fillText(text, position.x, position.y);
+      
+      ctx.restore();
     }
-    
-    ctx.fillText(text, position.x, position.y);
-    
-    ctx.restore();
   }
 
   // 工具方法

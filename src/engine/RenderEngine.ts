@@ -87,6 +87,14 @@ export class RenderEngine {
         viewport: { x: 0, y: 0, width: displayWidth, height: displayHeight },
         devicePixelRatio
       };
+      
+      // 为WebGPU渲染器添加present方法
+      if (this.renderer.constructor.name === 'WebGPURenderer') {
+        this.context.present = () => {
+          // WebGPU的present在渲染器内部处理
+          // 这里提供一个空实现以满足类型要求
+        };
+      }
     }
 
     // 设置初始视口
@@ -135,6 +143,9 @@ export class RenderEngine {
 
     this.renderer.update(deltaTime);
     this.renderer.render(this.context);
+    
+    // 提交渲染通道（对WebGPU重要，对Canvas2D无影响）
+    this.context.present?.();
 
     this.updateFPS(currentTime);
   }
@@ -231,6 +242,13 @@ export class RenderEngine {
    */
   getCurrentFPS(): number {
     return this.fpsCounter;
+  }
+
+  /**
+   * 获取底层渲染器
+   */
+  getRenderer(): BaseRenderer {
+    return this.renderer;
   }
 
   /**
