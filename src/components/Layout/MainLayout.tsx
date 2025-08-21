@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Layers, 
   Settings, 
   ChevronLeft,
   ChevronRight
@@ -85,11 +84,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               <div className="flex items-center justify-between p-4 border-b border-gray-200/60">
                 <div className="flex items-center gap-3">
                   <Icon 
-                    icon={Layers} 
+                    icon={Settings} 
                     variant="default" 
                     size="sm" 
                   />
-                  <span className="font-medium text-gray-800">图层</span>
+                  <span className="font-medium text-gray-800">工具</span>
                 </div>
                 <Button
                   variant="ghost"
@@ -105,8 +104,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
               <div className="flex-1 overflow-y-auto">
                 {leftPanel || (
                   <div className="p-4 text-center text-gray-500">
-                    <Layers className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">暂无图层</p>
+                    <Settings className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">暂无内容</p>
                   </div>
                 )}
               </div>

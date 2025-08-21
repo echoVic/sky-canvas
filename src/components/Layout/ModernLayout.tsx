@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Layers,
   Settings,
   ChevronLeft,
-  ChevronRight,
   Maximize2,
   Minimize2
 } from 'lucide-react';
 import { ModernCanvas } from '../Canvas/ModernCanvas';
-import { ModernLayerPanel } from './ModernLayerPanel';
 import { ModernPropertyPanel } from './ModernPropertyPanel';
 import { ModernToolbar } from '../Tools/ModernToolbar';
 
@@ -18,17 +15,14 @@ interface ModernLayoutProps {
 }
 
 export const ModernLayout: React.FC<ModernLayoutProps> = ({ className }) => {
-  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
     if (!isFullscreen) {
-      setLeftPanelOpen(false);
       setRightPanelOpen(false);
     } else {
-      setLeftPanelOpen(true);
       setRightPanelOpen(true);
     }
   };
@@ -59,12 +53,6 @@ export const ModernLayout: React.FC<ModernLayoutProps> = ({ className }) => {
             {/* 右侧控制 */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setLeftPanelOpen(!leftPanelOpen)}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <Layers className="w-4 h-4 text-slate-600" />
-              </button>
-              <button
                 onClick={() => setRightPanelOpen(!rightPanelOpen)}
                 className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
               >
@@ -87,21 +75,6 @@ export const ModernLayout: React.FC<ModernLayoutProps> = ({ className }) => {
 
       {/* 主要内容区域 */}
       <div className="flex-1 flex overflow-hidden">
-        {/* 左侧图层面板 */}
-        <AnimatePresence>
-          {leftPanelOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="bg-white/60 backdrop-blur-xl border-r border-slate-200/50 shadow-sm overflow-hidden"
-            >
-              <ModernLayerPanel />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* 中央画布区域 */}
         <motion.div 
           className="flex-1 flex flex-col relative"
@@ -113,17 +86,6 @@ export const ModernLayout: React.FC<ModernLayoutProps> = ({ className }) => {
             <ModernCanvas />
             
             {/* 浮动控制按钮 */}
-            {!leftPanelOpen && (
-              <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => setLeftPanelOpen(true)}
-                className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg hover:bg-white transition-colors"
-              >
-                <ChevronRight className="w-4 h-4 text-slate-600" />
-              </motion.button>
-            )}
-            
             {!rightPanelOpen && (
               <motion.button
                 initial={{ opacity: 0, x: 20 }}
@@ -163,7 +125,7 @@ export const ModernLayout: React.FC<ModernLayoutProps> = ({ className }) => {
           <div className="flex items-center gap-4">
             <span>画布: 1920 × 1080</span>
             <span>缩放: 100%</span>
-            <span>图层: 3</span>
+            <span>对象: 2</span>
           </div>
           <div className="flex items-center gap-4">
             <span>就绪</span>
