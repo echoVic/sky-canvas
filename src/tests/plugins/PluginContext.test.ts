@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PluginContext } from '../../engine/plugins/core/PluginContext';
+import { PluginContextImpl } from '../../engine/plugins/core/PluginContext';
 import { PluginPermission } from '../../engine/plugins/types/PluginTypes';
 
 // Mock依赖
@@ -49,13 +49,13 @@ const mockPermissionManager = {
 };
 
 describe('PluginContext', () => {
-  let pluginContext: PluginContext;
+  let pluginContext: PluginContextImpl;
   const pluginId = 'test-plugin';
 
   beforeEach(() => {
     vi.clearAllMocks();
     
-    pluginContext = new PluginContext(
+    pluginContext = new PluginContextImpl(
       pluginId,
       mockCanvas as any,
       mockUI as any,
@@ -373,10 +373,10 @@ describe('PluginContext', () => {
 
     beforeEach(() => {
       consoleSpy = {
-        log: vi.spyOn(console, 'log').mockImplementation(),
-        warn: vi.spyOn(console, 'warn').mockImplementation(),
-        error: vi.spyOn(console, 'error').mockImplementation(),
-        debug: vi.spyOn(console, 'debug').mockImplementation()
+        log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+        warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+        error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+        debug: vi.spyOn(console, 'debug').mockImplementation(() => {})
       };
     });
 

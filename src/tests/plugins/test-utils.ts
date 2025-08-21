@@ -46,13 +46,6 @@ export function createTestExtensionPoint(
     id,
     name: `Test Extension Point ${id}`,
     description: 'A test extension point',
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string' },
-        value: { type: 'number' }
-      }
-    },
     ...overrides
   };
 }
@@ -98,14 +91,22 @@ export class MockPlugin implements Plugin {
  * Mock扩展提供者
  */
 export class MockExtensionProvider implements ExtensionProvider {
+  public extensionId: string;
+  public implementation: unknown;
+  public config: Record<string, unknown>;
+
   constructor(
     public id: string,
     public pluginId: string,
-    private data: any = {},
+    private data: unknown = {},
     private shouldThrow = false
-  ) {}
+  ) {
+    this.extensionId = id;
+    this.implementation = data;
+    this.config = {};
+  }
 
-  provide(): any {
+  provide(): unknown {
     if (this.shouldThrow) {
       throw new Error('Mock provider error');
     }
@@ -287,7 +288,7 @@ export function waitForAsync(ms = 0): Promise<void> {
 /**
  * 创建测试用的插件模块
  */
-export function createTestPluginModule(PluginClass: any = MockPlugin) {
+export function createTestPluginModule(PluginClass: typeof MockPlugin = MockPlugin) {
   return {
     default: PluginClass
   };
@@ -347,24 +348,24 @@ export function mockConfirm(returnValue = true) {
  */
 export function mockConsole() {
   return {
-    log: vi.spyOn(console, 'log').mockImplementation(),
-    warn: vi.spyOn(console, 'warn').mockImplementation(),
-    error: vi.spyOn(console, 'error').mockImplementation(),
-    debug: vi.spyOn(console, 'debug').mockImplementation()
+    log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+    warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+    error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+    debug: vi.spyOn(console, 'debug').mockImplementation(() => {})
   };
 }
 
 /**
  * 创建测试事件
  */
-export function createTestEvent(type: string, data?: any) {
+export function createTestEvent(type: string, data?: unknown) {
   return new CustomEvent(type, { detail: data });
 }
 
 /**
  * 验证插件清单格式
  */
-export function validatePluginManifest(manifest: any): boolean {
+export function validatePluginManifest(manifest: unknown): boolean {
   const requiredFields = ['id', 'name', 'version', 'description', 'author', 'main'];
   return requiredFields.every(field => field in manifest && manifest[field]);
 }
@@ -392,7 +393,7 @@ export function createTestResource(id: string, size: number, disposable = true) 
  * 断言函数：检查权限
  */
 export function assertHasPermission(
-  permissionManager: any,
+  permissionManager: { hasPermission: (pluginId: string, permission: PluginPermission) => boolean },
   pluginId: string,
   permission: PluginPermission
 ) {
@@ -403,7 +404,7 @@ export function assertHasPermission(
  * 断言函数：检查资源存在
  */
 export function assertResourceExists(
-  memoryManager: any,
+  memoryManager: { hasResource: (pluginId: string, resourceId: string) => boolean },
   pluginId: string,
   resourceId: string
 ) {
@@ -414,7 +415,7 @@ export function assertResourceExists(
  * 断言函数：检查插件状态
  */
 export function assertPluginStatus(
-  pluginManager: any,
+  pluginManager: { getPluginStatus: (pluginId: string) => string },
   pluginId: string,
   expectedStatus: string
 ) {

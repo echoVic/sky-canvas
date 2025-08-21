@@ -97,16 +97,16 @@ export const ProfessionalToolbar: React.FC = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-200/60 px-6 py-4 shadow-sm">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
+    <div className="px-6 py-4 border-b shadow-sm bg-gradient-to-r from-slate-50 to-gray-50 border-gray-200/60">
+      <div className="flex items-center justify-between mx-auto max-w-7xl">
         {/* 左侧工具组 */}
         <div className="flex items-center space-x-8">
           {toolGroups.map((group, groupIndex) => (
             <div key={group.name} className="flex items-center space-x-2">
               {groupIndex > 0 && (
-                <div className="w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent mx-4" />
+                <div className="w-px h-8 mx-4 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
               )}
-              <div className="flex items-center space-x-1 bg-white/60 backdrop-blur-sm rounded-xl p-1 shadow-sm border border-white/20">
+              <div className="flex items-center p-1 space-x-1 border shadow-sm bg-white/60 backdrop-blur-sm rounded-xl border-white/20">
                 {group.tools.map((tool) => (
                   <Button
                     key={tool.type}
@@ -119,23 +119,20 @@ export const ProfessionalToolbar: React.FC = () => {
                     }`}
                     onClick={() => setCurrentTool(tool.type)}
                   >
-                    <tool.icon className="h-4 w-4" />
+                    <tool.icon className="w-4 h-4" />
                   </Button>
                 ))}
               </div>
-              <span className="text-xs font-medium text-gray-600 ml-2">{group.name}</span>
+              <span className="ml-2 text-xs font-medium text-gray-600">{group.name}</span>
             </div>
           ))}
-              <Divider orientation="vertical" className="h-16" />
-            )}
-          </React.Fragment>
-        ))}
+        </div>
 
         <Divider orientation="vertical" className="h-16" />
 
         {/* 历史操作 */}
         <div className="flex flex-col gap-1">
-          <div className="text-xs text-gray-500 font-medium px-1">历史</div>
+          <div className="px-1 text-xs font-medium text-gray-500">历史</div>
           <ButtonGroup variant="flat" size="sm">
             <Tooltip content="撤销 (⌘Z)">
               <Button
@@ -245,7 +242,7 @@ export const ProfessionalToolbar: React.FC = () => {
                 >
                   <Palette size={20} />
                   <div 
-                    className="absolute bottom-1 right-1 w-3 h-3 rounded-full border border-white shadow-sm"
+                    className="absolute w-3 h-3 border border-white rounded-full shadow-sm bottom-1 right-1"
                     style={{ backgroundColor: color }}
                   />
                 </Button>
@@ -253,16 +250,16 @@ export const ProfessionalToolbar: React.FC = () => {
               <PopoverContent className="p-4">
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium mb-2">自定义颜色</label>
+                    <label className="block mb-2 text-sm font-medium">自定义颜色</label>
                     <input
                       type="color"
                       value={color}
                       onChange={(e) => setColor(e.target.value)}
-                      className="w-full h-10 rounded-lg border border-gray-300"
+                      className="w-full h-10 border border-gray-300 rounded-lg"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">预设颜色</label>
+                    <label className="block mb-2 text-sm font-medium">预设颜色</label>
                     <div className="grid grid-cols-5 gap-2">
                       {colorPresets.map((preset) => (
                         <button
@@ -286,18 +283,18 @@ export const ProfessionalToolbar: React.FC = () => {
 
         {/* 视图控制 */}
         <div className="flex flex-col gap-1">
-          <div className="text-xs text-gray-500 font-medium px-1">视图</div>
+          <div className="px-1 text-xs font-medium text-gray-500">视图</div>
           <div className="flex items-center gap-2">
             <Button
               isIconOnly
               variant="flat"
               size="sm"
               onPress={zoomOut}
-              className="h-8 w-8"
+              className="w-8 h-8"
             >
               <span className="text-lg">−</span>
             </Button>
-            <span className="min-w-16 text-center text-sm text-gray-600">
+            <span className="text-sm text-center text-gray-600 min-w-16">
               {Math.round(zoom * 100)}%
             </span>
             <Button
@@ -305,7 +302,7 @@ export const ProfessionalToolbar: React.FC = () => {
               variant="flat"
               size="sm"
               onPress={zoomIn}
-              className="h-8 w-8"
+              className="w-8 h-8"
             >
               <span className="text-lg">+</span>
             </Button>

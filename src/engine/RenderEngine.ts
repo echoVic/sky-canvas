@@ -1,10 +1,17 @@
 import { Rect, RenderContext } from '../types';
 import { BaseRenderer, Drawable, RenderState } from './core';
-import { CanvasRenderer, RendererFactory } from './renderers';
+import { CanvasRenderer, RendererFactory, WebGLRenderer, WebGPURenderer } from './renderers';
+import { SystemManager } from './core/systems/SystemManager';
+import { ExtensionManager } from './core/systems/ExtensionSystem';
+import { RenderSystem } from './core/systems/RenderSystem';
+import { BatchRenderSystem } from './core/systems/BatchRenderSystem';
+import { ResourceSystem } from './core/systems/ResourceSystem';
+import { PerformanceSystem } from './core/systems/PerformanceSystem';
+import { ArchitectureManager } from './core/ArchitectureLayers';
 
 /**
  * 渲染引擎管理器
- * 负责管理渲染器、场景对象和渲染循环
+ * 实现三层架构和系统化管理
  */
 export class RenderEngine {
   private renderer: BaseRenderer;
@@ -16,7 +23,23 @@ export class RenderEngine {
   private fpsCounter = 0;
   private lastFPSUpdate = 0;
 
+  // 系统管理
+  private extensionManager: ExtensionManager;
+  private systemManager: SystemManager;
+  private architectureManager: ArchitectureManager;
+  
+  // 核心系统
+  private renderSystem: RenderSystem | null = null;
+  private batchRenderSystem: BatchRenderSystem | null = null;
+  private resourceSystem: ResourceSystem | null = null;
+  private performanceSystem: PerformanceSystem | null = null;
+
   constructor(rendererType: string = 'canvas2d') {
+    // 初始化管理器
+    this.extensionManager = new ExtensionManager();
+    this.systemManager = new SystemManager(this.extensionManager);
+    this.architectureManager = new ArchitectureManager();
+
     try {
       if (!RendererFactory.isRendererSupported(rendererType)) {
         console.warn(`Unsupported renderer type: ${rendererType}, falling back to canvas2d`);
@@ -42,6 +65,8 @@ export class RenderEngine {
       console.error('Failed to create renderer, falling back to canvas2d:', error);
       this.renderer = RendererFactory.createCanvasRenderer();
     }
+
+    this.initializeSystems();
   }
 
   /**
@@ -102,6 +127,45 @@ export class RenderEngine {
   }
 
   /**
+   * 初始化系统
+   */
+  private async initializeSystems(): Promise<void> {
+    try {
+      // 创建核心系统 - 按优先级顺序
+      this.resourceSystem = new ResourceSystem();
+      this.performanceSystem = new PerformanceSystem();
+      this.renderSystem = new RenderSystem();
+      
+      // 设置系统依赖关系
+      this.renderSystem.setRenderer(this.renderer);
+      
+      // 按优先级顺序添加系统到管理器
+      this.systemManager.addSystem(this.resourceSystem);  // 优先级: 1100
+      this.systemManager.addSystem(this.renderSystem);    // 优先级: 1000
+      
+      // 只在WebGL渲染器时创建和添加BatchRenderSystem
+      if (this.isWebGLRenderer()) {
+        this.batchRenderSystem = new BatchRenderSystem();
+        this.batchRenderSystem.setRenderer(this.renderer);
+        this.systemManager.addSystem(this.batchRenderSystem); // 优先级: 900
+        console.log('BatchRenderSystem enabled for WebGL renderer');
+      } else {
+        console.log('BatchRenderSystem disabled for Canvas2D renderer');
+      }
+      
+      this.systemManager.addSystem(this.performanceSystem); // 优先级: 800
+      
+      // 初始化系统管理器
+      await this.systemManager.initialize();
+      
+      console.log('Systems initialized successfully with proper dependency order');
+    } catch (error) {
+      console.error('Failed to initialize systems:', error);
+      throw new Error(`System initialization failed: ${error}`);
+    }
+  }
+
+  /**
    * 开始渲染循环
    */
   start(): void {
@@ -141,11 +205,28 @@ export class RenderEngine {
     const deltaTime = currentTime - this.lastFrameTime;
     this.lastFrameTime = currentTime;
 
+    // 性能系统开始帧
+    if (this.performanceSystem) {
+      this.performanceSystem.beginFrame();
+    }
+
+    // 更新系统
+    this.systemManager.update(deltaTime);
+
     this.renderer.update(deltaTime);
+    
+    // 系统渲染
+    this.systemManager.render();
+    
     this.renderer.render(this.context);
     
     // 提交渲染通道（对WebGPU重要，对Canvas2D无影响）
     this.context.present?.();
+
+    // 性能系统结束帧
+    if (this.performanceSystem) {
+      this.performanceSystem.endFrame();
+    }
 
     this.updateFPS(currentTime);
   }
@@ -259,17 +340,80 @@ export class RenderEngine {
   }
 
   /**
+   * 获取系统管理器
+   */
+  getSystemManager(): SystemManager {
+    return this.systemManager;
+  }
+
+  /**
+   * 获取扩展管理器
+   */
+  getExtensionManager(): ExtensionManager {
+    return this.extensionManager;
+  }
+
+  /**
+   * 获取架构管理器
+   */
+  getArchitectureManager(): ArchitectureManager {
+    return this.architectureManager;
+  }
+
+  /**
    * 获取渲染统计信息
    */
   getStats() {
-    return {
+    const baseStats = {
       drawCalls: 0,
       triangles: 0,
       vertices: 0,
       batches: 0,
       textureBinds: 0,
       shaderSwitches: 0,
-      frameTime: 0
+      frameTime: 0,
+      currentFPS: this.getCurrentFPS()
+    };
+    
+    // 合并系统统计
+    const systemStats = {
+      render: this.renderSystem?.getStats() || {},
+      batch: this.batchRenderSystem?.getStats() || {},
+      resource: this.resourceSystem?.getCacheStats() || {},
+      performance: this.performanceSystem?.getStats() || {}
+    };
+    
+    // 系统管理器统计
+    const managerStats = this.systemManager.getSystemStats();
+    
+    // 架构统计
+    const architectureStats = this.architectureManager.getArchitectureStats();
+    const dependencyValidation = this.architectureManager.validateDependencies();
+    
+    return {
+      ...baseStats,
+      systems: systemStats,
+      manager: managerStats,
+      architecture: {
+        ...architectureStats,
+        dependencies: dependencyValidation
+      }
+    };
+  }
+  
+  /**
+   * 执行系统健康检查
+   */
+  performHealthCheck() {
+    return {
+      engine: {
+        status: this.isRunning ? 'running' : 'stopped',
+        renderer: this.renderer.constructor.name,
+        context: this.context ? 'initialized' : 'not initialized',
+        fps: this.getCurrentFPS()
+      },
+      systems: this.systemManager.performHealthCheck(),
+      architecture: this.architectureManager.validateDependencies()
     };
   }
 
@@ -290,6 +434,7 @@ export class RenderEngine {
     this.context.viewport.height = height;
     
     this.renderer.setViewport(this.context.viewport);
+    this.systemManager.resize(width, height);
   }
 
   /**
@@ -319,10 +464,22 @@ export class RenderEngine {
   }
 
   /**
+   * 检查是否为WebGL渲染器
+   */
+  private isWebGLRenderer(): boolean {
+    return this.renderer instanceof WebGLRenderer || this.renderer instanceof WebGPURenderer;
+  }
+
+  /**
    * 销毁渲染引擎
    */
   dispose(): void {
     this.stop();
+    
+    // 销毁系统
+    this.systemManager.destroy();
+    this.architectureManager.clear();
+    
     this.renderer.dispose();
     this.context = null;
   }

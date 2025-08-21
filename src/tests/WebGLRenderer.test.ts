@@ -1,6 +1,83 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import { WebGLRenderer } from '../engine/renderers/WebGLRenderer';
+import { Vector2 } from '../engine/math/Vector2';
+import { Matrix3x3 } from '../engine/math/Matrix3x3';
+import { Transform } from '../engine/math/Transform';
+import { BufferType, TextureFormat } from '../engine/core/RenderTypes';
+
+// Mock classes for testing
+class WebGLShaderManager {
+  constructor(private gl: any) {}
+  
+  async loadShader(name: string, shaderDef: any): Promise<boolean> {
+    return true;
+  }
+  
+  async compileShader(type: any, source: string): Promise<{ success: boolean }> {
+    return { success: true };
+  }
+  
+  getShader(name: string): any {
+    return { id: `${name}_vertex_${name}_fragment` };
+  }
+  
+  useProgram(name: string): boolean {
+    this.gl.useProgram({});
+    return true;
+  }
+  
+  dispose(): void {}
+}
+
+class WebGLResourceManager {
+  private bufferCount = 0;
+  private textureCount = 0;
+  private activeResources = 0;
+  
+  constructor(private gl: any) {}
+  
+  createBuffer(type: BufferType, data: ArrayBuffer): any {
+    this.bufferCount++;
+    this.activeResources++;
+    return {
+      type,
+      size: data.byteLength,
+      update: (newData: ArrayBuffer) => {
+        return { size: newData.byteLength };
+      }
+    };
+  }
+  
+  createTexture(width: number, height: number, format: TextureFormat): any {
+    this.textureCount++;
+    this.activeResources++;
+    return { width, height, format };
+  }
+  
+  getStats() {
+    return {
+      totalBuffers: this.bufferCount,
+      totalTextures: this.textureCount,
+      activeResources: this.activeResources
+    };
+  }
+  
+  releaseResource(resource: any): void {
+    this.activeResources--;
+  }
+  
+  dispose(): void {}
+}
+
+class DefaultShaders {
+  static basic = {
+    vertex: 'basic vertex shader',
+    fragment: 'basic fragment shader'
+  };
+}
+
 // 简化的WebGL渲染器测试
 describe('WebGL渲染器测试', () => {
   test('WebGL渲染器基础测试', () => {
@@ -29,6 +106,7 @@ class MockWebGLContext {
   LINK_STATUS = 35714;
   ACTIVE_UNIFORMS = 35718;
   ACTIVE_ATTRIBUTES = 35721;
+  DEPTH_TEST = 2929;
 
   private shaders = new Map<WebGLShader, { type: number; source: string; compiled: boolean }>();
   private programs = new Map<WebGLProgram, { linked: boolean; uniforms: string[]; attributes: string[] }>();
@@ -404,8 +482,7 @@ describe('数学库集成测试', () => {
   test('Matrix3x3应该正确用于变换计算', () => {
     const matrix = Matrix3x3.translation(10, 20);
     const point = new Vector2(5, 5);
-    
-    const transformed = matrix.transformPoint(point);
+    const transformed = matrix.transformVector(point);
     expect(transformed.x).toBe(15);
     expect(transformed.y).toBe(25);
   });
