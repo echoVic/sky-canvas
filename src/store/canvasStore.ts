@@ -1,0 +1,61 @@
+import { create } from 'zustand'
+
+interface Tool {
+  id: string
+  name: string
+  icon: string
+  active: boolean
+}
+
+interface CanvasState {
+  selectedTool: string
+  tools: Tool[]
+  zoom: number
+  theme: 'light' | 'dark'
+  sidebarOpen: boolean
+  
+  setSelectedTool: (toolId: string) => void
+  setZoom: (zoom: number) => void
+  toggleTheme: () => void
+  toggleSidebar: () => void
+}
+
+export const useCanvasStore = create<CanvasState>((set) => ({
+  selectedTool: 'select',
+  tools: [
+    { id: 'select', name: '选择', icon: 'MousePointer2', active: true },
+    { id: 'hand', name: '抓手', icon: 'Hand', active: false },
+    { id: 'rectangle', name: '矩形', icon: 'Square', active: false },
+    { id: 'diamond', name: '菱形', icon: 'Diamond', active: false },
+    { id: 'circle', name: '圆形', icon: 'Circle', active: false },
+    { id: 'arrow', name: '箭头', icon: 'MoveRight', active: false },
+    { id: 'line', name: '线条', icon: 'Minus', active: false },
+    { id: 'draw', name: '自由绘画', icon: 'Pencil', active: false },
+    { id: 'text', name: '文本', icon: 'Type', active: false },
+    { id: 'image', name: '图片', icon: 'Image', active: false },
+    { id: 'sticky', name: '便签', icon: 'StickyNote', active: false },
+    { id: 'link', name: '链接', icon: 'Link', active: false },
+    { id: 'frame', name: '框架', icon: 'Frame', active: false }
+  ],
+  zoom: 100,
+  theme: 'light',
+  sidebarOpen: false, // 默认关闭
+
+  setSelectedTool: (toolId) => set((state) => ({
+    selectedTool: toolId,
+    tools: state.tools.map(tool => ({ 
+      ...tool, 
+      active: tool.id === toolId 
+    }))
+  })),
+
+  setZoom: (zoom) => set({ zoom }),
+
+  toggleTheme: () => set((state) => ({ 
+    theme: state.theme === 'light' ? 'dark' : 'light' 
+  })),
+
+  toggleSidebar: () => set((state) => ({ 
+    sidebarOpen: !state.sidebarOpen 
+  })),
+}))
