@@ -1,6 +1,6 @@
 /**
  * 批量渲染系统
- * 实现高效的批量渲染优化
+ * 实现高效的批量渲染优化，包括智能批次合并和动态纹理图集
  */
 
 import { BaseSystem } from './SystemManager';
@@ -16,6 +16,7 @@ interface BatchState {
   shader: WebGLProgram | null;
   vertexCount: number;
   indexCount: number;
+  textureAtlas?: TextureAtlas;
 }
 
 /**
@@ -27,6 +28,163 @@ interface BatchData {
   uvs: Float32Array;
   colors: Uint32Array;
   count: number;
+  capacity: number;
+}
+
+/**
+ * 纹理图集节点
+ */
+interface AtlasNode {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  used: boolean;
+  texture?: WebGLTexture;
+  right?: AtlasNode;
+  down?: AtlasNode;
+}
+
+/**
+ * 动态纹理图集
+ */
+class TextureAtlas {
+  private gl: WebGLRenderingContext;
+  private texture: WebGLTexture;
+  private canvas: HTMLCanvasElement;
+  private ctx: CanvasRenderingContext2D;
+  private root: AtlasNode;
+  private textureMap = new Map<WebGLTexture, { x: number; y: number; width: number; height: number }>();
+  
+  constructor(gl: WebGLRenderingContext, size: number = 2048) {
+    this.gl = gl;
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = this.canvas.height = size;
+    this.ctx = this.canvas.getContext('2d')!;
+    
+    this.texture = gl.createTexture()!;
+    this.root = { x: 0, y: 0, width: size, height: size, used: false };
+    
+    this.initTexture();
+  }
+  
+  private initTexture(): void {
+    const { gl, texture, canvas } = this;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  
+  addTexture(sourceTexture: WebGLTexture, width: number, height: number): { x: number; y: number; width: number; height: number } | null {
+    if (this.textureMap.has(sourceTexture)) {
+      return this.textureMap.get(sourceTexture)!;
+    }
+    
+    const node = this.findNode(this.root, width, height);
+    if (!node) return null;
+    
+    const splitNode = this.splitNode(node, width, height);
+    const region = { x: splitNode.x, y: splitNode.y, width, height };
+    
+    // 将纹理绘制到图集中
+    this.drawTextureToAtlas(sourceTexture, region);
+    this.textureMap.set(sourceTexture, region);
+    
+    return region;
+  }
+  
+  private findNode(node: AtlasNode, width: number, height: number): AtlasNode | null {
+    if (node.used) {
+      if (node.right) {
+        const rightResult = this.findNode(node.right, width, height);
+        if (rightResult) return rightResult;
+      }
+      if (node.down) {
+        return this.findNode(node.down, width, height);
+      }
+      return null;
+    }
+    
+    if (width <= node.width && height <= node.height) {
+      return node;
+    }
+    
+    return null;
+  }
+  
+  private splitNode(node: AtlasNode, width: number, height: number): AtlasNode {
+    node.used = true;
+    node.down = {
+      x: node.x,
+      y: node.y + height,
+      width: node.width,
+      height: node.height - height,
+      used: false
+    };
+    node.right = {
+      x: node.x + width,
+      y: node.y,
+      width: node.width - width,
+      height,
+      used: false
+    };
+    return node;
+  }
+  
+  private drawTextureToAtlas(sourceTexture: WebGLTexture, region: { x: number; y: number; width: number; height: number }): void {
+    // 创建临时framebuffer来读取纹理数据
+    const { gl } = this;
+    const framebuffer = gl.createFramebuffer();
+    const oldFramebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+    
+    try {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sourceTexture, 0);
+      
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) {
+        const pixels = new Uint8Array(region.width * region.height * 4);
+        gl.readPixels(0, 0, region.width, region.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        
+        // 创建临时canvas来处理像素数据
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = region.width;
+        tempCanvas.height = region.height;
+        const tempCtx = tempCanvas.getContext('2d')!;
+        
+        const imageData = tempCtx.createImageData(region.width, region.height);
+        imageData.data.set(pixels);
+        tempCtx.putImageData(imageData, 0, 0);
+        
+        // 绘制到主图集canvas
+        this.ctx.drawImage(tempCanvas, region.x, region.y);
+      }
+    } finally {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, oldFramebuffer);
+      gl.deleteFramebuffer(framebuffer);
+    }
+  }
+  
+  getTexture(): WebGLTexture {
+    return this.texture;
+  }
+  
+  getUVMapping(sourceTexture: WebGLTexture): { x: number; y: number; width: number; height: number } | null {
+    return this.textureMap.get(sourceTexture) || null;
+  }
+  
+  updateTexture(): void {
+    const { gl, texture, canvas } = this;
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  }
+  
+  dispose(): void {
+    this.gl.deleteTexture(this.texture);
+    this.textureMap.clear();
+  }
 }
 
 /**
@@ -37,9 +195,12 @@ export interface IBatchable {
   readonly blendMode: number;
   readonly vertexCount: number;
   readonly indexCount: number;
+  readonly priority: number; // 渲染优先级
+  readonly bounds: { x: number; y: number; width: number; height: number }; // 包围盒
   
   fillBatchData(vertices: Float32Array, indices: Uint16Array, uvs: Float32Array, colors: Uint32Array, offset: number): number;
   canBatch(other: IBatchable): boolean;
+  getTextureSize(): { width: number; height: number };
 }
 
 /**
@@ -60,11 +221,13 @@ export class BatchRenderSystem extends BaseSystem {
   // 批次配置
   private readonly maxBatchSize = 4096;
   private readonly maxTextureUnits = 16;
+  private readonly atlasSize = 2048;
   
   // 批次数据
   private currentBatch: BatchData;
   private currentState: BatchState;
   private batches: IBatchable[] = [];
+  private sortedBatches: IBatchable[] = [];
   
   // WebGL 资源
   private vertexBuffer: WebGLBuffer | null = null;
@@ -74,13 +237,24 @@ export class BatchRenderSystem extends BaseSystem {
   // 纹理管理
   private textureUnits: (WebGLTexture | null)[] = [];
   private currentTextureUnit = 0;
+  private textureAtlas: TextureAtlas | null = null;
+  private enableAtlas = true;
+  
+  // 智能批次合并
+  private batchGroups = new Map<string, IBatchable[]>();
+  private frameObjectCount = 0;
+  private lastFrameTime = 0;
   
   // 性能统计
   private stats = {
     batchCount: 0,
     drawCalls: 0,
     objectsBatched: 0,
-    textureSwaps: 0
+    textureSwaps: 0,
+    atlasHits: 0,
+    atlasMisses: 0,
+    sortTime: 0,
+    batchTime: 0
   };
   
   constructor() {
@@ -144,6 +318,12 @@ export class BatchRenderSystem extends BaseSystem {
     // 初始化WebGL资源
     this.initWebGLResources();
     
+    // 初始化纹理图集
+    if (this.enableAtlas) {
+      this.textureAtlas = new TextureAtlas(this.gl, this.atlasSize);
+      console.log('Texture atlas initialized with size:', this.atlasSize);
+    }
+    
     console.log('BatchRenderSystem initialized');
   }
   
@@ -170,6 +350,11 @@ export class BatchRenderSystem extends BaseSystem {
    * 添加可批量渲染对象
    */
   addBatchable(batchable: IBatchable): void {
+    // 尝试使用纹理图集优化
+    if (this.enableAtlas && this.textureAtlas && batchable.texture) {
+      this.tryAddToAtlas(batchable);
+    }
+    
     // 检查是否可以与当前批次合并
     if (this.canAddToBatch(batchable)) {
       this.addToBatch(batchable);
@@ -380,7 +565,8 @@ export class BatchRenderSystem extends BaseSystem {
       indices: new Uint16Array(this.maxBatchSize * 6), // 6 indices per quad
       uvs: new Float32Array(this.maxBatchSize * 8),
       colors: new Uint32Array(this.maxBatchSize * 4),
-      count: 0
+      count: 0,
+      capacity: this.maxBatchSize
     };
   }
   
@@ -531,6 +717,117 @@ export class BatchRenderSystem extends BaseSystem {
   }
   
   /**
+   * 尝试将纹理添加到图集
+   */
+  private tryAddToAtlas(batchable: IBatchable): void {
+    if (!this.textureAtlas || !batchable.texture) return;
+    
+    const textureSize = batchable.getTextureSize();
+    const atlasRegion = this.textureAtlas.addTexture(
+      batchable.texture,
+      textureSize.width,
+      textureSize.height
+    );
+    
+    if (atlasRegion) {
+      this.stats.atlasHits++;
+      // 更新纹理图集
+      this.textureAtlas.updateTexture();
+    } else {
+      this.stats.atlasMisses++;
+    }
+  }
+  
+  /**
+   * 智能批次分组
+   */
+  private groupBatches(): void {
+    const startTime = performance.now();
+    
+    this.batchGroups.clear();
+    
+    for (const batchable of this.batches) {
+      const key = this.getBatchKey(batchable);
+      if (!this.batchGroups.has(key)) {
+        this.batchGroups.set(key, []);
+      }
+      this.batchGroups.get(key)!.push(batchable);
+    }
+    
+    this.stats.sortTime = performance.now() - startTime;
+  }
+  
+  /**
+   * 获取批次分组键
+   */
+  private getBatchKey(batchable: IBatchable): string {
+    const textureId = batchable.texture ? this.getTextureId(batchable.texture) : 'null';
+    return `${textureId}_${batchable.blendMode}`;
+  }
+  
+  /**
+   * 获取纹理ID
+   */
+  private getTextureId(texture: WebGLTexture): string {
+    // 简化的纹理ID生成
+    return texture.toString();
+  }
+  
+  /**
+   * 优化批次排序
+   */
+  private optimizeBatchOrder(): void {
+    this.sortedBatches = [];
+    
+    // 按优先级和状态分组排序
+    const groups = Array.from(this.batchGroups.values());
+    groups.sort((a, b) => {
+      const avgPriorityA = a.reduce((sum, item) => sum + item.priority, 0) / a.length;
+      const avgPriorityB = b.reduce((sum, item) => sum + item.priority, 0) / b.length;
+      return avgPriorityB - avgPriorityA;
+    });
+    
+    // 在每组内按包围盒排序（空间局部性）
+    for (const group of groups) {
+      group.sort((a, b) => {
+        const distA = a.bounds.x + a.bounds.y;
+        const distB = b.bounds.x + b.bounds.y;
+        return distA - distB;
+      });
+      this.sortedBatches.push(...group);
+    }
+  }
+  
+  /**
+   * 处理智能批次合并
+   */
+  processSmartBatching(): void {
+    if (this.batches.length === 0) return;
+    
+    const startTime = performance.now();
+    
+    // 分组和排序
+    this.groupBatches();
+    this.optimizeBatchOrder();
+    
+    // 处理排序后的批次
+    for (const batchable of this.sortedBatches) {
+      this.addBatchable(batchable);
+    }
+    
+    this.stats.batchTime = performance.now() - startTime;
+    this.batches = [];
+  }
+  
+  /**
+   * 添加到批次队列
+   */
+  queueBatchable(batchable: IBatchable): void {
+    this.batches.push(batchable);
+    this.frameObjectCount++;
+  }
+  
+  /**
    * 销毁
    */
   destroy(): void {
@@ -546,10 +843,19 @@ export class BatchRenderSystem extends BaseSystem {
       }
     }
     
+    // 销毁纹理图集
+    if (this.textureAtlas) {
+      this.textureAtlas.dispose();
+      this.textureAtlas = null;
+    }
+    
     this.renderer = null;
     this.gl = null;
     this.vertexBuffer = null;
     this.indexBuffer = null;
     this.shader = null;
+    this.batchGroups.clear();
+    this.batches = [];
+    this.sortedBatches = [];
   }
 }

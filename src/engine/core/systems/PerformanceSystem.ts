@@ -14,9 +14,13 @@ interface PerformanceConfig {
   enableCulling: boolean;
   enableCaching: boolean;
   enableObjectPooling: boolean;
+  enablePredictiveCache: boolean;
+  enableDynamicLOD: boolean;
   cullMargin: number;
   cacheThreshold: number;
   maxPoolSize: number;
+  lodDistanceThreshold: number;
+  predictiveCacheSize: number;
 }
 
 /**
@@ -54,6 +58,130 @@ export interface IPoolable {
 }
 
 /**
+ * LOD对象接口
+ */
+export interface ILODObject {
+  readonly position: { x: number; y: number };
+  readonly lodLevels: number;
+  
+  setLODLevel(level: number): void;
+  getCurrentLODLevel(): number;
+  getDistanceToCamera(cameraPos: { x: number; y: number }): number;
+}
+
+/**
+ * 预测性缓存管理器
+ */
+export class PredictiveCacheManager {
+  private accessPattern = new Map<string, number[]>();
+  private predictionCache = new Map<string, unknown>();
+  private maxPatternLength = 10;
+  private predictionThreshold = 0.7;
+  
+  recordAccess(key: string): void {
+    const currentTime = Date.now();
+    if (!this.accessPattern.has(key)) {
+      this.accessPattern.set(key, []);
+    }
+    
+    const pattern = this.accessPattern.get(key)!;
+    pattern.push(currentTime);
+    
+    if (pattern.length > this.maxPatternLength) {
+      pattern.shift();
+    }
+  }
+  
+  predictNextAccess(key: string): boolean {
+    const pattern = this.accessPattern.get(key);
+    if (!pattern || pattern.length < 3) return false;
+    
+    // 简单的时间间隔预测
+    const intervals = [];
+    for (let i = 1; i < pattern.length; i++) {
+      intervals.push(pattern[i] - pattern[i - 1]);
+    }
+    
+    const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const variance = intervals.reduce((sum, interval) => sum + Math.pow(interval - avgInterval, 2), 0) / intervals.length;
+    const confidence = 1 / (1 + variance / (avgInterval * avgInterval));
+    
+    return confidence > this.predictionThreshold;
+  }
+  
+  preloadResource(key: string, loader: () => Promise<unknown>): void {
+    if (!this.predictionCache.has(key)) {
+      loader().then(resource => {
+        this.predictionCache.set(key, resource);
+      }).catch(() => {
+        // 预加载失败，忽略
+      });
+    }
+  }
+  
+  getPredictedResource(key: string): unknown | null {
+    return this.predictionCache.get(key) || null;
+  }
+  
+  clear(): void {
+    this.accessPattern.clear();
+    this.predictionCache.clear();
+  }
+}
+
+/**
+ * 动态LOD管理器
+ */
+export class DynamicLODManager {
+  private cameraPosition = { x: 0, y: 0 };
+  private lodObjects = new Set<ILODObject>();
+  private distanceThreshold: number;
+  
+  constructor(distanceThreshold: number = 1000) {
+    this.distanceThreshold = distanceThreshold;
+  }
+  
+  setCameraPosition(x: number, y: number): void {
+    this.cameraPosition = { x, y };
+  }
+  
+  addLODObject(obj: ILODObject): void {
+    this.lodObjects.add(obj);
+  }
+  
+  removeLODObject(obj: ILODObject): void {
+    this.lodObjects.delete(obj);
+  }
+  
+  updateLOD(): number {
+    let switches = 0;
+    
+    for (const obj of this.lodObjects) {
+      const distance = obj.getDistanceToCamera(this.cameraPosition);
+      const currentLevel = obj.getCurrentLODLevel();
+      
+      let newLevel = 0;
+      if (distance > this.distanceThreshold * 2) {
+        newLevel = Math.min(2, obj.lodLevels - 1);
+      } else if (distance > this.distanceThreshold) {
+        newLevel = Math.min(1, obj.lodLevels - 1);
+      }
+      
+      if (newLevel !== currentLevel) {
+        obj.setLODLevel(newLevel);
+        switches++;
+      }
+    }
+    
+    return switches;
+  }
+  
+  clear(): void {
+    this.lodObjects.clear();
+  }
+}
+
+/**
  * 性能统计
  */
 interface PerformanceStats {
@@ -64,6 +192,12 @@ interface PerformanceStats {
   frameTime: number;
   renderTime: number;
   updateTime: number;
+  memoryUsage: number;
+  gpuMemoryUsage: number;
+  drawCalls: number;
+  triangles: number;
+  cacheHitRate: number;
+  lodSwitches: number;
 }
 
 /**
@@ -221,14 +355,20 @@ export class PerformanceSystem extends BaseSystem {
     enableCulling: true,
     enableCaching: true,
     enableObjectPooling: true,
+    enablePredictiveCache: true,
+    enableDynamicLOD: true,
     cullMargin: 50,
     cacheThreshold: 100,
-    maxPoolSize: 100
+    maxPoolSize: 100,
+    lodDistanceThreshold: 1000,
+    predictiveCacheSize: 50
   };
   
   private cacheManager: CacheManager;
   private frustumCuller: FrustumCuller;
   private objectPools = new Map<string, ObjectPool<IPoolable>>();
+  private predictiveCache: PredictiveCacheManager;
+  private lodManager: DynamicLODManager;
   
   private stats: PerformanceStats = {
     culledObjects: 0,
@@ -237,7 +377,13 @@ export class PerformanceSystem extends BaseSystem {
     poolMisses: 0,
     frameTime: 0,
     renderTime: 0,
-    updateTime: 0
+    updateTime: 0,
+    memoryUsage: 0,
+    gpuMemoryUsage: 0,
+    drawCalls: 0,
+    triangles: 0,
+    cacheHitRate: 0,
+    lodSwitches: 0
   };
   
   private frameStartTime = 0;
@@ -247,6 +393,8 @@ export class PerformanceSystem extends BaseSystem {
     
     this.cacheManager = new CacheManager(this.config.cacheThreshold);
     this.frustumCuller = new FrustumCuller();
+    this.predictiveCache = new PredictiveCacheManager();
+    this.lodManager = new DynamicLODManager(this.config.lodDistanceThreshold);
   }
   
   /**
@@ -432,6 +580,75 @@ export class PerformanceSystem extends BaseSystem {
   }
   
   /**
+   * 设置相机位置（用于LOD计算）
+   */
+  setCameraPosition(x: number, y: number): void {
+    this.lodManager.setCameraPosition(x, y);
+  }
+  
+  /**
+   * 添加LOD对象
+   */
+  addLODObject(obj: ILODObject): void {
+    if (this.config.enableDynamicLOD) {
+      this.lodManager.addLODObject(obj);
+    }
+  }
+  
+  /**
+   * 移除LOD对象
+   */
+  removeLODObject(obj: ILODObject): void {
+    this.lodManager.removeLODObject(obj);
+  }
+  
+  /**
+   * 预测性缓存访问记录
+   */
+  recordCacheAccess(key: string): void {
+    if (this.config.enablePredictiveCache) {
+      this.predictiveCache.recordAccess(key);
+    }
+  }
+  
+  /**
+   * 获取预测缓存的资源
+   */
+  getPredictedResource(key: string): unknown | null {
+    if (this.config.enablePredictiveCache) {
+      return this.predictiveCache.getPredictedResource(key);
+    }
+    return null;
+  }
+  
+  /**
+   * 预加载资源
+   */
+  preloadResource(key: string, loader: () => Promise<unknown>): void {
+    if (this.config.enablePredictiveCache && this.predictiveCache.predictNextAccess(key)) {
+      this.predictiveCache.preloadResource(key, loader);
+    }
+  }
+  
+  /**
+   * 更新性能统计
+   */
+  update(_deltaTime: number): void {
+    const startTime = performance.now();
+    
+    // 更新LOD
+    if (this.config.enableDynamicLOD) {
+      this.stats.lodSwitches = this.lodManager.updateLOD();
+    }
+    
+    // 更新缓存命中率
+    this.stats.cacheHitRate = this.stats.cachedObjects / Math.max(1, this.stats.cachedObjects + this.stats.poolMisses);
+    
+    // 更新统计
+    this.stats.updateTime = performance.now() - startTime;
+  }
+  
+  /**
    * 销毁
    */
   destroy(): void {
@@ -441,5 +658,7 @@ export class PerformanceSystem extends BaseSystem {
       pool.clear();
     }
     this.objectPools.clear();
+    this.predictiveCache.clear();
+    this.lodManager.clear();
   }
 }

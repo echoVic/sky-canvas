@@ -198,6 +198,20 @@ export class ResourceSystem extends BaseSystem {
   private readonly maxUnusedTime = 5 * 60 * 1000; // 5分钟
   private currentCacheSize = 0;
   
+  // GPU内存管理
+  private gpuMemoryBudget = 256 * 1024 * 1024; // 256MB GPU内存预算
+  private currentGpuMemoryUsage = 0;
+  private gpuResourceQueue: string[] = []; // LRU队列
+  
+  // 异步加载管理
+  private loadingQueue: Array<{ id: string; priority: number; factory: () => IResource }> = [];
+  private maxConcurrentLoads = 4;
+  private currentLoadingCount = 0;
+  
+  // 缓冲区复用池
+  private bufferPools = new Map<string, WebGLBuffer[]>();
+  private maxBufferPoolSize = 20;
+  
   // 垃圾回收
   private gcInterval: number | null = null;
   private readonly gcIntervalTime = 30 * 1000; // 30秒
@@ -210,13 +224,14 @@ export class ResourceSystem extends BaseSystem {
   }
   
   /**
-   * 加载资源
+   * 加载资源（支持优先级和异步队列）
    */
-  async loadResource<T extends IResource>(id: string, factory: () => T): Promise<T> {
+  async loadResource<T extends IResource>(id: string, factory: () => T, priority: number = 0): Promise<T> {
     // 检查是否已存在
     const existing = this.resources.get(id) as T;
     if (existing) {
       existing.addRef();
+      this.updateGpuResourceAccess(id);
       return existing;
     }
     
@@ -224,6 +239,32 @@ export class ResourceSystem extends BaseSystem {
     const loadingPromise = this.loadingPromises.get(id);
     if (loadingPromise) {
       return loadingPromise as Promise<T>;
+    }
+    
+    // 检查并发加载限制
+    if (this.currentLoadingCount >= this.maxConcurrentLoads) {
+      return new Promise((resolve, reject) => {
+        this.loadingQueue.push({
+          id,
+          priority,
+          factory: factory as () => IResource
+        });
+        this.loadingQueue.sort((a, b) => b.priority - a.priority);
+        
+        // 等待队列处理
+        const checkQueue = () => {
+          if (this.currentLoadingCount < this.maxConcurrentLoads) {
+            const queueIndex = this.loadingQueue.findIndex(item => item.id === id);
+            if (queueIndex !== -1) {
+              this.loadingQueue.splice(queueIndex, 1);
+              this.doLoadResource(id, factory).then(resolve).catch(reject);
+            }
+          } else {
+            setTimeout(checkQueue, 100);
+          }
+        };
+        checkQueue();
+      });
     }
     
     // 开始加载
@@ -244,14 +285,27 @@ export class ResourceSystem extends BaseSystem {
    * 执行资源加载
    */
   private async doLoadResource<T extends IResource>(id: string, factory: () => T): Promise<T> {
+    this.currentLoadingCount++;
+    
     const resource = factory();
     
     try {
+      // 检查GPU内存预算
+      if (resource.type === ResourceType.Texture || resource.type === ResourceType.Buffer) {
+        await this.ensureGpuMemoryBudget(resource.size);
+      }
+      
       await resource.load();
       resource.addRef();
       
       this.resources.set(id, resource);
       this.currentCacheSize += resource.size;
+      
+      // 更新GPU内存使用
+      if (resource.type === ResourceType.Texture || resource.type === ResourceType.Buffer) {
+        this.currentGpuMemoryUsage += resource.size;
+        this.gpuResourceQueue.push(id);
+      }
       
       // 检查缓存大小
       this.checkCacheSize();
@@ -260,6 +314,9 @@ export class ResourceSystem extends BaseSystem {
     } catch (error) {
       resource.dispose();
       throw error;
+    } finally {
+      this.currentLoadingCount--;
+      this.processLoadingQueue();
     }
   }
   
@@ -371,6 +428,78 @@ export class ResourceSystem extends BaseSystem {
   }
   
   /**
+   * 更新GPU资源访问时间
+   */
+  private updateGpuResourceAccess(id: string): void {
+    const index = this.gpuResourceQueue.indexOf(id);
+    if (index !== -1) {
+      this.gpuResourceQueue.splice(index, 1);
+      this.gpuResourceQueue.push(id);
+    }
+  }
+  
+  /**
+   * 确保GPU内存预算
+   */
+  private async ensureGpuMemoryBudget(requiredSize: number): Promise<void> {
+    while (this.currentGpuMemoryUsage + requiredSize > this.gpuMemoryBudget && this.gpuResourceQueue.length > 0) {
+      const oldestId = this.gpuResourceQueue.shift()!;
+      const resource = this.resources.get(oldestId);
+      if (resource && resource.refCount === 0) {
+        this.currentGpuMemoryUsage -= resource.size;
+        this.disposeResource(oldestId);
+      }
+    }
+  }
+  
+  /**
+   * 处理加载队列
+   */
+  private processLoadingQueue(): void {
+    if (this.loadingQueue.length > 0 && this.currentLoadingCount < this.maxConcurrentLoads) {
+      const nextItem = this.loadingQueue.shift()!;
+      this.loadResource(nextItem.id, nextItem.factory, nextItem.priority);
+    }
+  }
+  
+  /**
+   * 创建WebGL缓冲区（支持复用）
+   */
+  createBuffer(gl: WebGLRenderingContext, type: number, size: number): WebGLBuffer | null {
+    const poolKey = `${type}_${size}`;
+    const pool = this.bufferPools.get(poolKey) || [];
+    
+    if (pool.length > 0) {
+      return pool.pop()!;
+    }
+    
+    const buffer = gl.createBuffer();
+    if (buffer) {
+      gl.bindBuffer(type, buffer);
+      gl.bufferData(type, size, gl.DYNAMIC_DRAW);
+    }
+    
+    return buffer;
+  }
+  
+  /**
+   * 释放WebGL缓冲区到池中
+   */
+  releaseBuffer(type: number, size: number, buffer: WebGLBuffer): void {
+    const poolKey = `${type}_${size}`;
+    let pool = this.bufferPools.get(poolKey);
+    
+    if (!pool) {
+      pool = [];
+      this.bufferPools.set(poolKey, pool);
+    }
+    
+    if (pool.length < this.maxBufferPoolSize) {
+      pool.push(buffer);
+    }
+  }
+  
+  /**
    * 获取缓存统计
    */
   getCacheStats() {
@@ -378,7 +507,11 @@ export class ResourceSystem extends BaseSystem {
       resourceCount: this.resources.size,
       cacheSize: this.currentCacheSize,
       maxCacheSize: this.maxCacheSize,
-      loadingCount: this.loadingPromises.size
+      loadingCount: this.loadingPromises.size,
+      gpuMemoryUsage: this.currentGpuMemoryUsage,
+      gpuMemoryBudget: this.gpuMemoryBudget,
+      queuedLoads: this.loadingQueue.length,
+      currentLoadingCount: this.currentLoadingCount
     };
   }
   
