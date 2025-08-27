@@ -1,20 +1,36 @@
 import { create } from 'zustand'
 
+// 工具类型定义（与Hook中的ToolType保持一致）
+export type UIToolType = 
+  | 'select' 
+  | 'hand' 
+  | 'rectangle' 
+  | 'diamond' 
+  | 'circle' 
+  | 'arrow' 
+  | 'line' 
+  | 'draw' 
+  | 'text' 
+  | 'image' 
+  | 'sticky' 
+  | 'link' 
+  | 'frame'
+
 interface Tool {
-  id: string
+  id: UIToolType
   name: string
   icon: string
   active: boolean
 }
 
 interface CanvasState {
-  selectedTool: string
+  selectedTool: UIToolType
   tools: Tool[]
   zoom: number
   theme: 'light' | 'dark'
   sidebarOpen: boolean
   
-  setSelectedTool: (toolId: string) => void
+  setSelectedTool: (toolId: UIToolType) => void
   setZoom: (zoom: number) => void
   toggleTheme: () => void
   toggleSidebar: () => void

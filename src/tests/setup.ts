@@ -2,7 +2,14 @@
  * Vitest 测试环境设置
  */
 
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
+import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+
+// 每个测试后清理
+afterEach(() => {
+  cleanup();
+});
 
 // Mock localStorage
 const localStorageMock = {
@@ -86,6 +93,73 @@ global.cancelAnimationFrame = vi.fn();
 // Mock URL.createObjectURL
 global.URL.createObjectURL = vi.fn(() => 'mock-url');
 global.URL.revokeObjectURL = vi.fn();
+
+// Mock HTMLCanvasElement
+HTMLCanvasElement.prototype.getContext = vi.fn((type: string) => {
+  if (type === '2d') {
+    return {
+      fillRect: vi.fn(),
+      clearRect: vi.fn(),
+      getImageData: vi.fn(),
+      putImageData: vi.fn(),
+      createLinearGradient: vi.fn(),
+      createRadialGradient: vi.fn(),
+      createPattern: vi.fn(),
+      setTransform: vi.fn(),
+      resetTransform: vi.fn(),
+      drawImage: vi.fn(),
+      save: vi.fn(),
+      restore: vi.fn(),
+      beginPath: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      closePath: vi.fn(),
+      stroke: vi.fn(),
+      fill: vi.fn(),
+      arc: vi.fn(),
+      rect: vi.fn(),
+      transform: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+      scale: vi.fn(),
+      measureText: vi.fn(() => ({ width: 100 })),
+      fillText: vi.fn(),
+      strokeText: vi.fn(),
+      canvas: {
+        width: 800,
+        height: 600,
+      },
+    };
+  }
+  if (type === 'webgl' || type === 'webgl2') {
+    return {
+      canvas: {
+        width: 800,
+        height: 600,
+      },
+      createShader: vi.fn(),
+      shaderSource: vi.fn(),
+      compileShader: vi.fn(),
+      createProgram: vi.fn(),
+      attachShader: vi.fn(),
+      linkProgram: vi.fn(),
+      useProgram: vi.fn(),
+      createBuffer: vi.fn(),
+      bindBuffer: vi.fn(),
+      bufferData: vi.fn(),
+      getAttribLocation: vi.fn(),
+      enableVertexAttribArray: vi.fn(),
+      vertexAttribPointer: vi.fn(),
+      drawArrays: vi.fn(),
+      clear: vi.fn(),
+      clearColor: vi.fn(),
+      viewport: vi.fn(),
+    };
+  }
+  return null;
+});
+
+HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,mock');
 
 // Mock Blob
 global.Blob = class MockBlob {

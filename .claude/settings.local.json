@@ -3,7 +3,20 @@
     "allow": [
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "Bash(pnpm run:*)"
+      "Bash(pnpm run:*)",
+      "Bash(npm install)",
+      "Bash(npm test)",
+      "Bash(pnpm install:*)",
+      "Bash(npm install:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm tsc:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm --filter @sky-canvas/render-engine test)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk test)",
+      "Bash(pnpm --filter @sky-canvas/render-engine build)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk build)",
+      "Bash(pnpm --filter @sky-canvas/render-engine test --coverage)"
     ],
     "deny": [],
     "ask": []

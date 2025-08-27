@@ -1,0 +1,51 @@
+{
+  "name": "@sky-canvas/canvas-sdk",
+  "version": "1.0.0",
+  "description": "框架无关的画布功能SDK，提供完整的画布绘制和交互能力",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "canvas",
+    "graphics",
+    "drawing",
+    "sdk",
+    "framework-agnostic",
+    "interaction",
+    "scene"
+  ],
+  "author": "Sky Canvas Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "@sky-canvas/render-engine": "workspace:^1.0.0"
+  },
+  "devDependencies": {
+    "@sky-canvas/render-engine": "workspace:^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "jsdom": "^22.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "examples"
+  ]
+}

@@ -13,11 +13,12 @@ import {
   Image, 
   StickyNote, 
   Link, 
-  Frame
+  Frame,
+  LucideIcon
 } from 'lucide-react'
-import { useCanvasStore } from '../../store/canvasStore'
+import { useCanvasStore, UIToolType } from '../../store/canvasStore'
 
-const iconMap = {
+const iconMap: Record<string, LucideIcon> = {
   MousePointer2, Hand, Square, Diamond, Circle, MoveRight, Minus, 
   Pencil, Type, Image, StickyNote, Link, Frame
 }
@@ -28,7 +29,7 @@ const Toolbar: React.FC = () => {
   return (
     <div className="flex items-center gap-0.5 bg-white dark:bg-gray-900 rounded-lg p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
       {tools.map((tool) => {
-        const IconComponent = iconMap[tool.icon as keyof typeof iconMap]
+        const IconComponent = iconMap[tool.icon]
         return (
           <Button
             key={tool.id}
