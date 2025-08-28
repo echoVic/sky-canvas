@@ -162,7 +162,7 @@ describe('createShape', () => {
 
   it('应该创建线条形状', () => {
     const startPoint = { x: 0, y: 0 };
-    const endPoint = { x: 100, y 50 };
+    const endPoint = { x: 100, y: 50 };
     const shape = createShape('line', 'test-line', startPoint, endPoint);
     
     expect(shape).toBeTruthy();

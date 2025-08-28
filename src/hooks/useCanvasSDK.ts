@@ -1,6 +1,13 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { CanvasSDK, IShape, ICanvasSDKEvents } from '@sky-canvas/canvas-sdk';
-import { IGraphicsContextFactory } from '@sky-canvas/render-engine';
+import { 
+  CanvasSDK, 
+  IShape, 
+  ICanvasSDKEvents, 
+  ICanvasSDKConfig,
+  RenderEngineType,
+  InteractionMode,
+  IInteractionManager
+} from '@sky-canvas/canvas-sdk';
 
 /**
  * Canvas SDK状态接口
@@ -18,14 +25,24 @@ export interface CanvasSDKState {
   canUndo: boolean;
   /** 是否可以重做 */
   canRedo: boolean;
+  /** 当前交互模式 */
+  interactionMode: InteractionMode;
+  /** 视口信息 */
+  viewport: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    zoom: number;
+  };
 }
 
 /**
- * Canvas SDK操作接口
+ * Canvas SDK操作接口 - 更新为使用新API
  */
 export interface CanvasSDKActions {
   /** 初始化SDK */
-  initialize: (canvas: HTMLCanvasElement, factory: IGraphicsContextFactory<HTMLCanvasElement>) => Promise<void>;
+  initialize: (canvas: HTMLCanvasElement, config?: ICanvasSDKConfig) => Promise<void>;
   /** 添加形状 */
   addShape: (shape: IShape) => void;
   /** 移除形状 */
@@ -46,6 +63,35 @@ export interface CanvasSDKActions {
   clearShapes: () => void;
   /** 点击测试 */
   hitTest: (point: { x: number; y: number }) => IShape | null;
+  
+  // === 新增的交互系统API ===
+  /** 设置交互模式 */
+  setInteractionMode: (mode: InteractionMode) => boolean;
+  /** 获取交互管理器 */
+  getInteractionManager: () => IInteractionManager | null;
+  /** 启用/禁用交互 */
+  setInteractionEnabled: (enabled: boolean) => void;
+  
+  // === 新增的视口控制API ===
+  /** 设置视口 */
+  setViewport: (viewport: Partial<{ x: number; y: number; width: number; height: number; zoom: number }>) => void;
+  /** 平移视口 */
+  panViewport: (delta: { x: number; y: number }) => void;
+  /** 缩放视口 */
+  zoomViewport: (factor: number, center?: { x: number; y: number }) => void;
+  /** 适应内容 */
+  fitToContent: () => void;
+  /** 重置视口 */
+  resetViewport: () => void;
+  
+  // === 新增的渲染控制API ===
+  /** 开始渲染 */
+  startRender: () => void;
+  /** 停止渲染 */
+  stopRender: () => void;
+  /** 手动渲染一帧 */
+  render: () => void;
+  
   /** 销毁SDK */
   dispose: () => void;
 }
@@ -70,6 +116,14 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     selectedShapes: [],
     canUndo: false,
     canRedo: false,
+    interactionMode: InteractionMode.SELECT,
+    viewport: {
+      x: 0,
+      y: 0,
+      width: 800,
+      height: 600,
+      zoom: 1
+    },
   });
 
   /**
@@ -86,6 +140,8 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       selectedShapes: sdk.getSelectedShapes(),
       canUndo: sdk.canUndo(),
       canRedo: sdk.canRedo(),
+      interactionMode: sdk.getInteractionMode(),
+      viewport: sdk.getViewport(),
     }));
   }, []);
 
@@ -94,7 +150,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
    */
   const initialize = useCallback(async (
     canvas: HTMLCanvasElement, 
-    factory: IGraphicsContextFactory<HTMLCanvasElement>
+    config: ICanvasSDKConfig = {}
   ) => {
     if (sdkRef.current) {
       throw new Error('SDK already initialized');
@@ -103,7 +159,12 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     const sdk = new CanvasSDK();
     
     try {
-      await sdk.initialize(canvas);
+      // 使用新的配置API初始化
+      await sdk.initialize(canvas, {
+        renderEngine: 'webgl', // 默认使用WebGL
+        enableInteraction: true,
+        ...config
+      });
       
       // 设置事件监听器
       const eventHandlers: { [K in keyof ICanvasSDKEvents]: (event: ICanvasSDKEvents[K]) => void } = {
@@ -113,6 +174,8 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         shapeSelected: () => updateState(),
         shapeDeselected: () => updateState(),
         selectionCleared: () => updateState(),
+        interactionModeChanged: () => updateState(),
+        viewportChanged: () => updateState(),
       };
 
       // 注册所有事件监听器
@@ -122,14 +185,19 @@ export function useCanvasSDK(): UseCanvasSDKResult {
 
       sdkRef.current = sdk;
       
+      // 开始渲染循环
+      sdk.startRender();
+      
       setState(prev => ({
         ...prev,
         sdk,
         isInitialized: true,
-        shapes: [],
-        selectedShapes: [],
-        canUndo: false,
-        canRedo: false,
+        shapes: sdk.getShapes(),
+        selectedShapes: sdk.getSelectedShapes(),
+        canUndo: sdk.canUndo(),
+        canRedo: sdk.canRedo(),
+        interactionMode: sdk.getInteractionMode(),
+        viewport: sdk.getViewport(),
       }));
 
     } catch (error) {
@@ -238,6 +306,122 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     return sdkRef.current.hitTest(point);
   }, []);
 
+  // === 新增的交互系统方法 ===
+
+  /**
+   * 设置交互模式
+   */
+  const setInteractionMode = useCallback((mode: InteractionMode) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    return sdkRef.current.setInteractionMode(mode);
+  }, []);
+
+  /**
+   * 获取交互管理器
+   */
+  const getInteractionManager = useCallback(() => {
+    if (!sdkRef.current) {
+      return null;
+    }
+    return sdkRef.current.getInteractionManager();
+  }, []);
+
+  /**
+   * 启用/禁用交互
+   */
+  const setInteractionEnabled = useCallback((enabled: boolean) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.setInteractionEnabled(enabled);
+  }, []);
+
+  // === 新增的视口控制方法 ===
+
+  /**
+   * 设置视口
+   */
+  const setViewport = useCallback((viewport: Partial<{ x: number; y: number; width: number; height: number; zoom: number }>) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.setViewport(viewport);
+  }, []);
+
+  /**
+   * 平移视口
+   */
+  const panViewport = useCallback((delta: { x: number; y: number }) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.panViewport(delta);
+  }, []);
+
+  /**
+   * 缩放视口
+   */
+  const zoomViewport = useCallback((factor: number, center?: { x: number; y: number }) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.zoomViewport(factor, center);
+  }, []);
+
+  /**
+   * 适应内容
+   */
+  const fitToContent = useCallback(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.fitToContent();
+  }, []);
+
+  /**
+   * 重置视口
+   */
+  const resetViewport = useCallback(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.resetViewport();
+  }, []);
+
+  // === 新增的渲染控制方法 ===
+
+  /**
+   * 开始渲染
+   */
+  const startRender = useCallback(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.startRender();
+  }, []);
+
+  /**
+   * 停止渲染
+   */
+  const stopRender = useCallback(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.stopRender();
+  }, []);
+
+  /**
+   * 手动渲染一帧
+   */
+  const render = useCallback(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.render();
+  }, []);
+
   /**
    * 销毁SDK
    */
@@ -252,6 +436,14 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         selectedShapes: [],
         canUndo: false,
         canRedo: false,
+        interactionMode: InteractionMode.SELECT,
+        viewport: {
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+          zoom: 1
+        },
       });
     }
   }, []);
@@ -275,6 +467,20 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     redo,
     clearShapes,
     hitTest,
+    // 交互系统方法
+    setInteractionMode,
+    getInteractionManager,
+    setInteractionEnabled,
+    // 视口控制方法
+    setViewport,
+    panViewport,
+    zoomViewport,
+    fitToContent,
+    resetViewport,
+    // 渲染控制方法
+    startRender,
+    stopRender,
+    render,
     dispose,
   };
 

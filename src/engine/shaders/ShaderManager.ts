@@ -322,5 +322,132 @@ export const DefaultShaders = {
         gl_FragColor = texColor * v_color;
       }
     `
+  },
+
+  // 新增：渐变着色器
+  gradient: {
+    vertex: `
+      attribute vec2 a_position;
+      attribute vec4 a_color;
+      attribute vec2 a_texCoord;
+      
+      uniform mat3 u_transform;
+      uniform mat3 u_projection;
+      
+      varying vec4 v_color;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        vec3 position = u_projection * u_transform * vec3(a_position, 1.0);
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+        v_color = a_color;
+        v_texCoord = a_texCoord;
+      }
+    `,
+    fragment: `
+      precision mediump float;
+      
+      uniform vec4 u_gradientStart;
+      uniform vec4 u_gradientEnd;
+      uniform vec2 u_gradientDirection;
+      
+      varying vec4 v_color;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        float t = dot(v_texCoord, u_gradientDirection);
+        t = clamp(t, 0.0, 1.0);
+        vec4 gradientColor = mix(u_gradientStart, u_gradientEnd, t);
+        gl_FragColor = gradientColor * v_color;
+      }
+    `
+  },
+
+  // 新增：发光效果着色器
+  glow: {
+    vertex: `
+      attribute vec2 a_position;
+      attribute vec4 a_color;
+      attribute vec2 a_texCoord;
+      
+      uniform mat3 u_transform;
+      uniform mat3 u_projection;
+      
+      varying vec4 v_color;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        vec3 position = u_projection * u_transform * vec3(a_position, 1.0);
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+        v_color = a_color;
+        v_texCoord = a_texCoord;
+      }
+    `,
+    fragment: `
+      precision mediump float;
+      
+      uniform float u_glowIntensity;
+      uniform vec4 u_glowColor;
+      uniform float u_time;
+      
+      varying vec4 v_color;
+      varying vec2 v_texCoord;
+      
+      void main() {
+        vec2 center = vec2(0.5, 0.5);
+        float dist = distance(v_texCoord, center);
+        float glow = 1.0 - smoothstep(0.0, 0.7, dist);
+        
+        // 添加时间动画
+        float pulse = sin(u_time * 3.0) * 0.5 + 0.5;
+        glow *= u_glowIntensity * (0.5 + pulse * 0.5);
+        
+        vec4 glowEffect = u_glowColor * glow;
+        gl_FragColor = mix(v_color, glowEffect, glow);
+      }
+    `
+  },
+
+  // 新增：粒子系统着色器  
+  particle: {
+    vertex: `
+      attribute vec2 a_position;
+      attribute vec4 a_color;
+      attribute float a_size;
+      
+      uniform mat3 u_transform;
+      uniform mat3 u_projection;
+      uniform float u_time;
+      
+      varying vec4 v_color;
+      varying float v_life;
+      
+      void main() {
+        vec3 position = u_projection * u_transform * vec3(a_position, 1.0);
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+        gl_PointSize = a_size;
+        
+        v_color = a_color;
+        v_life = a_color.a; // 使用alpha通道存储生命值
+      }
+    `,
+    fragment: `
+      precision mediump float;
+      
+      uniform float u_time;
+      
+      varying vec4 v_color;
+      varying float v_life;
+      
+      void main() {
+        vec2 center = gl_PointCoord - vec2(0.5);
+        float dist = length(center);
+        
+        if (dist > 0.5) discard;
+        
+        float alpha = (1.0 - dist * 2.0) * v_life;
+        gl_FragColor = vec4(v_color.rgb, alpha);
+      }
+    `
   }
 };

@@ -1,10 +1,44 @@
 /**
- * 画板SDK核心实现
+ * 画板SDK核心实现 - 集成交互系统
  */
-import { RenderEngine, IRenderLayer, IPoint } from '@sky-canvas/render-engine';
+import { 
+  RenderEngine, 
+  IRenderLayer, 
+  IPoint, 
+  IGraphicsContextFactory,
+  WebGLContextFactory,
+  Canvas2DContextFactory 
+} from '@sky-canvas/render-engine';
 import { IShape, IShapeUpdate, IShapeEvent, IShapeSelectionEvent } from '../scene/IShape';
 import { EventEmitter } from '../events/EventEmitter';
 import { HistoryManager } from '../core/HistoryManager';
+import { 
+  InteractionManager, 
+  IInteractionManager, 
+  IInteractionTool, 
+  SelectionMode,
+  InteractionMode
+} from '../interaction';
+
+/**
+ * 渲染引擎类型
+ */
+export type RenderEngineType = 'webgl' | 'canvas2d' | 'webgpu';
+
+/**
+ * SDK配置选项
+ */
+export interface ICanvasSDKConfig {
+  renderEngine?: RenderEngineType;
+  enableInteraction?: boolean;
+  viewport?: {
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    zoom?: number;
+  };
+}
 
 /**
  * SDK事件类型
@@ -16,25 +50,39 @@ export interface ICanvasSDKEvents {
   'shapeSelected': IShapeSelectionEvent;
   'shapeDeselected': IShapeSelectionEvent;
   'selectionCleared': {};
+  'interactionModeChanged': { mode: InteractionMode };
+  'viewportChanged': { viewport: any };
 }
 
 /**
- * 画板SDK核心类
+ * 画板SDK核心类 - 集成交互系统
  */
 export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   private renderEngine: RenderEngine | null = null;
+  private interactionManager: IInteractionManager | null = null;
   private canvas: HTMLCanvasElement | null = null;
   private shapes: Map<string, IShape> = new Map();
   private layers: Map<string, IRenderLayer> = new Map();
   private selectedShapes: Set<string> = new Set();
   private historyManager: HistoryManager = new HistoryManager();
   private isInitializedFlag = false;
+  private config: ICanvasSDKConfig = {};
+
+  // 视口状态
+  private viewport = {
+    x: 0,
+    y: 0, 
+    width: 800,
+    height: 600,
+    zoom: 1
+  };
 
   /**
    * 初始化SDK
    * @param canvas 画布元素
+   * @param config 配置选项
    */
-  async initialize(canvas: HTMLCanvasElement): Promise<void> {
+  async initialize(canvas: HTMLCanvasElement, config: ICanvasSDKConfig = {}): Promise<void> {
     if (this.isInitializedFlag) {
       throw new Error('Canvas SDK already initialized');
     }
@@ -44,12 +92,130 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
     }
 
     this.canvas = canvas;
-    this.renderEngine = new RenderEngine();
-    
-    // 这里需要实际的图形上下文工厂，暂时使用占位符
-    // await this.renderEngine.initialize(factory, canvas);
+    this.config = {
+      renderEngine: 'webgl',
+      enableInteraction: true,
+      ...config
+    };
+
+    // 更新视口
+    if (config.viewport) {
+      Object.assign(this.viewport, config.viewport);
+    } else {
+      this.viewport.width = canvas.width || canvas.offsetWidth;
+      this.viewport.height = canvas.height || canvas.offsetHeight;
+    }
+
+    // 初始化渲染引擎
+    await this.initializeRenderEngine();
+
+    // 初始化交互系统
+    if (this.config.enableInteraction) {
+      await this.initializeInteraction();
+    }
     
     this.isInitializedFlag = true;
+    console.log('Canvas SDK initialized with:', this.config);
+  }
+
+  private async initializeRenderEngine(): Promise<void> {
+    if (!this.canvas) throw new Error('Canvas not available');
+
+    this.renderEngine = new RenderEngine({
+      targetFPS: 60,
+      enableVSync: true,
+      enableCulling: true
+    });
+
+    // 选择图形上下文工厂
+    let factory: IGraphicsContextFactory<HTMLCanvasElement>;
+    switch (this.config.renderEngine) {
+      case 'webgl':
+        factory = new WebGLContextFactory();
+        break;
+      case 'canvas2d':
+        factory = new Canvas2DContextFactory();
+        break;
+      case 'webgpu':
+        // WebGPU暂未实现，回退到WebGL
+        console.warn('WebGPU not implemented, falling back to WebGL');
+        factory = new WebGLContextFactory();
+        break;
+      default:
+        factory = new WebGLContextFactory();
+    }
+
+    await this.renderEngine.initialize(factory, this.canvas);
+    this.renderEngine.setViewport(this.viewport);
+  }
+
+  private async initializeInteraction(): Promise<void> {
+    if (!this.canvas) throw new Error('Canvas not available');
+
+    this.interactionManager = new InteractionManager();
+    this.interactionManager.initialize(this.canvas);
+
+    // 设置坐标转换函数
+    this.interactionManager.setCoordinateTransforms(
+      this.screenToWorld.bind(this),
+      this.worldToScreen.bind(this)
+    );
+
+    // 设置视口控制函数
+    this.interactionManager.setViewportControls(
+      this.panViewport.bind(this),
+      this.zoomViewport.bind(this)
+    );
+
+    // 监听交互事件
+    this.setupInteractionEvents();
+
+    // 更新可交互对象
+    this.updateInteractableItems();
+  }
+
+  private setupInteractionEvents(): void {
+    if (!this.interactionManager) return;
+
+    // 监听选择变化事件
+    this.interactionManager.addEventListener('selectionchange', (event) => {
+      this.handleSelectionChange(event);
+    });
+
+    // 监听其他交互事件
+    this.interactionManager.addEventListener('mousedown', (event) => {
+      this.dispatchEvent({ type: 'mousedown', ...event });
+    });
+
+    this.interactionManager.addEventListener('mousemove', (event) => {
+      this.dispatchEvent({ type: 'mousemove', ...event });
+    });
+  }
+
+  private handleSelectionChange(event: any): void {
+    // 同步SDK内部选择状态与交互管理器
+    this.selectedShapes.clear();
+    const selectedItems = event.selected || [];
+    
+    selectedItems.forEach((item: IShape) => {
+      this.selectedShapes.add(item.id);
+    });
+
+    // 发出相应事件
+    if (selectedItems.length === 0) {
+      this.emit('selectionCleared', {});
+    } else {
+      selectedItems.forEach((shape: IShape) => {
+        this.emit('shapeSelected', { shape, selected: true });
+      });
+    }
+  }
+
+  private updateInteractableItems(): void {
+    if (!this.interactionManager) return;
+    
+    const shapes = Array.from(this.shapes.values());
+    this.interactionManager.updateInteractableItems(shapes);
   }
 
   /**
@@ -81,6 +247,9 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
       undo: () => this.shapes.delete(shape.id)
     });
 
+    // 更新可交互对象
+    this.updateInteractableItems();
+
     this.emit('shapeAdded', { shape });
   }
 
@@ -102,6 +271,9 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
         },
         undo: () => this.shapes.set(id, shape)
       });
+
+      // 更新可交互对象
+      this.updateInteractableItems();
 
       shape.dispose();
       this.emit('shapeRemoved', { shape });
@@ -349,6 +521,325 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
    */
   canRedo(): boolean {
     return this.historyManager.canRedo();
+  }
+
+  // === 交互系统API ===
+
+  /**
+   * 获取交互管理器
+   */
+  getInteractionManager(): IInteractionManager | null {
+    return this.interactionManager;
+  }
+
+  /**
+   * 设置交互模式
+   * @param mode 交互模式
+   */
+  setInteractionMode(mode: InteractionMode): boolean {
+    if (!this.interactionManager) return false;
+
+    let toolName: string | null = null;
+    switch (mode) {
+      case InteractionMode.SELECT:
+        toolName = 'select';
+        break;
+      case InteractionMode.PAN:
+        toolName = 'pan';
+        break;
+      case InteractionMode.ZOOM:
+        toolName = 'zoom';
+        break;
+      case InteractionMode.NONE:
+        toolName = null;
+        break;
+      default:
+        return false;
+    }
+
+    const success = this.interactionManager.setActiveTool(toolName);
+    if (success) {
+      this.emit('interactionModeChanged', { mode });
+    }
+    return success;
+  }
+
+  /**
+   * 获取当前交互模式
+   */
+  getInteractionMode(): InteractionMode {
+    if (!this.interactionManager) return InteractionMode.NONE;
+    
+    const activeTool = this.interactionManager.getActiveTool();
+    return activeTool ? activeTool.mode : InteractionMode.NONE;
+  }
+
+  /**
+   * 注册自定义交互工具
+   * @param tool 交互工具
+   */
+  registerInteractionTool(tool: IInteractionTool): void {
+    if (this.interactionManager) {
+      this.interactionManager.registerTool(tool);
+    }
+  }
+
+  /**
+   * 注销交互工具
+   * @param name 工具名称
+   */
+  unregisterInteractionTool(name: string): void {
+    if (this.interactionManager) {
+      this.interactionManager.unregisterTool(name);
+    }
+  }
+
+  /**
+   * 启用/禁用交互系统
+   * @param enabled 是否启用
+   */
+  setInteractionEnabled(enabled: boolean): void {
+    if (this.interactionManager) {
+      this.interactionManager.setEnabled(enabled);
+    }
+  }
+
+  /**
+   * 检查交互系统是否启用
+   */
+  isInteractionEnabled(): boolean {
+    return this.interactionManager ? this.interactionManager.enabled : false;
+  }
+
+  // === 视口控制API ===
+
+  /**
+   * 获取视口信息
+   */
+  getViewport() {
+    return { ...this.viewport };
+  }
+
+  /**
+   * 设置视口
+   * @param viewport 视口参数
+   */
+  setViewport(viewport: Partial<typeof this.viewport>): void {
+    const oldViewport = { ...this.viewport };
+    Object.assign(this.viewport, viewport);
+    
+    // 更新渲染引擎视口
+    if (this.renderEngine) {
+      this.renderEngine.setViewport(this.viewport);
+    }
+
+    this.emit('viewportChanged', { 
+      viewport: this.viewport,
+      oldViewport 
+    });
+  }
+
+  /**
+   * 平移视口
+   * @param delta 平移量
+   */
+  panViewport(delta: IPoint): void {
+    // 转换屏幕坐标的平移到世界坐标
+    const worldDelta = {
+      x: -delta.x / this.viewport.zoom,
+      y: -delta.y / this.viewport.zoom
+    };
+    
+    this.setViewport({
+      x: this.viewport.x + worldDelta.x,
+      y: this.viewport.y + worldDelta.y
+    });
+  }
+
+  /**
+   * 缩放视口
+   * @param factor 缩放因子
+   * @param center 缩放中心点（屏幕坐标）
+   */
+  zoomViewport(factor: number, center?: IPoint): void {
+    const newZoom = Math.max(0.1, Math.min(10, this.viewport.zoom * factor));
+    
+    if (center) {
+      // 以指定点为中心缩放
+      const worldCenter = this.screenToWorld(center);
+      const zoomRatio = newZoom / this.viewport.zoom;
+      
+      this.setViewport({
+        zoom: newZoom,
+        x: worldCenter.x - (worldCenter.x - this.viewport.x) * zoomRatio,
+        y: worldCenter.y - (worldCenter.y - this.viewport.y) * zoomRatio
+      });
+    } else {
+      // 以视口中心缩放
+      this.setViewport({ zoom: newZoom });
+    }
+  }
+
+  /**
+   * 适应到内容
+   */
+  fitToContent(): void {
+    const shapes = this.getShapes();
+    if (shapes.length === 0) return;
+
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    // 计算内容边界
+    shapes.forEach(shape => {
+      const bounds = shape.getBounds();
+      minX = Math.min(minX, bounds.x);
+      minY = Math.min(minY, bounds.y);
+      maxX = Math.max(maxX, bounds.x + bounds.width);
+      maxY = Math.max(maxY, bounds.y + bounds.height);
+    });
+
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    // 计算合适的缩放比例
+    const zoomX = this.viewport.width / contentWidth;
+    const zoomY = this.viewport.height / contentHeight;
+    const zoom = Math.min(zoomX, zoomY) * 0.9; // 留一些边距
+
+    this.setViewport({
+      x: minX - (this.viewport.width / zoom - contentWidth) / 2,
+      y: minY - (this.viewport.height / zoom - contentHeight) / 2,
+      zoom: zoom
+    });
+  }
+
+  /**
+   * 重置视口到默认状态
+   */
+  resetViewport(): void {
+    this.setViewport({
+      x: 0,
+      y: 0,
+      zoom: 1
+    });
+  }
+
+  // === 坐标转换API ===
+
+  /**
+   * 屏幕坐标转世界坐标
+   * @param screenPoint 屏幕坐标点
+   */
+  screenToWorld(screenPoint: IPoint): IPoint {
+    if (this.renderEngine) {
+      return this.renderEngine.screenToWorld(screenPoint);
+    }
+    
+    // 简化实现
+    return {
+      x: (screenPoint.x + this.viewport.x) / this.viewport.zoom,
+      y: (screenPoint.y + this.viewport.y) / this.viewport.zoom
+    };
+  }
+
+  /**
+   * 世界坐标转屏幕坐标
+   * @param worldPoint 世界坐标点
+   */
+  worldToScreen(worldPoint: IPoint): IPoint {
+    if (this.renderEngine) {
+      return this.renderEngine.worldToScreen(worldPoint);
+    }
+    
+    // 简化实现
+    return {
+      x: worldPoint.x * this.viewport.zoom - this.viewport.x,
+      y: worldPoint.y * this.viewport.zoom - this.viewport.y
+    };
+  }
+
+  /**
+   * 高级碰撞检测 - 点测试
+   * @param worldPoint 世界坐标点
+   */
+  hitTestAdvanced(worldPoint: IPoint): IShape[] {
+    if (this.interactionManager) {
+      return this.interactionManager.hitTestAll(worldPoint);
+    }
+    
+    // 回退到基础实现
+    const hit = this.hitTest(worldPoint);
+    return hit ? [hit] : [];
+  }
+
+  /**
+   * 高级碰撞检测 - 区域测试
+   * @param bounds 区域边界
+   */
+  hitTestBounds(bounds: { x: number; y: number; width: number; height: number }): IShape[] {
+    if (this.interactionManager) {
+      const collisionDetector = this.interactionManager.getCollisionDetector();
+      return collisionDetector.boundsTest(bounds);
+    }
+    
+    // 简化实现
+    return this.getShapes().filter(shape => {
+      const shapeBounds = shape.getBounds();
+      return this.boundsIntersect(bounds, shapeBounds);
+    });
+  }
+
+  private boundsIntersect(bounds1: any, bounds2: any): boolean {
+    return !(
+      bounds1.x + bounds1.width < bounds2.x ||
+      bounds2.x + bounds2.width < bounds1.x ||
+      bounds1.y + bounds1.height < bounds2.y ||
+      bounds2.y + bounds2.height < bounds1.y
+    );
+  }
+
+  // === 渲染控制API ===
+
+  /**
+   * 开始渲染循环
+   */
+  startRender(): void {
+    if (this.renderEngine) {
+      this.renderEngine.start();
+    }
+  }
+
+  /**
+   * 停止渲染循环
+   */
+  stopRender(): void {
+    if (this.renderEngine) {
+      this.renderEngine.stop();
+    }
+  }
+
+  /**
+   * 手动触发一次渲染
+   */
+  render(): void {
+    if (this.renderEngine) {
+      this.renderEngine.render();
+    }
+  }
+
+  /**
+   * 检查是否正在渲染
+   */
+  isRendering(): boolean {
+    return this.renderEngine ? this.renderEngine.isRunning() : false;
+  }
+
+  /**
+   * 获取渲染统计信息
+   */
+  getRenderStats() {
+    return this.renderEngine ? this.renderEngine.getStats() : null;
   }
 
   // === 资源管理 ===

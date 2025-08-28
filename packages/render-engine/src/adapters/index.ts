@@ -1,11 +1,38 @@
 /**
- * 图形适配器系统
- * 提供不同渲染后端的统一接口
+ * 渲染适配器导出
  */
 
-// TODO: 实现适配器
+// 导入核心接口
+import { IGraphicsContextFactory, IGraphicsContext, IPoint } from '../core/IGraphicsContext';
+
+// WebGL适配器
+export { WebGLContextFactory, IWebGLContext } from './WebGLContext';
+export { WebGLRenderer } from './WebGLRenderer';
+
+// Canvas 2D适配器 (占位符)
+export { Canvas2DContextFactory, ICanvas2DContext } from './Canvas2DContext';
+
+// WebGPU适配器 (占位符)  
+export { WebGPUContextFactory, IWebGPUContext } from './WebGPUContext';
+
+// 统一适配器接口
 export interface IGraphicsAdapter {
   name: string;
   initialize(): Promise<void>;
   dispose(): void;
+}
+
+// 适配器工厂
+export class AdapterFactory {
+  static createWebGLAdapter(): WebGLContextFactory {
+    return new WebGLContextFactory();
+  }
+
+  static createCanvas2DAdapter(): Canvas2DContextFactory {
+    return new Canvas2DContextFactory();
+  }
+
+  static createWebGPUAdapter(): WebGPUContextFactory {
+    return new WebGPUContextFactory();
+  }
 }

@@ -1,6 +1,6 @@
 /**
  * Sky Canvas 渲染引擎
- * 框架无关的高性能图形渲染引擎
+ * 高性能图形渲染引擎，专注于WebGL渲染，包含Canvas2D和WebGPU占位符
  */
 
 // 核心类型和接口
@@ -28,7 +28,7 @@ export { RenderEngine } from './core/RenderEngine';
 // 数学库
 export * from './math/index';
 
-// 适配器
+// 渲染适配器
 export * from './adapters/index';
 
 // 工具函数
