@@ -21,6 +21,7 @@ const Canvas: React.FC = () => {
       case 'rectangle': return 'rectangle'
       case 'circle': return 'circle'
       case 'diamond': return 'diamond'
+      case 'text': return 'text'
       // 其他工具目前使用draw作为默认
       case 'line':
       case 'arrow':

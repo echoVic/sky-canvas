@@ -13,7 +13,7 @@ import {
 import { EventDispatcher, EventFactory, GestureRecognizer, EventType } from './EventSystem';
 import { SelectionManager } from './SelectionManager';
 import { CollisionDetector } from './CollisionDetector';
-import { SelectTool, PanTool, ZoomTool, DrawTool, RectangleTool, CircleTool, DiamondTool } from './tools';
+import { SelectTool, PanTool, ZoomTool, DrawTool, RectangleTool, CircleTool, DiamondTool, TextTool } from './tools';
 import { IShape } from '../scene/IShape';
 
 /**
@@ -182,6 +182,11 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
       (shape: any) => this.addShapeFn?.(shape)
     ));
     this.registerTool(new DiamondTool(
+      this,
+      this.setCursor.bind(this),
+      (shape: any) => this.addShapeFn?.(shape)
+    ));
+    this.registerTool(new TextTool(
       this,
       this.setCursor.bind(this),
       (shape: any) => this.addShapeFn?.(shape)

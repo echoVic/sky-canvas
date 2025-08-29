@@ -687,6 +687,7 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
         case 'rectangle':
         case 'circle':
         case 'diamond':
+        case 'text':
           mode = InteractionMode.DRAW;
           break;
       }

@@ -7,3 +7,5 @@ export * from './PathShape';
 export * from './RectangleShape';
 export * from './CircleShape';
 export * from './DiamondShape';
+export * from './TextShape';
+export * from './EditableTextShape';

@@ -3,7 +3,8 @@
  */
 import { IPoint } from '@sky-canvas/render-engine';
 import { IInteractionTool, InteractionMode, IMouseEvent, IGestureEvent, SelectionMode } from './types';
-import { PathShape, RectangleShape, CircleShape, DiamondShape } from '../scene';
+import { PathShape, RectangleShape, CircleShape, DiamondShape, TextShape } from '../scene';
+import { EditableTextShape } from '../scene/EditableTextShape';
 
 /**
  * 基础交互工具抽象类
@@ -618,5 +619,135 @@ export class DiamondTool extends BaseInteractionTool {
 
   isCurrentlyDrawing(): boolean {
     return this.isDrawing;
+  }
+}
+
+/**
+ * 文本工具 - 使用EditableTextShape实现画布内编辑
+ */
+export class TextTool extends BaseInteractionTool {
+  readonly name = 'text';
+  readonly mode = InteractionMode.DRAW;
+  readonly cursor = 'text';
+
+  private currentEditableText: EditableTextShape | null = null;
+
+  constructor(
+    private manager: any,
+    private onSetCursor: (cursor: string) => void,
+    private onAddShape: (shape: any) => void
+  ) {
+    super();
+  }
+
+  onActivate(): void {
+    this.onSetCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    this.finishCurrentEditing();
+  }
+
+  onMouseDown(event: IMouseEvent): boolean {
+    if (event.button === 0) {
+      // 如果正在编辑其他文本，先完成编辑
+      if (this.currentEditableText) {
+        this.finishCurrentEditing();
+      }
+      
+      // 开始新的文本编辑
+      this.startNewTextEditing(event.worldPosition);
+      return true;
+    }
+    return false;
+  }
+
+  onMouseMove(event: IMouseEvent): boolean {
+    return false;
+  }
+
+  onMouseUp(event: IMouseEvent): boolean {
+    return false;
+  }
+
+  onKeyDown(key: string): boolean {
+    if (!this.currentEditableText || !this.currentEditableText.isEditing) {
+      return false;
+    }
+
+    if (key === 'Enter') {
+      this.finishCurrentEditing();
+      return true;
+    } else if (key === 'Escape') {
+      this.cancelCurrentEditing();
+      return true;
+    } else if (key === 'Backspace') {
+      this.currentEditableText.deleteChar();
+      return true;
+    } else if (key === 'Delete') {
+      this.currentEditableText.deleteForwardChar();
+      return true;
+    } else if (key === 'ArrowLeft') {
+      this.currentEditableText.moveCursor(-1);
+      return true;
+    } else if (key === 'ArrowRight') {
+      this.currentEditableText.moveCursor(1);
+      return true;
+    } else if (key.length === 1 && !key.match(/[\x00-\x1F\x7F]/)) {
+      // 处理可打印字符（排除控制字符）
+      this.currentEditableText.insertText(key);
+      return true;
+    }
+
+    return false;
+  }
+
+  private startNewTextEditing(position: IPoint): void {
+    // 创建新的可编辑文本形状
+    this.currentEditableText = new EditableTextShape(
+      `text_${Date.now()}_${Math.random()}`,
+      position,
+      '', // 空文本开始
+      {
+        fontSize: 16,
+        fontFamily: 'Arial, sans-serif',
+        color: '#000000',
+        backgroundColor: 'transparent', // 编辑时的背景由EditableTextShape内部处理
+        padding: 8
+      }
+    );
+
+    // 开始编辑
+    this.currentEditableText.startEditing();
+  }
+
+  private finishCurrentEditing(): void {
+    if (!this.currentEditableText) return;
+
+    this.currentEditableText.stopEditing();
+
+    // 如果有文本内容，添加到画布
+    if (this.currentEditableText.text.trim()) {
+      this.onAddShape(this.currentEditableText);
+    }
+
+    this.currentEditableText = null;
+  }
+
+  private cancelCurrentEditing(): void {
+    if (!this.currentEditableText) return;
+
+    this.currentEditableText.stopEditing();
+    this.currentEditableText = null;
+  }
+
+  getCurrentShape(): EditableTextShape | null {
+    return this.currentEditableText && this.currentEditableText.isEditing 
+      ? this.currentEditableText 
+      : null;
+  }
+
+  isCurrentlyDrawing(): boolean {
+    return this.currentEditableText?.isEditing || false;
   }
 }
