@@ -10,34 +10,32 @@ import { InteractionMode } from '@sky-canvas/canvas-sdk';
 vi.mock('../useCanvasSDK');
 vi.mock('../useDrawingTools');
 
-const mockSDKActions = {
-  initialize: vi.fn(),
-  addShape: vi.fn(),
-  removeShape: vi.fn(),
-  updateShape: vi.fn(),
-  selectShape: vi.fn(),
-  deselectShape: vi.fn(),
-  clearSelection: vi.fn(),
-  undo: vi.fn(),
-  redo: vi.fn(),
-  clearShapes: vi.fn(),
-  hitTest: vi.fn(() => null),
-  // 新增的交互系统方法
-  setInteractionMode: vi.fn(),
-  getInteractionManager: vi.fn(),
-  setInteractionEnabled: vi.fn(),
-  // 新增的视口控制方法
-  setViewport: vi.fn(),
-  panViewport: vi.fn(),
-  zoomViewport: vi.fn(),
-  fitToContent: vi.fn(),
-  resetViewport: vi.fn(),
-  // 新增的渲染控制方法
-  startRender: vi.fn(),
-  stopRender: vi.fn(),
-  render: vi.fn(),
-  dispose: vi.fn(),
-};
+      const mockSDKActions = {
+        initialize: vi.fn(),
+        addShape: vi.fn(),
+        removeShape: vi.fn(),
+        updateShape: vi.fn(),
+        selectShape: vi.fn(),
+        deselectShape: vi.fn(),
+        clearSelection: vi.fn(),
+        undo: vi.fn(),
+        redo: vi.fn(),
+        clearShapes: vi.fn(),
+        hitTest: vi.fn().mockReturnValue(null),
+        setInteractionMode: vi.fn(),
+        getInteractionManager: vi.fn(),
+        setInteractionEnabled: vi.fn(),
+        setTool: vi.fn(() => true),
+        setViewport: vi.fn(),
+        panViewport: vi.fn(),
+        zoomViewport: vi.fn(),
+        fitToContent: vi.fn(),
+        resetViewport: vi.fn(),
+        startRender: vi.fn(),
+        stopRender: vi.fn(),
+        render: vi.fn(),
+        dispose: vi.fn(),
+      };
 
 const mockSDKState = {
   sdk: null,

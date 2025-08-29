@@ -79,9 +79,10 @@ export interface IInteractionTool {
   onKeyDown(key: string): boolean;
   onKeyUp(key: string): boolean;
   
-  // 可选方法，主要用于DrawTool
+  // 可选方法，用于不同类型的工具
   isCurrentlyDrawing?(): boolean;
-  getCurrentStroke?(): any;
+  getCurrentStroke?(): any;    // 用于DrawTool
+  getCurrentShape?(): any;     // 用于形状工具（Rectangle, Circle, Diamond）
 }
 
 /**

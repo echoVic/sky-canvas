@@ -518,6 +518,10 @@ export class CircleTool extends BaseInteractionTool {
     this.currentCircle = null;
   }
 
+  getCurrentShape() {
+    return this.currentCircle;
+  }
+
   isCurrentlyDrawing(): boolean {
     return this.isDrawing;
   }
@@ -564,7 +568,7 @@ export class DiamondTool extends BaseInteractionTool {
     if (this.isDrawing && this.startPoint) {
       const currentPoint = event.worldPosition;
       
-      // 计算菱形的位置和尺寸（与矩形相同的逻辑）
+      // 计算菱形的位置和尺寸
       const x = Math.min(this.startPoint.x, currentPoint.x);
       const y = Math.min(this.startPoint.y, currentPoint.y);
       const width = Math.abs(currentPoint.x - this.startPoint.x);

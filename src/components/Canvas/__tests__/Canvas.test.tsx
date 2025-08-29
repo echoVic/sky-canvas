@@ -50,6 +50,7 @@ const mockSDKActions = {
   setInteractionMode: vi.fn(),
   getInteractionManager: vi.fn(),
   setInteractionEnabled: vi.fn(),
+  setTool: vi.fn(() => true),
   // 新增的视口控制方法
   setViewport: vi.fn(),
   panViewport: vi.fn(),

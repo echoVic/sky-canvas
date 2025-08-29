@@ -1040,29 +1040,41 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   }
   
   /**
-   * 渲染正在绘制的临时形状
+   * 渲染正在绘制的临时形状（实时预览）
    */
   private renderCurrentDrawing(context: CanvasRenderingContext2D): void {
     if (!this.interactionManager) return;
     
     const activeTool = this.interactionManager.getActiveTool();
-    if (!activeTool) return;
-    
-    // 检查工具是否正在绘制，并获取当前形状进行预览
-    const toolInstance = activeTool as any;
-    if (toolInstance.isCurrentlyDrawing && toolInstance.isCurrentlyDrawing() && toolInstance.getCurrentShape) {
-      const currentShape = toolInstance.getCurrentShape();
-      if (currentShape && currentShape.render) {
-        try {
-          // 设置预览样式（半透明）
-          context.save();
-          context.globalAlpha = 0.8;
-          currentShape.render(context);
-          context.restore();
-        } catch (error) {
-          console.warn('Failed to render current drawing:', error);
-          context.restore(); // 确保恢复状态
+    if (!activeTool || !activeTool.isCurrentlyDrawing || !activeTool.isCurrentlyDrawing()) {
+      return;
+    }
+
+    let previewShape = null;
+
+    // 根据工具类型获取预览形状
+    if (activeTool.name === 'draw' && activeTool.getCurrentStroke) {
+      // 绘制工具使用getCurrentStroke
+      previewShape = activeTool.getCurrentStroke();
+    } else if (activeTool.getCurrentShape) {
+      // 其他形状工具使用getCurrentShape (rectangle, circle, diamond)
+      previewShape = activeTool.getCurrentShape();
+    }
+
+    if (previewShape && previewShape.render) {
+      try {
+        context.save();
+        
+        // 对于非绘制工具，使用半透明效果显示预览
+        if (activeTool.name !== 'draw') {
+          context.globalAlpha = 0.5; // 半透明预览
         }
+        
+        previewShape.render(context);
+        context.restore();
+      } catch (error) {
+        console.warn('Failed to render current drawing:', error);
+        context.restore(); // 确保恢复状态
       }
     }
   }
