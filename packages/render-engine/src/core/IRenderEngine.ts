@@ -1,7 +1,7 @@
 /**
  * 渲染引擎核心接口定义
  */
-import { IPoint, IRect } from './IGraphicsContext';
+import { IPoint, IRect, IGraphicsContext } from './IGraphicsContext';
 
 /**
  * 可渲染对象接口
@@ -23,7 +23,7 @@ export interface IRenderable {
    * 渲染对象
    * @param context 图形上下文
    */
-  render(context: any): void;
+  render(context: IGraphicsContext): void;
   
   /**
    * 点击测试

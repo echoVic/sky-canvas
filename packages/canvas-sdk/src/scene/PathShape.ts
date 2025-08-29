@@ -1,8 +1,8 @@
 /**
  * 路径形状实现
  */
-import { IPoint, IRect } from '@sky-canvas/render-engine';
-import { IShape, ISize, ShapeType } from './IShape';
+import { IPoint, IRect, IGraphicsContext } from '@sky-canvas/render-engine';
+import { IShape, ISize, ShapeType, IShapeUpdate, IShapeData } from './IShape';
 
 /**
  * 路径形状类
@@ -77,7 +77,7 @@ export class PathShape implements IShape {
     };
   }
   
-  render(context: any): void {
+  render(context: IGraphicsContext): void {
     if (!this.visible || this.points.length < 2) return;
     
     // 检查是否是Canvas 2D上下文

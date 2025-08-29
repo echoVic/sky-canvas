@@ -22,8 +22,24 @@ export type {
   IRenderEngineConfig 
 } from './core/IRenderEngine';
 
+// 图形原语
+export type {
+  IGraphicPrimitive,
+  IRectanglePrimitive,
+  ICirclePrimitive,
+  IPathPrimitive,
+  GraphicPrimitiveType
+} from './primitives/IGraphicPrimitive';
+
+export type {
+  PrimitiveCreateOptions
+} from './primitives/PrimitiveFactory';
+
 // 核心实现
 export { RenderEngine } from './core/RenderEngine';
+
+// 图形原语实现
+export * from './primitives/index';
 
 // 数学库
 export * from './math/index';

@@ -1,8 +1,8 @@
 /**
  * 文本形状实现
  */
-import { IShape, ISize, ShapeType } from './IShape';
-import { IPoint, IRect } from '@sky-canvas/render-engine';
+import { IShape, ISize, ShapeType, IShapeUpdate, IShapeData } from './IShape';
+import { IPoint, IRect, IGraphicsContext } from '@sky-canvas/render-engine';
 
 export interface ITextStyle {
   fontSize?: number;
@@ -80,7 +80,7 @@ export class TextShape implements IShape {
     return { width, height };
   }
 
-  render(context: any): void {
+  render(context: IGraphicsContext): void {
     if (!context || !this.visible || !this.text) return;
 
     try {

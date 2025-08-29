@@ -1,8 +1,8 @@
 /**
  * 菱形形状实现
  */
-import { IPoint, IRect } from '@sky-canvas/render-engine';
-import { IShape, ISize, ShapeType } from './IShape';
+import { IPoint, IRect, IGraphicsContext } from '@sky-canvas/render-engine';
+import { IShape, ISize, ShapeType, IShapeUpdate, IShapeData } from './IShape';
 
 /**
  * 菱形形状类
@@ -15,6 +15,8 @@ export class DiamondShape implements IShape {
   public size: ISize;
   public visible: boolean = true;
   public zIndex: number = 0;
+  public selected: boolean = false;
+  public locked: boolean = false;
   
   // 菱形特有属性
   public strokeColor: string;
@@ -47,7 +49,11 @@ export class DiamondShape implements IShape {
     };
   }
   
-  render(context: any): void {
+  get bounds(): IRect {
+    return this.getBounds();
+  }
+  
+  render(context: IGraphicsContext): void {
     if (!this.visible) return;
     
     // 检查是否是Canvas 2D上下文
