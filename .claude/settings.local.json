@@ -18,7 +18,11 @@
       "Bash(pnpm --filter @sky-canvas/canvas-sdk build)",
       "Bash(pnpm --filter @sky-canvas/render-engine test --coverage)",
       "Bash(grep:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebSearch",
+      "WebSearch",
+      "WebSearch",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
