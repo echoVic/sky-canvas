@@ -13,6 +13,9 @@ export type {
   ShapeType 
 } from './scene/IShape';
 
+// 形状实现
+export { PathShape } from './scene/PathShape';
+
 export type {
   ICanvasSDKEvents,
   ICanvasSDKConfig,

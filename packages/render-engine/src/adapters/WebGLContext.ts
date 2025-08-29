@@ -1,10 +1,13 @@
 /**
  * WebGL图形上下文实现
  */
+import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../core/IGraphicsContext';
+
 export interface IWebGLContext extends IGraphicsContext {
   readonly gl: WebGLRenderingContext;
   
   // WebGL特有方法
+  clear(color?: string): void;
   setBlendMode(mode: string): void;
   drawElements(count: number, offset: number): void;
   drawArrays(mode: number, first: number, count: number): void;
@@ -31,7 +34,7 @@ export class WebGLContextFactory implements IGraphicsContextFactory<HTMLCanvasEl
 
   async createContext(canvas: HTMLCanvasElement): Promise<IWebGLContext> {
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) {
+    if (!gl || !(gl instanceof WebGLRenderingContext)) {
       throw new Error('WebGL not supported');
     }
 
@@ -176,6 +179,44 @@ class WebGLContext implements IWebGLContext {
       return [r, g, b, 1];
     }
     return [1, 1, 1, 1]; // 默认白色
+  }
+
+  // 缺失的接口方法实现
+  setStrokeStyle(style: string): void {
+    // WebGL中描边样式需要通过着色器实现
+  }
+
+  setFillStyle(style: string): void {
+    // WebGL中填充样式需要通过着色器实现
+  }
+
+  setLineWidth(width: number): void {
+    // WebGL中线宽设置
+    this.gl.lineWidth(width);
+  }
+
+  setLineDash(segments: number[]): void {
+    // WebGL中虚线需要通过着色器实现
+  }
+
+  drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
+    // WebGL矩形绘制需要顶点缓冲区和着色器
+    // 这里是简化实现占位符
+  }
+
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+    // WebGL圆形绘制需要生成顶点数据
+    // 这里是简化实现占位符
+  }
+
+  drawLine(from: IPoint, to: IPoint): void {
+    // WebGL线条绘制
+    // 这里是简化实现占位符
+  }
+
+  drawImage(imageData: { source: any; dx?: number; dy?: number; dWidth?: number; dHeight?: number }): void {
+    // WebGL图像绘制需要纹理
+    // 这里是简化实现占位符
   }
 
   dispose(): void {

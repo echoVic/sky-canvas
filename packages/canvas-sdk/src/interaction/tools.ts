@@ -3,6 +3,7 @@
  */
 import { IPoint } from '@sky-canvas/render-engine';
 import { IInteractionTool, InteractionMode, IMouseEvent, IGestureEvent, SelectionMode } from './types';
+import { PathShape } from '../scene/PathShape';
 
 /**
  * 基础交互工具抽象类
@@ -242,5 +243,98 @@ export class ZoomTool extends BaseInteractionTool {
     }
 
     return false;
+  }
+}
+
+/**
+ * 绘制工具
+ */
+export class DrawTool extends BaseInteractionTool {
+  readonly name = 'draw';
+  readonly mode = InteractionMode.DRAW;
+  readonly cursor = 'crosshair';
+
+  private isDrawing = false;
+  private currentPath: IPoint[] = [];
+  private currentPathShape: PathShape | null = null;
+  private hasAddedToScene = false;
+
+  constructor(
+    private manager: any,
+    private onSetCursor: (cursor: string) => void,
+    private onAddShape: (shape: any) => void
+  ) {
+    super();
+  }
+
+  onActivate(): void {
+    this.onSetCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    this.finishCurrentStroke();
+  }
+
+  onMouseDown(event: IMouseEvent): boolean {
+    if (event.button === 0) { // 只响应左键
+      this.isDrawing = true;
+      this.currentPath = [event.worldPosition];
+      
+      // 创建新的PathShape对象
+      const shapeId = `stroke_${Date.now()}_${Math.random()}`;
+      this.currentPathShape = new PathShape(
+        shapeId,
+        this.currentPath,
+        '#000000', // 黑色描边
+        2,         // 2px线宽
+        false      // 不填充
+      );
+      
+      return true;
+    }
+    return false;
+  }
+
+  onMouseMove(event: IMouseEvent): boolean {
+    if (this.isDrawing && this.currentPath.length > 0 && this.currentPathShape) {
+      // 添加新点到路径
+      this.currentPath.push(event.worldPosition);
+      
+      // 更新PathShape的路径点
+      this.currentPathShape.updatePoints(this.currentPath);
+      
+      // 不在这里重复添加，只在完成时添加一次
+      
+      return true;
+    }
+    return false;
+  }
+
+  onMouseUp(event: IMouseEvent): boolean {
+    if (this.isDrawing) {
+      this.finishCurrentStroke();
+      return true;
+    }
+    return false;
+  }
+
+  private finishCurrentStroke(): void {
+    if (this.isDrawing && this.currentPathShape && this.currentPath.length > 1) {
+      // 完成路径，添加到场景
+      this.onAddShape(this.currentPathShape);
+    }
+
+    // 重置状态
+    this.isDrawing = false;
+    this.currentPath = [];
+    this.currentPathShape = null;
+  }
+
+  getCurrentStroke() {
+    return this.currentPathShape;
+  }
+
+  isCurrentlyDrawing(): boolean {
+    return this.isDrawing;
   }
 }

@@ -105,7 +105,12 @@ export class Rectangle extends Shape {
   }
 
   draw(context: RenderContext): void {
-    const { ctx } = context;
+    // Only handle Canvas2D context for now
+    if (!context.ctx || typeof (context.ctx as any).save !== 'function') {
+      console.warn('Rectangle.draw: Canvas2D context required');
+      return;
+    }
+    const ctx = context.ctx as CanvasRenderingContext2D;
     ctx.save();
     
     this.applyStyle(ctx);
@@ -146,7 +151,12 @@ export class Circle extends Shape {
   }
 
   draw(context: RenderContext): void {
-    const { ctx } = context;
+    // Only handle Canvas2D context for now
+    if (!context.ctx || typeof (context.ctx as any).save !== 'function') {
+      console.warn('Circle.draw: Canvas2D context required');
+      return;
+    }
+    const ctx = context.ctx as CanvasRenderingContext2D;
     ctx.save();
     
     this.applyStyle(ctx);
@@ -200,7 +210,12 @@ export class Line extends Shape {
   }
 
   draw(context: RenderContext): void {
-    const { ctx } = context;
+    // Only handle Canvas2D context for now
+    if (!context.ctx || typeof (context.ctx as any).save !== 'function') {
+      console.warn('Line.draw: Canvas2D context required');
+      return;
+    }
+    const ctx = context.ctx as CanvasRenderingContext2D;
     ctx.save();
     
     this.applyStyle(ctx);
@@ -282,7 +297,12 @@ export class Text extends Shape {
   }
 
   draw(context: RenderContext): void {
-    const { ctx } = context;
+    // Only handle Canvas2D context for now
+    if (!context.ctx || typeof (context.ctx as any).save !== 'function') {
+      console.warn('Text.draw: Canvas2D context required');
+      return;
+    }
+    const ctx = context.ctx as CanvasRenderingContext2D;
     ctx.save();
     
     this.applyStyle(ctx);

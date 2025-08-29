@@ -70,11 +70,12 @@ export class EventFactory {
   static createMouseEvent(
     type: string, 
     nativeEvent: MouseEvent, 
-    worldPosition: IPoint
+    worldPosition: IPoint,
+    screenPosition?: IPoint
   ): IMouseEvent {
     return {
       type,
-      screenPosition: { x: nativeEvent.clientX, y: nativeEvent.clientY },
+      screenPosition: screenPosition || { x: nativeEvent.clientX, y: nativeEvent.clientY },
       worldPosition,
       button: nativeEvent.button,
       ctrlKey: nativeEvent.ctrlKey,
@@ -133,7 +134,7 @@ export class GestureRecognizer extends EventDispatcher {
   handleTouchStart(event: ITouchEvent): void {
     if (!this.enabled) return;
 
-    if (event.touches.length === 2) {
+    if (event.touches.length === 2 && event.touches[0] && event.touches[1]) {
       // 开始双指手势
       this.lastTouchPositions = [...event.touches];
       this.lastDistance = this.calculateDistance(event.touches[0], event.touches[1]);
@@ -147,7 +148,7 @@ export class GestureRecognizer extends EventDispatcher {
   }
 
   handleTouchMove(event: ITouchEvent): void {
-    if (!this.enabled || !this.gestureActive || event.touches.length !== 2) return;
+    if (!this.enabled || !this.gestureActive || event.touches.length !== 2 || !event.touches[0] || !event.touches[1]) return;
 
     const currentDistance = this.calculateDistance(event.touches[0], event.touches[1]);
     const currentAngle = this.calculateAngle(event.touches[0], event.touches[1]);

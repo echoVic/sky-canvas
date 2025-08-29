@@ -78,6 +78,10 @@ export interface IInteractionTool {
   onGesture(event: IGestureEvent): boolean;
   onKeyDown(key: string): boolean;
   onKeyUp(key: string): boolean;
+  
+  // 可选方法，主要用于DrawTool
+  isCurrentlyDrawing?(): boolean;
+  getCurrentStroke?(): any;
 }
 
 /**
@@ -148,4 +152,17 @@ export interface IInteractionManager {
   
   // 销毁
   dispose(): void;
+
+  // Canvas SDK 需要的额外方法
+  setCoordinateTransforms(
+    screenToWorld: (point: IPoint) => IPoint,
+    worldToScreen: (point: IPoint) => IPoint
+  ): void;
+  setViewportControls(
+    panViewport: (delta: IPoint) => void,
+    zoomViewport: (factor: number, center?: IPoint) => void
+  ): void;
+  setShapeControls(addShape: (shape: any) => void): void;
+  updateInteractableItems(items: any[]): void;
+  getCollisionDetector(): ICollisionDetector;
 }

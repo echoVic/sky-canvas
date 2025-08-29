@@ -4,6 +4,7 @@ import { useCanvasInteraction } from '../useCanvasInteraction';
 import { useCanvasSDK } from '../useCanvasSDK';
 import { useDrawingTools } from '../useDrawingTools';
 import { createMouseEvent, createMockCanvas } from '../../tests/test-utils';
+import { InteractionMode } from '@sky-canvas/canvas-sdk';
 
 // Mock dependencies
 vi.mock('../useCanvasSDK');
@@ -21,6 +22,20 @@ const mockSDKActions = {
   redo: vi.fn(),
   clearShapes: vi.fn(),
   hitTest: vi.fn(() => null),
+  // 新增的交互系统方法
+  setInteractionMode: vi.fn(),
+  getInteractionManager: vi.fn(),
+  setInteractionEnabled: vi.fn(),
+  // 新增的视口控制方法
+  setViewport: vi.fn(),
+  panViewport: vi.fn(),
+  zoomViewport: vi.fn(),
+  fitToContent: vi.fn(),
+  resetViewport: vi.fn(),
+  // 新增的渲染控制方法
+  startRender: vi.fn(),
+  stopRender: vi.fn(),
+  render: vi.fn(),
   dispose: vi.fn(),
 };
 
@@ -31,6 +46,14 @@ const mockSDKState = {
   selectedShapes: [],
   canUndo: false,
   canRedo: false,
+  interactionMode: InteractionMode.SELECT,
+  viewport: {
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
+    zoom: 1
+  },
 };
 
 const mockDrawingTools = {

@@ -1,13 +1,12 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { 
-  CanvasSDK, 
-  IShape, 
-  ICanvasSDKEvents, 
+import {
+  CanvasSDK,
   ICanvasSDKConfig,
-  RenderEngineType,
+  ICanvasSDKEvents,
+  IInteractionManager,
   InteractionMode,
-  IInteractionManager
+  IShape
 } from '@sky-canvas/canvas-sdk';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Canvas SDK状态接口
@@ -152,8 +151,11 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     canvas: HTMLCanvasElement, 
     config: ICanvasSDKConfig = {}
   ) => {
+    console.log('Initialize called, current SDK:', sdkRef.current, 'isInitialized:', state.isInitialized);
+    
     if (sdkRef.current) {
-      throw new Error('SDK already initialized');
+      console.log('SDK already initialized, skipping');
+      return;
     }
 
     const sdk = new CanvasSDK();
@@ -176,6 +178,8 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         selectionCleared: () => updateState(),
         interactionModeChanged: () => updateState(),
         viewportChanged: () => updateState(),
+        mousedown: () => updateState(),
+        mousemove: () => updateState(),
       };
 
       // 注册所有事件监听器
@@ -184,6 +188,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       });
 
       sdkRef.current = sdk;
+      console.log('SDK reference set:', sdkRef.current);
       
       // 开始渲染循环
       sdk.startRender();
@@ -204,7 +209,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       sdk.dispose();
       throw error;
     }
-  }, [updateState]);
+  }, []);
 
   /**
    * 添加形状
@@ -313,8 +318,10 @@ export function useCanvasSDK(): UseCanvasSDKResult {
    */
   const setInteractionMode = useCallback((mode: InteractionMode) => {
     if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
+      console.warn('setInteractionMode called but SDK not ready yet. Mode will be applied when SDK is ready.');
+      return false; // 返回 false 表示设置失败，但不抛错误
     }
+    console.log('Setting interaction mode:', mode);
     return sdkRef.current.setInteractionMode(mode);
   }, []);
 
@@ -426,6 +433,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
    * 销毁SDK
    */
   const dispose = useCallback(() => {
+    console.log('dispose called, current SDK:', sdkRef.current);
     if (sdkRef.current) {
       sdkRef.current.dispose();
       sdkRef.current = null;
@@ -448,12 +456,13 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     }
   }, []);
 
-  // 清理副作用
+  // 清理副作用 - 只在组件真正卸载时清理
   useEffect(() => {
     return () => {
+      console.log('useCanvasSDK cleanup called');
       dispose();
     };
-  }, [dispose]);
+  }, []); // 空依赖数组，只在组件卸载时运行
 
   const actions: CanvasSDKActions = {
     initialize,

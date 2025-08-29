@@ -19,7 +19,25 @@ export const ISelectionService = createDecorator<ISelectionService>('selectionSe
 export const IHistoryService = createDecorator<IHistoryService>('historyService');
 export const IToolService = createDecorator<IToolService>('toolService');
 
-// 渲染服务接口定义
+// 渲染服务接口定义 - forward declarations
+interface IWebGLRenderer {
+  initialize(): Promise<void>;
+  render(scene: any): void;
+  dispose(): void;
+}
+
+interface IWebGPURenderer {
+  initialize(): Promise<void>;
+  render(scene: any): void;
+  dispose(): void;
+}
+
+interface ICanvas2DRenderer {
+  initialize(): Promise<void>;
+  render(scene: any): void;
+  dispose(): void;
+}
+
 export const IWebGLRenderer = createDecorator<IWebGLRenderer>('webglRenderer');
 export const IWebGPURenderer = createDecorator<IWebGPURenderer>('webgpuRenderer');
 export const ICanvas2DRenderer = createDecorator<ICanvas2DRenderer>('canvas2dRenderer');

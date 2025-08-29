@@ -6,14 +6,22 @@
 import { IGraphicsContextFactory, IGraphicsContext, IPoint } from '../core/IGraphicsContext';
 
 // WebGL适配器
-export { WebGLContextFactory, IWebGLContext } from './WebGLContext';
+export { WebGLContextFactory } from './WebGLContext';
+export type { IWebGLContext } from './WebGLContext';
 export { WebGLRenderer } from './WebGLRenderer';
 
 // Canvas 2D适配器 (占位符)
-export { Canvas2DContextFactory, ICanvas2DContext } from './Canvas2DContext';
+export { Canvas2DContextFactory } from './Canvas2DContext';
+export type { ICanvas2DContext } from './Canvas2DContext';
 
 // WebGPU适配器 (占位符)  
-export { WebGPUContextFactory, IWebGPUContext } from './WebGPUContext';
+export { WebGPUContextFactory } from './WebGPUContext';
+export type { IWebGPUContext } from './WebGPUContext';
+
+// 导入工厂类
+import { WebGLContextFactory } from './WebGLContext';
+import { Canvas2DContextFactory } from './Canvas2DContext';
+import { WebGPUContextFactory } from './WebGPUContext';
 
 // 统一适配器接口
 export interface IGraphicsAdapter {

@@ -13,7 +13,7 @@ import {
 import { EventDispatcher, EventFactory, GestureRecognizer, EventType } from './EventSystem';
 import { SelectionManager } from './SelectionManager';
 import { CollisionDetector } from './CollisionDetector';
-import { SelectTool, PanTool, ZoomTool } from './tools';
+import { SelectTool, PanTool, ZoomTool, DrawTool } from './tools';
 import { IShape } from '../scene/IShape';
 
 /**
@@ -89,7 +89,7 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
 
   private tools = new Map<string, IInteractionTool>();
   private activeTool: IInteractionTool | null = null;
-  private enabled = true;
+  private _enabled = true;
 
   // 坐标转换函数
   private screenToWorldFn: ((point: IPoint) => IPoint) | null = null;
@@ -98,6 +98,8 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
   // 视口控制函数
   private panViewportFn: ((delta: IPoint) => void) | null = null;
   private zoomViewportFn: ((factor: number, center?: IPoint) => void) | null = null;
+
+  private addShapeFn: ((shape: any) => void) | null = null;
 
   // 事件监听器
   private eventListeners: { [key: string]: (event: any) => void } = {};
@@ -111,7 +113,7 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
     this.inputState = new InputState();
 
     // 监听选择事件
-    this.selectionManager.addEventListener(EventType.SELECTION_CHANGE, (event) => {
+    this.selectionManager.addEventListener(EventType.SELECTION_CHANGE, (event: any) => {
       this.dispatchEvent(event);
     });
   }
@@ -141,6 +143,11 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
     this.zoomViewportFn = zoomViewport;
   }
 
+  // 设置形状添加函数
+  setShapeControls(addShape: (shape: any) => void): void {
+    this.addShapeFn = addShape;
+  }
+
   // 更新可交互对象
   updateInteractableItems(items: IShape[]): void {
     this.collisionDetector.updateItems(items);
@@ -158,6 +165,11 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
       this,
       this.setCursor.bind(this),
       this.zoomViewport.bind(this)
+    ));
+    this.registerTool(new DrawTool(
+      this,
+      this.setCursor.bind(this),
+      (shape: any) => this.addShapeFn?.(shape)
     ));
   }
 
@@ -298,8 +310,14 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
 
     nativeEvent.preventDefault();
     
-    const worldPos = this.screenToWorld({ x: nativeEvent.clientX, y: nativeEvent.clientY });
-    const event = EventFactory.createMouseEvent(EventType.MOUSE_DOWN, nativeEvent, worldPos);
+    // 获取Canvas相对坐标
+    const canvasRect = this.canvas?.getBoundingClientRect();
+    const screenPos = {
+      x: nativeEvent.clientX - (canvasRect?.left || 0),
+      y: nativeEvent.clientY - (canvasRect?.top || 0)
+    };
+    const worldPos = this.screenToWorld(screenPos);
+    const event = EventFactory.createMouseEvent(EventType.MOUSE_DOWN, nativeEvent, worldPos, screenPos);
     
     this.inputState.setMousePosition(event.screenPosition);
     this.inputState.setMouseButtonDown(event.button);
@@ -320,8 +338,14 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
   private handleMouseMove(nativeEvent: MouseEvent): void {
     if (!this.enabled) return;
 
-    const worldPos = this.screenToWorld({ x: nativeEvent.clientX, y: nativeEvent.clientY });
-    const event = EventFactory.createMouseEvent(EventType.MOUSE_MOVE, nativeEvent, worldPos);
+    // 获取Canvas相对坐标
+    const canvasRect = this.canvas?.getBoundingClientRect();
+    const screenPos = {
+      x: nativeEvent.clientX - (canvasRect?.left || 0),
+      y: nativeEvent.clientY - (canvasRect?.top || 0)
+    };
+    const worldPos = this.screenToWorld(screenPos);
+    const event = EventFactory.createMouseEvent(EventType.MOUSE_MOVE, nativeEvent, worldPos, screenPos);
     
     this.inputState.setMousePosition(event.screenPosition);
 
@@ -335,8 +359,14 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
   private handleMouseUp(nativeEvent: MouseEvent): void {
     if (!this.enabled) return;
 
-    const worldPos = this.screenToWorld({ x: nativeEvent.clientX, y: nativeEvent.clientY });
-    const event = EventFactory.createMouseEvent(EventType.MOUSE_UP, nativeEvent, worldPos);
+    // 获取Canvas相对坐标
+    const canvasRect = this.canvas?.getBoundingClientRect();
+    const screenPos = {
+      x: nativeEvent.clientX - (canvasRect?.left || 0),
+      y: nativeEvent.clientY - (canvasRect?.top || 0)
+    };
+    const worldPos = this.screenToWorld(screenPos);
+    const event = EventFactory.createMouseEvent(EventType.MOUSE_UP, nativeEvent, worldPos, screenPos);
     
     this.inputState.setMouseButtonUp(event.button);
 
@@ -447,14 +477,14 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
 
   // 启用/禁用
   setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+    this._enabled = enabled;
     this.selectionManager.enabled = enabled;
     this.collisionDetector.enabled = enabled;
     this.gestureRecognizer.setEnabled(enabled);
   }
 
   get enabled(): boolean {
-    return this.enabled;
+    return this._enabled;
   }
 
   // 获取管理器

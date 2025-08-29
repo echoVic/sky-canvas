@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { IShape, ISize } from '@sky-canvas/canvas-sdk';
+import { IShape, ISize, PathShape } from '@sky-canvas/canvas-sdk';
 import { IPoint } from '@sky-canvas/render-engine';
 
 /**

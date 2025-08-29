@@ -20,7 +20,7 @@ export interface RenderState {
 // 渲染命令接口
 export interface RenderCommand {
   type: string;
-  execute(context: RenderContext, state: RenderState): void;
+  execute(context: any, state?: any): void;
 }
 
 // 基础渲染器接口

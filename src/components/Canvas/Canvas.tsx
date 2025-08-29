@@ -1,22 +1,31 @@
-import React, { useRef, useEffect } from 'react'
-import { useCanvasStore } from '../../store/canvasStore'
-import { useCanvasSDK } from '../../hooks/useCanvasSDK'
 import { InteractionMode } from '@sky-canvas/canvas-sdk'
+import React, { useEffect, useRef } from 'react'
+import { useCanvas } from '../../contexts'
+import { useCanvasStore } from '../../store/canvasStore'
 
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { selectedTool, zoom } = useCanvasStore()
   
-  // 使用新的Canvas SDK Hook
-  const [sdkState, sdkActions] = useCanvasSDK()
+  // 使用Canvas上下文中的SDK实例
+  const [sdkState, sdkActions] = useCanvas()
 
   // 工具映射到交互模式
   const getInteractionMode = (tool: string): InteractionMode => {
     switch (tool) {
       case 'select': return InteractionMode.SELECT
+      case 'hand': return InteractionMode.PAN
       case 'pan': return InteractionMode.PAN
       case 'zoom': return InteractionMode.ZOOM
       case 'draw': return InteractionMode.DRAW
+      // 对于其他绘画工具，也使用DRAW模式
+      case 'rectangle':
+      case 'circle':
+      case 'line':
+      case 'arrow':
+      case 'diamond':
+      case 'frame':
+        return InteractionMode.DRAW
       default: return InteractionMode.SELECT
     }
   }
@@ -42,15 +51,18 @@ const Canvas: React.FC = () => {
     }
 
     initializeCanvas()
-  }, [sdkState.isInitialized, sdkActions])
+  }, [sdkState.isInitialized]) // 移除sdkActions依赖，避免循环
 
   // 同步工具选择到交互模式
   useEffect(() => {
     if (sdkState.isInitialized) {
       const mode = getInteractionMode(selectedTool)
-      sdkActions.setInteractionMode(mode)
+      const success = sdkActions.setInteractionMode(mode)
+      if (!success) {
+        console.log('Failed to set interaction mode, SDK may not be ready yet')
+      }
     }
-  }, [selectedTool, sdkState.isInitialized, sdkActions])
+  }, [selectedTool, sdkState.isInitialized]) // 移除sdkActions依赖避免循环
 
   // 处理画布尺寸变化
   useEffect(() => {
@@ -63,24 +75,31 @@ const Canvas: React.FC = () => {
         canvas.width = width
         canvas.height = height
         
-        // 更新SDK视口
-        sdkActions.panViewport({
-          x: 0,
-          y: 0
-        })
+        // 更新SDK视口 - 检查SDK状态再调用
+        if (sdkState.isInitialized && sdkState.sdk) {
+          try {
+            sdkActions.panViewport({
+              x: 0,
+              y: 0
+            })
+          } catch (error) {
+            console.warn('Failed to update viewport during resize:', error)
+          }
+        }
       }
     })
 
     resizeObserver.observe(canvas)
     return () => resizeObserver.disconnect()
-  }, [sdkState.isInitialized, sdkActions])
+  }, [sdkState.isInitialized, sdkState.sdk]) // 移除sdkActions依赖避免循环
 
-  // 清理资源
+  // 清理资源 - 只在组件卸载时清理
   useEffect(() => {
     return () => {
+      // 只在组件真正卸载时清理
       sdkActions.dispose()
     }
-  }, [sdkActions])
+  }, []) // 空依赖数组，只在组件卸载时调用
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-white dark:bg-gray-900">
@@ -94,7 +113,7 @@ const Canvas: React.FC = () => {
       
       {/* 调试信息 */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs p-2 rounded">
+        <div className="absolute p-2 text-xs text-white bg-black bg-opacity-50 rounded top-2 right-2">
           <div>形状数量: {sdkState.shapes.length}</div>
           <div>选中: {sdkState.selectedShapes.length}</div>
           <div>工具: {selectedTool}</div>
@@ -104,25 +123,6 @@ const Canvas: React.FC = () => {
         </div>
       )}
 
-      {/* 视口控制按钮 */}
-      {sdkState.isInitialized && (
-        <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-          <button
-            onClick={() => sdkActions.fitToContent()}
-            className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-            title="适应内容"
-          >
-            适应
-          </button>
-          <button
-            onClick={() => sdkActions.resetViewport()}
-            className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600"
-            title="重置视口"
-          >
-            重置
-          </button>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,5 +1,13 @@
-import { Point, RenderContext } from '../../types';
+import { Point } from '../../types';
 import { RenderCommand, RenderState } from './index';
+
+// Canvas 2D特定的渲染上下文
+export interface Canvas2DRenderContext {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D;
+  viewport: { x: number; y: number; width: number; height: number };
+  devicePixelRatio: number;
+}
 
 /**
  * 清空画布命令
@@ -12,7 +20,12 @@ export class ClearCommand implements RenderCommand {
     private bounds?: { x: number; y: number; width: number; height: number }
   ) {}
 
-  execute(context: RenderContext): void {
+  execute(context: Canvas2DRenderContext | any): void {
+    // 类型断言以确保是Canvas2D上下文
+    if (!context.ctx || typeof context.ctx.save !== 'function') {
+      console.warn('ClearCommand requires Canvas2D context');
+      return;
+    }
     const { ctx } = context;
     
     if (this.bounds) {
@@ -50,8 +63,13 @@ export class DrawLineCommand implements RenderCommand {
     private style?: Partial<RenderState>
   ) {}
 
-  execute(context: RenderContext, state: RenderState): void {
-    const { ctx } = context;
+  execute(context: any, state?: RenderState): void {
+    // 类型检查，只处理Canvas2D上下文
+    if (!context.ctx || typeof context.ctx.save !== 'function') {
+      console.warn('DrawLineCommand requires Canvas2D context');
+      return;
+    }
+    const { ctx } = context as Canvas2DRenderContext;
     ctx.save();
     
     this.applyStyle(ctx, state);
@@ -64,7 +82,8 @@ export class DrawLineCommand implements RenderCommand {
     ctx.restore();
   }
 
-  private applyStyle(ctx: CanvasRenderingContext2D, baseState: RenderState): void {
+  private applyStyle(ctx: CanvasRenderingContext2D, baseState?: RenderState): void {
+    if (!baseState) return;
     const finalStyle = { ...baseState, ...this.style };
     
     ctx.strokeStyle = finalStyle.strokeStyle;
@@ -91,7 +110,11 @@ export class DrawRectCommand implements RenderCommand {
     private style?: Partial<RenderState>
   ) {}
 
-  execute(context: RenderContext, state: RenderState): void {
+  execute(context: any, state?: RenderState): void {
+    if (!context.ctx || typeof context.ctx.save !== 'function') {
+      console.warn('DrawRectCommand requires Canvas2D context');
+      return;
+    }
     const { ctx } = context;
     ctx.save();
     
@@ -106,7 +129,8 @@ export class DrawRectCommand implements RenderCommand {
     ctx.restore();
   }
 
-  private applyStyle(ctx: CanvasRenderingContext2D, baseState: RenderState): void {
+  private applyStyle(ctx: CanvasRenderingContext2D, baseState?: RenderState): void {
+    if (!baseState) return;
     const finalStyle = { ...baseState, ...this.style };
     
     if (this.filled) {
@@ -134,7 +158,7 @@ export class DrawCircleCommand implements RenderCommand {
     private style?: Partial<RenderState>
   ) {}
 
-  execute(context: RenderContext, state: RenderState): void {
+  execute(context: any, state: RenderState): void {
     const { ctx } = context;
     ctx.save();
     
@@ -183,7 +207,7 @@ export class DrawTextCommand implements RenderCommand {
     }
   ) {}
 
-  execute(context: RenderContext, state: RenderState): void {
+  execute(context: any, state: RenderState): void {
     const { ctx } = context;
     ctx.save();
     
@@ -213,7 +237,7 @@ export class DrawTextCommand implements RenderCommand {
 export class SaveStateCommand implements RenderCommand {
   type = 'saveState';
   
-  execute(context: RenderContext): void {
+  execute(context: any): void {
     context.ctx.save();
   }
 }
@@ -224,7 +248,7 @@ export class SaveStateCommand implements RenderCommand {
 export class RestoreStateCommand implements RenderCommand {
   type = 'restoreState';
   
-  execute(context: RenderContext): void {
+  execute(context: any): void {
     context.ctx.restore();
   }
 }
@@ -244,7 +268,7 @@ export class TransformCommand implements RenderCommand {
     private f: number
   ) {}
 
-  execute(context: RenderContext): void {
+  execute(context: any): void {
     context.ctx.transform(this.a, this.b, this.c, this.d, this.e, this.f);
   }
 }
@@ -264,7 +288,7 @@ export class SetTransformCommand implements RenderCommand {
     private f: number
   ) {}
 
-  execute(context: RenderContext): void {
+  execute(context: any): void {
     context.ctx.setTransform(this.a, this.b, this.c, this.d, this.e, this.f);
   }
 }
@@ -279,7 +303,7 @@ export class CommandBatch {
     this.commands.push(command);
   }
 
-  execute(context: RenderContext, state: RenderState): void {
+  execute(context: any, state: RenderState): void {
     for (const command of this.commands) {
       command.execute(context, state);
     }

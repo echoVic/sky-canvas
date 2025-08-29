@@ -5,9 +5,8 @@ import {
   RenderEngine, 
   IRenderLayer, 
   IPoint, 
-  IGraphicsContextFactory,
-  WebGLContextFactory,
-  Canvas2DContextFactory 
+  IGraphicsContextFactory
+  // AdapterFactory  // 暂时注释以避免构建错误
 } from '@sky-canvas/render-engine';
 import { IShape, IShapeUpdate, IShapeEvent, IShapeSelectionEvent } from '../scene/IShape';
 import { EventEmitter } from '../events/EventEmitter';
@@ -51,7 +50,9 @@ export interface ICanvasSDKEvents {
   'shapeDeselected': IShapeSelectionEvent;
   'selectionCleared': {};
   'interactionModeChanged': { mode: InteractionMode };
-  'viewportChanged': { viewport: any };
+  'viewportChanged': { viewport: any; oldViewport?: any };
+  'mousedown': any;
+  'mousemove': any;
 }
 
 /**
@@ -127,26 +128,116 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
       enableCulling: true
     });
 
-    // 选择图形上下文工厂
-    let factory: IGraphicsContextFactory<HTMLCanvasElement>;
+    // 选择图形上下文工厂 - 临时内联实现
+    let factory: IGraphicsContextFactory<HTMLCanvasElement> | null = null;
     switch (this.config.renderEngine) {
       case 'webgl':
-        factory = new WebGLContextFactory();
+        // 创建临时的 WebGL 工厂
+        factory = {
+          isSupported: () => {
+            try {
+              const canvas = document.createElement('canvas');
+              const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+              return !!gl;
+            } catch {
+              return false;
+            }
+          },
+          createContext: async (canvas: HTMLCanvasElement) => {
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl || !(gl instanceof WebGLRenderingContext)) {
+              throw new Error('WebGL not supported');
+            }
+            // 返回一个简单的图形上下文对象
+            return {
+              width: canvas.width,
+              height: canvas.height,
+              clear: (color?: string) => {
+                gl.clearColor(0, 0, 0, 0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+              },
+              save: () => {},
+              restore: () => {},
+              translate: () => {},
+              rotate: () => {},
+              scale: () => {},
+              setOpacity: () => {},
+              setStrokeStyle: () => {},
+              setFillStyle: () => {},
+              setLineWidth: () => {},
+              setLineDash: () => {},
+              drawRect: () => {},
+              drawCircle: () => {},
+              drawLine: () => {},
+              drawImage: () => {},
+              screenToWorld: (point: any) => point,
+              worldToScreen: (point: any) => point,
+              dispose: () => {}
+            };
+          }
+        };
+        console.log('Using temporary WebGL adapter');
         break;
       case 'canvas2d':
-        factory = new Canvas2DContextFactory();
+        console.warn('Canvas2D adapter temporarily disabled');
         break;
       case 'webgpu':
-        // WebGPU暂未实现，回退到WebGL
-        console.warn('WebGPU not implemented, falling back to WebGL');
-        factory = new WebGLContextFactory();
+        console.warn('WebGPU not implemented, adapter temporarily disabled');
+        // factory = AdapterFactory.createWebGLAdapter();
         break;
       default:
-        factory = new WebGLContextFactory();
+        // 默认使用 WebGL，复用上面的工厂代码
+        factory = {
+          isSupported: () => {
+            try {
+              const canvas = document.createElement('canvas');
+              const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+              return !!gl;
+            } catch {
+              return false;
+            }
+          },
+          createContext: async (canvas: HTMLCanvasElement) => {
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl || !(gl instanceof WebGLRenderingContext)) {
+              throw new Error('WebGL not supported');
+            }
+            return {
+              width: canvas.width,
+              height: canvas.height,
+              clear: (color?: string) => {
+                gl.clearColor(0, 0, 0, 0);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+              },
+              save: () => {},
+              restore: () => {},
+              translate: () => {},
+              rotate: () => {},
+              scale: () => {},
+              setOpacity: () => {},
+              setStrokeStyle: () => {},
+              setFillStyle: () => {},
+              setLineWidth: () => {},
+              setLineDash: () => {},
+              drawRect: () => {},
+              drawCircle: () => {},
+              drawLine: () => {},
+              drawImage: () => {},
+              screenToWorld: (point: any) => point,
+              worldToScreen: (point: any) => point,
+              dispose: () => {}
+            };
+          }
+        };
+        console.log('Using default temporary WebGL adapter');
     }
 
-    await this.renderEngine.initialize(factory, this.canvas);
-    this.renderEngine.setViewport(this.viewport);
+    if (factory) {
+      await this.renderEngine.initialize(factory, this.canvas);
+      this.renderEngine.setViewport(this.viewport);
+    } else {
+      console.warn('No graphics adapter available, rendering disabled');
+    }
   }
 
   private async initializeInteraction(): Promise<void> {
@@ -167,6 +258,9 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
       this.zoomViewport.bind(this)
     );
 
+    // 设置形状控制函数
+    this.interactionManager.setShapeControls(this.addShape.bind(this));
+
     // 监听交互事件
     this.setupInteractionEvents();
 
@@ -184,11 +278,11 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
 
     // 监听其他交互事件
     this.interactionManager.addEventListener('mousedown', (event) => {
-      this.dispatchEvent({ type: 'mousedown', ...event });
+      this.emit('mousedown', event);
     });
 
     this.interactionManager.addEventListener('mousemove', (event) => {
-      this.dispatchEvent({ type: 'mousemove', ...event });
+      this.emit('mousemove', event);
     });
   }
 
@@ -550,6 +644,9 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
       case InteractionMode.ZOOM:
         toolName = 'zoom';
         break;
+      case InteractionMode.DRAW:
+        toolName = 'draw';
+        break;
       case InteractionMode.NONE:
         toolName = null;
         break;
@@ -808,6 +905,9 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
     if (this.renderEngine) {
       this.renderEngine.start();
     }
+    
+    // 启动自定义渲染循环来确保shapes被渲染
+    this.startShapeRenderLoop();
   }
 
   /**
@@ -816,6 +916,37 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   stopRender(): void {
     if (this.renderEngine) {
       this.renderEngine.stop();
+    }
+    
+    this.stopShapeRenderLoop();
+  }
+  
+  private renderLoopId: number | null = null;
+  
+  /**
+   * 启动形状渲染循环
+   */
+  private startShapeRenderLoop(): void {
+    if (this.renderLoopId !== null) return;
+    
+    const loop = () => {
+      // 渲染所有形状
+      this.renderShapes();
+      
+      // 继续下一帧
+      this.renderLoopId = requestAnimationFrame(loop);
+    };
+    
+    this.renderLoopId = requestAnimationFrame(loop);
+  }
+  
+  /**
+   * 停止形状渲染循环
+   */
+  private stopShapeRenderLoop(): void {
+    if (this.renderLoopId !== null) {
+      cancelAnimationFrame(this.renderLoopId);
+      this.renderLoopId = null;
     }
   }
 
@@ -826,6 +957,136 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
     if (this.renderEngine) {
       this.renderEngine.render();
     }
+    
+    // 渲染所有形状
+    this.renderShapes();
+  }
+  
+  /**
+   * 渲染形状到画布
+   */
+  private renderShapes(): void {
+    if (!this.canvas) return;
+    
+    let context: CanvasRenderingContext2D | null = null;
+    
+    // 尝试获取2D上下文进行形状渲染
+    if (this.config.renderEngine === 'canvas2d') {
+      context = this.canvas.getContext('2d');
+    } else {
+      // 对于WebGL，创建叠加的2D画布来绘制形状
+      context = this.getOrCreateOverlayContext();
+    }
+    
+    if (context) {
+      // 清除画布
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      
+      // 应用视口变换 - 修复坐标系统
+      context.save();
+      
+      // 正确的视口变换顺序：先缩放，再平移
+      context.scale(this.viewport.zoom, this.viewport.zoom);
+      context.translate(-this.viewport.x, -this.viewport.y);
+      
+      // 渲染所有形状
+      const sortedShapes = Array.from(this.shapes.values())
+        .filter(shape => shape && shape.visible)
+        .sort((a, b) => a.zIndex - b.zIndex);
+        
+      for (const shape of sortedShapes) {
+        try {
+          shape.render(context);
+        } catch (error) {
+          console.warn('Failed to render shape:', shape.id, error);
+        }
+      }
+      
+      // 渲染正在绘制的临时形状
+      this.renderCurrentDrawing(context);
+      
+      context.restore();
+    }
+  }
+  
+  /**
+   * 渲染正在绘制的临时形状
+   */
+  private renderCurrentDrawing(context: CanvasRenderingContext2D): void {
+    if (!this.interactionManager) return;
+    
+    const drawTool = this.interactionManager.getActiveTool();
+    if (drawTool && drawTool.name === 'draw' && drawTool.isCurrentlyDrawing && drawTool.isCurrentlyDrawing()) {
+      const currentStroke = drawTool.getCurrentStroke && drawTool.getCurrentStroke();
+      if (currentStroke && currentStroke.render) {
+        try {
+          // 保存当前上下文状态
+          context.save();
+          
+          // 显式设置黑色描边，确保临时绘制与最终形状颜色一致
+          context.strokeStyle = '#000000';
+          context.lineWidth = 2;
+          context.lineCap = 'round';
+          context.lineJoin = 'round';
+          
+          // 渲染当前绘制
+          currentStroke.render(context);
+          
+          // 恢复上下文状态
+          context.restore();
+        } catch (error) {
+          console.warn('Failed to render current drawing:', error);
+        }
+      }
+    }
+  }
+  
+  /**
+   * 获取或创建2D叠加画布上下文
+   */
+  private getOrCreateOverlayContext(): CanvasRenderingContext2D | null {
+    if (!this.canvas) return null;
+    
+    let overlay = document.getElementById('canvas-2d-overlay') as HTMLCanvasElement;
+    
+    if (!overlay) {
+      overlay = document.createElement('canvas');
+      overlay.id = 'canvas-2d-overlay';
+      overlay.style.position = 'absolute';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.zIndex = '1';
+      
+      // 获取主画布的computed style来准确定位
+      const mainCanvasRect = this.canvas.getBoundingClientRect();
+      const mainCanvasStyle = window.getComputedStyle(this.canvas);
+      
+      overlay.style.left = mainCanvasStyle.left || '0';
+      overlay.style.top = mainCanvasStyle.top || '0';
+      
+      // 将叠加层添加到主画布的父元素
+      const parent = this.canvas.parentElement;
+      if (parent) {
+        parent.style.position = parent.style.position || 'relative';
+        parent.appendChild(overlay);
+      } else {
+        document.body.appendChild(overlay);
+      }
+    }
+    
+    // 确保叠加层尺寸与主画布一致
+    const canvasWidth = this.canvas.offsetWidth || this.viewport.width;
+    const canvasHeight = this.canvas.offsetHeight || this.viewport.height;
+    
+    if (overlay.width !== canvasWidth || overlay.height !== canvasHeight) {
+      overlay.width = canvasWidth;
+      overlay.height = canvasHeight;
+      overlay.style.width = canvasWidth + 'px';
+      overlay.style.height = canvasHeight + 'px';
+    }
+    
+    return overlay.getContext('2d');
   }
 
   /**

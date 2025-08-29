@@ -367,14 +367,19 @@ export class WebGLRenderer {
     
     for (let i = 0; i < vertices.length; i++) {
       const vertex = vertices[i];
+      if (!vertex) {
+        console.warn(`Vertex at index ${i} is undefined`);
+        continue;
+      }
+      
       const offset = i * 8;
       
-      buffer[offset] = vertex.position.x;
-      buffer[offset + 1] = vertex.position.y;
-      buffer[offset + 2] = vertex.color[0];
-      buffer[offset + 3] = vertex.color[1];
-      buffer[offset + 4] = vertex.color[2];
-      buffer[offset + 5] = vertex.color[3];
+      buffer[offset] = vertex.position?.x || 0;
+      buffer[offset + 1] = vertex.position?.y || 0;
+      buffer[offset + 2] = vertex.color?.[0] || 0;
+      buffer[offset + 3] = vertex.color?.[1] || 0;
+      buffer[offset + 4] = vertex.color?.[2] || 0;
+      buffer[offset + 5] = vertex.color?.[3] || 1;
       buffer[offset + 6] = vertex.texCoord?.x || 0;
       buffer[offset + 7] = vertex.texCoord?.y || 0;
     }

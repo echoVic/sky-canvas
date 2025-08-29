@@ -1,9 +1,11 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import Canvas from '../Canvas';
 import { useCanvasStore } from '../../../store/canvasStore';
 import { useCanvas } from '../../../contexts';
 import { useCanvasInteraction } from '../../../hooks';
+import { InteractionMode } from '@sky-canvas/canvas-sdk';
 
 // Mock dependencies
 vi.mock('../../../store/canvasStore');
@@ -22,6 +24,14 @@ const mockSDKState = {
   selectedShapes: [],
   canUndo: false,
   canRedo: false,
+  interactionMode: InteractionMode.SELECT,
+  viewport: {
+    x: 0,
+    y: 0,
+    width: 800,
+    height: 600,
+    zoom: 1
+  },
 };
 
 const mockSDKActions = {
@@ -36,6 +46,20 @@ const mockSDKActions = {
   redo: vi.fn(),
   clearShapes: vi.fn(),
   hitTest: vi.fn(),
+  // 新增的交互系统方法
+  setInteractionMode: vi.fn(),
+  getInteractionManager: vi.fn(),
+  setInteractionEnabled: vi.fn(),
+  // 新增的视口控制方法
+  setViewport: vi.fn(),
+  panViewport: vi.fn(),
+  zoomViewport: vi.fn(),
+  fitToContent: vi.fn(),
+  resetViewport: vi.fn(),
+  // 新增的渲染控制方法
+  startRender: vi.fn(),
+  stopRender: vi.fn(),
+  render: vi.fn(),
   dispose: vi.fn(),
 };
 
@@ -54,6 +78,22 @@ const mockCanvasStore = {
   selectedTool: 'select',
   zoom: 1,
 };
+
+// 创建mock形状的辅助函数
+const createMockShape = (overrides = {}) => ({
+  id: 'shape-1',
+  type: 'rectangle' as const,
+  position: { x: 10, y: 10 },
+  size: { width: 50, height: 30 },
+  visible: true,
+  zIndex: 0,
+  render: vi.fn(),
+  getBounds: vi.fn(() => ({ x: 10, y: 10, width: 50, height: 30 })),
+  hitTest: vi.fn(),
+  clone: vi.fn(),
+  dispose: vi.fn(),
+  ...overrides,
+});
 
 describe('Canvas', () => {
   beforeEach(() => {
@@ -163,9 +203,16 @@ describe('Canvas', () => {
     it('应该在SDK初始化后渲染形状', () => {
       const mockShape = {
         id: 'shape-1',
+        type: 'rectangle' as const,
+        position: { x: 10, y: 10 },
+        size: { width: 50, height: 30 },
         visible: true,
+        zIndex: 0,
         render: vi.fn(),
         getBounds: vi.fn(() => ({ x: 10, y: 10, width: 50, height: 30 })),
+        hitTest: vi.fn(),
+        clone: vi.fn(),
+        dispose: vi.fn(),
       };
 
       const stateWithShapes = {
@@ -183,12 +230,7 @@ describe('Canvas', () => {
     });
 
     it('应该为选中的形状绘制选择框', () => {
-      const mockShape = {
-        id: 'shape-1',
-        visible: true,
-        render: vi.fn(),
-        getBounds: vi.fn(() => ({ x: 10, y: 10, width: 50, height: 30 })),
-      };
+      const mockShape = createMockShape();
 
       const stateWithSelectedShape = {
         ...mockSDKState,
@@ -207,12 +249,7 @@ describe('Canvas', () => {
     });
 
     it('应该跳过不可见的形状', () => {
-      const invisibleShape = {
-        id: 'shape-1',
-        visible: false,
-        render: vi.fn(),
-        getBounds: vi.fn(),
-      };
+      const invisibleShape = createMockShape({ visible: false });
 
       const stateWithInvisibleShape = {
         ...mockSDKState,
@@ -228,12 +265,7 @@ describe('Canvas', () => {
     });
 
     it('应该在SDK未初始化时跳过渲染', () => {
-      const mockShape = {
-        id: 'shape-1',
-        visible: true,
-        render: vi.fn(),
-        getBounds: vi.fn(),
-      };
+      const mockShape = createMockShape({ id: 'shape-1' });
 
       const uninitializedState = {
         ...mockSDKState,
@@ -254,7 +286,7 @@ describe('Canvas', () => {
       const stateWithShapes = {
         ...mockSDKState,
         isInitialized: true,
-        shapes: [{ id: 'shape-1', visible: true, render: vi.fn(), getBounds: vi.fn() }],
+        shapes: [createMockShape({ id: 'shape-1' })],
       };
 
       vi.mocked(useCanvas).mockReturnValue([stateWithShapes, mockSDKActions]);
@@ -276,8 +308,8 @@ describe('Canvas', () => {
       const stateWithData = {
         ...mockSDKState,
         isInitialized: true,
-        shapes: [{ id: '1' }, { id: '2' }],
-        selectedShapes: [{ id: '1' }],
+        shapes: [createMockShape({ id: '1' }), createMockShape({ id: '2' })],
+        selectedShapes: [createMockShape({ id: '1' })],
       };
 
       const storeWithTool = {

@@ -2,13 +2,14 @@
  * Canvas 2D图形上下文实现 (占位符)
  * TODO: 未来实现完整的Canvas 2D渲染功能
  */
+import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../core/IGraphicsContext';
+
 export interface ICanvas2DContext extends IGraphicsContext {
   readonly ctx: CanvasRenderingContext2D;
   
   // Canvas 2D特有方法
   fillRect(x: number, y: number, width: number, height: number): void;
   strokeRect(x: number, y: number, width: number, height: number): void;
-  drawImage(image: CanvasImageSource, dx: number, dy: number): void;
 }
 
 /**
@@ -91,10 +92,6 @@ class Canvas2DContext implements ICanvas2DContext {
     this.ctx.strokeRect(x, y, width, height);
   }
 
-  drawImage(image: CanvasImageSource, dx: number, dy: number): void {
-    this.ctx.drawImage(image, dx, dy);
-  }
-
   screenToWorld(point: IPoint): IPoint {
     // Canvas 2D坐标系直接对应
     return { ...point };
@@ -102,6 +99,59 @@ class Canvas2DContext implements ICanvas2DContext {
 
   worldToScreen(point: IPoint): IPoint {
     return { ...point };
+  }
+
+  // 缺失的接口方法实现
+  setStrokeStyle(style: string): void {
+    this.ctx.strokeStyle = style;
+  }
+
+  setFillStyle(style: string): void {
+    this.ctx.fillStyle = style;
+  }
+
+  setLineWidth(width: number): void {
+    this.ctx.lineWidth = width;
+  }
+
+  setLineDash(segments: number[]): void {
+    this.ctx.setLineDash(segments);
+  }
+
+  drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+    if (stroke) {
+      this.ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    }
+  }
+
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+    this.ctx.beginPath();
+    this.ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+    if (fill) {
+      this.ctx.fill();
+    }
+    if (stroke) {
+      this.ctx.stroke();
+    }
+  }
+
+  drawLine(from: IPoint, to: IPoint): void {
+    this.ctx.beginPath();
+    this.ctx.moveTo(from.x, from.y);
+    this.ctx.lineTo(to.x, to.y);
+    this.ctx.stroke();
+  }
+
+  drawImage(imageData: { source: any; dx?: number; dy?: number; dWidth?: number; dHeight?: number }): void {
+    const { source, dx = 0, dy = 0, dWidth, dHeight } = imageData;
+    if (dWidth !== undefined && dHeight !== undefined) {
+      this.ctx.drawImage(source, dx, dy, dWidth, dHeight);
+    } else {
+      this.ctx.drawImage(source, dx, dy);
+    }
   }
 
   dispose(): void {

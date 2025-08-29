@@ -13,10 +13,12 @@ export function createDecorator<T>(serviceId: string): ServiceIdentifier<T> {
     if (arguments.length !== 3) {
       throw new Error('@IServiceName-decorator can only be used to decorate a parameter');
     }
-    storeServiceDependency(id, target, index);
-  };
+    storeServiceDependency(id as ServiceIdentifier<T>, target, index);
+  } as ServiceIdentifier<T>;
 
   id.toString = () => serviceId;
+  // Add the type property required by the interface
+  (id as any).type = undefined as T;
   return id;
 }
 
