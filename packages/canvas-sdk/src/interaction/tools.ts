@@ -3,7 +3,7 @@
  */
 import { IPoint } from '@sky-canvas/render-engine';
 import { IInteractionTool, InteractionMode, IMouseEvent, IGestureEvent, SelectionMode } from './types';
-import { PathShape } from '../scene/PathShape';
+import { PathShape, RectangleShape, CircleShape, DiamondShape } from '../scene';
 
 /**
  * 基础交互工具抽象类
@@ -332,6 +332,284 @@ export class DrawTool extends BaseInteractionTool {
 
   getCurrentStroke() {
     return this.currentPathShape;
+  }
+
+  isCurrentlyDrawing(): boolean {
+    return this.isDrawing;
+  }
+}
+
+/**
+ * 矩形工具
+ */
+export class RectangleTool extends BaseInteractionTool {
+  readonly name = 'rectangle';
+  readonly mode = InteractionMode.DRAW;
+  readonly cursor = 'crosshair';
+
+  private isDrawing = false;
+  private startPoint: IPoint | null = null;
+  private currentRectangle: RectangleShape | null = null;
+
+  constructor(
+    private manager: any,
+    private onSetCursor: (cursor: string) => void,
+    private onAddShape: (shape: any) => void
+  ) {
+    super();
+  }
+
+  onActivate(): void {
+    this.onSetCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    this.finishCurrentRectangle();
+  }
+
+  onMouseDown(event: IMouseEvent): boolean {
+    if (event.button === 0) {
+      this.isDrawing = true;
+      this.startPoint = event.worldPosition;
+      return true;
+    }
+    return false;
+  }
+
+  onMouseMove(event: IMouseEvent): boolean {
+    if (this.isDrawing && this.startPoint) {
+      const currentPoint = event.worldPosition;
+      
+      // 计算矩形的位置和尺寸
+      const x = Math.min(this.startPoint.x, currentPoint.x);
+      const y = Math.min(this.startPoint.y, currentPoint.y);
+      const width = Math.abs(currentPoint.x - this.startPoint.x);
+      const height = Math.abs(currentPoint.y - this.startPoint.y);
+      
+      // 创建或更新矩形
+      const rectangleId = this.currentRectangle?.id || `rectangle_${Date.now()}_${Math.random()}`;
+      this.currentRectangle = new RectangleShape(
+        rectangleId,
+        { x, y },
+        { width, height },
+        '#000000',
+        2,
+        false
+      );
+      
+      return true;
+    }
+    return false;
+  }
+
+  onMouseUp(event: IMouseEvent): boolean {
+    if (this.isDrawing) {
+      this.finishCurrentRectangle();
+      return true;
+    }
+    return false;
+  }
+
+  private finishCurrentRectangle(): void {
+    if (this.isDrawing && this.currentRectangle && this.startPoint) {
+      // 只有当矩形有一定大小时才添加
+      if (this.currentRectangle.size.width > 5 && this.currentRectangle.size.height > 5) {
+        this.onAddShape(this.currentRectangle);
+      }
+    }
+
+    // 重置状态
+    this.isDrawing = false;
+    this.startPoint = null;
+    this.currentRectangle = null;
+  }
+
+  getCurrentShape() {
+    return this.currentRectangle;
+  }
+
+  isCurrentlyDrawing(): boolean {
+    return this.isDrawing;
+  }
+}
+
+/**
+ * 圆形工具
+ */
+export class CircleTool extends BaseInteractionTool {
+  readonly name = 'circle';
+  readonly mode = InteractionMode.DRAW;
+  readonly cursor = 'crosshair';
+
+  private isDrawing = false;
+  private centerPoint: IPoint | null = null;
+  private currentCircle: CircleShape | null = null;
+
+  constructor(
+    private manager: any,
+    private onSetCursor: (cursor: string) => void,
+    private onAddShape: (shape: any) => void
+  ) {
+    super();
+  }
+
+  onActivate(): void {
+    this.onSetCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    this.finishCurrentCircle();
+  }
+
+  onMouseDown(event: IMouseEvent): boolean {
+    if (event.button === 0) {
+      this.isDrawing = true;
+      this.centerPoint = event.worldPosition;
+      return true;
+    }
+    return false;
+  }
+
+  onMouseMove(event: IMouseEvent): boolean {
+    if (this.isDrawing && this.centerPoint) {
+      const currentPoint = event.worldPosition;
+      
+      // 计算半径
+      const radius = Math.sqrt(
+        Math.pow(currentPoint.x - this.centerPoint.x, 2) + 
+        Math.pow(currentPoint.y - this.centerPoint.y, 2)
+      );
+      
+      // 创建或更新圆形
+      const circleId = this.currentCircle?.id || `circle_${Date.now()}_${Math.random()}`;
+      this.currentCircle = new CircleShape(
+        circleId,
+        this.centerPoint,
+        radius,
+        '#000000',
+        2,
+        false
+      );
+      
+      return true;
+    }
+    return false;
+  }
+
+  onMouseUp(event: IMouseEvent): boolean {
+    if (this.isDrawing) {
+      this.finishCurrentCircle();
+      return true;
+    }
+    return false;
+  }
+
+  private finishCurrentCircle(): void {
+    if (this.isDrawing && this.currentCircle && this.centerPoint) {
+      // 只有当圆形有一定大小时才添加
+      if (this.currentCircle.radius > 5) {
+        this.onAddShape(this.currentCircle);
+      }
+    }
+
+    // 重置状态
+    this.isDrawing = false;
+    this.centerPoint = null;
+    this.currentCircle = null;
+  }
+
+  isCurrentlyDrawing(): boolean {
+    return this.isDrawing;
+  }
+}
+
+/**
+ * 菱形工具
+ */
+export class DiamondTool extends BaseInteractionTool {
+  readonly name = 'diamond';
+  readonly mode = InteractionMode.DRAW;
+  readonly cursor = 'crosshair';
+
+  private isDrawing = false;
+  private startPoint: IPoint | null = null;
+  private currentDiamond: DiamondShape | null = null;
+
+  constructor(
+    private manager: any,
+    private onSetCursor: (cursor: string) => void,
+    private onAddShape: (shape: any) => void
+  ) {
+    super();
+  }
+
+  onActivate(): void {
+    this.onSetCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    this.finishCurrentDiamond();
+  }
+
+  onMouseDown(event: IMouseEvent): boolean {
+    if (event.button === 0) {
+      this.isDrawing = true;
+      this.startPoint = event.worldPosition;
+      return true;
+    }
+    return false;
+  }
+
+  onMouseMove(event: IMouseEvent): boolean {
+    if (this.isDrawing && this.startPoint) {
+      const currentPoint = event.worldPosition;
+      
+      // 计算菱形的位置和尺寸（与矩形相同的逻辑）
+      const x = Math.min(this.startPoint.x, currentPoint.x);
+      const y = Math.min(this.startPoint.y, currentPoint.y);
+      const width = Math.abs(currentPoint.x - this.startPoint.x);
+      const height = Math.abs(currentPoint.y - this.startPoint.y);
+      
+      // 创建或更新菱形
+      const diamondId = this.currentDiamond?.id || `diamond_${Date.now()}_${Math.random()}`;
+      this.currentDiamond = new DiamondShape(
+        diamondId,
+        { x, y },
+        { width, height },
+        '#000000',
+        2,
+        false
+      );
+      
+      return true;
+    }
+    return false;
+  }
+
+  onMouseUp(event: IMouseEvent): boolean {
+    if (this.isDrawing) {
+      this.finishCurrentDiamond();
+      return true;
+    }
+    return false;
+  }
+
+  private finishCurrentDiamond(): void {
+    if (this.isDrawing && this.currentDiamond && this.startPoint) {
+      // 只有当菱形有一定大小时才添加
+      if (this.currentDiamond.size.width > 5 && this.currentDiamond.size.height > 5) {
+        this.onAddShape(this.currentDiamond);
+      }
+    }
+
+    // 重置状态
+    this.isDrawing = false;
+    this.startPoint = null;
+    this.currentDiamond = null;
+  }
+
+  getCurrentShape() {
+    return this.currentDiamond;
   }
 
   isCurrentlyDrawing(): boolean {

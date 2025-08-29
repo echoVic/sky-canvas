@@ -4,3 +4,6 @@
 
 export * from './IShape';
 export * from './PathShape';
+export * from './RectangleShape';
+export * from './CircleShape';
+export * from './DiamondShape';

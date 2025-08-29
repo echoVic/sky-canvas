@@ -662,6 +662,40 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   }
 
   /**
+   * 直接设置工具（按工具名称）
+   * @param toolName 工具名称
+   * @returns 是否设置成功
+   */
+  setTool(toolName: string | null): boolean {
+    if (!this.interactionManager) return false;
+
+    const success = this.interactionManager.setActiveTool(toolName);
+    if (success) {
+      // 根据工具名称推断交互模式
+      let mode = InteractionMode.NONE;
+      switch (toolName) {
+        case 'select':
+          mode = InteractionMode.SELECT;
+          break;
+        case 'pan':
+          mode = InteractionMode.PAN;
+          break;
+        case 'zoom':
+          mode = InteractionMode.ZOOM;
+          break;
+        case 'draw':
+        case 'rectangle':
+        case 'circle':
+        case 'diamond':
+          mode = InteractionMode.DRAW;
+          break;
+      }
+      this.emit('interactionModeChanged', { mode });
+    }
+    return success;
+  }
+
+  /**
    * 获取当前交互模式
    */
   getInteractionMode(): InteractionMode {
@@ -982,12 +1016,8 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
       // 清除画布
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
       
-      // 应用视口变换 - 修复坐标系统
+      // 简化的渲染：先不应用复杂的视口变换
       context.save();
-      
-      // 正确的视口变换顺序：先缩放，再平移
-      context.scale(this.viewport.zoom, this.viewport.zoom);
-      context.translate(-this.viewport.x, -this.viewport.y);
       
       // 渲染所有形状
       const sortedShapes = Array.from(this.shapes.values())
@@ -1015,37 +1045,33 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   private renderCurrentDrawing(context: CanvasRenderingContext2D): void {
     if (!this.interactionManager) return;
     
-    const drawTool = this.interactionManager.getActiveTool();
-    if (drawTool && drawTool.name === 'draw' && drawTool.isCurrentlyDrawing && drawTool.isCurrentlyDrawing()) {
-      const currentStroke = drawTool.getCurrentStroke && drawTool.getCurrentStroke();
-      if (currentStroke && currentStroke.render) {
+    const activeTool = this.interactionManager.getActiveTool();
+    if (!activeTool) return;
+    
+    // 检查工具是否正在绘制，并获取当前形状进行预览
+    const toolInstance = activeTool as any;
+    if (toolInstance.isCurrentlyDrawing && toolInstance.isCurrentlyDrawing() && toolInstance.getCurrentShape) {
+      const currentShape = toolInstance.getCurrentShape();
+      if (currentShape && currentShape.render) {
         try {
-          // 保存当前上下文状态
+          // 设置预览样式（半透明）
           context.save();
-          
-          // 显式设置黑色描边，确保临时绘制与最终形状颜色一致
-          context.strokeStyle = '#000000';
-          context.lineWidth = 2;
-          context.lineCap = 'round';
-          context.lineJoin = 'round';
-          
-          // 渲染当前绘制
-          currentStroke.render(context);
-          
-          // 恢复上下文状态
+          context.globalAlpha = 0.8;
+          currentShape.render(context);
           context.restore();
         } catch (error) {
           console.warn('Failed to render current drawing:', error);
+          context.restore(); // 确保恢复状态
         }
       }
     }
   }
-  
+
   /**
    * 获取或创建2D叠加画布上下文
    */
   private getOrCreateOverlayContext(): CanvasRenderingContext2D | null {
-    if (!this.canvas) return null;
+    if (!this.canvas || !this.canvas.parentElement) return null;
     
     let overlay = document.getElementById('canvas-2d-overlay') as HTMLCanvasElement;
     
@@ -1058,32 +1084,17 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
       overlay.style.pointerEvents = 'none';
       overlay.style.zIndex = '1';
       
-      // 获取主画布的computed style来准确定位
-      const mainCanvasRect = this.canvas.getBoundingClientRect();
-      const mainCanvasStyle = window.getComputedStyle(this.canvas);
-      
-      overlay.style.left = mainCanvasStyle.left || '0';
-      overlay.style.top = mainCanvasStyle.top || '0';
-      
-      // 将叠加层添加到主画布的父元素
-      const parent = this.canvas.parentElement;
-      if (parent) {
-        parent.style.position = parent.style.position || 'relative';
-        parent.appendChild(overlay);
-      } else {
-        document.body.appendChild(overlay);
-      }
+      // 将叠加层添加到主画布的父元素，使其与主画布重叠
+      this.canvas.parentElement.style.position = 'relative';
+      this.canvas.parentElement.appendChild(overlay);
     }
     
     // 确保叠加层尺寸与主画布一致
-    const canvasWidth = this.canvas.offsetWidth || this.viewport.width;
-    const canvasHeight = this.canvas.offsetHeight || this.viewport.height;
-    
-    if (overlay.width !== canvasWidth || overlay.height !== canvasHeight) {
-      overlay.width = canvasWidth;
-      overlay.height = canvasHeight;
-      overlay.style.width = canvasWidth + 'px';
-      overlay.style.height = canvasHeight + 'px';
+    if (overlay.width !== this.canvas.width || overlay.height !== this.canvas.height) {
+      overlay.width = this.canvas.width;
+      overlay.height = this.canvas.height;
+      overlay.style.width = this.canvas.style.width || this.canvas.width + 'px';
+      overlay.style.height = this.canvas.style.height || this.canvas.height + 'px';
     }
     
     return overlay.getContext('2d');

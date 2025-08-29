@@ -66,6 +66,8 @@ export interface CanvasSDKActions {
   // === 新增的交互系统API ===
   /** 设置交互模式 */
   setInteractionMode: (mode: InteractionMode) => boolean;
+  /** 设置工具（按名称） */
+  setTool: (toolName: string | null) => boolean;
   /** 获取交互管理器 */
   getInteractionManager: () => IInteractionManager | null;
   /** 启用/禁用交互 */
@@ -326,6 +328,18 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   }, []);
 
   /**
+   * 设置工具（按名称）
+   */
+  const setTool = useCallback((toolName: string | null) => {
+    if (!sdkRef.current) {
+      console.warn('setTool called but SDK not ready yet. Tool will be applied when SDK is ready.');
+      return false;
+    }
+    console.log('Setting tool:', toolName);
+    return sdkRef.current.setTool(toolName);
+  }, []);
+
+  /**
    * 获取交互管理器
    */
   const getInteractionManager = useCallback(() => {
@@ -478,6 +492,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     hitTest,
     // 交互系统方法
     setInteractionMode,
+    setTool,
     getInteractionManager,
     setInteractionEnabled,
     // 视口控制方法

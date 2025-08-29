@@ -10,23 +10,22 @@ const Canvas: React.FC = () => {
   // 使用Canvas上下文中的SDK实例
   const [sdkState, sdkActions] = useCanvas()
 
-  // 工具映射到交互模式
-  const getInteractionMode = (tool: string): InteractionMode => {
+  // 工具映射到工具名称
+  const getToolName = (tool: string): string => {
     switch (tool) {
-      case 'select': return InteractionMode.SELECT
-      case 'hand': return InteractionMode.PAN
-      case 'pan': return InteractionMode.PAN
-      case 'zoom': return InteractionMode.ZOOM
-      case 'draw': return InteractionMode.DRAW
-      // 对于其他绘画工具，也使用DRAW模式
-      case 'rectangle':
-      case 'circle':
+      case 'select': return 'select'
+      case 'hand': 
+      case 'pan': return 'pan'
+      case 'zoom': return 'zoom'
+      case 'draw': return 'draw'
+      case 'rectangle': return 'rectangle'
+      case 'circle': return 'circle'
+      case 'diamond': return 'diamond'
+      // 其他工具目前使用draw作为默认
       case 'line':
       case 'arrow':
-      case 'diamond':
       case 'frame':
-        return InteractionMode.DRAW
-      default: return InteractionMode.SELECT
+      default: return 'draw'
     }
   }
 
@@ -53,13 +52,13 @@ const Canvas: React.FC = () => {
     initializeCanvas()
   }, [sdkState.isInitialized]) // 移除sdkActions依赖，避免循环
 
-  // 同步工具选择到交互模式
+  // 同步工具选择到工具名称
   useEffect(() => {
     if (sdkState.isInitialized) {
-      const mode = getInteractionMode(selectedTool)
-      const success = sdkActions.setInteractionMode(mode)
+      const toolName = getToolName(selectedTool)
+      const success = sdkActions.setTool(toolName)
       if (!success) {
-        console.log('Failed to set interaction mode, SDK may not be ready yet')
+        console.log('Failed to set tool, SDK may not be ready yet')
       }
     }
   }, [selectedTool, sdkState.isInitialized]) // 移除sdkActions依赖避免循环
