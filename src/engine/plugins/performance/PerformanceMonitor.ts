@@ -10,6 +10,11 @@ export interface PerformanceMetrics {
   apiCallCount: number;
   errorCount: number;
   lastActivity: number;
+  loadStartTime?: number;
+  activationTime?: number;
+  apiCalls?: number;
+  errors?: number;
+  lastError?: string;
 }
 
 export interface SystemMetrics {
@@ -27,6 +32,9 @@ export class PerformanceMonitor {
   private observers: PerformanceObserver[] = [];
   private memoryCheckInterval?: number;
   private listeners = new Map<string, Set<(metrics: PerformanceMetrics | SystemMetrics) => void>>();
+  private loadStartTimes = new Map<string, number>();
+  private activationStartTimes = new Map<string, number>();
+  private realTimeInterval?: number;
 
   constructor() {
     this.initializeObservers();
@@ -135,8 +143,8 @@ export class PerformanceMonitor {
   /**
    * 获取插件性能指标
    */
-  getPluginMetrics(pluginId: string): PerformanceMetrics | undefined {
-    return this.metrics.get(pluginId);
+  getPluginMetrics(pluginId: string): PerformanceMetrics {
+    return this.metrics.get(pluginId) || this.getOrCreateMetrics(pluginId);
   }
 
   /**
@@ -372,6 +380,202 @@ export class PerformanceMonitor {
           console.error(`Error in performance monitor listener for '${event}'`, error);
         }
       }
+    }
+  }
+
+  /**
+   * 开始记录插件加载时间
+   */
+  startLoadTime(pluginId: string): void {
+    this.loadStartTimes.set(pluginId, Date.now());
+    const metrics = this.getOrCreateMetrics(pluginId);
+    metrics.loadStartTime = Date.now();
+  }
+
+  /**
+   * 结束记录插件加载时间
+   */
+  endLoadTime(pluginId: string): void {
+    const startTime = this.loadStartTimes.get(pluginId);
+    if (startTime) {
+      const metrics = this.getOrCreateMetrics(pluginId);
+      metrics.loadTime = Date.now() - startTime;
+      this.loadStartTimes.delete(pluginId);
+    } else {
+      const metrics = this.getOrCreateMetrics(pluginId);
+      metrics.loadTime = 0;
+    }
+  }
+
+  /**
+   * 开始记录插件激活时间
+   */
+  startActivationTime(pluginId: string): void {
+    this.activationStartTimes.set(pluginId, Date.now());
+  }
+
+  /**
+   * 结束记录插件激活时间
+   */
+  endActivationTime(pluginId: string): void {
+    const startTime = this.activationStartTimes.get(pluginId);
+    if (startTime) {
+      const metrics = this.getOrCreateMetrics(pluginId);
+      metrics.activationTime = Date.now() - startTime;
+      this.activationStartTimes.delete(pluginId);
+    }
+  }
+
+  /**
+   * 增加API调用计数
+   */
+  incrementApiCalls(pluginId: string): void {
+    const metrics = this.getOrCreateMetrics(pluginId);
+    metrics.apiCalls = (metrics.apiCalls || 0) + 1;
+    metrics.apiCallCount++;
+  }
+
+  /**
+   * 增加错误计数
+   */
+  incrementErrors(pluginId: string): void {
+    const metrics = this.getOrCreateMetrics(pluginId);
+    metrics.errors = (metrics.errors || 0) + 1;
+    metrics.errorCount++;
+  }
+
+  /**
+   * 记录内存使用情况
+   */
+  recordMemoryUsage(pluginId: string): void {
+    const metrics = this.getOrCreateMetrics(pluginId);
+    if ((performance as any).memory) {
+      metrics.memoryUsage = (performance as any).memory.usedJSHeapSize;
+    } else {
+      metrics.memoryUsage = 0;
+    }
+  }
+
+  /**
+   * 清除所有指标
+   */
+  clearAllMetrics(): void {
+    this.metrics.clear();
+    this.loadStartTimes.clear();
+    this.activationStartTimes.clear();
+  }
+
+
+
+  /**
+   * 生成性能报告
+   */
+  generateReport(): {
+    totalPlugins: number;
+    totalLoadTime: number;
+    totalActivationTime: number;
+    totalApiCalls: number;
+    totalErrors: number;
+    averageLoadTime: number;
+    averageActivationTime: number;
+    slowestLoadTime: number;
+    plugins: PerformanceMetrics[];
+  } {
+    const allMetrics = this.getAllMetrics();
+    const totalLoadTime = allMetrics.reduce((sum, m) => sum + m.loadTime, 0);
+    const totalActivationTime = allMetrics.reduce((sum, m) => sum + (m.activationTime || 0), 0);
+    const totalApiCalls = allMetrics.reduce((sum, m) => sum + (m.apiCalls || 0), 0);
+    const totalErrors = allMetrics.reduce((sum, m) => sum + (m.errors || 0), 0);
+    const slowestLoadTime = allMetrics.length > 0 ? Math.max(...allMetrics.map(m => m.loadTime)) : 0;
+
+    return {
+      totalPlugins: allMetrics.length,
+      totalLoadTime,
+      totalActivationTime,
+      totalApiCalls,
+      totalErrors,
+      averageLoadTime: allMetrics.length > 0 ? totalLoadTime / allMetrics.length : 0,
+      averageActivationTime: allMetrics.length > 0 ? totalActivationTime / allMetrics.length : 0,
+      slowestLoadTime,
+      plugins: allMetrics
+    };
+  }
+
+  /**
+   * 开始实时监控
+   */
+  startRealTimeMonitoring(callback: (metrics: any) => void, interval: number): void {
+    this.realTimeInterval = window.setInterval(() => {
+      callback(this.getSystemMetrics());
+    }, interval);
+  }
+
+  /**
+   * 停止实时监控
+   */
+  stopRealTimeMonitoring(): void {
+    if (this.realTimeInterval) {
+      clearInterval(this.realTimeInterval);
+      this.realTimeInterval = undefined;
+    }
+  }
+
+  /**
+   * 设置性能基准
+   */
+  setBenchmark(benchmark: any): void {
+    // 实现基准设置逻辑
+  }
+
+  /**
+   * 获取性能警告
+   */
+  getPerformanceWarnings(): any[] {
+    // 实现警告获取逻辑
+    return [];
+  }
+
+  /**
+   * 导出数据
+   */
+  exportData(): {
+    timestamp: number;
+    plugins: Record<string, any>;
+  } {
+    const plugins: Record<string, any> = {};
+    for (const [pluginId, metrics] of this.metrics) {
+      plugins[pluginId] = {
+        loadTime: metrics.loadTime,
+        activationTime: metrics.activationTime || 0,
+        memoryUsage: metrics.memoryUsage,
+        apiCalls: metrics.apiCalls || 0,
+        errors: metrics.errors || 0,
+        lastError: metrics.lastError
+      };
+    }
+    return {
+      timestamp: Date.now(),
+      plugins
+    };
+  }
+
+  /**
+   * 导入数据
+   */
+  importData(data: {
+    timestamp: number;
+    plugins: Record<string, any>;
+  }): void {
+    for (const [pluginId, pluginData] of Object.entries(data.plugins)) {
+      const metrics = this.getOrCreateMetrics(pluginId);
+      metrics.loadTime = pluginData.loadTime || 0;
+      metrics.activationTime = pluginData.activationTime || 0;
+      metrics.memoryUsage = pluginData.memoryUsage || 0;
+      metrics.apiCalls = pluginData.apiCalls || 0;
+      metrics.errors = pluginData.errors || 0;
+      metrics.lastError = pluginData.lastError;
+      metrics.apiCallCount = pluginData.apiCalls || 0;
+      metrics.errorCount = pluginData.errors || 0;
     }
   }
 }

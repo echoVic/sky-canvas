@@ -264,6 +264,13 @@ export class ExtensionManager {
   }
 
   /**
+   * 销毁扩展管理器
+   */
+  dispose(): void {
+    this.clear();
+  }
+
+  /**
    * 获取扩展点统计信息
    */
   getStats(): {

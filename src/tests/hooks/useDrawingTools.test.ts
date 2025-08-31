@@ -1,165 +1,113 @@
 /**
  * useDrawingTools Hook 单元测试
  */
-import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useDrawingTools } from '../../hooks/useDrawingTools';
-
-// Mock Canvas SDK
-const mockSDK = {
-  addShape: vi.fn(),
-  on: vi.fn(),
-  off: vi.fn()
-};
+import { describe, test, expect } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { useDrawingTools, ToolType } from '../../hooks/useDrawingTools';
 
 describe('useDrawingTools', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe('工具状态管理', () => {
-    test('应该有默认的当前工具', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+  describe('createShapeForTool', () => {
+    test('应该能创建矩形形状', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { createShapeForTool } = result.current;
       
-      expect(result.current.currentTool).toBe('select');
-      expect(result.current.isDrawing).toBe(false);
+      const startPoint = { x: 10, y: 10 };
+      const endPoint = { x: 110, y: 60 };
+      const shape = createShapeForTool('rectangle', startPoint, endPoint);
+      
+      expect(shape).toBeTruthy();
+      expect(shape?.type).toBe('rectangle');
+      expect(shape?.position.x).toBe(10);
+      expect(shape?.position.y).toBe(10);
+      expect(shape?.size.width).toBe(100);
+      expect(shape?.size.height).toBe(50);
     });
 
-    test('应该能切换工具', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+    test('应该能创建圆形形状', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { createShapeForTool } = result.current;
       
-      act(() => {
-        result.current.setCurrentTool('rectangle');
-      });
+      const startPoint = { x: 50, y: 50 };
+      const endPoint = { x: 150, y: 150 };
+      const shape = createShapeForTool('circle', startPoint, endPoint);
       
-      expect(result.current.currentTool).toBe('rectangle');
-    });
-  });
-
-  describe('形状创建测试', () => {
-    test('应该能创建矩形', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
-      
-      const mockRect = {
-        id: 'rect1',
-        type: 'rectangle' as const,
-        position: { x: 10, y: 20 },
-        size: { width: 100, height: 80 },
-        visible: true,
-        zIndex: 0
-      };
-      
-      act(() => {
-        result.current.createRectangle(mockRect.position, mockRect.size);
-      });
-      
-      expect(mockSDK.addShape).toHaveBeenCalled();
+      expect(shape).toBeTruthy();
+      expect(shape?.type).toBe('circle');
+      expect(shape?.position.x).toBe(50);
+      expect(shape?.position.y).toBe(50);
+      expect(shape?.size.width).toBe(100);
+      expect(shape?.size.height).toBe(100);
     });
 
-    test('应该能创建圆形', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+    test('应该能创建线条形状', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { createShapeForTool } = result.current;
       
-      const mockCircle = {
-        position: { x: 50, y: 50 },
-        radius: 25
-      };
+      const startPoint = { x: 0, y: 0 };
+      const endPoint = { x: 100, y: 100 };
+      const shape = createShapeForTool('line', startPoint, endPoint);
       
-      act(() => {
-        result.current.createCircle(mockCircle.position, mockCircle.radius);
-      });
-      
-      expect(mockSDK.addShape).toHaveBeenCalled();
+      expect(shape).toBeTruthy();
+      expect(shape?.type).toBe('line');
     });
 
-    test('应该能创建线条', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+    test('应该为不支持的工具返回null', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { createShapeForTool } = result.current;
       
-      const mockLine = {
-        start: { x: 0, y: 0 },
-        end: { x: 100, y: 100 }
-      };
+      const startPoint = { x: 10, y: 10 };
+      const shape = createShapeForTool('select', startPoint);
       
-      act(() => {
-        result.current.createLine(mockLine.start, mockLine.end);
-      });
-      
-      expect(mockSDK.addShape).toHaveBeenCalled();
+      expect(shape).toBeNull();
     });
   });
 
-  describe('绘制状态管理', () => {
-    test('应该正确管理绘制状态', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+  describe('isDrawingTool', () => {
+    test('应该正确识别绘图工具', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { isDrawingTool } = result.current;
       
-      act(() => {
-        result.current.startDrawing({ x: 10, y: 20 });
+      const drawingTools: ToolType[] = ['rectangle', 'diamond', 'circle', 'arrow', 'line', 'draw', 'text', 'image', 'sticky', 'frame'];
+      const nonDrawingTools: ToolType[] = ['select', 'hand'];
+      
+      drawingTools.forEach(tool => {
+        expect(isDrawingTool(tool)).toBe(true);
       });
       
-      expect(result.current.isDrawing).toBe(true);
-      expect(result.current.startPoint).toEqual({ x: 10, y: 20 });
-      
-      act(() => {
-        result.current.finishDrawing();
+      nonDrawingTools.forEach(tool => {
+        expect(isDrawingTool(tool)).toBe(false);
       });
-      
-      expect(result.current.isDrawing).toBe(false);
-      expect(result.current.startPoint).toBeNull();
-    });
-
-    test('应该能取消绘制', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
-      
-      act(() => {
-        result.current.startDrawing({ x: 10, y: 20 });
-      });
-      
-      expect(result.current.isDrawing).toBe(true);
-      
-      act(() => {
-        result.current.cancelDrawing();
-      });
-      
-      expect(result.current.isDrawing).toBe(false);
-      expect(result.current.startPoint).toBeNull();
     });
   });
 
-  describe('工具配置测试', () => {
-    test('应该正确返回工具配置', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+  describe('needsDrag', () => {
+    test('应该正确识别需要拖拽的工具', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { needsDrag } = result.current;
       
-      const tools = result.current.availableTools;
+      const dragTools: ToolType[] = ['rectangle', 'diamond', 'circle', 'arrow', 'line', 'frame'];
+      const nonDragTools: ToolType[] = ['select', 'hand', 'draw', 'text', 'image', 'sticky', 'link'];
       
-      expect(tools).toContain('select');
-      expect(tools).toContain('pan');
-      expect(tools).toContain('rectangle');
-      expect(tools).toContain('circle');
-      expect(tools).toContain('line');
-      expect(tools).toContain('arrow');
+      dragTools.forEach(tool => {
+        expect(needsDrag(tool)).toBe(true);
+      });
+      
+      nonDragTools.forEach(tool => {
+        expect(needsDrag(tool)).toBe(false);
+      });
     });
   });
 
-  describe('预览功能测试', () => {
-    test('应该能管理预览形状', () => {
-      const { result } = renderHook(() => useDrawingTools(mockSDK as any));
+  describe('getCursorForTool', () => {
+    test('应该返回正确的光标样式', () => {
+      const { result } = renderHook(() => useDrawingTools());
+      const { getCursorForTool } = result.current;
       
-      const previewShape = {
-        type: 'rectangle',
-        position: { x: 10, y: 20 },
-        size: { width: 50, height: 30 }
-      };
-      
-      act(() => {
-        result.current.setPreviewShape(previewShape);
-      });
-      
-      expect(result.current.previewShape).toEqual(previewShape);
-      
-      act(() => {
-        result.current.clearPreview();
-      });
-      
-      expect(result.current.previewShape).toBeNull();
+      expect(getCursorForTool('select')).toBe('default');
+      expect(getCursorForTool('hand')).toBe('grab');
+      expect(getCursorForTool('text')).toBe('text');
+      expect(getCursorForTool('rectangle')).toBe('crosshair');
+      expect(getCursorForTool('circle')).toBe('crosshair');
     });
   });
 });

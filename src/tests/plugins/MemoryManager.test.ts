@@ -203,7 +203,10 @@ describe('MemoryManager', () => {
 
   describe('垃圾回收', () => {
     it('应该执行垃圾回收', () => {
-      const gcSpy = vi.spyOn(global, 'gc').mockImplementation(() => {});
+      // 模拟gc函数
+      const mockGc = vi.fn();
+      (global as any).gc = mockGc;
+      const gcSpy = vi.spyOn(global as any, 'gc').mockImplementation(() => undefined);
       
       memoryManager.forceGarbageCollection();
       

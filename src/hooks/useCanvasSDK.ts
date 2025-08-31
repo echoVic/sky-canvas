@@ -156,8 +156,8 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     console.log('Initialize called, current SDK:', sdkRef.current, 'isInitialized:', state.isInitialized);
     
     if (sdkRef.current) {
-      console.log('SDK already initialized, skipping');
-      return;
+      console.log('SDK already initialized, throwing error');
+      throw new Error('SDK already initialized');
     }
 
     const sdk = new CanvasSDK();

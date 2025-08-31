@@ -52,15 +52,21 @@ export const createMockCanvas = (width = 800, height = 600): HTMLCanvasElement =
 export const createMockShape = (id?: string) => ({
   id: id || `shape-${Math.random().toString(36).substr(2, 9)}`,
   type: 'rectangle' as const,
-  x: 10,
-  y: 10,
-  width: 100,
-  height: 50,
-  fill: '#000000',
-  stroke: '#ffffff',
-  strokeWidth: 1,
+  position: { x: 10, y: 10 },
+  size: { width: 100, height: 50 },
+  bounds: { x: 10, y: 10, width: 100, height: 50 },
+  selected: false,
+  locked: false,
   visible: true,
   zIndex: 0,
+  render: vi.fn(),
+  clone: vi.fn().mockReturnValue({}),
+  dispose: vi.fn(),
+  update: vi.fn(),
+  serialize: vi.fn().mockReturnValue({}),
+  deserialize: vi.fn(),
+  hitTest: vi.fn().mockReturnValue(false),
+  getBounds: vi.fn().mockReturnValue({ x: 10, y: 10, width: 100, height: 50 }),
 });
 
 // 自定义渲染函数，包装 CanvasProvider

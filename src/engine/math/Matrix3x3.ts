@@ -12,15 +12,24 @@ export class Matrix3x3 {
   public elements: Float32Array;
 
   constructor(
-    m00: number = 1, m10: number = 0, m20: number = 0,
+    m00: number | number[] = 1, m10: number = 0, m20: number = 0,
     m01: number = 0, m11: number = 1, m21: number = 0,
     m02: number = 0, m12: number = 0, m22: number = 1
   ) {
-    this.elements = new Float32Array([
-      m00, m01, m02,
-      m10, m11, m12,
-      m20, m21, m22
-    ]);
+    if (Array.isArray(m00)) {
+      if (m00.length !== 9) throw new Error('Array must have 9 elements');
+      this.elements = new Float32Array([
+        m00[0], m00[1], m00[2],
+        m00[3], m00[4], m00[5],
+        m00[6], m00[7], m00[8]
+      ]);
+    } else {
+      this.elements = new Float32Array([
+        m00, m01, m02,
+        m10, m11, m12,
+        m20, m21, m22
+      ]);
+    }
   }
 
   // 静态常量
@@ -220,6 +229,10 @@ export class Matrix3x3 {
     );
   }
 
+  static scaling(scale: Vector2): Matrix3x3 {
+    return Matrix3x3.scale(scale.x, scale.y);
+  }
+
   static shear(x: number, y: number): Matrix3x3 {
     return new Matrix3x3(
       1, x, 0,
@@ -282,6 +295,11 @@ export class Matrix3x3 {
       }
     }
     return true;
+  }
+
+  // 访问方法
+  get(row: number, col: number): number {
+    return this.elements[col * 3 + row];
   }
 
   // 工具方法

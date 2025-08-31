@@ -1,4 +1,4 @@
-import test, { afterEach, beforeEach, describe } from 'node:test';
+import { afterEach, beforeEach, describe, test, expect } from 'vitest';
 import { Circle, Rectangle } from '../engine/core/shapes';
 import { EventType } from '../engine/events/EventSystem';
 import { InteractionManager, InteractionMode, PanTool, SelectTool, ZoomTool } from '../engine/interaction/InteractionManager';
@@ -6,6 +6,7 @@ import { SelectionMode } from '../engine/interaction/SelectionManager';
 import { Transform, Vector2 } from '../engine/math';
 import { Camera, Scene } from '../engine/scene/Scene';
 import { Viewport } from '../engine/scene/Viewport';
+import { ShapeNode, wrapShape } from '../engine/scene/ShapeNode';
 
 // Mock Canvas API
 class MockCanvas {
@@ -52,9 +53,9 @@ describe('InteractionSystem', () => {
   let scene: Scene;
   let viewport: Viewport;
   let interactionManager: InteractionManager;
-  let rect1: Rectangle;
-  let rect2: Rectangle;
-  let circle: Circle;
+  let rect1: ShapeNode;
+  let rect2: ShapeNode;
+  let circle: ShapeNode;
 
   beforeEach(() => {
     // 设置 mock
@@ -67,11 +68,10 @@ describe('InteractionSystem', () => {
 
     // 创建场景和视口
     scene = new Scene();
-    viewport = new Viewport();
-    viewport.setSize(800, 600);
+    viewport = new Viewport({ x: 0, y: 0, width: 800, height: 600 });
     
-    const camera = new Camera();
-    camera.setViewport(viewport);
+    const camera = new Camera('camera1');
+    camera.setViewport({ x: 0, y: 0, width: 800, height: 600 });
     scene.setActiveCamera(camera);
 
     // 创建交互管理器
@@ -79,19 +79,16 @@ describe('InteractionSystem', () => {
     interactionManager.initialize(canvas as any, scene, viewport);
 
     // 创建测试图形
-    rect1 = new Rectangle(100, 50);
-    rect1.transform = new Transform(new Vector2(100, 100));
-    rect1.style = { fillColor: '#ff0000' };
+    const rectShape1 = new Rectangle('rect1', 100, 100, 100, 50, false, { fillStyle: '#ff0000' });
+    rect1 = wrapShape(rectShape1);
     scene.addChild(rect1);
 
-    rect2 = new Rectangle(80, 80);
-    rect2.transform = new Transform(new Vector2(250, 150));
-    rect2.style = { fillColor: '#00ff00' };
+    const rectShape2 = new Rectangle('rect2', 250, 150, 80, 80, false, { fillStyle: '#00ff00' });
+    rect2 = wrapShape(rectShape2);
     scene.addChild(rect2);
 
-    circle = new Circle(40);
-    circle.transform = new Transform(new Vector2(400, 200));
-    circle.style = { fillColor: '#0000ff' };
+    const circleShape = new Circle('circle1', 400, 200, 40, false, { fillStyle: '#0000ff' });
+    circle = wrapShape(circleShape);
     scene.addChild(circle);
 
     // 更新碰撞检测
@@ -280,14 +277,20 @@ describe('InteractionSystem', () => {
     test('应该在点击图形时选择它', () => {
       const mouseEvent = {
         type: EventType.MOUSE_DOWN,
+        pointerId: 1,
         screenPosition: { x: 100, y: 100 },
         worldPosition: { x: 100, y: 100 },
         button: 0,
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       const handled = selectTool.onMouseDown(mouseEvent);
@@ -301,14 +304,20 @@ describe('InteractionSystem', () => {
       
       const mouseEvent = {
         type: EventType.MOUSE_DOWN,
+        pointerId: 1,
         screenPosition: { x: 250, y: 150 },
         worldPosition: { x: 250, y: 150 },
         button: 0,
+        buttons: 1,
         ctrlKey: true,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       selectTool.onMouseDown(mouseEvent);
@@ -323,14 +332,20 @@ describe('InteractionSystem', () => {
       // 开始拖拽
       const mouseDown = {
         type: EventType.MOUSE_DOWN,
+        pointerId: 1,
         screenPosition: { x: 80, y: 80 },
         worldPosition: { x: 80, y: 80 },
         button: 0,
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       selectTool.onMouseDown(mouseDown);
@@ -338,14 +353,20 @@ describe('InteractionSystem', () => {
       // 拖拽移动
       const mouseMove = {
         type: EventType.MOUSE_MOVE,
+        pointerId: 1,
         screenPosition: { x: 280, y: 180 },
         worldPosition: { x: 280, y: 180 },
         button: 0,
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       selectTool.onMouseMove(mouseMove);
@@ -360,14 +381,20 @@ describe('InteractionSystem', () => {
       // 结束拖拽
       const mouseUp = {
         type: EventType.MOUSE_UP,
+        pointerId: 1,
         screenPosition: { x: 280, y: 180 },
         worldPosition: { x: 280, y: 180 },
         button: 0,
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       selectTool.onMouseUp(mouseUp);
@@ -386,19 +413,25 @@ describe('InteractionSystem', () => {
     });
 
     test('应该能够平移视口', () => {
-      const initialPosition = viewport.position.clone();
+      const initialTransform = viewport.getTransform().clone();
       
       // 开始平移
       const mouseDown = {
         type: EventType.MOUSE_DOWN,
+        pointerId: 1,
         screenPosition: { x: 400, y: 300 },
         worldPosition: { x: 400, y: 300 },
         button: 0,
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       panTool.onMouseDown(mouseDown);
@@ -406,21 +439,28 @@ describe('InteractionSystem', () => {
       // 移动鼠标
       const mouseMove = {
         type: EventType.MOUSE_MOVE,
+        pointerId: 1,
         screenPosition: { x: 450, y: 350 },
         worldPosition: { x: 450, y: 350 },
         button: 0,
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       panTool.onMouseMove(mouseMove);
 
-      // 视口位置应该改变
-      expect(viewport.position.x).not.toBe(initialPosition.x);
-      expect(viewport.position.y).not.toBe(initialPosition.y);
+      // 视口变换应该改变
+      const currentTransform = viewport.getTransform();
+      expect(currentTransform.position.x).not.toBe(initialTransform.position.x);
+      expect(currentTransform.position.y).not.toBe(initialTransform.position.y);
     });
   });
 
@@ -437,14 +477,20 @@ describe('InteractionSystem', () => {
       
       const mouseDown = {
         type: EventType.MOUSE_DOWN,
+        pointerId: 1,
         screenPosition: { x: 400, y: 300 },
         worldPosition: { x: 400, y: 300 },
         button: 0, // 左键放大
+        buttons: 1,
         ctrlKey: false,
         shiftKey: false,
         altKey: false,
         metaKey: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       zoomTool.onMouseDown(mouseDown);
@@ -458,10 +504,17 @@ describe('InteractionSystem', () => {
       const gestureEvent = {
         type: EventType.GESTURE_CHANGE,
         center: { x: 400, y: 300 },
+        scale: 1.1,
+        rotation: 0,
+        velocity: new Vector2(0, 0),
         deltaScale: 10, // 放大
         deltaRotation: 0,
         deltaTranslation: new Vector2(0, 0),
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        isDefaultPrevented: () => false,
+        isPropagationStopped: () => false
       };
 
       zoomTool.onGesture(gestureEvent);
@@ -471,14 +524,16 @@ describe('InteractionSystem', () => {
   });
 
   describe('事件分发', () => {
-    test('应该分发选择变化事件', (done) => {
-      interactionManager.addEventListener('selection-change', (event: any) => {
-        expect(event.selectedNodes).toHaveLength(1);
-        expect(event.selectedNodes[0]).toBe(rect1);
-        done();
-      });
+    test('应该分发选择变化事件', () => {
+      return new Promise<void>((resolve) => {
+        interactionManager.addEventListener(EventType.SELECTION_CHANGE, (event: any) => {
+          expect(event.selectedNodes).toHaveLength(1);
+          expect(event.selectedNodes[0]).toBe(rect1);
+          resolve();
+        });
 
-      interactionManager.select(rect1);
+        interactionManager.select(rect1);
+      });
     });
 
     test('应该能够启用和禁用', () => {
@@ -497,12 +552,13 @@ describe('InteractionSystem', () => {
       // 创建大量节点
       const nodeCount = 1000;
       for (let i = 0; i < nodeCount; i++) {
-        const rect = new Rectangle(10, 10);
-        rect.transform = new Transform(new Vector2(
+        const rectShape = new Rectangle(`rect-${i}`, 0, 0, 10, 10, false);
+        const rectNode = wrapShape(rectShape);
+        rectNode.transform = new Transform(new Vector2(
           Math.random() * 800,
           Math.random() * 600
         ));
-        scene.addChild(rect);
+        scene.addChild(rectNode);
       }
 
       const startTime = performance.now();

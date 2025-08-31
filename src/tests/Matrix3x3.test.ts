@@ -50,7 +50,7 @@ describe('Matrix3x3', () => {
 
   describe('变换测试', () => {
     test('平移变换应该正确', () => {
-      const translate = Matrix3x3.translation(new Vector2(10, 20));
+      const translate = Matrix3x3.translation(10, 20);
       const point = new Vector2(0, 0);
       const transformed = translate.transformVector(point);
       

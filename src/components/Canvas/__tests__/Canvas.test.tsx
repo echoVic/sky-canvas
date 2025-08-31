@@ -88,13 +88,18 @@ const createMockShape = (overrides = {}) => ({
   size: { width: 50, height: 30 },
   visible: true,
   zIndex: 0,
+  selected: false,
+  locked: false,
   render: vi.fn(),
   getBounds: vi.fn(() => ({ x: 10, y: 10, width: 50, height: 30 })),
-  hitTest: vi.fn(),
+  hitTest: vi.fn(() => true),
   clone: vi.fn(),
+  update: vi.fn(),
+  serialize: vi.fn(() => ({})),
+  deserialize: vi.fn(),
   dispose: vi.fn(),
   ...overrides,
-});
+})
 
 describe('Canvas', () => {
   beforeEach(() => {
