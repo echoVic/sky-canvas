@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useCanvasInteraction } from '../useCanvasInteraction';
 import { useCanvasSDK } from '../useCanvasSDK';
-import { useDrawingTools } from '../useDrawingTools';
+import { useDrawingTools, ToolType } from '../useDrawingTools';
 import { createMouseEvent, createMockCanvas } from '../../tests/test-utils';
 import { InteractionMode } from '@sky-canvas/canvas-sdk';
 
@@ -148,8 +148,8 @@ describe('useCanvasInteraction', () => {
         .mockReturnValueOnce('default');
 
       const { result, rerender } = renderHook(
-        ({ tool }) => useCanvasInteraction(mockCanvasRef, [mockSDKState, mockSDKActions], tool),
-        { initialProps: { tool: 'rectangle' as const } }
+        ({ tool }: { tool: ToolType }) => useCanvasInteraction(mockCanvasRef, [mockSDKState, mockSDKActions], tool),
+        { initialProps: { tool: 'rectangle' as ToolType } }
       );
 
       expect(result.current.interactionState.cursor).toBe('crosshair');

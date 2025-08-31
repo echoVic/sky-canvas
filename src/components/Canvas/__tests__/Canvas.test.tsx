@@ -81,25 +81,56 @@ const mockCanvasStore = {
 };
 
 // 创建mock形状的辅助函数
-const createMockShape = (overrides = {}) => ({
-  id: 'shape-1',
-  type: 'rectangle' as const,
-  position: { x: 10, y: 10 },
-  size: { width: 50, height: 30 },
-  visible: true,
-  zIndex: 0,
-  selected: false,
-  locked: false,
-  render: vi.fn(),
-  getBounds: vi.fn(() => ({ x: 10, y: 10, width: 50, height: 30 })),
-  hitTest: vi.fn(() => true),
-  clone: vi.fn(),
-  update: vi.fn(),
-  serialize: vi.fn(() => ({})),
-  deserialize: vi.fn(),
-  dispose: vi.fn(),
-  ...overrides,
-})
+const createMockShape = (overrides = {}) => {
+  const defaultBounds = { x: 10, y: 10, width: 50, height: 30 };
+  
+  // 创建完整的对象，包含所有必需属性
+  const shape = {
+    id: 'shape-1',
+    type: 'rectangle' as const,
+    position: { x: 10, y: 10 },
+    size: { width: 50, height: 30 },
+    visible: true,
+    zIndex: 0,
+    selected: false,
+    locked: false,
+    bounds: defaultBounds,
+    render: vi.fn(),
+    getBounds: vi.fn(() => defaultBounds),
+    hitTest: vi.fn(() => true),
+    clone: vi.fn(),
+    update: vi.fn(),
+    serialize: vi.fn(() => ({
+      id: 'shape-1',
+      type: 'rectangle' as const,
+      position: { x: 10, y: 10 },
+      size: { width: 50, height: 30 },
+      visible: true,
+      zIndex: 0,
+      selected: false,
+      locked: false,
+    })),
+    deserialize: vi.fn(),
+    dispose: vi.fn(),
+    ...overrides,
+  };
+  
+  // 确保 serialize 方法返回正确的数据
+  if (overrides && Object.keys(overrides).length > 0) {
+    shape.serialize = vi.fn(() => ({
+      id: shape.id,
+      type: shape.type,
+      position: shape.position,
+      size: shape.size,
+      visible: shape.visible,
+      zIndex: shape.zIndex,
+      selected: shape.selected,
+      locked: shape.locked,
+    }));
+  }
+  
+  return shape;
+}
 
 describe('Canvas', () => {
   beforeEach(() => {
@@ -207,19 +238,7 @@ describe('Canvas', () => {
     });
 
     it('应该在SDK初始化后渲染形状', () => {
-      const mockShape = {
-        id: 'shape-1',
-        type: 'rectangle' as const,
-        position: { x: 10, y: 10 },
-        size: { width: 50, height: 30 },
-        visible: true,
-        zIndex: 0,
-        render: vi.fn(),
-        getBounds: vi.fn(() => ({ x: 10, y: 10, width: 50, height: 30 })),
-        hitTest: vi.fn(),
-        clone: vi.fn(),
-        dispose: vi.fn(),
-      };
+      const mockShape = createMockShape();
 
       const stateWithShapes = {
         ...mockSDKState,

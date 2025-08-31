@@ -119,7 +119,27 @@ describe('useCanvasSDK', () => {
         position: { x: 10, y: 20 },
         size: { width: 100, height: 80 },
         visible: true,
-        zIndex: 0
+        zIndex: 0,
+        selected: false,
+        locked: false,
+        bounds: { x: 10, y: 20, width: 100, height: 80 },
+        render: vi.fn(),
+        getBounds: vi.fn(() => ({ x: 10, y: 20, width: 100, height: 80 })),
+        hitTest: vi.fn(() => false),
+        clone: vi.fn(),
+        update: vi.fn(),
+        serialize: vi.fn(() => ({
+          id: 'shape-1',
+          type: 'rectangle' as const,
+          position: { x: 10, y: 20 },
+          size: { width: 100, height: 80 },
+          visible: true,
+          zIndex: 0,
+          selected: false,
+          locked: false,
+        })),
+        deserialize: vi.fn(),
+        dispose: vi.fn(),
       };
       
       act(() => {
