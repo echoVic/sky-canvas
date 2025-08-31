@@ -386,7 +386,8 @@ export class WebGLMemoryManager {
     
     // 如果分配失败，尝试扩展内存池
     if (!block) {
-      const expansionSize = Math.max(size * 2, pool.totalSize * 0.5);
+      const poolStats = pool.getStats();
+      const expansionSize = Math.max(size * 2, poolStats.allocated * 0.5);
       pool.expand(expansionSize);
       block = pool.allocate(size, alignment);
     }

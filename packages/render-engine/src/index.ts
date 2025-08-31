@@ -4,22 +4,14 @@
  */
 
 // 核心类型和接口
-export type { 
-  IGraphicsContext, 
-  IGraphicsContextFactory, 
-  IPoint, 
-  IRect, 
-  IImageData, 
-  ColorStyle 
+export type {
+  ColorStyle, IGraphicsContext,
+  IGraphicsContextFactory, IImageData, IPoint,
+  IRect
 } from './core/IGraphicsContext';
 
-export type { 
-  IRenderEngine, 
-  IRenderLayer, 
-  IRenderable, 
-  IViewport, 
-  IRenderStats, 
-  IRenderEngineConfig 
+export type {
+  IRenderable, IRenderEngine, IRenderEngineConfig, IRenderLayer, IRenderStats, IViewport
 } from './core/IRenderEngine';
 
 // 现代渲染管道
@@ -47,26 +39,17 @@ export type {
 
 // WebGL 系统
 export type {
-  IShaderProgram,
-  IShaderManager,
-  IShaderSource
+  IShaderManager, IShaderProgram, IShaderSource
 } from './webgl/ShaderManager';
 
 export type {
-  IBuffer,
-  IVertexArray,
-  IBufferManager,
-  IVertexLayout as WebGLVertexLayout,
-  IVertexAttribute,
   BufferType,
-  BufferUsage
+  BufferUsage, IBuffer, IBufferManager, IVertexArray, IVertexAttribute, IVertexLayout as WebGLVertexLayout
 } from './webgl/BufferManager';
 
-// 批处理系统
+// 批处理类型
 export type {
-  IBatcher,
-  IBatchData,
-  IVertexLayout as BatchingVertexLayout
+  IVertexLayout as BatchingVertexLayout, IBatchData, IBatcher
 } from './batching/Batcher';
 
 export type {
@@ -80,20 +63,14 @@ export type {
 
 // 数学和变换系统
 export type {
-  Matrix2D,
-  TransformStack,
-  CoordinateSystemManager,
-  IViewportConfig,
-  CoordinateSystem
+  CoordinateSystem, CoordinateSystemManager,
+  IViewportConfig, Matrix2D,
+  TransformStack
 } from './math/Transform';
 
 // 图形原语
 export type {
-  IGraphicPrimitive,
-  IRectanglePrimitive,
-  ICirclePrimitive,
-  IPathPrimitive,
-  GraphicPrimitiveType
+  GraphicPrimitiveType, ICirclePrimitive, IGraphicPrimitive, IPathPrimitive, IRectanglePrimitive
 } from './primitives/IGraphicPrimitive';
 
 export type {
@@ -109,11 +86,14 @@ export * from './core/ModernRenderPipeline';
 // 渲染命令实现
 export * from './commands/index';
 
-// WebGL 实现
-export * from './webgl/index';
+// WebGL 实现 - 具体导出避免冲突
+export { BufferManager } from './webgl/BufferManager';
+export { SHADER_LIBRARY } from './webgl/ShaderLibrary';
+export { ShaderManager } from './webgl/ShaderManager';
 
-// 批处理实现
-export * from './batching/index';
+// 批处理实现 - 具体导出避免冲突
+export { BatcherFactory, MultiTextureBatcher, UniversalBatcher } from './batching/Batcher';
+export { WebGLBatchRenderer } from './batching/BatchRenderer';
 
 // 空间分割和剔除实现
 export * from './culling/index';

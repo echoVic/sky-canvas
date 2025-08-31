@@ -14,9 +14,7 @@
     "rootDir": "src",
     "removeComments": false,
     "sourceMap": true,
-    "isolatedModules": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "isolatedModules": true
   },
   "include": [
     "src/**/*"

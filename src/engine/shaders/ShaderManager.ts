@@ -3,7 +3,7 @@ import { Shader, ShaderSource, ShaderType } from '../core/RenderTypes';
 // 着色器编译结果
 export interface ShaderCompileResult {
   success: boolean;
-  shader?: WebGLShader | GPUShaderModule;
+  shader?: globalThis.WebGLShader | GPUShaderModule;
   error?: string;
   warnings?: string[];
 }
@@ -39,7 +39,7 @@ export class WebGLShader implements Shader {
   usage: number = 0;
   
   private gl: WebGLRenderingContext;
-  private shader: WebGLShader | null = null;
+  private glShader: globalThis.WebGLShader | null = null;
 
   constructor(gl: WebGLRenderingContext, id: string, type: ShaderType, source: string) {
     this.gl = gl;
@@ -53,32 +53,32 @@ export class WebGLShader implements Shader {
     const glType = this.type === ShaderType.VERTEX ? 
       this.gl.VERTEX_SHADER : this.gl.FRAGMENT_SHADER;
     
-    this.shader = this.gl.createShader(glType);
-    if (!this.shader) return false;
+    this.glShader = this.gl.createShader(glType);
+    if (!this.glShader) return false;
 
-    this.gl.shaderSource(this.shader, this.source);
-    this.gl.compileShader(this.shader);
+    this.gl.shaderSource(this.glShader, this.source);
+    this.gl.compileShader(this.glShader);
 
-    this.compiled = this.gl.getShaderParameter(this.shader, this.gl.COMPILE_STATUS);
+    this.compiled = this.gl.getShaderParameter(this.glShader, this.gl.COMPILE_STATUS);
     
     if (!this.compiled) {
-      const error = this.gl.getShaderInfoLog(this.shader);
+      const error = this.gl.getShaderInfoLog(this.glShader);
       console.error(`Shader compilation failed: ${error}`);
-      this.gl.deleteShader(this.shader);
-      this.shader = null;
+      this.gl.deleteShader(this.glShader);
+      this.glShader = null;
     }
 
     return this.compiled;
   }
 
-  getShader(): WebGLShader | null {
-    return this.shader;
+  getShader(): globalThis.WebGLShader | null {
+    return this.glShader;
   }
 
   dispose(): void {
-    if (this.shader) {
-      this.gl.deleteShader(this.shader);
-      this.shader = null;
+    if (this.glShader) {
+      this.gl.deleteShader(this.glShader);
+      this.glShader = null;
     }
     this.compiled = false;
   }

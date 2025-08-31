@@ -112,6 +112,19 @@ export interface PluginAPI {
     updateShape(id: string, updates: any): void;
     getShapes(): any[];
     clear(): void;
+    // 兼容方法
+    addElement(element: any): void;
+    removeElement(id: string): void;
+    updateElement(id: string, updates: any): void;
+    getElement(id: string): any;
+    getAllElements(): any[];
+    setTool(tool: string): void;
+    getTool(): string;
+    undo(): void;
+    redo(): void;
+    zoom(factor: number): void;
+    pan(delta: { x: number; y: number }): void;
+    getViewport(): any;
   };
   
   // UI操作
@@ -132,6 +145,15 @@ export interface PluginAPI {
     save(data: any, filename?: string): Promise<void>;
     import(data: any): Promise<void>;
     export(format: string): Promise<any>;
+  };
+  
+  // 文件系统操作
+  fileSystem: {
+    readFile(path: string): Promise<string>;
+    writeFile(path: string, content: string): Promise<void>;
+    deleteFile(path: string): Promise<void>;
+    listFiles(path: string): Promise<string[]>;
+    createDirectory(path: string): Promise<void>;
   };
   
   // 工具注册
@@ -174,6 +196,13 @@ export interface PluginResourceManager {
   getAssetUrl(path: string): string;
   preloadAssets(paths: string[]): Promise<void>;
   cleanup(): void;
+  
+  // 资源注册和管理
+  register(key: string, resource: any): void;
+  get(key: string): any;
+  has(key: string): boolean;
+  release(key: string): void;
+  releaseAll(): void;
 }
 
 // 插件日志记录器

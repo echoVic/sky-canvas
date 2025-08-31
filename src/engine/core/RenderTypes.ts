@@ -118,6 +118,7 @@ export interface Buffer extends GPUResource {
   type: BufferType;
   data: ArrayBuffer;
   update(data: ArrayBuffer, offset?: number): void;
+  bind(): void;
 }
 
 // 纹理接口

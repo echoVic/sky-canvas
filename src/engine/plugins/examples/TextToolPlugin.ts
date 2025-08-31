@@ -2,24 +2,27 @@
  * 文本工具插件示例
  */
 
-import { Tool, ToolBuilder, ToolPlugin } from '../sdk/PluginSDK';
+import { ToolPlugin, createTool } from '../sdk/PluginSDK';
+import { Tool } from '../types/PluginTypes';
 
 export default class TextToolPlugin extends ToolPlugin {
   private textInput: HTMLInputElement | null = null;
 
   protected createTool(): Tool {
-    return new ToolBuilder()
+    return createTool()
       .id('text-tool')
       .name('文本工具')
-      .icon('📝')
+      .icon('text')
       .cursor('text')
       .shortcut('T')
       .onActivate(() => {
-        this.log('info', 'Text tool activated');
+        this.log('info', '文本工具已激活');
       })
-      .onMouseDown((event) => {
-        this.addText(event);
+      .onDeactivate(() => {
+        this.cleanupInput();
+        this.log('info', '文本工具已停用');
       })
+      .onMouseDown((event: MouseEvent) => this.addText(event))
       .build();
   }
 

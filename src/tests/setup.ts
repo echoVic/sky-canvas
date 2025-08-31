@@ -95,7 +95,7 @@ global.URL.createObjectURL = vi.fn(() => 'mock-url');
 global.URL.revokeObjectURL = vi.fn();
 
 // Mock HTMLCanvasElement
-HTMLCanvasElement.prototype.getContext = vi.fn((type: string) => {
+(HTMLCanvasElement.prototype.getContext as any) = vi.fn((type: string) => {
   if (type === '2d') {
     return {
       fillRect: vi.fn(),

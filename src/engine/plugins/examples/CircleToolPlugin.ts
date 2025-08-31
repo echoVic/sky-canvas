@@ -2,7 +2,8 @@
  * 圆形工具插件示例
  */
 
-import { Tool, ToolBuilder, ToolPlugin } from '../sdk/PluginSDK';
+import { ToolPlugin, createTool } from '../sdk/PluginSDK';
+import { Tool } from '../types/PluginTypes';
 
 export default class CircleToolPlugin extends ToolPlugin {
   private isDrawing = false;
@@ -10,10 +11,10 @@ export default class CircleToolPlugin extends ToolPlugin {
   private currentCircle: any = null;
 
   protected createTool(): Tool {
-    return new ToolBuilder()
+    return createTool()
       .id('circle-tool')
       .name('圆形工具')
-      .icon('⭕')
+      .icon('circle')
       .cursor('crosshair')
       .shortcut('C')
       .onActivate(() => {
@@ -24,13 +25,13 @@ export default class CircleToolPlugin extends ToolPlugin {
           message: '点击并拖拽绘制圆形'
         });
       })
-      .onMouseDown((event) => {
+      .onMouseDown((event: MouseEvent) => {
         this.startDrawing(event);
       })
-      .onMouseMove((event) => {
+      .onMouseMove((event: MouseEvent) => {
         this.updateDrawing(event);
       })
-      .onMouseUp((event) => {
+      .onMouseUp((event: MouseEvent) => {
         this.finishDrawing(event);
       })
       .build();

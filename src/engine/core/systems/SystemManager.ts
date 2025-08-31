@@ -233,11 +233,12 @@ export class SystemManager {
    * 从扩展管理器加载系统
    */
   private async loadSystemsFromExtensions(): Promise<void> {
-    const systemExtensions = this.extensionManager.get(ExtensionType.RenderSystem) as ISystem[];
+    const systemExtensions = this.extensionManager.get(ExtensionType.RenderSystem);
+    const extensions = Array.isArray(systemExtensions) ? systemExtensions : [systemExtensions];
     
-    for (const SystemClass of systemExtensions) {
+    for (const SystemClass of extensions) {
       if (typeof SystemClass === 'function') {
-        const system = new (SystemClass as new () => ISystem)();
+        const system = new (SystemClass as unknown as new () => ISystem)();
         this.addSystem(system);
       }
     }

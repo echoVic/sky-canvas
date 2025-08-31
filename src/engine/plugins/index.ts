@@ -20,7 +20,6 @@ export { PluginMarketplace, LocalPluginStore } from './marketplace/PluginMarketp
 // 示例插件
 export { default as CircleToolPlugin } from './examples/CircleToolPlugin';
 export { default as TextToolPlugin } from './examples/TextToolPlugin';
-export { default as LayerManagerPlugin } from './examples/LayerManagerPlugin';
 
 // 插件系统工厂
 import { PluginManager } from './core/PluginManager';

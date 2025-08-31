@@ -55,12 +55,27 @@ describe('PluginContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
+    const mockManifest = {
+      id: pluginId,
+      name: 'Test Plugin',
+      version: '1.0.0',
+      description: 'Test plugin for unit tests',
+      author: 'Test Author',
+      license: 'MIT',
+      main: 'index.js',
+      minEngineVersion: '1.0.0',
+      permissions: [PluginPermission.CANVAS_MODIFY, PluginPermission.READ_ONLY],
+      extensionPoints: [],
+      keywords: []
+    };
+    
+    const mockPluginManager = {
+      getPermissionManager: () => mockPermissionManager
+    };
+    
     pluginContext = new PluginContextImpl(
-      pluginId,
-      mockCanvas as any,
-      mockUI as any,
-      mockFileSystem as any,
-      mockPermissionManager as any
+      mockManifest as any,
+      mockPluginManager as any
     );
   });
 
@@ -72,7 +87,7 @@ describe('PluginContext', () => {
     it('应该添加画布元素', async () => {
       const element = { id: 'test-element', type: 'rectangle' };
       
-      await pluginContext.canvas.addElement(element);
+      await pluginContext.api.canvas.addElement(element);
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
@@ -87,7 +102,7 @@ describe('PluginContext', () => {
       const element = { id: 'test-element', type: 'rectangle' };
       
       await expect(
-        pluginContext.canvas.addElement(element)
+        pluginContext.api.canvas.addElement(element)
       ).rejects.toThrow('Permission denied');
     });
 
@@ -95,7 +110,7 @@ describe('PluginContext', () => {
       mockPermissionManager.validatePermission.mockReturnValue(true);
       mockCanvas.getElement.mockReturnValue({ id: 'test-element' });
       
-      const element = await pluginContext.canvas.getElement('test-element');
+      const element = await pluginContext.api.canvas.getElement('test-element');
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
@@ -107,7 +122,7 @@ describe('PluginContext', () => {
     it('应该设置画布工具', async () => {
       mockPermissionManager.validatePermission.mockReturnValue(true);
       
-      await pluginContext.canvas.setTool('brush');
+      await pluginContext.api.canvas.setTool('brush');
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
@@ -119,7 +134,7 @@ describe('PluginContext', () => {
     it('应该执行撤销操作', async () => {
       mockPermissionManager.validatePermission.mockReturnValue(true);
       
-      await pluginContext.canvas.undo();
+      await pluginContext.api.canvas.undo();
       
       expect(mockCanvas.undo).toHaveBeenCalled();
     });
@@ -131,9 +146,14 @@ describe('PluginContext', () => {
     });
 
     it('应该添加UI面板', async () => {
-      const panel = { id: 'test-panel', title: 'Test Panel', content: 'div' };
+      const panel = { 
+        id: 'test-panel', 
+        title: 'Test Panel', 
+        component: () => null, 
+        position: 'left' as const 
+      };
       
-      await pluginContext.ui.addPanel(panel);
+      await pluginContext.api.ui.addPanel(panel);
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
@@ -143,19 +163,25 @@ describe('PluginContext', () => {
     });
 
     it('应该显示通知', async () => {
-      await pluginContext.ui.showNotification('Test message', 'info');
+      const notification = {
+        type: 'info' as const,
+        title: 'Test',
+        message: 'Test message'
+      };
+      
+      await pluginContext.api.ui.showNotification(notification);
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
         PluginPermission.UI_MODIFY
       );
-      expect(mockUI.showNotification).toHaveBeenCalledWith('Test message', 'info');
+      expect(mockUI.showNotification).toHaveBeenCalledWith(notification);
     });
 
     it('应该添加菜单项', async () => {
       const menuItem = { id: 'test-menu', label: 'Test', action: vi.fn() };
       
-      await pluginContext.ui.addMenuItem(menuItem);
+      await pluginContext.api.ui.addMenuItem(menuItem);
       
       expect(mockUI.addMenuItem).toHaveBeenCalledWith(menuItem);
     });
@@ -164,7 +190,12 @@ describe('PluginContext', () => {
       mockPermissionManager.validatePermission.mockReturnValue(false);
       
       await expect(
-        pluginContext.ui.addPanel({ id: 'test', title: 'Test', content: 'div' })
+        pluginContext.api.ui.addPanel({ 
+          id: 'test', 
+          title: 'Test', 
+          component: () => null, 
+          position: 'left' as const 
+        })
       ).rejects.toThrow('Permission denied');
     });
   });
@@ -177,7 +208,7 @@ describe('PluginContext', () => {
     it('应该读取文件', async () => {
       mockFileSystem.readFile.mockResolvedValue('file content');
       
-      const content = await pluginContext.fileSystem.readFile('test.txt');
+      const content = await pluginContext.api.fileSystem.readFile('test.txt');
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
@@ -187,7 +218,7 @@ describe('PluginContext', () => {
     });
 
     it('应该写入文件', async () => {
-      await pluginContext.fileSystem.writeFile('test.txt', 'content');
+      await pluginContext.api.fileSystem.writeFile('test.txt', 'content');
       
       expect(mockPermissionManager.validatePermission).toHaveBeenCalledWith(
         pluginId,
@@ -199,7 +230,7 @@ describe('PluginContext', () => {
     it('应该列出文件', async () => {
       mockFileSystem.listFiles.mockResolvedValue(['file1.txt', 'file2.txt']);
       
-      const files = await pluginContext.fileSystem.listFiles('/path');
+      const files = await pluginContext.api.fileSystem.listFiles('/path');
       
       expect(files).toEqual(['file1.txt', 'file2.txt']);
     });
@@ -208,7 +239,7 @@ describe('PluginContext', () => {
       mockPermissionManager.validatePermission.mockReturnValue(false);
       
       await expect(
-        pluginContext.fileSystem.readFile('test.txt')
+        pluginContext.api.fileSystem.readFile('test.txt')
       ).rejects.toThrow('Permission denied');
     });
   });
@@ -433,10 +464,10 @@ describe('PluginContext', () => {
       const resource1 = { dispose: vi.fn() };
       const resource2 = { dispose: vi.fn() };
       
-      pluginContext.resources.register('resource1', resource1);
-      pluginContext.resources.register('resource2', resource2);
+      (pluginContext.resources as any).register('resource1', resource1);
+      (pluginContext.resources as any).register('resource2', resource2);
       
-      pluginContext.dispose();
+      (pluginContext as any).dispose();
       
       expect(resource1.dispose).toHaveBeenCalled();
       expect(resource2.dispose).toHaveBeenCalled();
@@ -446,7 +477,7 @@ describe('PluginContext', () => {
       const handler = vi.fn();
       
       pluginContext.events.on('test-event', handler);
-      pluginContext.dispose();
+      (pluginContext as any).dispose();
       pluginContext.events.emit('test-event', 'data');
       
       expect(handler).not.toHaveBeenCalled();
@@ -454,7 +485,7 @@ describe('PluginContext', () => {
 
     it('应该清空配置', () => {
       pluginContext.config.set('test', 'value');
-      pluginContext.dispose();
+      (pluginContext as any).dispose();
       
       expect(pluginContext.config.has('test')).toBe(false);
     });

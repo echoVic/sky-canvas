@@ -131,15 +131,20 @@ export class Scene extends SceneNode {
 
     // 使用活动摄像机的视口进行渲染
     const { ctx } = context;
-    ctx.save();
-
-    // 应用摄像机变换
-    this._activeCamera.applyViewTransform(ctx);
+    
+    // 只在Canvas 2D上下文中应用变换
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
+      // 应用摄像机变换
+      this._activeCamera.applyViewTransform(ctx);
+    }
 
     // 渲染场景内容
     super.render(context);
 
-    ctx.restore();
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.restore();
+    }
   }
 
   // 坐标转换
@@ -213,9 +218,11 @@ export class SceneLayer extends SceneNode {
   protected renderSelf(context: RenderContext): void {
     const { ctx } = context;
     
-    // 应用图层样式
-    ctx.globalAlpha *= this.opacity;
-    ctx.globalCompositeOperation = this.blendMode;
+    // 只在Canvas 2D上下文中应用图层样式
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.globalAlpha *= this.opacity;
+      ctx.globalCompositeOperation = this.blendMode;
+    }
   }
 }
 

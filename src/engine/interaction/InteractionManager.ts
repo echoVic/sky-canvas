@@ -675,6 +675,11 @@ export class InteractionManager extends EventDispatcher {
 
     const { ctx } = context;
     
+    // 只在Canvas 2D上下文中渲染调试信息
+    if (!(ctx instanceof CanvasRenderingContext2D)) {
+      return;
+    }
+    
     // 渲染选择框
     const selectTool = this._tools.get('select') as SelectTool;
     if (selectTool) {

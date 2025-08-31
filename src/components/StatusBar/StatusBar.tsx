@@ -125,26 +125,22 @@ const StatusBar: React.FC = () => {
               }
             }}
           >
-            {zoomLevels.map((level) => (
-              <DropdownItem
-                key={level}
-                className={zoom === level ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'}
+            <>
+              {zoomLevels.map((level) => (
+                <DropdownItem
+                  key={level}
+                  className={zoom === level ? 'bg-blue-50 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'}
+                >
+                  {level}%{zoom === level ? ' ✓' : ''}
+                </DropdownItem>
+              ))}
+              <DropdownItem 
+                key="fit"
+                className="text-gray-700 border-t border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
               >
-                <div className="flex items-center justify-between w-full">
-                  <span>{level}%</span>
-                  {zoom === level && <span className="text-blue-500">✓</span>}
-                </div>
+                🎯 适应内容
               </DropdownItem>
-            ))}
-            <DropdownItem 
-              key="fit"
-              className="text-gray-700 border-t border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
-            >
-              <div className="flex items-center gap-2">
-                <span>🎯</span>
-                <span>适应内容</span>
-              </div>
-            </DropdownItem>
+            </>
           </DropdownMenu>
         </Dropdown>
         

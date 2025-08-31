@@ -60,13 +60,13 @@ export interface TextureInfo {
  */
 export class WebGLTexture {
   public readonly id: string;
-  public readonly texture: WebGLTexture;
+  public readonly texture: globalThis.WebGLTexture;
   public readonly info: TextureInfo;
 
   constructor(
     gl: WebGLRenderingContext,
     id: string,
-    texture: WebGLTexture,
+    texture: globalThis.WebGLTexture,
     width: number,
     height: number,
     format: TextureFormat = TextureFormat.RGBA
@@ -133,7 +133,7 @@ export interface AtlasEntry {
  * 纹理图集
  */
 export class TextureAtlas {
-  private atlas: WebGLTexture;
+  private atlas: globalThis.WebGLTexture;
   private entries = new Map<string, AtlasEntry>();
   private size: number;
   private currentX = 0;
@@ -148,7 +148,7 @@ export class TextureAtlas {
     this.atlas = this.createAtlasTexture();
   }
 
-  private createAtlasTexture(): WebGLTexture {
+  private createAtlasTexture(): globalThis.WebGLTexture {
     const texture = this.gl.createTexture();
     if (!texture) {
       throw new Error('Failed to create atlas texture');
@@ -232,7 +232,7 @@ export class TextureAtlas {
     return this.entries.get(id);
   }
 
-  getTexture(): WebGLTexture {
+  getTexture(): globalThis.WebGLTexture {
     return this.atlas;
   }
 
@@ -350,7 +350,7 @@ export class WebGLTextureManager {
   private createTexture(
     imageData: ImageData | HTMLImageElement | HTMLCanvasElement,
     options: TextureOptions
-  ): WebGLTexture {
+  ): globalThis.WebGLTexture {
     const texture = this.gl.createTexture();
     if (!texture) {
       throw new Error('Failed to create WebGL texture');

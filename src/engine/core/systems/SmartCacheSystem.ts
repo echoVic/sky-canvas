@@ -170,7 +170,7 @@ class LZCompressor implements Compressor {
  * 智能缓存系统
  */
 @Extension({
-  type: ExtensionType.CoreSystem,
+  type: ExtensionType.Application,
   name: 'smart-cache-system',
   priority: 800
 })
@@ -446,7 +446,7 @@ export class SmartCacheSystem extends BaseSystem {
         victimKey = this.findAdaptiveVictim(cache);
         break;
       default:
-        victimKey = cache.keys().next().value;
+        victimKey = cache.keys().next().value || '';
     }
     
     const item = cache.get(victimKey)!;

@@ -4,8 +4,8 @@
  */
 import { IGraphicsContext } from '../core/IGraphicsContext';
 import { IShaderProgram, ShaderManager } from '../webgl/ShaderManager';
-import { IBuffer, IVertexArray, BufferType, BufferUsage } from '../webgl/BufferManager';
-import { IBatchData, IVertexLayout } from './Batcher';
+import { IBuffer, IVertexArray, BufferType, BufferUsage, IVertexLayout as WebGLVertexLayout, IVertexAttribute } from '../webgl/BufferManager';
+import { IBatchData, IVertexLayout as BatchVertexLayout } from './Batcher';
 import { Matrix2D } from '../math/Transform';
 
 /**
@@ -301,45 +301,37 @@ export class WebGLBatchRenderer implements IBatchRenderer {
     this.setupVertexAttributes(gl, shader, layout);
   }
   
-  private createVertexLayout(shader: IShaderProgram): IVertexLayout {
+  private createVertexLayout(shader: IShaderProgram): WebGLVertexLayout {
     // 创建标准的顶点布局
+    const attributes: IVertexAttribute[] = [
+      { name: 'a_position', size: 2, type: WebGLRenderingContext.FLOAT, normalized: false, offset: 0 },
+      { name: 'a_texCoord', size: 2, type: WebGLRenderingContext.FLOAT, normalized: false, offset: 8 },
+      { name: 'a_color', size: 4, type: WebGLRenderingContext.FLOAT, normalized: false, offset: 16 },
+    ];
     return {
-      position: 0,
-      texCoord: 2,
-      color: 4,
-      transformIndex: 8,
-      textureIndex: 9,
-      stride: 10 * 4 // 10 floats * 4 bytes
+      stride: 10 * 4, // 10 floats * 4 bytes
+      attributes
     };
   }
-  
+
   private setupVertexAttributes(
     gl: WebGLRenderingContext,
     shader: IShaderProgram,
-    layout: IVertexLayout
+    layout: WebGLVertexLayout
   ): void {
-    // 设置位置属性
-    const positionLoc = shader.getAttributeLocation('a_position');
-    if (positionLoc >= 0) {
-      gl.enableVertexAttribArray(positionLoc);
-      gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, layout.stride, layout.position);
-    }
-    
-    // 设置纹理坐标属性
-    if (layout.texCoord !== undefined) {
-      const texCoordLoc = shader.getAttributeLocation('a_texCoord');
-      if (texCoordLoc >= 0) {
-        gl.enableVertexAttribArray(texCoordLoc);
-        gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, layout.stride, layout.texCoord * 4);
-      }
-    }
-    
-    // 设置颜色属性
-    if (layout.color !== undefined) {
-      const colorLoc = shader.getAttributeLocation('a_color');
-      if (colorLoc >= 0) {
-        gl.enableVertexAttribArray(colorLoc);
-        gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, layout.stride, layout.color * 4);
+    // 设置顶点属性
+    for (const attribute of layout.attributes) {
+      const location = shader.getAttributeLocation(attribute.name);
+      if (location >= 0) {
+        gl.enableVertexAttribArray(location);
+        gl.vertexAttribPointer(
+          location,
+          attribute.size,
+          attribute.type,
+          attribute.normalized,
+          layout.stride,
+          attribute.offset
+        );
       }
     }
   }

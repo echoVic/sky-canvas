@@ -36,7 +36,7 @@ export class WebGLBuffer implements Buffer {
   data: ArrayBuffer;
   
   private gl: WebGLRenderingContext;
-  private buffer: WebGLBuffer | null = null;
+  private glBuffer: globalThis.WebGLBuffer | null = null;
   private glType: number;
 
   constructor(gl: WebGLRenderingContext, id: string, type: BufferType, data: ArrayBuffer, usage: number = gl.STATIC_DRAW) {
@@ -52,17 +52,17 @@ export class WebGLBuffer implements Buffer {
   }
 
   private createBuffer(): void {
-    this.buffer = this.gl.createBuffer();
-    if (this.buffer) {
-      this.gl.bindBuffer(this.glType, this.buffer);
+    this.glBuffer = this.gl.createBuffer();
+    if (this.glBuffer) {
+      this.gl.bindBuffer(this.glType, this.glBuffer);
       this.gl.bufferData(this.glType, this.data, this.usage);
     }
   }
 
   update(data: ArrayBuffer, offset: number = 0): void {
-    if (!this.buffer) return;
+    if (!this.glBuffer) return;
     
-    this.gl.bindBuffer(this.glType, this.buffer);
+    this.gl.bindBuffer(this.glType, this.glBuffer);
     if (offset === 0 && data.byteLength === this.size) {
       this.gl.bufferData(this.glType, data, this.usage);
     } else {
@@ -74,15 +74,15 @@ export class WebGLBuffer implements Buffer {
   }
 
   bind(): void {
-    if (this.buffer) {
-      this.gl.bindBuffer(this.glType, this.buffer);
+    if (this.glBuffer) {
+      this.gl.bindBuffer(this.glType, this.glBuffer);
     }
   }
 
   dispose(): void {
-    if (this.buffer) {
-      this.gl.deleteBuffer(this.buffer);
-      this.buffer = null;
+    if (this.glBuffer) {
+      this.gl.deleteBuffer(this.glBuffer);
+      this.glBuffer = null;
     }
   }
 }
@@ -99,7 +99,7 @@ export class WebGLTexture implements Texture {
   type: string = 'texture';
   
   private gl: WebGLRenderingContext;
-  private texture: WebGLTexture | null = null;
+  private glTexture: globalThis.WebGLTexture | null = null;
   private glFormat: number;
   private glType: number;
 
@@ -132,10 +132,10 @@ export class WebGLTexture implements Texture {
   }
 
   private createTexture(data?: ArrayBuffer): void {
-    this.texture = this.gl.createTexture();
-    if (!this.texture) return;
+    this.glTexture = this.gl.createTexture();
+    if (!this.glTexture) return;
 
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.glTexture);
     
     // 设置纹理参数
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
@@ -153,9 +153,9 @@ export class WebGLTexture implements Texture {
   }
 
   update(data: ArrayBuffer | ImageData, level: number = 0): void {
-    if (!this.texture) return;
+    if (!this.glTexture) return;
     
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.glTexture);
     
     if (data instanceof ImageData) {
       this.gl.texImage2D(this.gl.TEXTURE_2D, level, this.glFormat, this.glFormat, this.glType, data);
@@ -166,16 +166,16 @@ export class WebGLTexture implements Texture {
   }
 
   bind(unit: number = 0): void {
-    if (this.texture) {
+    if (this.glTexture) {
       this.gl.activeTexture(this.gl.TEXTURE0 + unit);
-      this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.glTexture);
     }
   }
 
   dispose(): void {
-    if (this.texture) {
-      this.gl.deleteTexture(this.texture);
-      this.texture = null;
+    if (this.glTexture) {
+      this.gl.deleteTexture(this.glTexture);
+      this.glTexture = null;
     }
   }
 }

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { IShape, ISize, PathShape } from '@sky-canvas/canvas-sdk';
-import { IPoint } from '@sky-canvas/render-engine';
+import { IShape, ISize, ShapeType } from '@sky-canvas/canvas-sdk';
+import { IPoint, IRect } from '@sky-canvas/render-engine';
 
 /**
  * 工具类型定义（与UI store保持一致）
@@ -26,10 +26,21 @@ export type ToolType =
 abstract class BaseShape implements IShape {
   public visible: boolean = true;
   public zIndex: number = 0;
+  public selected: boolean = false;
+  public locked: boolean = false;
+
+  get bounds(): IRect {
+    return {
+      x: this.position.x,
+      y: this.position.y,
+      width: this.size.width,
+      height: this.size.height
+    };
+  }
 
   constructor(
     public readonly id: string,
-    public readonly type: any,
+    public readonly type: ShapeType,
     public position: IPoint,
     public size: ISize
   ) {}
@@ -38,6 +49,49 @@ abstract class BaseShape implements IShape {
   abstract getBounds(): any;
   abstract hitTest(point: IPoint): boolean;
   abstract clone(): IShape;
+  
+  update(update: any): void {
+    if (update.position) {
+      this.position = { ...this.position, ...update.position };
+    }
+    if (update.size) {
+      this.size = { ...this.size, ...update.size };
+    }
+    if (update.visible !== undefined) {
+      this.visible = update.visible;
+    }
+    if (update.zIndex !== undefined) {
+      this.zIndex = update.zIndex;
+    }
+    if (update.selected !== undefined) {
+      this.selected = update.selected;
+    }
+    if (update.locked !== undefined) {
+      this.locked = update.locked;
+    }
+  }
+  
+  serialize(): any {
+    return {
+      id: this.id,
+      type: this.type,
+      position: this.position,
+      size: this.size,
+      visible: this.visible,
+      zIndex: this.zIndex,
+      selected: this.selected,
+      locked: this.locked
+    };
+  }
+  
+  deserialize(data: any): void {
+    this.position = data.position;
+    this.size = data.size;
+    this.visible = data.visible;
+    this.zIndex = data.zIndex;
+    this.selected = data.selected;
+    this.locked = data.locked;
+  }
   
   dispose(): void {
     // 基础清理逻辑

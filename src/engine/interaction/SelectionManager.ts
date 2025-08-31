@@ -207,7 +207,7 @@ export class SelectionManager extends EventDispatcher {
   }
 
   getFirstSelected(): ISceneNode | null {
-    return this._selectedNodes.size > 0 ? this._selectedNodes.values().next().value : null;
+    return this._selectedNodes.size > 0 ? this._selectedNodes.values().next().value || null : null;
   }
 
   getLastSelected(): ISceneNode | null {

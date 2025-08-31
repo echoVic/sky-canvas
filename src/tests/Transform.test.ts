@@ -52,7 +52,7 @@ describe('Transform', () => {
   describe('矩阵变换', () => {
     test('应该能获取变换矩阵', () => {
       const transform = new Transform();
-      const matrix = transform.getMatrix();
+      const matrix = transform.matrix;
       
       expect(matrix).toBeDefined();
     });
@@ -67,7 +67,7 @@ describe('Transform', () => {
       transform.rotation = rotation;
       transform.scale = scale.clone();
       
-      const matrix = transform.getMatrix();
+      const matrix = transform.matrix;
       const newTransform = Transform.fromMatrix(matrix);
       
       expect(newTransform.position.x).toBeCloseTo(position.x, 5);

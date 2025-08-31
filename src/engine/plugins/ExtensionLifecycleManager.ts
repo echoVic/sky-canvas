@@ -235,7 +235,7 @@ export class ExtensionLifecycleManager {
     } catch (error) {
       // 清理上下文
       if (extensionInstance.context) {
-        extensionInstance.context.dispose();
+        (extensionInstance.context as any).dispose();
         extensionInstance.context = undefined;
       }
       
@@ -264,7 +264,7 @@ export class ExtensionLifecycleManager {
 
       // 清理上下文
       if (extensionInstance.context) {
-        extensionInstance.context.dispose();
+        (extensionInstance.context as any).dispose();
         extensionInstance.context = undefined;
       }
 

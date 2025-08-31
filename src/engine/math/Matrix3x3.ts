@@ -185,6 +185,14 @@ export class Matrix3x3 {
     );
   }
 
+  transformPoint(point: Vector2): Vector2 {
+    const e = this.elements;
+    return new Vector2(
+      e[0] * point.x + e[3] * point.y + e[6],
+      e[1] * point.x + e[4] * point.y + e[7]
+    );
+  }
+
   // 变换矩阵创建
   static translation(x: number, y: number): Matrix3x3 {
     return new Matrix3x3(

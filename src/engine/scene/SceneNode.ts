@@ -1,5 +1,4 @@
 import { Point, Rect, RenderContext } from '../../types';
-import { Drawable } from '../core';
 import { Transform, Vector2 } from '../math';
 
 /**
@@ -14,12 +13,14 @@ export interface ISceneNode {
   visible: boolean;
   enabled: boolean;
   zIndex: number;
-  
+
   addChild(child: ISceneNode): void;
   removeChild(child: ISceneNode): void;
   removeFromParent(): void;
   getWorldTransform(): Transform;
   getWorldBounds(): Rect;
+  getBounds(): Rect;
+  findChildRecursive(id: string): ISceneNode | null;
   hitTest(point: Point): ISceneNode | null;
   update(deltaTime: number): void;
   render(context: RenderContext): void;
@@ -29,7 +30,7 @@ export interface ISceneNode {
 /**
  * 场景节点基类
  */
-export abstract class SceneNode implements ISceneNode, Drawable {
+export abstract class SceneNode implements ISceneNode {
   public id: string;
   public name: string;
   public parent: ISceneNode | null = null;
@@ -222,13 +223,17 @@ export abstract class SceneNode implements ISceneNode, Drawable {
     if (!this.visible) return;
 
     const { ctx } = context;
-    ctx.save();
+    
+    // 只在Canvas 2D上下文中使用变换
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.save();
 
-    // 应用世界变换
-    const worldTransform = this.getWorldTransform();
-    const matrix = worldTransform.matrix;
-    const e = matrix.elements;
-    ctx.transform(e[0], e[1], e[3], e[4], e[6], e[7]);
+      // 应用世界变换
+      const worldTransform = this.getWorldTransform();
+      const matrix = worldTransform.matrix;
+      const e = matrix.elements;
+      ctx.transform(e[0], e[1], e[3], e[4], e[6], e[7]);
+    }
 
     // 渲染自身
     this.renderSelf(context);
@@ -238,7 +243,9 @@ export abstract class SceneNode implements ISceneNode, Drawable {
       child.render(context);
     }
 
-    ctx.restore();
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.restore();
+    }
   }
 
   // 抽象方法，子类实现

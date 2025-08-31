@@ -183,7 +183,7 @@ export class UniversalBatcher implements IBatcher {
     };
   }
   
-  private getBatchKey(command: IRenderCommand): string {
+  protected getBatchKey(command: IRenderCommand): string {
     const mk = command.materialKey;
     // 使用类型、纹理、着色器、混合模式作为批次键
     return `${command.type}_${mk.textureId || 'none'}_${mk.shaderId || 'default'}_${mk.blendMode || 'normal'}`;

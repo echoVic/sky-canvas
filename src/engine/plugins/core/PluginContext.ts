@@ -52,7 +52,7 @@ class PluginAPIImpl implements PluginAPI {
     getRenderer: () => {
       this.checkPermission('canvas.getRenderer');
       // 返回当前渲染器实例
-      return window.currentRenderer || null;
+      return (window as any).currentRenderer || null;
     },
 
     addShape: (shape: any) => {
@@ -79,7 +79,7 @@ class PluginAPIImpl implements PluginAPI {
     getShapes: () => {
       this.checkPermission('canvas.getShapes');
       // 获取所有图形
-      return window.currentShapes || [];
+      return (window as any).currentShapes || [];
     },
 
     clear: () => {
@@ -87,6 +87,88 @@ class PluginAPIImpl implements PluginAPI {
       // 清空画布
       const event = new CustomEvent('plugin:clearCanvas', { detail: { pluginId: this.pluginId } });
       window.dispatchEvent(event);
+    },
+
+    // 兼容方法
+    addElement: (element: any) => {
+      this.checkPermission('canvas.addShape');
+      // 添加元素（兼容方法）
+      const event = new CustomEvent('plugin:addShape', { detail: { shape: element, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    removeElement: (id: string) => {
+      this.checkPermission('canvas.removeShape');
+      // 移除元素（兼容方法）
+      const event = new CustomEvent('plugin:removeShape', { detail: { id, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    updateElement: (id: string, updates: any) => {
+      this.checkPermission('canvas.updateShape');
+      // 更新元素（兼容方法）
+      const event = new CustomEvent('plugin:updateShape', { detail: { id, updates, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    getElement: (id: string) => {
+      this.checkPermission('canvas.getShapes');
+      // 获取元素（兼容方法）
+      const shapes = (window as any).currentShapes || [];
+      return shapes.find((shape: any) => shape.id === id) || null;
+    },
+
+    getAllElements: () => {
+      this.checkPermission('canvas.getShapes');
+      // 获取所有元素（兼容方法）
+      return (window as any).currentShapes || [];
+    },
+
+    setTool: (tool: string) => {
+      this.checkPermission('canvas.setTool');
+      // 设置工具
+      const event = new CustomEvent('plugin:setTool', { detail: { tool, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    getTool: () => {
+      this.checkPermission('canvas.getTool');
+      // 获取当前工具
+      return (window as any).currentTool || null;
+    },
+
+    undo: () => {
+      this.checkPermission('canvas.undo');
+      // 撤销操作
+      const event = new CustomEvent('plugin:undo', { detail: { pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    redo: () => {
+      this.checkPermission('canvas.redo');
+      // 重做操作
+      const event = new CustomEvent('plugin:redo', { detail: { pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    zoom: (factor: number) => {
+      this.checkPermission('canvas.zoom');
+      // 缩放操作
+      const event = new CustomEvent('plugin:zoom', { detail: { factor, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    pan: (delta: { x: number; y: number }) => {
+      this.checkPermission('canvas.pan');
+      // 平移操作
+      const event = new CustomEvent('plugin:pan', { detail: { delta, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    getViewport: () => {
+      this.checkPermission('canvas.getViewport');
+      // 获取视口信息
+      return (window as any).currentViewport || null;
     }
   };
 
@@ -208,6 +290,45 @@ class PluginAPIImpl implements PluginAPI {
     }
   };
 
+  fileSystem = {
+    readFile: async (path: string) => {
+      this.checkPermission('fileSystem.readFile');
+      // 读取文件
+      const event = new CustomEvent('plugin:readFile', { detail: { path, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+      return '';
+    },
+
+    writeFile: async (path: string, content: string) => {
+      this.checkPermission('fileSystem.writeFile');
+      // 写入文件
+      const event = new CustomEvent('plugin:writeFile', { detail: { path, content, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    deleteFile: async (path: string) => {
+      this.checkPermission('fileSystem.deleteFile');
+      // 删除文件
+      const event = new CustomEvent('plugin:deleteFile', { detail: { path, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    },
+
+    listFiles: async (path: string) => {
+      this.checkPermission('fileSystem.listFiles');
+      // 列出文件
+      const event = new CustomEvent('plugin:listFiles', { detail: { path, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+      return [];
+    },
+
+    createDirectory: async (path: string) => {
+      this.checkPermission('fileSystem.createDirectory');
+      // 创建目录
+      const event = new CustomEvent('plugin:createDirectory', { detail: { path, pluginId: this.pluginId } });
+      window.dispatchEvent(event);
+    }
+  };
+
   tools = {
     register: (tool: Tool) => {
       this.checkPermission('tools.register');
@@ -226,7 +347,7 @@ class PluginAPIImpl implements PluginAPI {
     },
 
     getActive: (): Tool | null => {
-      return window.currentTool || null;
+      return (window as any).currentTool || null;
     },
 
     setActive: (id: string) => {
@@ -256,7 +377,7 @@ class PluginAPIImpl implements PluginAPI {
     },
 
     getAvailable: (): CustomRenderer[] => {
-      return window.availableRenderers || [];
+      return (window as any).availableRenderers || [];
     }
   };
 
@@ -281,7 +402,7 @@ class PluginConfigImpl implements PluginConfig {
   }
 
   get<T = any>(key: string, defaultValue?: T): T {
-    return this.storage.has(key) ? this.storage.get(key) : defaultValue;
+    return this.storage.has(key) ? this.storage.get(key) : defaultValue as T;
   }
 
   set(key: string, value: any): void {
@@ -382,6 +503,7 @@ class PluginEventEmitterImpl implements PluginEventEmitter {
  */
 class PluginResourceManagerImpl implements PluginResourceManager {
   private cache = new Map<string, any>();
+  private resources = new Map<string, any>();
   private baseUrl: string;
 
   constructor(pluginId: string) {
@@ -431,6 +553,40 @@ class PluginResourceManagerImpl implements PluginResourceManager {
 
   cleanup(): void {
     this.cache.clear();
+    this.releaseAll();
+  }
+
+  // 资源注册和管理方法
+  register(key: string, resource: any): void {
+    this.resources.set(key, resource);
+  }
+
+  get(key: string): any {
+    return this.resources.get(key);
+  }
+
+  has(key: string): boolean {
+    return this.resources.has(key);
+  }
+
+  release(key: string): void {
+    const resource = this.resources.get(key);
+    if (resource) {
+      try {
+        if (typeof resource.dispose === 'function') {
+          resource.dispose();
+        }
+      } catch (error) {
+        console.warn(`Error disposing resource '${key}':`, error);
+      }
+      this.resources.delete(key);
+    }
+  }
+
+  releaseAll(): void {
+    for (const [key] of this.resources) {
+      this.release(key);
+    }
   }
 }
 

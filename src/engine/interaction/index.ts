@@ -1,8 +1,13 @@
-export { CollisionDetector, CollisionResult, SpatialGrid } from './CollisionDetection';
+export { CollisionDetector, SpatialGrid } from './CollisionDetection';
+export type { CollisionResult } from './CollisionDetection';
 export {
   InteractionManager,
-  InteractionMode,
-  InteractionTool, PanTool, SelectTool, ZoomTool
+  PanTool, SelectTool, ZoomTool
 } from './InteractionManager';
-export { SelectionFilter, SelectionManager, SelectionMode } from './SelectionManager';
+export type {
+  InteractionMode,
+  InteractionTool
+} from './InteractionManager';
+export { SelectionManager } from './SelectionManager';
+export type { SelectionFilter, SelectionMode } from './SelectionManager';
 

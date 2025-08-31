@@ -21,6 +21,7 @@ export class PermissionManager {
   private grantedPermissions = new Map<string, Map<PluginPermission, PermissionGrant>>();
   private permissionCallbacks = new Map<PluginPermission, Set<Function>>();
   private securityPolicies = new Map<PluginPermission, SecurityPolicy>();
+  private eventListeners = new Map<string, Set<Function>>();
 
   constructor() {
     this.initializeDefaultPolicies();
@@ -76,16 +77,26 @@ export class PermissionManager {
   /**
    * 检查权限
    */
-  async checkPermissions(permissions: PluginPermission[]): Promise<void> {
-    for (const permission of permissions) {
-      const policy = this.securityPolicies.get(permission);
-      if (!policy) {
-        throw new Error(`Unknown permission: ${permission}`);
-      }
+  async checkPermissions(permissions: PluginPermission[]): Promise<boolean> {
+    try {
+      for (const permission of permissions) {
+        const policy = this.securityPolicies.get(permission);
+        if (!policy) {
+          this.emit('permission:checked', permissions, false);
+          return false;
+        }
 
-      if (policy.riskLevel === 'critical') {
-        throw new Error(`Permission '${permission}' is not allowed`);
+        if (policy.riskLevel === 'critical') {
+          this.emit('permission:checked', permissions, false);
+          return false;
+        }
       }
+      
+      this.emit('permission:checked', permissions, true);
+      return true;
+    } catch (error) {
+      this.emit('permission:checked', permissions, false);
+      return false;
     }
   }
 
@@ -176,6 +187,9 @@ export class PermissionManager {
 
     // 触发权限授予回调
     this.triggerPermissionCallbacks(permission, pluginId, true);
+    
+    // 触发权限授予事件
+    this.emit('permission:granted', pluginId, permission);
   }
 
   /**
@@ -186,8 +200,16 @@ export class PermissionManager {
     if (pluginPermissions) {
       pluginPermissions.delete(permission);
       
+      // 如果插件没有任何权限了，移除整个条目
+      if (pluginPermissions.size === 0) {
+        this.grantedPermissions.delete(pluginId);
+      }
+      
       // 触发权限撤销回调
       this.triggerPermissionCallbacks(permission, pluginId, false);
+      
+      // 触发权限撤销事件
+      this.emit('permission:revoked', pluginId, permission);
     }
   }
 
@@ -259,6 +281,19 @@ export class PermissionManager {
       'canvas.clear': PluginPermission.CANVAS_MODIFY,
       'canvas.getShapes': PluginPermission.READ_ONLY,
       'canvas.getRenderer': PluginPermission.READ_ONLY,
+      // 兼容方法权限
+      'canvas.addElement': PluginPermission.CANVAS_MODIFY,
+      'canvas.removeElement': PluginPermission.CANVAS_MODIFY,
+      'canvas.updateElement': PluginPermission.CANVAS_MODIFY,
+      'canvas.getElement': PluginPermission.READ_ONLY,
+      'canvas.getAllElements': PluginPermission.READ_ONLY,
+      'canvas.setTool': PluginPermission.CANVAS_MODIFY,
+      'canvas.getTool': PluginPermission.READ_ONLY,
+      'canvas.undo': PluginPermission.CANVAS_MODIFY,
+      'canvas.redo': PluginPermission.CANVAS_MODIFY,
+      'canvas.zoom': PluginPermission.CANVAS_MODIFY,
+      'canvas.pan': PluginPermission.CANVAS_MODIFY,
+      'canvas.getViewport': PluginPermission.READ_ONLY,
 
       // UI API
       'ui.addMenuItem': PluginPermission.UI_MODIFY,
@@ -275,6 +310,13 @@ export class PermissionManager {
       'file.save': PluginPermission.FILE_ACCESS,
       'file.import': PluginPermission.FILE_ACCESS,
       'file.export': PluginPermission.FILE_ACCESS,
+
+      // 文件系统API
+      'fileSystem.readFile': PluginPermission.FILE_ACCESS,
+      'fileSystem.writeFile': PluginPermission.FILE_ACCESS,
+      'fileSystem.deleteFile': PluginPermission.FILE_ACCESS,
+      'fileSystem.listFiles': PluginPermission.FILE_ACCESS,
+      'fileSystem.createDirectory': PluginPermission.FILE_ACCESS,
 
       // 工具API
       'tools.register': PluginPermission.CANVAS_MODIFY,
@@ -405,11 +447,106 @@ export class PermissionManager {
   }
 
   /**
+   * 导出权限配置
+   */
+  exportPermissions(): Record<string, PluginPermission[]> {
+    const exported: Record<string, PluginPermission[]> = {};
+    
+    for (const [pluginId, permissions] of this.grantedPermissions) {
+      exported[pluginId] = Array.from(permissions.keys());
+    }
+    
+    return exported;
+  }
+
+  /**
+   * 导入权限配置
+   */
+  importPermissions(permissions: Record<string, PluginPermission[]>): void {
+    // 清除现有权限
+    this.grantedPermissions.clear();
+    
+    // 导入新权限
+    for (const [pluginId, pluginPermissions] of Object.entries(permissions)) {
+      for (const permission of pluginPermissions) {
+        this.grantPermission(pluginId, permission, true);
+      }
+    }
+  }
+
+  /**
+   * 重置所有权限
+   */
+  resetAllPermissions(): void {
+    this.grantedPermissions.clear();
+    this.permissionCallbacks.clear();
+  }
+
+  /**
+   * 获取所有权限
+   */
+  getAllPermissions(): Record<string, PluginPermission[]> {
+    return this.exportPermissions();
+  }
+
+  /**
+   * 验证权限
+   */
+  validatePermission(pluginId: string, permission: PluginPermission): boolean {
+    return this.hasPermission(pluginId, permission);
+  }
+
+  /**
+   * 检查是否为高风险权限
+   */
+  isHighRiskPermission(permission: PluginPermission): boolean {
+    const policy = this.securityPolicies.get(permission);
+    return policy ? (policy.riskLevel === 'high' || policy.riskLevel === 'critical') : false;
+  }
+
+  /**
+   * 注册事件监听器
+   */
+  on(event: string, callback: Function): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, new Set());
+    }
+    this.eventListeners.get(event)!.add(callback);
+  }
+
+  /**
+   * 移除事件监听器
+   */
+  off(event: string, callback: Function): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.delete(callback);
+    }
+  }
+
+  /**
+   * 触发事件
+   */
+  private emit(event: string, ...args: any[]): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      for (const listener of listeners) {
+        try {
+          listener(...args);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      }
+    }
+  }
+
+  /**
    * 清理所有权限
    */
   clear(): void {
     this.grantedPermissions.clear();
     this.permissionCallbacks.clear();
+    this.eventListeners.clear();
   }
 }
 

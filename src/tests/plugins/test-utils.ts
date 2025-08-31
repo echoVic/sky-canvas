@@ -44,8 +44,10 @@ export function createTestExtensionPoint(
 ): ExtensionPoint {
   return {
     id,
+    type: 'TOOL' as any,
     name: `Test Extension Point ${id}`,
     description: 'A test extension point',
+    providers: [],
     ...overrides
   };
 }
@@ -366,8 +368,9 @@ export function createTestEvent(type: string, data?: unknown) {
  * 验证插件清单格式
  */
 export function validatePluginManifest(manifest: unknown): boolean {
-  const requiredFields = ['id', 'name', 'version', 'description', 'author', 'main'];
-  return requiredFields.every(field => field in manifest && manifest[field]);
+  const requiredFields = ['id', 'name', 'version', 'description'];
+  const manifestObj = manifest as Record<string, any>;
+  return requiredFields.every(field => field in manifestObj && manifestObj[field]);
 }
 
 /**

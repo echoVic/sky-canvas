@@ -2,6 +2,7 @@ import { Point, Rect, RenderContext } from '../../types';
 import { BaseRenderer, Drawable, RendererCapabilities, RenderState } from '../core';
 import {
   BlendMode,
+  Buffer,
   BufferType,
   RenderStats
 } from '../core/RenderTypes';
@@ -50,7 +51,7 @@ export class WebGLRenderer extends BaseRenderer {
   
   // 实例渲染支持
   private instancedArrays: ANGLE_instanced_arrays | null = null;
-  private instanceBuffer: WebGLBuffer | null = null;
+  private instanceBuffer: Buffer | null = null;
   private maxInstances = 1000;
   
   // 动态几何缓存
@@ -79,15 +80,15 @@ export class WebGLRenderer extends BaseRenderer {
   private projectionMatrix = Matrix3x3.identity();
   
   // 缓冲区
-  private vertexBuffer: WebGLBuffer | null = null;
-  private indexBuffer: WebGLBuffer | null = null;
+  private vertexBuffer: Buffer | null = null;
+  private indexBuffer: Buffer | null = null;
 
   initialize(canvas: HTMLCanvasElement, options?: {
     enablePerformanceMonitoring?: boolean;
     enableMemoryOptimization?: boolean;
   }): boolean {
     // 获取WebGL上下文
-    this.gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    this.gl = canvas.getContext('webgl') as WebGLRenderingContext || canvas.getContext('experimental-webgl') as WebGLRenderingContext;
     if (!this.gl) {
       console.error('WebGL not supported');
       return false;
@@ -279,7 +280,7 @@ export class WebGLRenderer extends BaseRenderer {
       const aBlend = this.getDrawableBlendMode(a);
       const bBlend = this.getDrawableBlendMode(b);
       if (aBlend !== bBlend) {
-        return aBlend - bBlend;
+        return Object.values(BlendMode).indexOf(aBlend) - Object.values(BlendMode).indexOf(bBlend);
       }
 
       // 最后按深度排序
@@ -473,7 +474,7 @@ export class WebGLRenderer extends BaseRenderer {
       case BlendMode.NORMAL:
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
         break;
-      case BlendMode.ADDITIVE:
+      case BlendMode.ADD:
         this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
         break;
       case BlendMode.MULTIPLY:

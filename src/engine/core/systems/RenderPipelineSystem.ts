@@ -154,13 +154,15 @@ export class RenderPipelineSystem extends BaseSystem {
     if (data.type === 'prepared') {
       // 处理准备完成的任务
       const tasks = this.workerTasks.get(workerId) || [];
-      tasks.forEach((task, index) => {
-        const result = data.results[index];
-        if (result && result.visible) {
-          // 任务可见，添加到渲染队列
-          this.addToRenderQueue(task);
-        }
-      });
+      if (data.results) {
+        tasks.forEach((task, index) => {
+          const result = data.results?.[index] as { visible?: boolean };
+          if (result && result.visible) {
+            // 任务可见，添加到渲染队列
+            this.addToRenderQueue(task);
+          }
+        });
+      }
       this.workerTasks.set(workerId, []);
     }
   }

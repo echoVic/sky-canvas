@@ -120,11 +120,12 @@ export const measurePerformance = async (fn: () => Promise<void> | void) => {
 
 // 内存测试工具
 export const getMemoryUsage = () => {
-  if (performance.memory) {
+  const perfWithMemory = performance as any;
+  if (perfWithMemory.memory) {
     return {
-      used: performance.memory.usedJSHeapSize,
-      total: performance.memory.totalJSHeapSize,
-      limit: performance.memory.jsHeapSizeLimit,
+      used: perfWithMemory.memory.usedJSHeapSize,
+      total: perfWithMemory.memory.totalJSHeapSize,
+      limit: perfWithMemory.memory.jsHeapSizeLimit,
     };
   }
   return null;

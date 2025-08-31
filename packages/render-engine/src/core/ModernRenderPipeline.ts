@@ -82,8 +82,8 @@ export interface IModernRenderPipeline {
 export class WebGLModernRenderPipeline implements IModernRenderPipeline {
   readonly commandRenderer: ICommandRenderer;
   readonly coordinateSystem: CoordinateSystemManager;
-  readonly shaderManager: IShaderManager;
-  readonly bufferManager: IBufferManager;
+  readonly shaderManager!: IShaderManager;
+  readonly bufferManager!: IBufferManager;
   readonly transformStack: TransformStack;
   
   private gl: WebGLRenderingContext | null = null;
@@ -118,8 +118,8 @@ export class WebGLModernRenderPipeline implements IModernRenderPipeline {
     }
     
     // 创建管理器
-    this.shaderManager = new ShaderManager(this.gl);
-    this.bufferManager = new BufferManager(this.gl);
+    (this as any).shaderManager = new ShaderManager(this.gl);
+    (this as any).bufferManager = new BufferManager(this.gl);
     
     // 更新坐标系统配置
     this.coordinateSystem.updateViewport(config);

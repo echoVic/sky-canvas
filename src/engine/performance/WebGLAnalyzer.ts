@@ -86,7 +86,7 @@ export class WebGLPerformanceAnalyzer {
   
   // GPU查询对象
   private gpuTimer: WebGLQuery | null = null;
-  private timerExt: EXT_disjoint_timer_query | null = null;
+  private timerExt: any | null = null;
 
   constructor(
     private gl: WebGLRenderingContext,
