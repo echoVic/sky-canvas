@@ -14,13 +14,14 @@ export const BASIC_SHAPE_SHADER: IShaderSource = {
     attribute vec2 a_position;
     attribute vec4 a_color;
     
-    uniform mat4 u_projection;
-    uniform mat4 u_modelView;
+    uniform mat3 u_transform;
+    uniform mat3 u_projection;
     
     varying vec4 v_color;
     
     void main() {
-      gl_Position = u_projection * u_modelView * vec4(a_position, 0.0, 1.0);
+      vec3 position = u_projection * u_transform * vec3(a_position, 1.0);
+      gl_Position = vec4(position.xy, 0.0, 1.0);
       v_color = a_color;
     }
   `,
@@ -46,14 +47,15 @@ export const TEXTURE_SHADER: IShaderSource = {
     attribute vec2 a_texCoord;
     attribute vec4 a_color;
     
-    uniform mat4 u_projection;
-    uniform mat4 u_modelView;
+    uniform mat3 u_transform;
+    uniform mat3 u_projection;
     
     varying vec2 v_texCoord;
     varying vec4 v_color;
     
     void main() {
-      gl_Position = u_projection * u_modelView * vec4(a_position, 0.0, 1.0);
+      vec3 position = u_projection * u_transform * vec3(a_position, 1.0);
+      gl_Position = vec4(position.xy, 0.0, 1.0);
       v_texCoord = a_texCoord;
       v_color = a_color;
     }
@@ -69,6 +71,34 @@ export const TEXTURE_SHADER: IShaderSource = {
     void main() {
       vec4 texColor = texture2D(u_texture, v_texCoord);
       gl_FragColor = texColor * v_color;
+    }
+  `
+};
+
+/**
+ * 单色着色器 - 用于单一颜色绘制
+ */
+export const SOLID_COLOR_SHADER: IShaderSource = {
+  name: 'solid_color',
+  version: '1.0.0',
+  vertex: `
+    attribute vec2 a_position;
+    
+    uniform mat3 u_transform;
+    uniform mat3 u_projection;
+    
+    void main() {
+      vec3 position = u_projection * u_transform * vec3(a_position, 1.0);
+      gl_Position = vec4(position.xy, 0.0, 1.0);
+    }
+  `,
+  fragment: `
+    precision mediump float;
+    
+    uniform vec4 u_color;
+    
+    void main() {
+      gl_FragColor = u_color;
     }
   `
 };
@@ -346,6 +376,7 @@ export const POST_PROCESS_SHADER: IShaderSource = {
 export const SHADER_LIBRARY = {
   BASIC_SHAPE: BASIC_SHAPE_SHADER,
   TEXTURE: TEXTURE_SHADER,
+  SOLID_COLOR: SOLID_COLOR_SHADER,
   SDF_CIRCLE: SDF_CIRCLE_SHADER,
   SDF_RECT: SDF_RECT_SHADER,
   BATCH: BATCH_SHADER,

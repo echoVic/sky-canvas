@@ -3,7 +3,7 @@
  * 将批处理数据高效地渲染到GPU
  */
 import { IGraphicsContext } from '../core/IGraphicsContext';
-import { IShaderProgram } from '../webgl/ShaderManager';
+import { IShaderProgram, ShaderManager } from '../webgl/ShaderManager';
 import { IBuffer, IVertexArray, BufferType, BufferUsage } from '../webgl/BufferManager';
 import { IBatchData, IVertexLayout } from './Batcher';
 import { Matrix2D } from '../math/Transform';
@@ -362,10 +362,34 @@ export class WebGLBatchRenderer implements IBatchRenderer {
     return `${material.shaderId || 'default'}_${material.textureId || 'none'}_${material.blendMode || 'normal'}`;
   }
   
+  private shaderManager: ShaderManager | null = null;
+  
+  /**
+   * 设置着色器管理器
+   */
+  setShaderManager(shaderManager: ShaderManager): void {
+    this.shaderManager = shaderManager;
+  }
+
   private getShaderForMaterial(gl: WebGLRenderingContext, materialKey: string): IShaderProgram | null {
-    // 这里应该从着色器管理器获取合适的着色器
-    // 现在返回null作为占位符
-    return null;
+    if (!this.shaderManager) {
+      console.warn('ShaderManager not set for WebGLBatchRenderer');
+      return null;
+    }
+
+    // 根据材质键解析着色器类型
+    const [shaderId] = materialKey.split('_');
+    
+    switch (shaderId) {
+      case 'basic':
+        return this.shaderManager.getShaderByName('basic_shape');
+      case 'texture':
+        return this.shaderManager.getShaderByName('texture');
+      case 'solid':
+        return this.shaderManager.getShaderByName('solid_color');
+      default:
+        return this.shaderManager.getShaderByName('basic_shape');
+    }
   }
   
   private parseColor(colorString: string): number[] {

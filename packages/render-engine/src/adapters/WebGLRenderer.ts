@@ -273,8 +273,26 @@ export class WebGLRenderer {
   }
 
   private isRenderableInViewport(renderable: IRenderable, viewport: IViewport): boolean {
-    // 简化的视口剔除
-    return true; // 暂时返回true，实际应该做边界检测
+    const bounds = renderable.getBounds();
+    const cullMargin = 50; // 剔除边距
+    
+    // 计算视口在世界坐标中的边界
+    const viewportLeft = viewport.x - cullMargin;
+    const viewportRight = viewport.x + viewport.width + cullMargin;
+    const viewportTop = viewport.y - cullMargin;
+    const viewportBottom = viewport.y + viewport.height + cullMargin;
+    
+    // 检查对象边界是否与视口相交
+    const objectLeft = bounds.x;
+    const objectRight = bounds.x + bounds.width;
+    const objectTop = bounds.y;
+    const objectBottom = bounds.y + bounds.height;
+    
+    // AABB相交检测
+    return !(objectRight < viewportLeft || 
+             objectLeft > viewportRight || 
+             objectBottom < viewportTop || 
+             objectTop > viewportBottom);
   }
 
   private renderBatched(renderables: IRenderable[]): void {
@@ -295,8 +313,26 @@ export class WebGLRenderer {
   }
 
   private generateBatchKey(renderable: IRenderable): string {
-    // 简化的批次键生成
-    return 'basic';
+    // 根据渲染对象的特性生成批处理键
+    // 相同键的对象可以在同一批次中渲染
+    
+    // 检查对象是否有纹理（假设可渲染对象有getTexture方法）
+    const hasTexture = this.renderableHasTexture(renderable);
+    const shaderType = hasTexture ? 'texture' : 'basic';
+    
+    // 检查混合模式（简化实现）
+    const blendMode = 'normal'; // 可扩展为从renderable获取
+    
+    // 检查Z索引范围，相近的可以批处理
+    const zRange = Math.floor(renderable.zIndex / 10) * 10;
+    
+    return `${shaderType}_${blendMode}_z${zRange}`;
+  }
+  
+  private renderableHasTexture(renderable: IRenderable): boolean {
+    // 简化实现：检查renderable是否有纹理相关属性
+    // 实际实现中可以检查对象类型或属性
+    return false; // 默认无纹理
   }
 
   private addRenderableToBatch(renderable: IRenderable, batchKey: string): void {

@@ -2,6 +2,8 @@
  * WebGL图形上下文实现
  */
 import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../core/IGraphicsContext';
+import { Matrix3 } from '../math/Matrix3';
+import { WebGLRenderManager } from './WebGLRenderManager';
 
 export interface IWebGLContext extends IGraphicsContext {
   readonly gl: WebGLRenderingContext;
@@ -50,10 +52,40 @@ class WebGLContext implements IWebGLContext {
   public readonly height: number;
   public readonly gl: WebGLRenderingContext;
 
+  // 变换矩阵栈
+  private transformStack: Matrix3[] = [];
+  private currentTransform: Matrix3;
+  private projectionMatrix: Matrix3;
+  
+  // 状态栈
+  private stateStack: Array<{
+    transform: Matrix3;
+    fillStyle: string;
+    strokeStyle: string;
+    lineWidth: number;
+    globalAlpha: number;
+  }> = [];
+  
+  // 当前样式状态
+  private fillStyle: string = '#000000';
+  private strokeStyle: string = '#000000';
+  private lineWidth: number = 1;
+  private globalAlpha: number = 1;
+
+  // 渲染管理器
+  private renderManager: WebGLRenderManager;
+
   constructor(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
     this.gl = gl;
     this.width = canvas.width;
     this.height = canvas.height;
+    
+    // 初始化变换矩阵
+    this.currentTransform = Matrix3.identity();
+    this.projectionMatrix = Matrix3.projection(this.width, this.height);
+    
+    // 初始化渲染管理器
+    this.renderManager = new WebGLRenderManager(gl);
     
     // 初始化WebGL状态
     this.setupWebGLState();
@@ -84,29 +116,42 @@ class WebGLContext implements IWebGLContext {
   }
 
   save(): void {
-    // WebGL没有状态栈，需要手动实现
-    // 这里简化实现，实际应该保存变换矩阵等状态
+    // 保存当前状态到栈
+    this.stateStack.push({
+      transform: this.currentTransform.clone(),
+      fillStyle: this.fillStyle,
+      strokeStyle: this.strokeStyle,
+      lineWidth: this.lineWidth,
+      globalAlpha: this.globalAlpha
+    });
   }
 
   restore(): void {
-    // WebGL状态恢复
+    // 从栈恢复状态
+    const state = this.stateStack.pop();
+    if (state) {
+      this.currentTransform = state.transform;
+      this.fillStyle = state.fillStyle;
+      this.strokeStyle = state.strokeStyle;
+      this.lineWidth = state.lineWidth;
+      this.globalAlpha = state.globalAlpha;
+    }
   }
 
   translate(x: number, y: number): void {
-    // 在WebGL中，平移通过变换矩阵实现
-    // 这里需要与着色器配合
+    this.currentTransform.translate(x, y);
   }
 
   rotate(angle: number): void {
-    // 旋转变换
+    this.currentTransform.rotate(angle);
   }
 
   scale(scaleX: number, scaleY: number): void {
-    // 缩放变换
+    this.currentTransform.scale(scaleX, scaleY);
   }
 
   setOpacity(opacity: number): void {
-    // 设置全局透明度
+    this.globalAlpha = Math.max(0, Math.min(1, opacity));
   }
 
   // WebGL特有方法
@@ -181,17 +226,38 @@ class WebGLContext implements IWebGLContext {
     return [1, 1, 1, 1]; // 默认白色
   }
 
+  /**
+   * 获取当前变换矩阵
+   */
+  getCurrentTransform(): Matrix3 {
+    return this.currentTransform.clone();
+  }
+
+  /**
+   * 获取投影矩阵
+   */
+  getProjectionMatrix(): Matrix3 {
+    return this.projectionMatrix.clone();
+  }
+
+  /**
+   * 获取组合的MVP矩阵
+   */
+  getMVPMatrix(): Matrix3 {
+    return this.projectionMatrix.clone().multiply(this.currentTransform);
+  }
+
   // 缺失的接口方法实现
   setStrokeStyle(style: string): void {
-    // WebGL中描边样式需要通过着色器实现
+    this.strokeStyle = style;
   }
 
   setFillStyle(style: string): void {
-    // WebGL中填充样式需要通过着色器实现
+    this.fillStyle = style;
   }
 
   setLineWidth(width: number): void {
-    // WebGL中线宽设置
+    this.lineWidth = Math.max(0, width);
     this.gl.lineWidth(width);
   }
 
@@ -200,18 +266,48 @@ class WebGLContext implements IWebGLContext {
   }
 
   drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
-    // WebGL矩形绘制需要顶点缓冲区和着色器
-    // 这里是简化实现占位符
+    const fillColor = fill ? this.fillStyle : undefined;
+    const strokeColor = stroke ? this.strokeStyle : undefined;
+    const strokeWidth = stroke ? this.lineWidth : undefined;
+    
+    this.renderManager.drawRectangle(
+      rect.x, rect.y, rect.width, rect.height,
+      fillColor, strokeColor, strokeWidth
+    );
+    
+    // 立即渲染以保持与Canvas2D的兼容性
+    this.flushRender();
   }
 
   drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
-    // WebGL圆形绘制需要生成顶点数据
-    // 这里是简化实现占位符
+    const fillColor = fill ? this.fillStyle : undefined;
+    const strokeColor = stroke ? this.strokeStyle : undefined;
+    const strokeWidth = stroke ? this.lineWidth : undefined;
+    
+    this.renderManager.drawCircle(
+      center.x, center.y, radius,
+      fillColor, strokeColor, strokeWidth
+    );
+    
+    // 立即渲染以保持与Canvas2D的兼容性
+    this.flushRender();
   }
 
   drawLine(from: IPoint, to: IPoint): void {
-    // WebGL线条绘制
-    // 这里是简化实现占位符
+    this.renderManager.drawLine(
+      from.x, from.y, to.x, to.y,
+      this.strokeStyle, this.lineWidth
+    );
+    
+    // 立即渲染以保持与Canvas2D的兼容性
+    this.flushRender();
+  }
+  
+  /**
+   * 执行渲染
+   */
+  private flushRender(): void {
+    this.renderManager.flush(this.projectionMatrix, this.currentTransform);
   }
 
   drawImage(imageData: { source: any; dx?: number; dy?: number; dWidth?: number; dHeight?: number }): void {
@@ -220,6 +316,6 @@ class WebGLContext implements IWebGLContext {
   }
 
   dispose(): void {
-    // WebGL上下文清理
+    this.renderManager.dispose();
   }
 }

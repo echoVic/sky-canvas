@@ -283,6 +283,12 @@ export interface IShaderManager {
   getShader(id: string): IShaderProgram | null;
   
   /**
+   * 根据名称获取着色器程序
+   * @param name 着色器名称
+   */
+  getShaderByName(name: string): IShaderProgram | null;
+  
+  /**
    * 删除着色器程序
    * @param id 着色器ID
    */
@@ -308,6 +314,7 @@ export interface IShaderManager {
  */
 export class ShaderManager implements IShaderManager {
   private shaders = new Map<string, IShaderProgram>();
+  private shadersByName = new Map<string, IShaderProgram>();
   private gl: WebGLRenderingContext;
   
   constructor(gl: WebGLRenderingContext) {
@@ -317,6 +324,7 @@ export class ShaderManager implements IShaderManager {
   createShader(source: IShaderSource): IShaderProgram {
     const shader = new ShaderProgram(this.gl, source);
     this.shaders.set(shader.id, shader);
+    this.shadersByName.set(source.name, shader);
     return shader;
   }
   
@@ -324,9 +332,21 @@ export class ShaderManager implements IShaderManager {
     return this.shaders.get(id) || null;
   }
   
+  getShaderByName(name: string): IShaderProgram | null {
+    return this.shadersByName.get(name) || null;
+  }
+  
   deleteShader(id: string): void {
     const shader = this.shaders.get(id);
     if (shader) {
+      // 也要从名称映射中删除
+      for (const [name, shaderInstance] of this.shadersByName.entries()) {
+        if (shaderInstance === shader) {
+          this.shadersByName.delete(name);
+          break;
+        }
+      }
+      
       shader.dispose();
       this.shaders.delete(id);
     }
@@ -337,6 +357,7 @@ export class ShaderManager implements IShaderManager {
       shader.dispose();
     }
     this.shaders.clear();
+    this.shadersByName.clear();
   }
   
   getStats() {
