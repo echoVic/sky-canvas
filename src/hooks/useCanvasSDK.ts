@@ -6,7 +6,8 @@ import {
   InteractionMode,
   IShape
 } from '@sky-canvas/canvas-sdk';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCreation, useMemoizedFn } from 'ahooks';
 
 /**
  * Canvas SDK状态接口
@@ -26,6 +27,8 @@ export interface CanvasSDKState {
   canRedo: boolean;
   /** 当前交互模式 */
   interactionMode: InteractionMode;
+  /** 当前选中的工具 */
+  currentTool: string | null;
   /** 视口信息 */
   viewport: {
     x: number;
@@ -70,6 +73,8 @@ export interface CanvasSDKActions {
   setTool: (toolName: string | null) => boolean;
   /** 获取交互管理器 */
   getInteractionManager: () => IInteractionManager | null;
+  /** 注册交互工具 */
+  registerInteractionTool: (tool: any) => void;
   /** 启用/禁用交互 */
   setInteractionEnabled: (enabled: boolean) => void;
   
@@ -118,6 +123,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     canUndo: false,
     canRedo: false,
     interactionMode: InteractionMode.SELECT,
+    currentTool: null,
     viewport: {
       x: 0,
       y: 0,
@@ -130,11 +136,16 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   /**
    * 更新状态
    */
-  const updateState = useCallback(() => {
+  const updateState = useMemoizedFn(() => {
     const sdk = sdkRef.current;
     if (!sdk) return;
 
-    setState(prev => ({
+    // 获取当前工具名称
+    const interactionManager = sdk.getInteractionManager();
+    const activeTool = interactionManager?.getActiveTool();
+    const currentTool = activeTool?.name || null;
+
+    setState((prev: typeof state) => ({
       ...prev,
       sdk,
       shapes: sdk.getShapes(),
@@ -142,15 +153,16 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       canUndo: sdk.canUndo(),
       canRedo: sdk.canRedo(),
       interactionMode: sdk.getInteractionMode(),
+      currentTool,
       viewport: sdk.getViewport(),
     }));
-  }, []);
+  });
 
   /**
    * 初始化SDK
    */
-  const initialize = useCallback(async (
-    canvas: HTMLCanvasElement, 
+  const initialize = useMemoizedFn(async (
+    canvas: HTMLCanvasElement,
     config: ICanvasSDKConfig = {}
   ) => {
     console.log('Initialize called, current SDK:', sdkRef.current, 'isInitialized:', state.isInitialized);
@@ -195,7 +207,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       // 开始渲染循环
       sdk.startRender();
       
-      setState(prev => ({
+      setState((prev: typeof state) => ({
         ...prev,
         sdk,
         isInitialized: true,
@@ -211,242 +223,252 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       sdk.dispose();
       throw error;
     }
-  }, []);
+  });
 
   /**
    * 添加形状
    */
-  const addShape = useCallback((shape: IShape) => {
+  const addShape = useMemoizedFn((shape: IShape) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.addShape(shape);
-  }, []);
+  });
 
   /**
    * 移除形状
    */
-  const removeShape = useCallback((id: string) => {
+  const removeShape = useMemoizedFn((id: string) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.removeShape(id);
-  }, []);
+  });
 
   /**
    * 更新形状
    */
-  const updateShape = useCallback((id: string, updates: any) => {
+  const updateShape = useMemoizedFn((id: string, updates: any) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.updateShape(id, updates);
-  }, []);
+  });
 
   /**
    * 选择形状
    */
-  const selectShape = useCallback((id: string) => {
+  const selectShape = useMemoizedFn((id: string) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.selectShape(id);
-  }, []);
+  });
 
   /**
    * 取消选择形状
    */
-  const deselectShape = useCallback((id: string) => {
+  const deselectShape = useMemoizedFn((id: string) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.deselectShape(id);
-  }, []);
+  });
 
   /**
    * 清空选择
    */
-  const clearSelection = useCallback(() => {
+  const clearSelection = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.clearSelection();
-  }, []);
+  });
 
   /**
    * 撤销操作
    */
-  const undo = useCallback(() => {
+  const undo = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.undo();
-  }, []);
+  });
 
   /**
    * 重做操作
    */
-  const redo = useCallback(() => {
+  const redo = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.redo();
-  }, []);
+  });
 
   /**
    * 清空所有形状
    */
-  const clearShapes = useCallback(() => {
+  const clearShapes = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.clearShapes();
-  }, []);
+  });
 
   /**
    * 点击测试
    */
-  const hitTest = useCallback((point: { x: number; y: number }) => {
+  const hitTest = useMemoizedFn((point: { x: number; y: number }) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     return sdkRef.current.hitTest(point);
-  }, []);
+  });
 
   // === 新增的交互系统方法 ===
 
   /**
    * 设置交互模式
    */
-  const setInteractionMode = useCallback((mode: InteractionMode) => {
+  const setInteractionMode = useMemoizedFn((mode: InteractionMode) => {
     if (!sdkRef.current) {
       console.warn('setInteractionMode called but SDK not ready yet. Mode will be applied when SDK is ready.');
       return false; // 返回 false 表示设置失败，但不抛错误
     }
     console.log('Setting interaction mode:', mode);
     return sdkRef.current.setInteractionMode(mode);
-  }, []);
+  });
 
   /**
    * 设置工具（按名称）
    */
-  const setTool = useCallback((toolName: string | null) => {
+  const setTool = useMemoizedFn((toolName: string | null) => {
     if (!sdkRef.current) {
       console.warn('setTool called but SDK not ready yet. Tool will be applied when SDK is ready.');
       return false;
     }
     console.log('Setting tool:', toolName);
     return sdkRef.current.setTool(toolName);
-  }, []);
+  });
 
   /**
    * 获取交互管理器
    */
-  const getInteractionManager = useCallback(() => {
+  const getInteractionManager = useMemoizedFn(() => {
     if (!sdkRef.current) {
       return null;
     }
     return sdkRef.current.getInteractionManager();
-  }, []);
+  });
+
+  /**
+   * 注册交互工具
+   */
+  const registerInteractionTool = useMemoizedFn((tool: any) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    sdkRef.current.registerInteractionTool(tool);
+  });
 
   /**
    * 启用/禁用交互
    */
-  const setInteractionEnabled = useCallback((enabled: boolean) => {
+  const setInteractionEnabled = useMemoizedFn((enabled: boolean) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.setInteractionEnabled(enabled);
-  }, []);
+  });
 
   // === 新增的视口控制方法 ===
 
   /**
    * 设置视口
    */
-  const setViewport = useCallback((viewport: Partial<{ x: number; y: number; width: number; height: number; zoom: number }>) => {
+  const setViewport = useMemoizedFn((viewport: Partial<{ x: number; y: number; width: number; height: number; zoom: number }>) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.setViewport(viewport);
-  }, []);
+  });
 
   /**
    * 平移视口
    */
-  const panViewport = useCallback((delta: { x: number; y: number }) => {
+  const panViewport = useMemoizedFn((delta: { x: number; y: number }) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.panViewport(delta);
-  }, []);
+  });
 
   /**
    * 缩放视口
    */
-  const zoomViewport = useCallback((factor: number, center?: { x: number; y: number }) => {
+  const zoomViewport = useMemoizedFn((factor: number, center?: { x: number; y: number }) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.zoomViewport(factor, center);
-  }, []);
+  });
 
   /**
    * 适应内容
    */
-  const fitToContent = useCallback(() => {
+  const fitToContent = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.fitToContent();
-  }, []);
+  });
 
   /**
    * 重置视口
    */
-  const resetViewport = useCallback(() => {
+  const resetViewport = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.resetViewport();
-  }, []);
+  });
 
   // === 新增的渲染控制方法 ===
 
   /**
    * 开始渲染
    */
-  const startRender = useCallback(() => {
+  const startRender = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.startRender();
-  }, []);
+  });
 
   /**
    * 停止渲染
    */
-  const stopRender = useCallback(() => {
+  const stopRender = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.stopRender();
-  }, []);
+  });
 
   /**
    * 手动渲染一帧
    */
-  const render = useCallback(() => {
+  const render = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.render();
-  }, []);
+  });
 
   /**
    * 销毁SDK
    */
-  const dispose = useCallback(() => {
+  const dispose = useMemoizedFn(() => {
     console.log('dispose called, current SDK:', sdkRef.current);
     if (sdkRef.current) {
       sdkRef.current.dispose();
@@ -459,6 +481,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         canUndo: false,
         canRedo: false,
         interactionMode: InteractionMode.SELECT,
+        currentTool: null,
         viewport: {
           x: 0,
           y: 0,
@@ -468,7 +491,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         },
       });
     }
-  }, []);
+  });
 
   // 清理副作用 - 只在组件真正卸载时清理
   useEffect(() => {
@@ -478,7 +501,8 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     };
   }, []); // 空依赖数组，只在组件卸载时运行
 
-  const actions: CanvasSDKActions = {
+  // 使用useMemo来稳定actions对象，避免无限循环
+  const actions = useMemo(() => ({
     initialize,
     addShape,
     removeShape,
@@ -494,6 +518,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     setInteractionMode,
     setTool,
     getInteractionManager,
+    registerInteractionTool,
     setInteractionEnabled,
     // 视口控制方法
     setViewport,
@@ -506,7 +531,12 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     stopRender,
     render,
     dispose,
-  };
+  }), [
+    initialize, addShape, removeShape, updateShape, selectShape, deselectShape, clearSelection,
+    undo, redo, clearShapes, hitTest, setInteractionMode, setTool, getInteractionManager,
+    setInteractionEnabled, setViewport, panViewport, zoomViewport, fitToContent, resetViewport,
+    startRender, stopRender, render, dispose
+  ]);
 
   return [state, actions];
 }

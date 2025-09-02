@@ -24,20 +24,17 @@ interface Tool {
 }
 
 interface CanvasState {
-  selectedTool: UIToolType
   tools: Tool[]
-  zoom: number
   theme: 'light' | 'dark'
   sidebarOpen: boolean
+  zoom: number
   
-  setSelectedTool: (toolId: UIToolType) => void
-  setZoom: (zoom: number) => void
   toggleTheme: () => void
   toggleSidebar: () => void
+  setZoom: (zoom: number) => void
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
-  selectedTool: 'select',
   tools: [
     { id: 'select', name: '选择', icon: 'MousePointer2', active: true },
     { id: 'hand', name: '抓手', icon: 'Hand', active: false },
@@ -53,25 +50,19 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     { id: 'link', name: '链接', icon: 'Link', active: false },
     { id: 'frame', name: '框架', icon: 'Frame', active: false }
   ],
-  zoom: 100,
   theme: 'light',
   sidebarOpen: false, // 默认关闭
+  zoom: 100, // 默认100%缩放
 
-  setSelectedTool: (toolId) => set((state) => ({
-    selectedTool: toolId,
-    tools: state.tools.map(tool => ({ 
-      ...tool, 
-      active: tool.id === toolId 
-    }))
+  toggleTheme: () => set((state) => ({
+    theme: state.theme === 'light' ? 'dark' : 'light'
   })),
 
-  setZoom: (zoom) => set({ zoom }),
-
-  toggleTheme: () => set((state) => ({ 
-    theme: state.theme === 'light' ? 'dark' : 'light' 
+  toggleSidebar: () => set((state) => ({
+    sidebarOpen: !state.sidebarOpen
   })),
 
-  toggleSidebar: () => set((state) => ({ 
-    sidebarOpen: !state.sidebarOpen 
+  setZoom: (zoom: number) => set(() => ({
+    zoom
   })),
 }))

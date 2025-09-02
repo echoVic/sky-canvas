@@ -11,3 +11,8 @@ export type {
 export { SelectionManager } from './SelectionManager';
 export type { SelectionFilter, SelectionMode } from './SelectionManager';
 
+// 导出绘图工具
+export {
+  DiamondTool, DrawTool, TextTool
+} from './tools';
+

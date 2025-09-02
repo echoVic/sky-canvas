@@ -1,23 +1,23 @@
 /**
  * 画板SDK核心实现 - 集成交互系统
  */
-import { 
-  RenderEngine, 
-  IRenderLayer, 
-  IPoint, 
+import {
   IGraphicsContextFactory
   // AdapterFactory  // 暂时注释以避免构建错误
+  ,
+  IPoint,
+  IRenderLayer,
+  RenderEngine
 } from '@sky-canvas/render-engine';
-import { IShape, IShapeUpdate, IShapeEvent, IShapeSelectionEvent } from '../scene/IShape';
-import { EventEmitter } from '../events/EventEmitter';
 import { HistoryManager } from '../core/HistoryManager';
-import { 
-  InteractionManager, 
-  IInteractionManager, 
-  IInteractionTool, 
-  SelectionMode,
+import { EventEmitter } from '../events/EventEmitter';
+import {
+  IInteractionManager,
+  IInteractionTool,
+  InteractionManager,
   InteractionMode
 } from '../interaction';
+import { IShape, IShapeEvent, IShapeSelectionEvent, IShapeUpdate } from '../scene/IShape';
 
 /**
  * 渲染引擎类型
@@ -712,6 +712,20 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
    */
   registerInteractionTool(tool: IInteractionTool): void {
     if (this.interactionManager) {
+      // 为工具设置回调函数
+      if ('setCallbacks' in tool && typeof tool.setCallbacks === 'function') {
+        (tool as any).setCallbacks({
+          onSetCursor: (cursor: string) => {
+            if (this.interactionManager) {
+              this.interactionManager.setCursor(cursor);
+            }
+          },
+          onAddShape: (shape: any) => {
+            this.addShape(shape);
+          }
+        });
+      }
+      
       this.interactionManager.registerTool(tool);
     }
   }
@@ -1033,11 +1047,34 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
         }
       }
       
+      // 渲染选中形状的边框
+      this.renderSelectionBoxes(context);
+      
       // 渲染正在绘制的临时形状
       this.renderCurrentDrawing(context);
       
       context.restore();
     }
+  }
+  
+  /**
+   * 渲染选中形状的边框
+   */
+  private renderSelectionBoxes(context: CanvasRenderingContext2D): void {
+    const selectedShapes = this.getSelectedShapes();
+    
+    selectedShapes.forEach(shape => {
+      if (shape.visible) {
+        const bounds = shape.getBounds();
+        context.save();
+        context.strokeStyle = 'rgba(59, 130, 246, 0.8)';
+        context.lineWidth = 2;
+        context.setLineDash([4, 4]);
+        context.strokeRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4);
+        context.setLineDash([]);
+        context.restore();
+      }
+    });
   }
   
   /**

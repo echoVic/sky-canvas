@@ -1,13 +1,10 @@
-import { InteractionMode } from '@sky-canvas/canvas-sdk'
+import { CircleTool, RectangleTool, DiamondTool, TextTool } from '@sky-canvas/canvas-sdk'
 import React, { useEffect, useRef } from 'react'
 import { useCanvas } from '../../contexts'
-import { useCanvasStore } from '../../store/canvasStore'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
-import { Canvas2DGraphicsContext } from '../../adapters'
 
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { selectedTool, zoom } = useCanvasStore()
   
   // 使用Canvas上下文中的SDK实例
   const [sdkState, sdkActions] = useCanvas()
@@ -16,7 +13,7 @@ const Canvas: React.FC = () => {
   const { interactionState } = useCanvasInteraction(
     canvasRef,
     [sdkState, sdkActions],
-    selectedTool as any
+    sdkState.interactionMode as any
   )
 
   // 工具映射到工具名称
@@ -54,6 +51,68 @@ const Canvas: React.FC = () => {
             height: canvas.offsetHeight
           }
         })
+        
+        // 注册SDK工具
+        // 创建工具实例时传入必需的回调函数
+        const interactionManager = sdkActions.getInteractionManager()
+        if (interactionManager) {
+          const rectangleTool = new RectangleTool(
+            interactionManager,
+            (cursor: string) => {
+              if (interactionManager) {
+                interactionManager.setCursor(cursor)
+              }
+            },
+            (shape: any) => {
+              sdkActions.addShape(shape)
+            }
+          )
+          
+          const circleTool = new CircleTool(
+            interactionManager,
+            (cursor: string) => {
+              if (interactionManager) {
+                interactionManager.setCursor(cursor)
+              }
+            },
+            (shape: any) => {
+              sdkActions.addShape(shape)
+            }
+          )
+          
+          const diamondTool = new DiamondTool(
+            interactionManager,
+            (cursor: string) => {
+              if (interactionManager) {
+                interactionManager.setCursor(cursor)
+              }
+            },
+            (shape: any) => {
+              sdkActions.addShape(shape)
+            }
+          )
+          
+          const textTool = new TextTool(
+            interactionManager,
+            (cursor: string) => {
+              if (interactionManager) {
+                interactionManager.setCursor(cursor)
+              }
+            },
+            (shape: any) => {
+              sdkActions.addShape(shape)
+            }
+          )
+          
+          // 通过SDK注册工具
+          sdkActions.registerInteractionTool(rectangleTool)
+          sdkActions.registerInteractionTool(circleTool)
+          sdkActions.registerInteractionTool(diamondTool)
+          sdkActions.registerInteractionTool(textTool)
+        }
+        
+        // 设置默认工具
+        sdkActions.setTool('select')
       } catch (error) {
         console.error('Failed to initialize Canvas SDK:', error)
       }
@@ -62,59 +121,19 @@ const Canvas: React.FC = () => {
     initializeCanvas()
   }, [sdkState.isInitialized]) // 移除sdkActions依赖，避免循环
 
-  // 渲染循环
+  // 启动SDK渲染循环
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !sdkState.isInitialized) return
+    if (!sdkState.isInitialized) return
 
-    const render = () => {
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      // 使用Canvas2DGraphicsContext包装原生context
-      const graphicsContext = new Canvas2DGraphicsContext(ctx, canvas)
-
-      // 清除画布
-      graphicsContext.clear()
-
-      // 渲染所有形状
-      sdkState.shapes.forEach(shape => {
-        if (shape.visible) {
-          shape.render(graphicsContext)
-        }
-      })
-
-      // 绘制选中形状的边框
-      sdkState.selectedShapes.forEach(shape => {
-        if (shape.visible) {
-          const bounds = shape.getBounds()
-          graphicsContext.save()
-          graphicsContext.setStrokeStyle('rgba(59, 130, 246, 0.8)')
-          graphicsContext.setLineWidth(2)
-          graphicsContext.setLineDash([4, 4])
-          graphicsContext.strokeRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4)
-          graphicsContext.setLineDash([])
-          graphicsContext.restore()
-        }
-      })
+    try {
+      // 启动SDK内置的渲染循环
+      sdkActions.startRender()
+    } catch (error) {
+      console.error('Failed to start SDK render loop:', error)
     }
+  }, [sdkState.isInitialized])
 
-    // 初始渲染
-    render()
-
-    // 如果需要动画循环，可以在这里添加 requestAnimationFrame
-  }, [sdkState.isInitialized, sdkState.shapes, sdkState.selectedShapes])
-
-  // 同步工具选择到工具名称
-  useEffect(() => {
-    if (sdkState.isInitialized) {
-      const toolName = getToolName(selectedTool)
-      const success = sdkActions.setTool(toolName)
-      if (!success) {
-        console.log('Failed to set tool, SDK may not be ready yet')
-      }
-    }
-  }, [selectedTool, sdkState.isInitialized]) // 移除sdkActions依赖避免循环
+  // 这个 useEffect 不再需要，因为工具选择现在由 Toolbar 组件直接通过 SDK 处理
 
   // 处理画布尺寸变化
   useEffect(() => {
@@ -169,7 +188,7 @@ const Canvas: React.FC = () => {
         <div className="absolute p-2 text-xs text-white bg-black bg-opacity-50 rounded top-2 right-2">
           <div>形状数量: {sdkState.shapes.length}</div>
           <div>选中: {sdkState.selectedShapes.length}</div>
-          <div>工具: {selectedTool}</div>
+          <div>工具: {sdkState.interactionMode}</div>
           <div>交互模式: {sdkState.interactionMode}</div>
           <div>初始化: {sdkState.isInitialized ? '是' : '否'}</div>
           <div>视口缩放: {sdkState.viewport.zoom.toFixed(2)}</div>

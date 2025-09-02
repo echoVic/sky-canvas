@@ -6,8 +6,5 @@
 export { useCanvasSDK } from './useCanvasSDK';
 export type { CanvasSDKState, CanvasSDKActions, UseCanvasSDKResult } from './useCanvasSDK';
 
-export { useDrawingTools, createShape } from './useDrawingTools';
-export type { ToolType } from './useDrawingTools';
-
 export { useCanvasInteraction } from './useCanvasInteraction';
 export type { CanvasInteractionState } from './useCanvasInteraction';
