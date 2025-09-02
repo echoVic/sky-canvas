@@ -69,21 +69,27 @@ export class CircleTool implements IInteractionTool {
   onMouseMove(event: IMouseEvent): boolean {
     if (!this.isDrawing || !this.startPoint || !this.currentShape) return false;
 
-    // 计算圆形半径
+    // 计算圆形直径（取宽度和高度的最大值）
     const endPoint = event.worldPosition;
-    const dx = endPoint.x - this.startPoint.x;
-    const dy = endPoint.y - this.startPoint.y;
-    const radius = Math.sqrt(dx * dx + dy * dy);
+    const width = Math.max(0, endPoint.x - this.startPoint.x);
+    const height = Math.max(0, endPoint.y - this.startPoint.y);
+    const diameter = Math.max(width, height);
 
-    // 更新形状
-    this.currentShape.radius = radius;
+    // 更新形状 - 保持起始点为左上角，向右下方扩展
+    this.currentShape.radius = diameter / 2;
+    
+    // 计算圆心位置（从起始点向右下方扩展）
+    const centerX = this.startPoint.x + this.currentShape.radius;
+    const centerY = this.startPoint.y + this.currentShape.radius;
+    
+    // 更新圆形的位置（position表示边界框的左上角）
     this.currentShape.position = {
-      x: this.startPoint.x - radius,
-      y: this.startPoint.y - radius
+      x: this.startPoint.x,
+      y: this.startPoint.y
     };
     this.currentShape.size = {
-      width: radius * 2,
-      height: radius * 2
+      width: diameter,
+      height: diameter
     };
 
     return true;

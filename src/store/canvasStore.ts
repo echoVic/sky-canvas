@@ -25,10 +25,12 @@ interface Tool {
 
 interface CanvasState {
   tools: Tool[]
+  selectedTool: UIToolType
   theme: 'light' | 'dark'
   sidebarOpen: boolean
   zoom: number
   
+  setSelectedTool: (tool: UIToolType) => void
   toggleTheme: () => void
   toggleSidebar: () => void
   setZoom: (zoom: number) => void
@@ -50,9 +52,14 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     { id: 'link', name: '链接', icon: 'Link', active: false },
     { id: 'frame', name: '框架', icon: 'Frame', active: false }
   ],
+  selectedTool: 'select', // 默认选择工具
   theme: 'light',
   sidebarOpen: false, // 默认关闭
   zoom: 100, // 默认100%缩放
+
+  setSelectedTool: (tool: UIToolType) => set(() => ({
+    selectedTool: tool
+  })),
 
   toggleTheme: () => set((state) => ({
     theme: state.theme === 'light' ? 'dark' : 'light'

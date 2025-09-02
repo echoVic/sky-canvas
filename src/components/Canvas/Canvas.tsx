@@ -2,6 +2,7 @@ import { CircleTool, RectangleTool, DiamondTool, TextTool } from '@sky-canvas/ca
 import React, { useEffect, useRef } from 'react'
 import { useCanvas } from '../../contexts'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
+import { useCanvasStore } from '../../store/canvasStore'
 
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -9,11 +10,14 @@ const Canvas: React.FC = () => {
   // 使用Canvas上下文中的SDK实例
   const [sdkState, sdkActions] = useCanvas()
   
+  // 获取当前选中的工具
+  const { selectedTool } = useCanvasStore()
+  
   // 使用Canvas交互hook
   const { interactionState } = useCanvasInteraction(
     canvasRef,
     [sdkState, sdkActions],
-    sdkState.interactionMode as any
+    selectedTool
   )
 
   // 工具映射到工具名称

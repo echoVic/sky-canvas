@@ -443,7 +443,7 @@ export class CircleTool extends BaseInteractionTool {
   readonly cursor = 'crosshair';
 
   private isDrawing = false;
-  private centerPoint: IPoint | null = null;
+  private startPoint: IPoint | null = null;
   private currentCircle: CircleShape | null = null;
 
   constructor(
@@ -465,27 +465,33 @@ export class CircleTool extends BaseInteractionTool {
   onMouseDown(event: IMouseEvent): boolean {
     if (event.button === 0) {
       this.isDrawing = true;
-      this.centerPoint = event.worldPosition;
+      this.startPoint = event.worldPosition;
       return true;
     }
     return false;
   }
 
   onMouseMove(event: IMouseEvent): boolean {
-    if (this.isDrawing && this.centerPoint) {
+    if (this.isDrawing && this.startPoint) {
       const currentPoint = event.worldPosition;
       
-      // 计算半径
-      const radius = Math.sqrt(
-        Math.pow(currentPoint.x - this.centerPoint.x, 2) + 
-        Math.pow(currentPoint.y - this.centerPoint.y, 2)
-      );
+      // 确保只向右下方扩展：当前点必须在起始点的右下方
+      const deltaX = Math.max(0, currentPoint.x - this.startPoint.x);
+      const deltaY = Math.max(0, currentPoint.y - this.startPoint.y);
+      
+      // 使用较小的边作为直径，保持圆形
+      const diameter = Math.min(deltaX, deltaY);
+      const radius = diameter / 2;
+      
+      // 圆心位置：从固定的左上角（startPoint）偏移半径
+      const centerX = this.startPoint.x + radius;
+      const centerY = this.startPoint.y + radius;
       
       // 创建或更新圆形
       const circleId = this.currentCircle?.id || `circle_${Date.now()}_${Math.random()}`;
       this.currentCircle = new CircleShape(
         circleId,
-        this.centerPoint,
+        { x: centerX, y: centerY },
         radius,
         '#000000',
         2,
@@ -506,7 +512,7 @@ export class CircleTool extends BaseInteractionTool {
   }
 
   private finishCurrentCircle(): void {
-    if (this.isDrawing && this.currentCircle && this.centerPoint) {
+    if (this.isDrawing && this.currentCircle && this.startPoint) {
       // 只有当圆形有一定大小时才添加
       if (this.currentCircle.radius > 5) {
         this.onAddShape(this.currentCircle);
@@ -515,7 +521,7 @@ export class CircleTool extends BaseInteractionTool {
 
     // 重置状态
     this.isDrawing = false;
-    this.centerPoint = null;
+    this.startPoint = null;
     this.currentCircle = null;
   }
 

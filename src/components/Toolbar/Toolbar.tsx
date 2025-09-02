@@ -25,31 +25,8 @@ const iconMap: Record<string, LucideIcon> = {
 }
 
 const Toolbar: React.FC = () => {
-  const { tools } = useCanvasStore()
+  const { tools, selectedTool, setSelectedTool } = useCanvasStore()
   const [sdkState, sdkActions] = useCanvas()
-  
-  // 获取当前激活的工具名称
-  const getActiveTool = () => {
-    if (!sdkState.isInitialized) return 'select'
-    
-    // 直接使用SDK状态中的currentTool
-    const currentTool = sdkState.currentTool
-    
-    // 将SDK工具名称映射到UI工具ID
-    switch (currentTool) {
-      case 'select': return 'select'
-      case 'pan': return 'hand'
-      case 'zoom': return 'zoom'
-      case 'draw': return 'draw'
-      case 'rectangle': return 'rectangle'
-      case 'circle': return 'circle'
-      case 'diamond': return 'diamond'
-      case 'text': return 'text'
-      default: return 'select'
-    }
-  }
-  
-  const activeTool = getActiveTool()
 
   return (
     <div className="flex items-center gap-0.5 bg-white dark:bg-gray-900 rounded-lg p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
@@ -63,12 +40,15 @@ const Toolbar: React.FC = () => {
             isIconOnly
             className={`
               w-8 h-8 transition-all duration-150 rounded-md flex items-center justify-center
-              ${activeTool === tool.id
+              ${selectedTool === tool.id
                 ? 'bg-blue-500 text-white shadow-md'
                 : 'hover:bg-gray-100 dark:hover:bg-gray-800'
               }
             `}
             onPress={() => {
+              // 先更新UI状态
+              setSelectedTool(tool.id)
+              // 然后同步到SDK
               if (sdkState.isInitialized) {
                 sdkActions.setTool(tool.id)
               }
