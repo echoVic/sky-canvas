@@ -18,6 +18,7 @@ export interface IRenderable {
   render(context: IGraphicsContext): void;
   hitTest(point: IPoint): boolean;
   getBounds(): IRect;
+  dispose(): void;
 }
 
 /**

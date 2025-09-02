@@ -143,9 +143,12 @@ describe('useCanvasInteraction', () => {
 
   describe('工具切换', () => {
     it('应该在工具切换时更新光标', () => {
-      mockDrawingTools.getCursorForTool
-        .mockReturnValueOnce('crosshair')
-        .mockReturnValueOnce('default');
+      // 设置模拟函数的返回值
+      mockDrawingTools.getCursorForTool.mockImplementation((tool: ToolType) => {
+        if (tool === 'rectangle') return 'crosshair';
+        if (tool === 'select') return 'default';
+        return 'crosshair'; // 默认值
+      });
 
       const { result, rerender } = renderHook(
         ({ tool }: { tool: ToolType }) => useCanvasInteraction(mockCanvasRef, [mockSDKState, mockSDKActions], tool),

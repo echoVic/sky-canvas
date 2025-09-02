@@ -37,6 +37,11 @@ export interface IRenderable {
    * @returns 边界框
    */
   getBounds(): IRect;
+  
+  /**
+   * 销毁对象
+   */
+  dispose(): void;
 }
 
 /**

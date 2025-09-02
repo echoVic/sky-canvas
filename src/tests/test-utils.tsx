@@ -95,14 +95,93 @@ export const waitFor = (ms: number) => new Promise(resolve => setTimeout(resolve
 
 // 事件模拟
 export const createMouseEvent = (type: string, options: any = {}) => {
-  return new MouseEvent(type, {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    clientX: 0,
-    clientY: 0,
-    ...options,
-  });
+  try {
+    // Try to create a proper Event first
+    const event = new Event(type, {
+      bubbles: true,
+      cancelable: true,
+    });
+    
+    // Add mouse-specific properties
+    Object.defineProperties(event, {
+      clientX: {
+        value: options.clientX || 0,
+        enumerable: true,
+      },
+      clientY: {
+        value: options.clientY || 0,
+        enumerable: true,
+      },
+      button: {
+        value: options.button || 0,
+        enumerable: true,
+      },
+      target: {
+        value: options.target || null,
+        enumerable: true,
+      },
+      currentTarget: {
+        value: options.currentTarget || null,
+        enumerable: true,
+      },
+      preventDefault: {
+        value: vi.fn(),
+        enumerable: true,
+      },
+      stopPropagation: {
+        value: vi.fn(),
+        enumerable: true,
+      },
+    });
+    
+    return event;
+  } catch (e) {
+    // If Event creation fails, create a mock object with the correct prototype
+    const mockEvent = Object.create(Event.prototype, {
+      type: {
+        value: type,
+        enumerable: true,
+      },
+      bubbles: {
+        value: true,
+        enumerable: true,
+      },
+      cancelable: {
+        value: true,
+        enumerable: true,
+      },
+      clientX: {
+        value: options.clientX || 0,
+        enumerable: true,
+      },
+      clientY: {
+        value: options.clientY || 0,
+        enumerable: true,
+      },
+      button: {
+        value: options.button || 0,
+        enumerable: true,
+      },
+      target: {
+        value: options.target || null,
+        enumerable: true,
+      },
+      currentTarget: {
+        value: options.currentTarget || null,
+        enumerable: true,
+      },
+      preventDefault: {
+        value: vi.fn(),
+        enumerable: true,
+      },
+      stopPropagation: {
+        value: vi.fn(),
+        enumerable: true,
+      },
+    });
+    
+    return mockEvent;
+  }
 };
 
 export const createTouchEvent = (type: string, touches: any[] = []) => {

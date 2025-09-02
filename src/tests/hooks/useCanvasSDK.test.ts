@@ -95,14 +95,19 @@ describe('useCanvasSDK', () => {
       const [state] = result.current;
       expect(state.isInitialized).toBe(true);
       expect(state.sdk).toBeTruthy();
-      expect(mockSDK.initialize).toHaveBeenCalledWith(mockCanvas, {});
+      expect(mockSDK.initialize).toHaveBeenCalledWith(mockCanvas, {
+        enableInteraction: true,
+        renderEngine: 'webgl',
+      });
     });
   });
 
   describe('形状管理测试', () => {
+    let actions: any;
+
     beforeEach(async () => {
       const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
+      actions = result.current[1];
       
       await act(async () => {
         await actions.initialize(mockCanvas);
@@ -110,9 +115,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够添加形状', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       const mockShape = {
         id: 'shape-1',
         type: 'rectangle' as const,
@@ -150,9 +152,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够移除形状', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       act(() => {
         actions.removeShape('shape-1');
       });
@@ -161,9 +160,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够更新形状', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       const updates = { position: { x: 50, y: 60 } };
       
       act(() => {
@@ -175,10 +171,18 @@ describe('useCanvasSDK', () => {
   });
 
   describe('选择管理测试', () => {
-    test('应该能够选择形状', () => {
+    let actions: any;
+
+    beforeEach(async () => {
       const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
+      actions = result.current[1];
       
+      await act(async () => {
+        await actions.initialize(mockCanvas);
+      });
+    });
+
+    test('应该能够选择形状', () => {
       act(() => {
         actions.selectShape('shape-1');
       });
@@ -187,9 +191,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够取消选择形状', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       act(() => {
         actions.deselectShape('shape-1');
       });
@@ -198,9 +199,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够清空选择', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       act(() => {
         actions.clearSelection();
       });
@@ -210,10 +208,18 @@ describe('useCanvasSDK', () => {
   });
 
   describe('撤销重做测试', () => {
-    test('应该能够撤销', () => {
+    let actions: any;
+
+    beforeEach(async () => {
       const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
+      actions = result.current[1];
       
+      await act(async () => {
+        await actions.initialize(mockCanvas);
+      });
+    });
+
+    test('应该能够撤销', () => {
       act(() => {
         actions.undo();
       });
@@ -222,9 +228,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够重做', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       act(() => {
         actions.redo();
       });
@@ -234,10 +237,18 @@ describe('useCanvasSDK', () => {
   });
 
   describe('其他操作测试', () => {
-    test('应该能够清空所有形状', () => {
+    let actions: any;
+
+    beforeEach(async () => {
       const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
+      actions = result.current[1];
       
+      await act(async () => {
+        await actions.initialize(mockCanvas);
+      });
+    });
+
+    test('应该能够清空所有形状', () => {
       act(() => {
         actions.clearShapes();
       });
@@ -246,9 +257,6 @@ describe('useCanvasSDK', () => {
     });
 
     test('应该能够执行点击测试', () => {
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
       const point = { x: 100, y: 100 };
       const hitShape = actions.hitTest(point);
       

@@ -1,286 +1,360 @@
-/**
- * 3x3矩阵类 - 用于2D变换
- * 矩阵布局：
- * [m00, m01, m02]
- * [m10, m11, m12] 
- * [m20, m21, m22]
- * 
- * 对于2D变换：
- * [sx*cos, -sx*sin, tx]
- * [sy*sin,  sy*cos, ty]
- * [0,       0,      1 ]
- */
+import { Vector2 } from './Vector2';
 
-export class Matrix3 {
+/**
+ * 3x3矩阵类
+ * 用于2D图形变换（平移、旋转、缩放）
+ * 矩阵存储为列优先格式：
+ * [m00 m10 m20]
+ * [m01 m11 m21]
+ * [m02 m12 m22]
+ */
+export class Matrix3x3 {
   public elements: Float32Array;
 
   constructor(
-    m00 = 1, m01 = 0, m02 = 0,
-    m10 = 0, m11 = 1, m12 = 0,
-    m20 = 0, m21 = 0, m22 = 1
+    m00: number | number[] = 1, m10: number = 0, m20: number = 0,
+    m01: number = 0, m11: number = 1, m21: number = 0,
+    m02: number = 0, m12: number = 0, m22: number = 1
   ) {
-    this.elements = new Float32Array([
-      m00, m01, m02,
-      m10, m11, m12,
-      m20, m21, m22
-    ]);
+    if (Array.isArray(m00)) {
+      if (m00.length !== 9) throw new Error('Array must have 9 elements');
+      this.elements = new Float32Array([
+        m00[0], m00[1], m00[2],
+        m00[3], m00[4], m00[5],
+        m00[6], m00[7], m00[8]
+      ]);
+    } else {
+      this.elements = new Float32Array([
+        m00, m01, m02,
+        m10, m11, m12,
+        m20, m21, m22
+      ]);
+    }
   }
 
-  /**
-   * 创建单位矩阵
-   */
-  static identity(): Matrix3 {
-    return new Matrix3();
+  // 静态常量
+  static readonly IDENTITY = new Matrix3x3();
+  static readonly ZERO = new Matrix3x3(0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+  // 基础操作
+  clone(): Matrix3x3 {
+    return new Matrix3x3(
+      this.elements[0], this.elements[3], this.elements[6],
+      this.elements[1], this.elements[4], this.elements[7],
+      this.elements[2], this.elements[5], this.elements[8]
+    );
   }
 
-  /**
-   * 创建平移矩阵
-   */
-  static translation(x: number, y: number): Matrix3 {
-    return new Matrix3(
+  copy(other: Matrix3x3): Matrix3x3 {
+    for (let i = 0; i < 9; i++) {
+      this.elements[i] = other.elements[i];
+    }
+    return this;
+  }
+
+  set(
+    m00: number, m10: number, m20: number,
+    m01: number, m11: number, m21: number,
+    m02: number, m12: number, m22: number
+  ): Matrix3x3 {
+    this.elements[0] = m00; this.elements[3] = m10; this.elements[6] = m20;
+    this.elements[1] = m01; this.elements[4] = m11; this.elements[7] = m21;
+    this.elements[2] = m02; this.elements[5] = m12; this.elements[8] = m22;
+    return this;
+  }
+
+  identity(): Matrix3x3 {
+    return this.set(
+      1, 0, 0,
+      0, 1, 0,
+      0, 0, 1
+    );
+  }
+
+  // 矩阵运算
+  multiply(other: Matrix3x3): Matrix3x3 {
+    const a = this.elements;
+    const b = other.elements;
+    const result = new Matrix3x3();
+    const c = result.elements;
+
+    c[0] = a[0] * b[0] + a[3] * b[1] + a[6] * b[2];
+    c[1] = a[1] * b[0] + a[4] * b[1] + a[7] * b[2];
+    c[2] = a[2] * b[0] + a[5] * b[1] + a[8] * b[2];
+
+    c[3] = a[0] * b[3] + a[3] * b[4] + a[6] * b[5];
+    c[4] = a[1] * b[3] + a[4] * b[4] + a[7] * b[5];
+    c[5] = a[2] * b[3] + a[5] * b[4] + a[8] * b[5];
+
+    c[6] = a[0] * b[6] + a[3] * b[7] + a[6] * b[8];
+    c[7] = a[1] * b[6] + a[4] * b[7] + a[7] * b[8];
+    c[8] = a[2] * b[6] + a[5] * b[7] + a[8] * b[8];
+
+    return result;
+  }
+
+  multiplyInPlace(other: Matrix3x3): Matrix3x3 {
+    const result = this.multiply(other);
+    this.copy(result);
+    return this;
+  }
+
+  multiplyScalar(scalar: number): Matrix3x3 {
+    const result = new Matrix3x3();
+    for (let i = 0; i < 9; i++) {
+      result.elements[i] = this.elements[i] * scalar;
+    }
+    return result;
+  }
+
+  multiplyScalarInPlace(scalar: number): Matrix3x3 {
+    for (let i = 0; i < 9; i++) {
+      this.elements[i] *= scalar;
+    }
+    return this;
+  }
+
+  add(other: Matrix3x3): Matrix3x3 {
+    const result = new Matrix3x3();
+    for (let i = 0; i < 9; i++) {
+      result.elements[i] = this.elements[i] + other.elements[i];
+    }
+    return result;
+  }
+
+  addInPlace(other: Matrix3x3): Matrix3x3 {
+    for (let i = 0; i < 9; i++) {
+      this.elements[i] += other.elements[i];
+    }
+    return this;
+  }
+
+  // 矩阵属性
+  determinant(): number {
+    const e = this.elements;
+    return e[0] * (e[4] * e[8] - e[7] * e[5]) -
+           e[3] * (e[1] * e[8] - e[7] * e[2]) +
+           e[6] * (e[1] * e[5] - e[4] * e[2]);
+  }
+
+  transpose(): Matrix3x3 {
+    const e = this.elements;
+    return new Matrix3x3(
+      e[0], e[3], e[6],
+      e[1], e[4], e[7],
+      e[2], e[5], e[8]
+    );
+  }
+
+  transposeInPlace(): Matrix3x3 {
+    const e = this.elements;
+    let temp: number;
+    
+    temp = e[1]; e[1] = e[3]; e[3] = temp;
+    temp = e[2]; e[2] = e[6]; e[6] = temp;
+    temp = e[5]; e[5] = e[7]; e[7] = temp;
+    
+    return this;
+  }
+
+  inverse(): Matrix3x3 | null {
+    const det = this.determinant();
+    if (Math.abs(det) < 1e-10) return null; // 矩阵不可逆
+
+    const e = this.elements;
+    const invDet = 1 / det;
+
+    return new Matrix3x3(
+      (e[4] * e[8] - e[7] * e[5]) * invDet,
+      (e[7] * e[2] - e[1] * e[8]) * invDet,
+      (e[1] * e[5] - e[4] * e[2]) * invDet,
+      (e[6] * e[5] - e[3] * e[8]) * invDet,
+      (e[0] * e[8] - e[6] * e[2]) * invDet,
+      (e[3] * e[2] - e[0] * e[5]) * invDet,
+      (e[3] * e[7] - e[6] * e[4]) * invDet,
+      (e[6] * e[1] - e[0] * e[7]) * invDet,
+      (e[0] * e[4] - e[3] * e[1]) * invDet
+    );
+  }
+
+  // 向量变换
+  transformVector(vector: Vector2): Vector2 {
+    const e = this.elements;
+    return new Vector2(
+      e[0] * vector.x + e[3] * vector.y + e[6],
+      e[1] * vector.x + e[4] * vector.y + e[7]
+    );
+  }
+
+  transformDirection(vector: Vector2): Vector2 {
+    const e = this.elements;
+    return new Vector2(
+      e[0] * vector.x + e[3] * vector.y,
+      e[1] * vector.x + e[4] * vector.y
+    );
+  }
+
+  transformPoint(point: Vector2): Vector2 {
+    const e = this.elements;
+    return new Vector2(
+      e[0] * point.x + e[3] * point.y + e[6],
+      e[1] * point.x + e[4] * point.y + e[7]
+    );
+  }
+
+  // 变换矩阵创建
+  static translation(x: number, y: number): Matrix3x3 {
+    return new Matrix3x3(
       1, 0, x,
       0, 1, y,
       0, 0, 1
     );
   }
 
-  /**
-   * 创建旋转矩阵
-   */
-  static rotation(angle: number): Matrix3 {
+  static rotation(angle: number): Matrix3x3 {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
-    return new Matrix3(
+    return new Matrix3x3(
       cos, -sin, 0,
       sin, cos, 0,
       0, 0, 1
     );
   }
 
-  /**
-   * 创建缩放矩阵
-   */
-  static scaling(sx: number, sy: number): Matrix3 {
-    return new Matrix3(
-      sx, 0, 0,
-      0, sy, 0,
+  static scale(x: number, y: number = x): Matrix3x3 {
+    return new Matrix3x3(
+      x, 0, 0,
+      0, y, 0,
       0, 0, 1
     );
   }
 
-  /**
-   * 创建投影矩阵（NDC坐标系）
-   */
-  static projection(width: number, height: number): Matrix3 {
-    return new Matrix3(
-      2 / width, 0, -1,
-      0, -2 / height, 1,
+  static scaling(scale: Vector2): Matrix3x3 {
+    return Matrix3x3.scale(scale.x, scale.y);
+  }
+
+  static shear(x: number, y: number): Matrix3x3 {
+    return new Matrix3x3(
+      1, x, 0,
+      y, 1, 0,
       0, 0, 1
     );
   }
 
-  /**
-   * 设置为单位矩阵
-   */
-  identity(): Matrix3 {
-    this.elements.set([
-      1, 0, 0,
-      0, 1, 0,
-      0, 0, 1
-    ]);
-    return this;
+  // 组合变换
+  translate(x: number, y: number): Matrix3x3 {
+    return this.multiply(Matrix3x3.translation(x, y));
   }
 
-  /**
-   * 复制矩阵
-   */
-  copy(other: Matrix3): Matrix3 {
-    this.elements.set(other.elements);
-    return this;
+  translateInPlace(x: number, y: number): Matrix3x3 {
+    return this.multiplyInPlace(Matrix3x3.translation(x, y));
   }
 
-  /**
-   * 克隆矩阵
-   */
-  clone(): Matrix3 {
-    const m = this.elements;
-    return new Matrix3(
-      m[0], m[1], m[2],
-      m[3], m[4], m[5],
-      m[6], m[7], m[8]
-    );
+  rotate(angle: number): Matrix3x3 {
+    return this.multiply(Matrix3x3.rotation(angle));
   }
 
-  /**
-   * 矩阵乘法 (this = this * other)
-   */
-  multiply(other: Matrix3): Matrix3 {
-    const a = this.elements;
-    const b = other.elements;
+  rotateInPlace(angle: number): Matrix3x3 {
+    return this.multiplyInPlace(Matrix3x3.rotation(angle));
+  }
+
+  scale(x: number, y: number = x): Matrix3x3 {
+    return this.multiply(Matrix3x3.scale(x, y));
+  }
+
+  scaleInPlace(x: number, y: number = x): Matrix3x3 {
+    return this.multiplyInPlace(Matrix3x3.scale(x, y));
+  }
+
+  // 分解变换
+  getTranslation(): Vector2 {
+    return new Vector2(this.elements[6], this.elements[7]);
+  }
+
+  getScale(): Vector2 {
+    // 对于包含旋转的变换矩阵，需要考虑行列式的符号
+    const scaleX = Math.sqrt(this.elements[0] * this.elements[0] + this.elements[1] * this.elements[1]);
+    const scaleY = Math.sqrt(this.elements[3] * this.elements[3] + this.elements[4] * this.elements[4]);
     
-    const a00 = a[0], a01 = a[1], a02 = a[2];
-    const a10 = a[3], a11 = a[4], a12 = a[5];
-    const a20 = a[6], a21 = a[7], a22 = a[8];
-
-    const b00 = b[0], b01 = b[1], b02 = b[2];
-    const b10 = b[3], b11 = b[4], b12 = b[5];
-    const b20 = b[6], b21 = b[7], b22 = b[8];
-
-    a[0] = a00 * b00 + a01 * b10 + a02 * b20;
-    a[1] = a00 * b01 + a01 * b11 + a02 * b21;
-    a[2] = a00 * b02 + a01 * b12 + a02 * b22;
-
-    a[3] = a10 * b00 + a11 * b10 + a12 * b20;
-    a[4] = a10 * b01 + a11 * b11 + a12 * b21;
-    a[5] = a10 * b02 + a11 * b12 + a12 * b22;
-
-    a[6] = a20 * b00 + a21 * b10 + a22 * b20;
-    a[7] = a20 * b01 + a21 * b11 + a22 * b21;
-    a[8] = a20 * b02 + a21 * b12 + a22 * b22;
-
-    return this;
-  }
-
-  /**
-   * 左乘矩阵 (this = other * this)
-   */
-  premultiply(other: Matrix3): Matrix3 {
-    const temp = other.clone();
-    temp.multiply(this);
-    this.copy(temp);
-    return this;
-  }
-
-  /**
-   * 应用平移变换
-   */
-  translate(x: number, y: number): Matrix3 {
-    return this.multiply(Matrix3.translation(x, y));
-  }
-
-  /**
-   * 应用旋转变换
-   */
-  rotate(angle: number): Matrix3 {
-    return this.multiply(Matrix3.rotation(angle));
-  }
-
-  /**
-   * 应用缩放变换
-   */
-  scale(sx: number, sy: number): Matrix3 {
-    return this.multiply(Matrix3.scaling(sx, sy));
-  }
-
-  /**
-   * 计算逆矩阵
-   */
-  invert(): Matrix3 {
-    const m = this.elements;
+    // 检查是否有反射（负缩放）
+    const det = this.determinant();
+    const finalScaleY = det < 0 ? -scaleY : scaleY;
     
-    const m00 = m[0], m01 = m[1], m02 = m[2];
-    const m10 = m[3], m11 = m[4], m12 = m[5];
-    const m20 = m[6], m21 = m[7], m22 = m[8];
-
-    const det = m00 * (m11 * m22 - m21 * m12) -
-                m01 * (m10 * m22 - m12 * m20) +
-                m02 * (m10 * m21 - m11 * m20);
-
-    if (Math.abs(det) < 1e-10) {
-      console.warn('Matrix3: Cannot invert matrix, determinant is 0');
-      return this.identity();
-    }
-
-    const invDet = 1 / det;
-
-    m[0] = (m11 * m22 - m21 * m12) * invDet;
-    m[1] = (m02 * m21 - m01 * m22) * invDet;
-    m[2] = (m01 * m12 - m02 * m11) * invDet;
-    m[3] = (m12 * m20 - m10 * m22) * invDet;
-    m[4] = (m00 * m22 - m02 * m20) * invDet;
-    m[5] = (m02 * m10 - m00 * m12) * invDet;
-    m[6] = (m10 * m21 - m11 * m20) * invDet;
-    m[7] = (m01 * m20 - m00 * m21) * invDet;
-    m[8] = (m00 * m11 - m01 * m10) * invDet;
-
-    return this;
+    return new Vector2(scaleX, finalScaleY);
   }
 
-  /**
-   * 变换向量点
-   */
-  transformPoint(x: number, y: number): { x: number; y: number } {
-    const m = this.elements;
-    return {
-      x: m[0] * x + m[1] * y + m[2],
-      y: m[3] * x + m[4] * y + m[5]
-    };
-  }
-
-  /**
-   * 获取平移分量
-   */
-  getTranslation(): { x: number; y: number } {
-    return {
-      x: this.elements[2],
-      y: this.elements[5]
-    };
-  }
-
-  /**
-   * 获取缩放分量
-   */
-  getScale(): { x: number; y: number } {
-    const m = this.elements;
-    const sx = Math.sqrt(m[0] * m[0] + m[3] * m[3]);
-    const sy = Math.sqrt(m[1] * m[1] + m[4] * m[4]);
-    return { x: sx, y: sy };
-  }
-
-  /**
-   * 获取旋转角度
-   */
   getRotation(): number {
-    return Math.atan2(this.elements[3], this.elements[0]);
+    return Math.atan2(this.elements[1], this.elements[0]);
   }
 
-  /**
-   * 转换为WebGL uniform格式（列主序）
-   */
-  toWebGL(): Float32Array {
-    const m = this.elements;
-    return new Float32Array([
-      m[0], m[3], m[6],
-      m[1], m[4], m[7],
-      m[2], m[5], m[8]
-    ]);
-  }
-
-  /**
-   * 转换为字符串
-   */
-  toString(): string {
-    const m = this.elements;
-    return `Matrix3(
-  ${m[0].toFixed(3)}, ${m[1].toFixed(3)}, ${m[2].toFixed(3)}
-  ${m[3].toFixed(3)}, ${m[4].toFixed(3)}, ${m[5].toFixed(3)}
-  ${m[6].toFixed(3)}, ${m[7].toFixed(3)}, ${m[8].toFixed(3)}
-)`;
-  }
-
-  /**
-   * 比较两个矩阵是否相等
-   */
-  equals(other: Matrix3, epsilon = 1e-6): boolean {
-    const a = this.elements;
-    const b = other.elements;
-    
+  // 比较
+  equals(other: Matrix3x3, epsilon: number = 1e-10): boolean {
     for (let i = 0; i < 9; i++) {
-      if (Math.abs(a[i] - b[i]) > epsilon) {
+      if (Math.abs(this.elements[i] - other.elements[i]) > epsilon) {
         return false;
       }
     }
-    
     return true;
   }
+
+  // 访问方法
+  get(row: number, col: number): number {
+    return this.elements[col * 3 + row];
+  }
+
+  // 工具方法
+  toString(): string {
+    const e = this.elements;
+    return `Matrix3x3(\n` +
+           `  [${e[0].toFixed(3)}, ${e[3].toFixed(3)}, ${e[6].toFixed(3)}]\n` +
+           `  [${e[1].toFixed(3)}, ${e[4].toFixed(3)}, ${e[7].toFixed(3)}]\n` +
+           `  [${e[2].toFixed(3)}, ${e[5].toFixed(3)}, ${e[8].toFixed(3)}]\n` +
+           `)`;
+  }
+
+  toArray(): number[] {
+    return Array.from(this.elements);
+  }
+
+  // 静态方法
+  static fromArray(arr: number[]): Matrix3x3 {
+    if (arr.length !== 9) throw new Error('Array must have 9 elements');
+    return new Matrix3x3(
+      arr[0], arr[3], arr[6],
+      arr[1], arr[4], arr[7],
+      arr[2], arr[5], arr[8]
+    );
+  }
+
+  static multiply(a: Matrix3x3, b: Matrix3x3): Matrix3x3 {
+    return a.multiply(b);
+  }
+
+  static lerp(a: Matrix3x3, b: Matrix3x3, t: number): Matrix3x3 {
+    const result = new Matrix3x3();
+    for (let i = 0; i < 9; i++) {
+      result.elements[i] = a.elements[i] + (b.elements[i] - a.elements[i]) * t;
+    }
+    return result;
+  }
+
+  // 创建单位矩阵
+  static identity(): Matrix3x3 {
+    return new Matrix3x3();
+  }
+
+  // 创建正交投影矩阵
+  static orthographic(left: number, right: number, bottom: number, top: number): Matrix3x3 {
+    const width = right - left;
+    const height = top - bottom;
+    
+    return new Matrix3x3(
+      2 / width, 0, -(right + left) / width,
+      0, 2 / height, -(top + bottom) / height,
+      0, 0, 1
+    );
+  }
 }
+
+// 为了向后兼容，导出 Matrix3 作为 Matrix3x3 的别名
+export { Matrix3x3 as Matrix3 };

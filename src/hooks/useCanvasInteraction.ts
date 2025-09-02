@@ -67,11 +67,16 @@ export function useCanvasInteraction(
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    };
+    try {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    } catch (error) {
+      console.warn('getBoundingClientRect failed:', error);
+      return null;
+    }
   }, [canvasRef]);
 
   /**

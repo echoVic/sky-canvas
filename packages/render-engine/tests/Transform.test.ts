@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
-import { Transform } from '../engine/math/Transform';
-import { Vector2 } from '../engine/math/Vector2';
+import { Transform } from '../src/math/Transform';
+import { Vector2 } from '../src/math/Vector2';
 
 describe('Transform', () => {
   describe('构造函数', () => {

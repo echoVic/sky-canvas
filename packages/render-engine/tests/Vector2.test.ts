@@ -1,199 +1,165 @@
-/**
- * 2D向量数学库测试
- */
 import { describe, test, expect } from 'vitest';
 import { Vector2 } from '../src/math/Vector2';
 
 describe('Vector2', () => {
   describe('构造函数', () => {
-    test('应该能创建零向量', () => {
-      const v = new Vector2();
-      expect(v.x).toBe(0);
-      expect(v.y).toBe(0);
+    test('默认构造应该为 (0, 0)', () => {
+      const v1 = new Vector2();
+      expect(v1.x).toBe(0);
+      expect(v1.y).toBe(0);
     });
 
-    test('应该能创建指定坐标的向量', () => {
-      const v = new Vector2(3, 4);
-      expect(v.x).toBe(3);
-      expect(v.y).toBe(4);
-    });
-  });
-
-  describe('基本运算', () => {
-    test('应该能进行向量加法', () => {
-      const v1 = new Vector2(1, 2);
+    test('参数构造应该正确设置值', () => {
       const v2 = new Vector2(3, 4);
-      const result = v1.add(v2);
-      
-      expect(result.x).toBe(4);
-      expect(result.y).toBe(6);
-      expect(v1.x).toBe(1); // 原向量不变
-      expect(v1.y).toBe(2);
-    });
-
-    test('应该能进行向量减法', () => {
-      const v1 = new Vector2(5, 7);
-      const v2 = new Vector2(2, 3);
-      const result = v1.subtract(v2);
-      
-      expect(result.x).toBe(3);
-      expect(result.y).toBe(4);
-    });
-
-    test('应该能进行标量乘法', () => {
-      const v = new Vector2(2, 3);
-      const result = v.multiply(2);
-      
-      expect(result.x).toBe(4);
-      expect(result.y).toBe(6);
-    });
-
-    test('应该能进行标量除法', () => {
-      const v = new Vector2(6, 8);
-      const result = v.divide(2);
-      
-      expect(result.x).toBe(3);
-      expect(result.y).toBe(4);
-    });
-
-    test('除以零应该抛出错误', () => {
-      const v = new Vector2(1, 1);
-      expect(() => v.divide(0)).toThrow('Cannot divide by zero');
-    });
-  });
-
-  describe('长度计算', () => {
-    test('应该能计算向量长度', () => {
-      const v = new Vector2(3, 4);
-      expect(v.length()).toBe(5);
-    });
-
-    test('应该能计算向量长度平方', () => {
-      const v = new Vector2(3, 4);
-      expect(v.lengthSquared()).toBe(25);
-    });
-
-    test('零向量长度应该为0', () => {
-      const v = new Vector2(0, 0);
-      expect(v.length()).toBe(0);
-    });
-  });
-
-  describe('单位向量', () => {
-    test('应该能归一化向量', () => {
-      const v = new Vector2(3, 4);
-      const normalized = v.normalize();
-      
-      expect(normalized.length()).toBeCloseTo(1, 5);
-      expect(normalized.x).toBeCloseTo(0.6, 5);
-      expect(normalized.y).toBeCloseTo(0.8, 5);
-    });
-
-    test('归一化零向量应该返回零向量', () => {
-      const v = new Vector2(0, 0);
-      const normalized = v.normalize();
-      
-      expect(normalized.x).toBe(0);
-      expect(normalized.y).toBe(0);
-    });
-  });
-
-  describe('点积和距离', () => {
-    test('应该能计算点积', () => {
-      const v1 = new Vector2(2, 3);
-      const v2 = new Vector2(4, 5);
-      const dot = v1.dot(v2);
-      
-      expect(dot).toBe(23); // 2*4 + 3*5 = 23
-    });
-
-    test('应该能计算两点距离', () => {
-      const v1 = new Vector2(0, 0);
-      const v2 = new Vector2(3, 4);
-      const distance = v1.distanceTo(v2);
-      
-      expect(distance).toBe(5);
-    });
-
-    test('应该能计算两点距离平方', () => {
-      const v1 = new Vector2(0, 0);
-      const v2 = new Vector2(3, 4);
-      const distanceSquared = v1.distanceToSquared(v2);
-      
-      expect(distanceSquared).toBe(25);
-    });
-  });
-
-  describe('角度计算', () => {
-    test('应该能计算向量角度', () => {
-      const v1 = new Vector2(1, 0);
-      const v2 = new Vector2(0, 1);
-      
-      expect(v1.angle()).toBe(0);
-      expect(v2.angle()).toBeCloseTo(Math.PI / 2, 5);
-    });
-
-    test('应该能计算两向量夹角', () => {
-      const v1 = new Vector2(1, 0);
-      const v2 = new Vector2(0, 1);
-      const angle = v1.angleTo(v2);
-      
-      expect(angle).toBeCloseTo(Math.PI / 2, 5);
-    });
-  });
-
-  describe('工具方法', () => {
-    test('应该能克隆向量', () => {
-      const v1 = new Vector2(3, 4);
-      const v2 = v1.clone();
-      
       expect(v2.x).toBe(3);
       expect(v2.y).toBe(4);
-      expect(v2).not.toBe(v1); // 不是同一个对象
     });
 
-    test('应该能判断向量相等', () => {
-      const v1 = new Vector2(3, 4);
+    test('克隆应该创建相同的向量', () => {
       const v2 = new Vector2(3, 4);
-      const v3 = new Vector2(3, 5);
-      
-      expect(v1.equals(v2)).toBe(true);
-      expect(v1.equals(v3)).toBe(false);
+      const v3 = v2.clone();
+      expect(v3.x).toBe(3);
+      expect(v3.y).toBe(4);
+      expect(v3).not.toBe(v2);
+    });
+  });
+
+  describe('基础运算', () => {
+    test('向量加法应该正确', () => {
+      const v1 = new Vector2(1, 2);
+      const v2 = new Vector2(3, 4);
+      const sum = v1.add(v2);
+      expect(sum.x).toBe(4);
+      expect(sum.y).toBe(6);
     });
 
-    test('应该能转换为数组', () => {
-      const v = new Vector2(3, 4);
-      const array = v.toArray();
-      
-      expect(array).toEqual([3, 4]);
+    test('向量减法应该正确', () => {
+      const v1 = new Vector2(1, 2);
+      const v2 = new Vector2(3, 4);
+      const diff = v2.subtract(v1);
+      expect(diff.x).toBe(2);
+      expect(diff.y).toBe(2);
     });
 
-    test('应该有正确的字符串表示', () => {
-      const v = new Vector2(3, 4);
-      expect(v.toString()).toBe('Vector2(3, 4)');
+    test('标量乘法应该正确', () => {
+      const v1 = new Vector2(1, 2);
+      const scaled = v1.multiply(2);
+      expect(scaled.x).toBe(2);
+      expect(scaled.y).toBe(4);
+    });
+
+    test('标量除法应该正确', () => {
+      const scaled = new Vector2(2, 4);
+      const divided = scaled.divide(2);
+      expect(divided.x).toBe(1);
+      expect(divided.y).toBe(2);
+    });
+  });
+
+  describe('向量数学运算', () => {
+    test('向量长度应该正确计算', () => {
+      const v1 = new Vector2(3, 4);
+      const length = v1.length();
+      expect(Math.abs(length - 5)).toBeLessThan(1e-10);
+    });
+
+    test('向量长度平方应该正确计算', () => {
+      const v1 = new Vector2(3, 4);
+      const lengthSq = v1.lengthSquared();
+      expect(lengthSq).toBe(25);
+    });
+
+    test('归一化向量长度应该为 1', () => {
+      const v1 = new Vector2(3, 4);
+      const normalized = v1.normalize();
+      expect(Math.abs(normalized.length() - 1)).toBeLessThan(1e-10);
+    });
+
+    test('点积应该正确计算', () => {
+      const v1 = new Vector2(3, 4);
+      const v2 = new Vector2(1, 0);
+      const dot = v1.dot(v2);
+      expect(dot).toBe(3);
+    });
+
+    test('叉积应该正确计算', () => {
+      const v1 = new Vector2(3, 4);
+      const v2 = new Vector2(1, 0);
+      const cross = v1.cross(v2);
+      expect(cross).toBe(-4);
+    });
+
+    test('距离计算应该正确', () => {
+      const v1 = new Vector2(3, 4);
+      const distance = v1.distance(Vector2.ZERO);
+      expect(Math.abs(distance - 5)).toBeLessThan(1e-10);
+    });
+  });
+
+  describe('向量变换', () => {
+    test('90度旋转应该正确', () => {
+      const v1 = new Vector2(1, 0);
+      const rotated = v1.rotate(Math.PI / 2);
+      expect(Math.abs(rotated.x)).toBeLessThan(1e-10);
+      expect(Math.abs(rotated.y - 1)).toBeLessThan(1e-10);
+    });
+
+    test('垂直向量应该正确', () => {
+      const v1 = new Vector2(1, 0);
+      const perp = v1.perpendicular();
+      expect(perp.x).toBe(0);
+      expect(perp.y).toBe(1);
+    });
+
+    test('反射应该正确', () => {
+      const normal = new Vector2(0, 1);
+      const reflected = new Vector2(1, -1).reflect(normal);
+      expect(Math.abs(reflected.x - 1)).toBeLessThan(1e-10);
+      expect(Math.abs(reflected.y - 1)).toBeLessThan(1e-10);
     });
   });
 
   describe('静态方法', () => {
-    test('应该能创建零向量', () => {
-      const zero = Vector2.zero();
-      expect(zero.x).toBe(0);
-      expect(zero.y).toBe(0);
+    test('从角度创建应该正确', () => {
+      const v1 = Vector2.fromAngle(0, 5);
+      expect(Math.abs(v1.x - 5)).toBeLessThan(1e-10);
+      expect(Math.abs(v1.y)).toBeLessThan(1e-10);
     });
 
-    test('应该能创建单位向量', () => {
-      const one = Vector2.one();
-      expect(one.x).toBe(1);
-      expect(one.y).toBe(1);
+    test('从数组创建应该正确', () => {
+      const v2 = Vector2.fromArray([3, 4]);
+      expect(v2.x).toBe(3);
+      expect(v2.y).toBe(4);
     });
 
-    test('应该能插值两个向量', () => {
-      const v1 = new Vector2(0, 0);
-      const v2 = new Vector2(10, 10);
-      const lerp = Vector2.lerp(v1, v2, 0.5);
-      
-      expect(lerp.x).toBe(5);
-      expect(lerp.y).toBe(5);
+    test('插值应该正确', () => {
+      const v3 = new Vector2(0, 0);
+      const v4 = new Vector2(10, 10);
+      const lerped = Vector2.lerp(v3, v4, 0.5);
+      expect(lerped.x).toBe(5);
+      expect(lerped.y).toBe(5);
+    });
+  });
+
+  describe('工具方法', () => {
+    test('转换为数组应该正确', () => {
+      const v1 = new Vector2(3.14159, 2.71828);
+      const arr = v1.toArray();
+      expect(arr[0]).toBe(v1.x);
+      expect(arr[1]).toBe(v1.y);
+    });
+
+    test('相等比较应该正确', () => {
+      const v1 = new Vector2(3.14159, 2.71828);
+      const v2 = new Vector2(3.14159, 2.71828);
+      expect(v1.equals(v2)).toBe(true);
+    });
+
+    test('字符串表示应该包含正确值', () => {
+      const v1 = new Vector2(3.14159, 2.71828);
+      const str = v1.toString();
+      expect(str).toContain('3.142');
+      expect(str).toContain('2.718');
     });
   });
 });

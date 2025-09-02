@@ -1,404 +1,559 @@
-/**
- * 交互管理器实现
- */
-import { IPoint } from '@sky-canvas/render-engine';
-import { 
-  IInteractionManager, 
-  IInteractionTool, 
-  SelectionMode, 
-  IMouseEvent, 
-  ITouchEvent, 
-  IGestureEvent 
-} from './types';
-import { EventDispatcher, EventFactory, GestureRecognizer, EventType } from './EventSystem';
-import { SelectionManager } from './SelectionManager';
-import { CollisionDetector } from './CollisionDetector';
-import { SelectTool, PanTool, ZoomTool, DrawTool, RectangleTool, CircleTool, DiamondTool, TextTool } from './tools';
-import { IShape } from '../scene/IShape';
+import { Point, Rect, RenderContext } from '../../types';
+import {
+  EventDispatcher,
+  EventFactory,
+  EventType,
+  GestureEvent,
+  InputState,
+  MouseEvent
+} from '../events/EventSystem';
+import { GestureRecognizer } from '../events/GestureRecognizer';
+import { Vector2 } from '../math';
+import { Scene } from '../scene/Scene';
+import { ISceneNode } from '../scene/SceneNode';
+import { Viewport } from '../scene/Viewport';
+import { CollisionDetector } from './CollisionDetection';
+import { SelectionManager, SelectionMode } from './SelectionManager';
 
 /**
- * 输入状态管理
+ * 交互模式枚举
  */
-class InputState {
-  private mousePosition: IPoint = { x: 0, y: 0 };
-  private mouseButtons = new Set<number>();
-  private keys = new Set<string>();
-  private modifiers = {
-    ctrl: false,
-    shift: false,
-    alt: false,
-    meta: false
-  };
+export enum InteractionMode {
+  SELECT = 'select',
+  PAN = 'pan',
+  ZOOM = 'zoom',
+  DRAW = 'draw',
+  EDIT = 'edit',
+  NONE = 'none'
+}
 
-  setMousePosition(position: IPoint): void {
-    this.mousePosition = { ...position };
+/**
+ * 交互工具接口
+ */
+export interface InteractionTool {
+  name: string;
+  mode: InteractionMode;
+  cursor: string;
+  enabled: boolean;
+  
+  onActivate(): void;
+  onDeactivate(): void;
+  onMouseDown(event: MouseEvent): boolean;
+  onMouseMove(event: MouseEvent): boolean;
+  onMouseUp(event: MouseEvent): boolean;
+  onGesture(event: GestureEvent): boolean;
+  onKeyDown(key: string): boolean;
+  onKeyUp(key: string): boolean;
+}
+
+/**
+ * 选择工具
+ */
+export class SelectTool implements InteractionTool {
+  name = 'select';
+  mode = InteractionMode.SELECT;
+  cursor = 'default';
+  enabled = true;
+
+  private _manager: InteractionManager;
+  private _isDragging = false;
+  private _dragStart: Point | null = null;
+  private _selectionRect: Rect | null = null;
+
+  constructor(manager: InteractionManager) {
+    this._manager = manager;
   }
 
-  getMousePosition(): IPoint {
-    return { ...this.mousePosition };
+  onActivate(): void {
+    this._manager.setCursor(this.cursor);
   }
 
-  setMouseButtonDown(button: number): void {
-    this.mouseButtons.add(button);
+  onDeactivate(): void {
+    this._isDragging = false;
+    this._dragStart = null;
+    this._selectionRect = null;
   }
 
-  setMouseButtonUp(button: number): void {
-    this.mouseButtons.delete(button);
+  onMouseDown(event: MouseEvent): boolean {
+    const worldPos = this._manager.screenToWorld(event.screenPosition);
+    const hitNode = this._manager.hitTest(worldPos);
+
+    if (hitNode) {
+      // 选择节点
+      const mode = event.ctrlKey ? SelectionMode.TOGGLE : 
+                   event.shiftKey ? SelectionMode.ADDITIVE : 
+                   SelectionMode.SINGLE;
+      this._manager.select(hitNode, mode);
+    } else {
+      // 开始框选
+      this._isDragging = true;
+      this._dragStart = worldPos;
+      
+      if (!event.shiftKey && !event.ctrlKey) {
+        this._manager.clearSelection();
+      }
+    }
+
+    return true;
   }
 
-  isMouseButtonDown(button: number): boolean {
-    return this.mouseButtons.has(button);
+  onMouseMove(event: MouseEvent): boolean {
+    if (this._isDragging && this._dragStart) {
+      const worldPos = this._manager.screenToWorld(event.screenPosition);
+      
+      // 更新选择框
+      this._selectionRect = {
+        x: Math.min(this._dragStart.x, worldPos.x),
+        y: Math.min(this._dragStart.y, worldPos.y),
+        width: Math.abs(worldPos.x - this._dragStart.x),
+        height: Math.abs(worldPos.y - this._dragStart.y)
+      };
+
+      return true;
+    }
+
+    return false;
   }
 
-  setKeyDown(key: string): void {
-    this.keys.add(key);
+  onMouseUp(event: MouseEvent): boolean {
+    if (this._isDragging && this._selectionRect) {
+      // 框选
+      const mode = event.shiftKey ? SelectionMode.ADDITIVE : SelectionMode.MULTIPLE;
+      this._manager.selectInBounds(this._selectionRect, mode);
+      
+      this._isDragging = false;
+      this._dragStart = null;
+      this._selectionRect = null;
+      return true;
+    }
+
+    return false;
   }
 
-  setKeyUp(key: string): void {
-    this.keys.delete(key);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onGesture(_event: GestureEvent): boolean {
+    return false;
   }
 
-  isKeyDown(key: string): boolean {
-    return this.keys.has(key);
+  onKeyDown(key: string): boolean {
+    if (key === 'Delete' || key === 'Backspace') {
+      // 删除选中的节点
+      const selected = this._manager.getSelectedNodes();
+      for (const node of selected) {
+        node.removeFromParent();
+      }
+      this._manager.clearSelection();
+      return true;
+    }
+
+    return false;
   }
 
-  setModifiers(mods: Partial<typeof this.modifiers>): void {
-    Object.assign(this.modifiers, mods);
+  onKeyUp(key: string): boolean {
+    return false;
   }
 
-  getModifiers() {
-    return { ...this.modifiers };
+  getSelectionRect(): Rect | null {
+    return this._selectionRect;
+  }
+}
+
+/**
+ * 平移工具
+ */
+export class PanTool implements InteractionTool {
+  name = 'pan';
+  mode = InteractionMode.PAN;
+  cursor = 'grab';
+  enabled = true;
+
+  private _manager: InteractionManager;
+  private _isPanning = false;
+  private _lastPosition: Point | null = null;
+
+  constructor(manager: InteractionManager) {
+    this._manager = manager;
   }
 
-  reset(): void {
-    this.mouseButtons.clear();
-    this.keys.clear();
-    this.modifiers = { ctrl: false, shift: false, alt: false, meta: false };
+  onActivate(): void {
+    this._manager.setCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    this._isPanning = false;
+    this._lastPosition = null;
+  }
+
+  onMouseDown(event: MouseEvent): boolean {
+    this._isPanning = true;
+    this._lastPosition = event.screenPosition;
+    this._manager.setCursor('grabbing');
+    return true;
+  }
+
+  onMouseMove(event: MouseEvent): boolean {
+    if (this._isPanning && this._lastPosition) {
+      const delta = new Vector2(
+        event.screenPosition.x - this._lastPosition.x,
+        event.screenPosition.y - this._lastPosition.y
+      );
+
+      this._manager.panViewport(delta);
+      this._lastPosition = event.screenPosition;
+      return true;
+    }
+
+    return false;
+  }
+
+  onMouseUp(_event: MouseEvent): boolean {
+    if (this._isPanning) {
+      this._isPanning = false;
+      this._lastPosition = null;
+      this._manager.setCursor(this.cursor);
+      return true;
+    }
+
+    return false;
+  }
+
+  onGesture(event: GestureEvent): boolean {
+    if (event.type === EventType.GESTURE_CHANGE) {
+      // 处理触摸平移
+      this._manager.panViewport(event.deltaTranslation);
+      return true;
+    }
+
+    return false;
+  }
+
+  onKeyDown(key: string): boolean {
+    return false;
+  }
+
+  onKeyUp(key: string): boolean {
+    return false;
+  }
+}
+
+/**
+ * 缩放工具
+ */
+export class ZoomTool implements InteractionTool {
+  name = 'zoom';
+  mode = InteractionMode.ZOOM;
+  cursor = 'zoom-in';
+  enabled = true;
+
+  private _manager: InteractionManager;
+
+  constructor(manager: InteractionManager) {
+    this._manager = manager;
+  }
+
+  onActivate(): void {
+    this._manager.setCursor(this.cursor);
+  }
+
+  onDeactivate(): void {
+    // 无需清理
+  }
+
+  onMouseDown(event: MouseEvent): boolean {
+    const worldPos = this._manager.screenToWorld(event.screenPosition);
+    const zoomFactor = event.button === 0 ? 1.2 : 0.8; // 左键放大，右键缩小
+    
+    this._manager.zoomViewport(zoomFactor, worldPos);
+    return true;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onMouseMove(_event: MouseEvent): boolean {
+    return false;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onMouseUp(_event: MouseEvent): boolean {
+    return false;
+  }
+
+  onGesture(event: GestureEvent): boolean {
+    if (event.type === EventType.GESTURE_CHANGE && event.deltaScale !== 0) {
+      const zoomFactor = 1 + event.deltaScale * 0.01;
+      this._manager.zoomViewport(zoomFactor, event.center);
+      return true;
+    }
+
+    return false;
+  }
+
+  onKeyDown(key: string): boolean {
+    return false;
+  }
+
+  onKeyUp(key: string): boolean {
+    return false;
   }
 }
 
 /**
  * 交互管理器
  */
-export class InteractionManager extends EventDispatcher implements IInteractionManager {
-  private canvas: HTMLCanvasElement | null = null;
-  private selectionManager: SelectionManager;
-  private collisionDetector: CollisionDetector;
-  private gestureRecognizer: GestureRecognizer;
-  private inputState: InputState;
+export class InteractionManager extends EventDispatcher {
+  private _canvas: HTMLCanvasElement | null = null;
+  private _scene: Scene | null = null;
+  private _viewport: Viewport | null = null;
+  private _selectionManager: SelectionManager;
+  private _collisionDetector: CollisionDetector;
+  private _gestureRecognizer: GestureRecognizer;
+  private _inputState: InputState;
 
-  private tools = new Map<string, IInteractionTool>();
-  private activeTool: IInteractionTool | null = null;
-  private _enabled = true;
-
-  // 坐标转换函数
-  private screenToWorldFn: ((point: IPoint) => IPoint) | null = null;
-  private worldToScreenFn: ((point: IPoint) => IPoint) | null = null;
-  
-  // 视口控制函数
-  private panViewportFn: ((delta: IPoint) => void) | null = null;
-  private zoomViewportFn: ((factor: number, center?: IPoint) => void) | null = null;
-
-  private addShapeFn: ((shape: any) => void) | null = null;
+  private _tools: Map<string, InteractionTool> = new Map();
+  private _activeTool: InteractionTool | null = null;
+  private _enabled: boolean = true;
 
   // 事件监听器
-  private eventListeners: { [key: string]: (event: any) => void } = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _eventListeners: { [key: string]: (event: any) => void } = {};
 
   constructor() {
     super();
     
-    this.selectionManager = new SelectionManager();
-    this.collisionDetector = new CollisionDetector();
-    this.gestureRecognizer = new GestureRecognizer();
-    this.inputState = new InputState();
+    this._selectionManager = new SelectionManager();
+    this._collisionDetector = new CollisionDetector();
+    this._gestureRecognizer = new GestureRecognizer();
+    this._inputState = new InputState();
+
+    // 注册默认工具
+    this.registerTool(new SelectTool(this));
+    this.registerTool(new PanTool(this));
+    this.registerTool(new ZoomTool(this));
+
+    // 设置默认工具
+    this.setActiveTool('select');
 
     // 监听选择事件
-    this.selectionManager.addEventListener(EventType.SELECTION_CHANGE, (event: any) => {
+    this._selectionManager.addEventListener(EventType.SELECTION_CHANGE, (event) => {
       this.dispatchEvent(event);
     });
   }
 
-  initialize(canvas: HTMLCanvasElement): void {
-    this.canvas = canvas;
+  // 初始化
+  initialize(canvas: HTMLCanvasElement, scene: Scene, viewport: Viewport): void {
+    this._canvas = canvas;
+    this._scene = scene;
+    this._viewport = viewport;
+
     this.setupEventListeners();
-    this.initializeDefaultTools();
-    this.setActiveTool('select');
-  }
-
-  // 设置坐标转换函数
-  setCoordinateTransforms(
-    screenToWorld: (point: IPoint) => IPoint,
-    worldToScreen: (point: IPoint) => IPoint
-  ): void {
-    this.screenToWorldFn = screenToWorld;
-    this.worldToScreenFn = worldToScreen;
-  }
-
-  // 设置视口控制函数
-  setViewportControls(
-    panViewport: (delta: IPoint) => void,
-    zoomViewport: (factor: number, center?: IPoint) => void
-  ): void {
-    this.panViewportFn = panViewport;
-    this.zoomViewportFn = zoomViewport;
-  }
-
-  // 设置形状添加函数
-  setShapeControls(addShape: (shape: any) => void): void {
-    this.addShapeFn = addShape;
-  }
-
-  // 更新可交互对象
-  updateInteractableItems(items: IShape[]): void {
-    this.collisionDetector.updateItems(items);
-  }
-
-  private initializeDefaultTools(): void {
-    // 注册默认工具
-    this.registerTool(new SelectTool(this, this.setCursor.bind(this)));
-    this.registerTool(new PanTool(
-      this, 
-      this.setCursor.bind(this),
-      this.panViewport.bind(this)
-    ));
-    this.registerTool(new ZoomTool(
-      this,
-      this.setCursor.bind(this),
-      this.zoomViewport.bind(this)
-    ));
-    this.registerTool(new DrawTool(
-      this,
-      this.setCursor.bind(this),
-      (shape: any) => this.addShapeFn?.(shape)
-    ));
-    this.registerTool(new RectangleTool(
-      this,
-      this.setCursor.bind(this),
-      (shape: any) => this.addShapeFn?.(shape)
-    ));
-    this.registerTool(new CircleTool(
-      this,
-      this.setCursor.bind(this),
-      (shape: any) => this.addShapeFn?.(shape)
-    ));
-    this.registerTool(new DiamondTool(
-      this,
-      this.setCursor.bind(this),
-      (shape: any) => this.addShapeFn?.(shape)
-    ));
-    this.registerTool(new TextTool(
-      this,
-      this.setCursor.bind(this),
-      (shape: any) => this.addShapeFn?.(shape)
-    ));
+    this.updateCollisionNodes();
   }
 
   // 工具管理
-  registerTool(tool: IInteractionTool): void {
-    this.tools.set(tool.name, tool);
+  registerTool(tool: InteractionTool): void {
+    this._tools.set(tool.name, tool);
   }
 
   unregisterTool(name: string): void {
-    if (this.activeTool?.name === name) {
+    if (this._activeTool?.name === name) {
       this.setActiveTool(null);
     }
-    this.tools.delete(name);
+    this._tools.delete(name);
   }
 
   setActiveTool(name: string | null): boolean {
-    if (this.activeTool) {
-      this.activeTool.onDeactivate();
+    if (this._activeTool) {
+      this._activeTool.onDeactivate();
     }
 
-    if (name && this.tools.has(name)) {
-      this.activeTool = this.tools.get(name)!;
-      this.activeTool.onActivate();
+    if (name && this._tools.has(name)) {
+      this._activeTool = this._tools.get(name)!;
+      this._activeTool.onActivate();
       return true;
     } else {
-      this.activeTool = null;
+      this._activeTool = null;
       this.setCursor('default');
       return false;
     }
   }
 
-  getActiveTool(): IInteractionTool | null {
-    return this.activeTool;
+  getActiveTool(): InteractionTool | null {
+    return this._activeTool;
+  }
+
+  getTools(): InteractionTool[] {
+    return Array.from(this._tools.values());
   }
 
   // 坐标转换
-  screenToWorld(screenPoint: IPoint): IPoint {
-    return this.screenToWorldFn ? this.screenToWorldFn(screenPoint) : screenPoint;
+  screenToWorld(screenPoint: Point): Point {
+    if (!this._viewport) return screenPoint;
+    const worldPos = this._viewport.screenToWorld(screenPoint);
+    return { x: worldPos.x, y: worldPos.y };
   }
 
-  worldToScreen(worldPoint: IPoint): IPoint {
-    return this.worldToScreenFn ? this.worldToScreenFn(worldPoint) : worldPoint;
+  worldToScreen(worldPoint: Point): Point {
+    if (!this._viewport) return worldPoint;
+    const screenPos = this._viewport.worldToScreen(worldPoint);
+    return { x: screenPos.x, y: screenPos.y };
   }
 
   // 碰撞检测
-  hitTest(worldPoint: IPoint): any | null {
-    return this.collisionDetector.hitTest(worldPoint);
+  hitTest(worldPoint: Point): ISceneNode | null {
+    if (!this._scene) return null;
+    return this._collisionDetector.pointTest(worldPoint);
   }
 
-  hitTestAll(worldPoint: IPoint): any[] {
-    return this.collisionDetector.hitTestAll(worldPoint);
+  hitTestAll(worldPoint: Point): ISceneNode[] {
+    if (!this._scene) return [];
+    return this._collisionDetector.pointTestAll(worldPoint);
   }
 
   // 选择管理
-  select(target: any | any[], mode?: SelectionMode): boolean {
-    return this.selectionManager.select(target, mode);
+  select(node: ISceneNode | ISceneNode[], mode?: SelectionMode): boolean {
+    return this._selectionManager.select(node, mode);
   }
 
-  deselect(target: any | any[]): boolean {
-    return this.selectionManager.deselect(target);
+  deselect(node: ISceneNode | ISceneNode[]): boolean {
+    return this._selectionManager.deselect(node);
   }
 
   clearSelection(): boolean {
-    return this.selectionManager.clearSelection();
+    return this._selectionManager.clearSelection();
   }
 
-  selectInBounds(bounds: { x: number; y: number; width: number; height: number }, mode?: SelectionMode): boolean {
-    const items = this.collisionDetector.boundsTest(bounds);
-    return this.selectionManager.select(items, mode);
+  selectInBounds(bounds: Rect, mode?: SelectionMode): boolean {
+    if (!this._scene) return false;
+    const nodes = this._collisionDetector.boundsTest(bounds);
+    return this._selectionManager.select(nodes, mode);
   }
 
-  getSelectedItems(): any[] {
-    return this.selectionManager.getSelectedItems();
+  getSelectedNodes(): ISceneNode[] {
+    return this._selectionManager.getSelectedNodes();
   }
 
-  isSelected(target: any): boolean {
-    return this.selectionManager.isSelected(target);
+  isSelected(node: ISceneNode): boolean {
+    return this._selectionManager.isSelected(node);
   }
 
   // 视口控制
-  panViewport(delta: IPoint): void {
-    if (this.panViewportFn) {
-      this.panViewportFn(delta);
-    }
+  panViewport(delta: Vector2): void {
+    if (!this._viewport) return;
+    
+    // 转换屏幕坐标的平移到世界坐标
+    const worldDelta = delta.multiplyScalar(-1 / this._viewport.zoom);
+    this._viewport.panBy(worldDelta);
   }
 
-  zoomViewport(factor: number, center?: IPoint): void {
-    if (this.zoomViewportFn) {
-      this.zoomViewportFn(factor, center);
+  zoomViewport(factor: number, center?: Point): void {
+    if (!this._viewport) return;
+    
+    if (center) {
+      const worldCenter = this._viewport.screenToWorld(center);
+      this._viewport.setZoom(this._viewport.zoom * factor, { x: worldCenter.x, y: worldCenter.y });
+    } else {
+      this._viewport.setZoom(this._viewport.zoom * factor);
     }
   }
 
   // 光标管理
   setCursor(cursor: string): void {
-    if (this.canvas) {
-      this.canvas.style.cursor = cursor;
+    if (this._canvas) {
+      this._canvas.style.cursor = cursor;
     }
   }
 
   // 事件处理
   private setupEventListeners(): void {
-    if (!this.canvas) return;
+    if (!this._canvas) return;
 
     // 鼠标事件
-    this.eventListeners.mousedown = this.handleMouseDown.bind(this);
-    this.eventListeners.mousemove = this.handleMouseMove.bind(this);
-    this.eventListeners.mouseup = this.handleMouseUp.bind(this);
-    this.eventListeners.wheel = this.handleWheel.bind(this);
-    this.eventListeners.contextmenu = this.handleContextMenu.bind(this);
+    this._eventListeners.mousedown = this.handleMouseDown.bind(this);
+    this._eventListeners.mousemove = this.handleMouseMove.bind(this);
+    this._eventListeners.mouseup = this.handleMouseUp.bind(this);
+    this._eventListeners.wheel = this.handleWheel.bind(this);
+    this._eventListeners.contextmenu = this.handleContextMenu.bind(this);
 
     // 触摸事件
-    this.eventListeners.touchstart = this.handleTouchStart.bind(this);
-    this.eventListeners.touchmove = this.handleTouchMove.bind(this);
-    this.eventListeners.touchend = this.handleTouchEnd.bind(this);
-    this.eventListeners.touchcancel = this.handleTouchCancel.bind(this);
+    this._eventListeners.touchstart = this.handleTouchStart.bind(this);
+    this._eventListeners.touchmove = this.handleTouchMove.bind(this);
+    this._eventListeners.touchend = this.handleTouchEnd.bind(this);
+    this._eventListeners.touchcancel = this.handleTouchCancel.bind(this);
 
     // 键盘事件
-    this.eventListeners.keydown = this.handleKeyDown.bind(this);
-    this.eventListeners.keyup = this.handleKeyUp.bind(this);
+    this._eventListeners.keydown = this.handleKeyDown.bind(this);
+    this._eventListeners.keyup = this.handleKeyUp.bind(this);
 
     // 注册事件监听器
-    for (const [type, listener] of Object.entries(this.eventListeners)) {
+    for (const [type, listener] of Object.entries(this._eventListeners)) {
       if (type.startsWith('key')) {
         window.addEventListener(type, listener);
       } else {
-        this.canvas.addEventListener(type, listener as EventListener);
+        this._canvas.addEventListener(type, listener);
       }
     }
 
     // 手势事件
-    this.gestureRecognizer.addEventListener(EventType.GESTURE_START, this.handleGesture.bind(this));
-    this.gestureRecognizer.addEventListener(EventType.GESTURE_CHANGE, this.handleGesture.bind(this));
-    this.gestureRecognizer.addEventListener(EventType.GESTURE_END, this.handleGesture.bind(this));
+    this._gestureRecognizer.addEventListener(EventType.GESTURE_START, this.handleGesture.bind(this));
+    this._gestureRecognizer.addEventListener(EventType.GESTURE_CHANGE, this.handleGesture.bind(this));
+    this._gestureRecognizer.addEventListener(EventType.GESTURE_END, this.handleGesture.bind(this));
   }
 
-  private handleMouseDown(nativeEvent: MouseEvent): void {
-    if (!this.enabled) return;
+  private handleMouseDown(nativeEvent: globalThis.MouseEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
     nativeEvent.preventDefault();
     
-    // 获取Canvas相对坐标
-    const canvasRect = this.canvas?.getBoundingClientRect();
-    const screenPos = {
-      x: nativeEvent.clientX - (canvasRect?.left || 0),
-      y: nativeEvent.clientY - (canvasRect?.top || 0)
-    };
-    const worldPos = this.screenToWorld(screenPos);
-    const event = EventFactory.createMouseEvent(EventType.MOUSE_DOWN, nativeEvent, worldPos, screenPos);
+    const worldPos = this.screenToWorld({ x: nativeEvent.clientX, y: nativeEvent.clientY });
+    const event = EventFactory.createMouseEvent(EventType.MOUSE_DOWN, nativeEvent, worldPos);
     
-    this.inputState.setMousePosition(event.screenPosition);
-    this.inputState.setMouseButtonDown(event.button);
-    this.inputState.setModifiers({
+    this._inputState.setMousePosition(event.screenPosition);
+    this._inputState.setMouseButtonDown(event.button);
+    this._inputState.setModifiers({
       ctrl: event.ctrlKey,
       shift: event.shiftKey,
       alt: event.altKey,
       meta: event.metaKey
     });
 
-    if (this.activeTool) {
-      this.activeTool.onMouseDown(event);
+    if (this._activeTool) {
+      this._activeTool.onMouseDown(event);
     }
 
     this.dispatchEvent(event);
   }
 
-  private handleMouseMove(nativeEvent: MouseEvent): void {
-    if (!this.enabled) return;
+  private handleMouseMove(nativeEvent: globalThis.MouseEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
-    // 获取Canvas相对坐标
-    const canvasRect = this.canvas?.getBoundingClientRect();
-    const screenPos = {
-      x: nativeEvent.clientX - (canvasRect?.left || 0),
-      y: nativeEvent.clientY - (canvasRect?.top || 0)
-    };
-    const worldPos = this.screenToWorld(screenPos);
-    const event = EventFactory.createMouseEvent(EventType.MOUSE_MOVE, nativeEvent, worldPos, screenPos);
+    const worldPos = this.screenToWorld({ x: nativeEvent.clientX, y: nativeEvent.clientY });
+    const event = EventFactory.createMouseEvent(EventType.MOUSE_MOVE, nativeEvent, worldPos);
     
-    this.inputState.setMousePosition(event.screenPosition);
+    this._inputState.setMousePosition(event.screenPosition);
 
-    if (this.activeTool) {
-      this.activeTool.onMouseMove(event);
+    if (this._activeTool) {
+      this._activeTool.onMouseMove(event);
     }
 
     this.dispatchEvent(event);
   }
 
-  private handleMouseUp(nativeEvent: MouseEvent): void {
-    if (!this.enabled) return;
+  private handleMouseUp(nativeEvent: globalThis.MouseEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
-    // 获取Canvas相对坐标
-    const canvasRect = this.canvas?.getBoundingClientRect();
-    const screenPos = {
-      x: nativeEvent.clientX - (canvasRect?.left || 0),
-      y: nativeEvent.clientY - (canvasRect?.top || 0)
-    };
-    const worldPos = this.screenToWorld(screenPos);
-    const event = EventFactory.createMouseEvent(EventType.MOUSE_UP, nativeEvent, worldPos, screenPos);
+    const worldPos = this.screenToWorld({ x: nativeEvent.clientX, y: nativeEvent.clientY });
+    const event = EventFactory.createMouseEvent(EventType.MOUSE_UP, nativeEvent, worldPos);
     
-    this.inputState.setMouseButtonUp(event.button);
+    this._inputState.setMouseButtonUp(event.button);
 
-    if (this.activeTool) {
-      this.activeTool.onMouseUp(event);
+    if (this._activeTool) {
+      this._activeTool.onMouseUp(event);
     }
 
     this.dispatchEvent(event);
   }
 
   private handleWheel(nativeEvent: WheelEvent): void {
-    if (!this.enabled) return;
+    if (!this._enabled || !this._viewport) return;
 
     nativeEvent.preventDefault();
     
@@ -407,12 +562,12 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
     this.zoomViewport(zoomFactor, center);
   }
 
-  private handleContextMenu(nativeEvent: MouseEvent): void {
+  private handleContextMenu(nativeEvent: globalThis.MouseEvent): void {
     nativeEvent.preventDefault();
   }
 
-  private handleTouchStart(nativeEvent: TouchEvent): void {
-    if (!this.enabled) return;
+  private handleTouchStart(nativeEvent: globalThis.TouchEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
     nativeEvent.preventDefault();
     
@@ -421,12 +576,12 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
     );
     
     const event = EventFactory.createTouchEvent(EventType.TOUCH_START, nativeEvent, worldPositions);
-    this.gestureRecognizer.handleTouchStart(event);
+    this._gestureRecognizer.handleTouchStart(event);
     this.dispatchEvent(event);
   }
 
-  private handleTouchMove(nativeEvent: TouchEvent): void {
-    if (!this.enabled) return;
+  private handleTouchMove(nativeEvent: globalThis.TouchEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
     nativeEvent.preventDefault();
     
@@ -435,12 +590,12 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
     );
     
     const event = EventFactory.createTouchEvent(EventType.TOUCH_MOVE, nativeEvent, worldPositions);
-    this.gestureRecognizer.handleTouchMove(event);
+    this._gestureRecognizer.handleTouchMove(event);
     this.dispatchEvent(event);
   }
 
-  private handleTouchEnd(nativeEvent: TouchEvent): void {
-    if (!this.enabled) return;
+  private handleTouchEnd(nativeEvent: globalThis.TouchEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
     nativeEvent.preventDefault();
     
@@ -449,58 +604,114 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
     );
     
     const event = EventFactory.createTouchEvent(EventType.TOUCH_END, nativeEvent, worldPositions);
-    this.gestureRecognizer.handleTouchEnd(event);
+    this._gestureRecognizer.handleTouchEnd(event);
     this.dispatchEvent(event);
   }
 
-  private handleTouchCancel(nativeEvent: TouchEvent): void {
-    if (!this.enabled) return;
+  private handleTouchCancel(nativeEvent: globalThis.TouchEvent): void {
+    if (!this._enabled || !this._viewport) return;
 
     const worldPositions = Array.from(nativeEvent.changedTouches).map(touch => 
       this.screenToWorld({ x: touch.clientX, y: touch.clientY })
     );
     
     const event = EventFactory.createTouchEvent(EventType.TOUCH_CANCEL, nativeEvent, worldPositions);
-    this.gestureRecognizer.handleTouchCancel(event);
+    this._gestureRecognizer.handleTouchCancel(event);
     this.dispatchEvent(event);
   }
 
   private handleKeyDown(nativeEvent: KeyboardEvent): void {
-    if (!this.enabled) return;
+    if (!this._enabled) return;
 
-    this.inputState.setKeyDown(nativeEvent.key);
+    this._inputState.setKeyDown(nativeEvent.key);
     
-    if (this.activeTool) {
-      this.activeTool.onKeyDown(nativeEvent.key);
+    if (this._activeTool) {
+      this._activeTool.onKeyDown(nativeEvent.key);
     }
   }
 
   private handleKeyUp(nativeEvent: KeyboardEvent): void {
-    if (!this.enabled) return;
+    if (!this._enabled) return;
 
-    this.inputState.setKeyUp(nativeEvent.key);
+    this._inputState.setKeyUp(nativeEvent.key);
     
-    if (this.activeTool) {
-      this.activeTool.onKeyUp(nativeEvent.key);
+    if (this._activeTool) {
+      this._activeTool.onKeyUp(nativeEvent.key);
     }
   }
 
-  private handleGesture(event: IGestureEvent): void {
-    if (!this.enabled) return;
+  private handleGesture(event: GestureEvent): void {
+    if (!this._enabled) return;
 
-    if (this.activeTool) {
-      this.activeTool.onGesture(event);
+    if (this._activeTool) {
+      this._activeTool.onGesture(event);
     }
 
     this.dispatchEvent(event);
+  }
+
+  // 更新碰撞检测节点
+  updateCollisionNodes(): void {
+    if (!this._scene) return;
+
+    this._collisionDetector.clear();
+    
+    const addNodeRecursive = (node: ISceneNode) => {
+      if (node.visible && node.enabled) {
+        this._collisionDetector.addNode(node);
+      }
+      
+      for (const child of node.children) {
+        addNodeRecursive(child);
+      }
+    };
+
+    addNodeRecursive(this._scene);
+  }
+
+  // 渲染调试信息
+  renderDebug(context: RenderContext): void {
+    if (!this._enabled) return;
+
+    const { ctx } = context;
+    
+    // 只在Canvas 2D上下文中渲染调试信息
+    if (!(ctx instanceof CanvasRenderingContext2D)) {
+      return;
+    }
+    
+    // 渲染选择框
+    const selectTool = this._tools.get('select') as SelectTool;
+    if (selectTool) {
+      const selectionRect = selectTool.getSelectionRect();
+      if (selectionRect) {
+        ctx.save();
+        ctx.strokeStyle = '#007acc';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+        ctx.restore();
+      }
+    }
+
+    // 渲染选中节点的边界框
+    const selectedNodes = this.getSelectedNodes();
+    for (const node of selectedNodes) {
+      const bounds = node.getBounds();
+      ctx.save();
+      ctx.strokeStyle = '#ff6b6b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+      ctx.restore();
+    }
   }
 
   // 启用/禁用
   setEnabled(enabled: boolean): void {
     this._enabled = enabled;
-    this.selectionManager.enabled = enabled;
-    this.collisionDetector.enabled = enabled;
-    this.gestureRecognizer.setEnabled(enabled);
+    this._selectionManager.enabled = enabled;
+    this._collisionDetector.enabled = enabled;
+    this._gestureRecognizer.setEnabled(enabled);
   }
 
   get enabled(): boolean {
@@ -509,44 +720,44 @@ export class InteractionManager extends EventDispatcher implements IInteractionM
 
   // 获取管理器
   getSelectionManager(): SelectionManager {
-    return this.selectionManager;
+    return this._selectionManager;
   }
 
   getCollisionDetector(): CollisionDetector {
-    return this.collisionDetector;
+    return this._collisionDetector;
   }
 
   getGestureRecognizer(): GestureRecognizer {
-    return this.gestureRecognizer;
+    return this._gestureRecognizer;
   }
 
   getInputState(): InputState {
-    return this.inputState;
+    return this._inputState;
   }
 
   // 销毁
   dispose(): void {
-    if (this.canvas) {
+    if (this._canvas) {
       // 移除事件监听器
-      for (const [type, listener] of Object.entries(this.eventListeners)) {
+      for (const [type, listener] of Object.entries(this._eventListeners)) {
         if (type.startsWith('key')) {
           window.removeEventListener(type, listener);
         } else {
-          this.canvas.removeEventListener(type, listener as EventListener);
+          this._canvas.removeEventListener(type, listener);
         }
       }
     }
 
-    this.selectionManager.removeAllListeners();
-    this.collisionDetector.clear();
-    this.gestureRecognizer.dispose();
-    this.inputState.reset();
+    this._selectionManager.removeAllListeners();
+    this._collisionDetector.clear();
+    this._gestureRecognizer.dispose();
+    this._inputState.reset();
 
-    if (this.activeTool) {
-      this.activeTool.onDeactivate();
+    if (this._activeTool) {
+      this._activeTool.onDeactivate();
     }
 
-    this.tools.clear();
+    this._tools.clear();
     this.removeAllListeners();
   }
 }

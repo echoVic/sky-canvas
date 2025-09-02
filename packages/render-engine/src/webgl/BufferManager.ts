@@ -4,20 +4,32 @@
  */
 
 /**
+ * WebGL 常量
+ */
+export enum WebGLConstants {
+  ARRAY_BUFFER = 0x8892, // WebGLRenderingContext.ARRAY_BUFFER
+  ELEMENT_ARRAY_BUFFER = 0x8893, // WebGLRenderingContext.ELEMENT_ARRAY_BUFFER
+  STATIC_DRAW = 0x88E4, // WebGLRenderingContext.STATIC_DRAW
+  DYNAMIC_DRAW = 0x88E8, // WebGLRenderingContext.DYNAMIC_DRAW
+  STREAM_DRAW = 0x88E0, // WebGLRenderingContext.STREAM_DRAW
+  UNSIGNED_SHORT = 0x1403 // WebGLRenderingContext.UNSIGNED_SHORT
+}
+
+/**
  * 缓冲区类型
  */
 export enum BufferType {
-  VERTEX = WebGLRenderingContext.ARRAY_BUFFER,
-  INDEX = WebGLRenderingContext.ELEMENT_ARRAY_BUFFER
+  VERTEX = WebGLConstants.ARRAY_BUFFER,
+  INDEX = WebGLConstants.ELEMENT_ARRAY_BUFFER
 }
 
 /**
  * 缓冲区使用模式
  */
 export enum BufferUsage {
-  STATIC = WebGLRenderingContext.STATIC_DRAW,
-  DYNAMIC = WebGLRenderingContext.DYNAMIC_DRAW,
-  STREAM = WebGLRenderingContext.STREAM_DRAW
+  STATIC = WebGLConstants.STATIC_DRAW,
+  DYNAMIC = WebGLConstants.DYNAMIC_DRAW,
+  STREAM = WebGLConstants.STREAM_DRAW
 }
 
 /**
@@ -331,7 +343,7 @@ export class VertexArray implements IVertexArray {
   
   draw(gl: WebGLRenderingContext, mode: number, count: number, offset: number = 0): void {
     if (this.indexBuffer) {
-      gl.drawElements(mode, count, gl.UNSIGNED_SHORT, offset);
+      gl.drawElements(mode, count, WebGLConstants.UNSIGNED_SHORT, offset);
     } else {
       gl.drawArrays(mode, offset, count);
     }

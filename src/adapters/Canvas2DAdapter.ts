@@ -21,6 +21,10 @@ export class Canvas2DGraphicsContext implements IGraphicsContext {
     }
   }
 
+  clearRect(x: number, y: number, width: number, height: number): void {
+    this.ctx.clearRect(x, y, width, height);
+  }
+
   save(): void {
     this.ctx.save();
   }

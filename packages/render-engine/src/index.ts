@@ -68,6 +68,19 @@ export type {
   TransformStack
 } from './math/Transform';
 
+export type {
+  Matrix3x3,
+  Matrix3
+} from './math/Matrix3';
+
+export type {
+  Rectangle
+} from './math/Rectangle';
+
+export type {
+  Vector2
+} from './math/Vector2';
+
 // 图形原语
 export type {
   GraphicPrimitiveType, ICirclePrimitive, IGraphicPrimitive, IPathPrimitive, IRectanglePrimitive

@@ -303,7 +303,7 @@ describe('形状行为测试', () => {
     shapes.forEach(shape => {
       expect(shape?.visible).toBe(true);
       expect(shape?.zIndex).toBe(0);
-      expect(typeof shape?.dispose).toBe('function');
+      expect(typeof (shape as any)?.dispose).toBe('function');
       expect(typeof shape?.render).toBe('function');
       expect(typeof shape?.getBounds).toBe('function');
       expect(typeof shape?.hitTest).toBe('function');

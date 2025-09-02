@@ -7,8 +7,8 @@
  * 着色器类型
  */
 export enum ShaderType {
-  VERTEX = WebGLRenderingContext.VERTEX_SHADER,
-  FRAGMENT = WebGLRenderingContext.FRAGMENT_SHADER
+  VERTEX = 0x8B31, // WebGLRenderingContext.VERTEX_SHADER
+  FRAGMENT = 0x8B30 // WebGLRenderingContext.FRAGMENT_SHADER
 }
 
 /**

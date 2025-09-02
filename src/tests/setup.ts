@@ -249,3 +249,103 @@ global.FileReader = class MockFileReader {
 
 // 设置测试环境变量
 process.env.NODE_ENV = 'test';
+
+// Simple way to mock WebGL types without type conflicts
+Object.defineProperty(global, 'WebGLRenderingContext', {
+  value: class {
+    static ARRAY_BUFFER = 0x8892;
+    static ELEMENT_ARRAY_BUFFER = 0x8893;
+    static STATIC_DRAW = 0x88E4;
+    static DYNAMIC_DRAW = 0x88E8;
+    static STREAM_DRAW = 0x88E0;
+    static UNSIGNED_SHORT = 0x1403;
+    static VERTEX_SHADER = 0x8B31;
+    static FRAGMENT_SHADER = 0x8B30;
+    
+    canvas = { width: 800, height: 600 };
+    
+    // Mock all methods to avoid undefined errors
+    createShader = vi.fn();
+    shaderSource = vi.fn();
+    compileShader = vi.fn();
+    createProgram = vi.fn();
+    attachShader = vi.fn();
+    linkProgram = vi.fn();
+    useProgram = vi.fn();
+    createBuffer = vi.fn();
+    bindBuffer = vi.fn();
+    bufferData = vi.fn();
+    getAttribLocation = vi.fn();
+    enableVertexAttribArray = vi.fn();
+    vertexAttribPointer = vi.fn();
+    drawArrays = vi.fn();
+    clear = vi.fn();
+    clearColor = vi.fn();
+    viewport = vi.fn();
+    getExtension = vi.fn();
+    deleteBuffer = vi.fn();
+    getUniformLocation = vi.fn();
+    uniform1i = vi.fn();
+    uniform1f = vi.fn();
+    uniform2f = vi.fn();
+    uniform3f = vi.fn();
+    uniform4f = vi.fn();
+    uniformMatrix4fv = vi.fn();
+    enable = vi.fn();
+    disable = vi.fn();
+    blendFunc = vi.fn();
+    depthFunc = vi.fn();
+    cullFace = vi.fn();
+    frontFace = vi.fn();
+    drawElements = vi.fn();
+    bufferSubData = vi.fn();
+    deleteShader = vi.fn();
+    deleteProgram = vi.fn();
+    getShaderParameter = vi.fn();
+    getProgramParameter = vi.fn();
+    getShaderInfoLog = vi.fn();
+    getProgramInfoLog = vi.fn();
+    scissor = vi.fn();
+    activeTexture = vi.fn();
+    bindTexture = vi.fn();
+    texImage2D = vi.fn();
+    texParameteri = vi.fn();
+    generateMipmap = vi.fn();
+    getError = vi.fn();
+    finish = vi.fn();
+    flush = vi.fn();
+  },
+  configurable: true,
+  writable: true
+});
+
+Object.defineProperty(global, 'WebGL2RenderingContext', {
+  value: class extends (global as any).WebGLRenderingContext {
+    // WebGL2 specific methods
+    texStorage2D = vi.fn();
+    texSubImage2D = vi.fn();
+    vertexAttribIPointer = vi.fn();
+    uniform1ui = vi.fn();
+    uniform2ui = vi.fn();
+    uniform3ui = vi.fn();
+    uniform4ui = vi.fn();
+    getActiveUniforms = vi.fn();
+    getUniformBlockIndex = vi.fn();
+    uniformBlockBinding = vi.fn();
+    createVertexArray = vi.fn();
+    bindVertexArray = vi.fn();
+    deleteVertexArray = vi.fn();
+  },
+  configurable: true,
+  writable: true
+});
+
+Object.defineProperty(global, 'OES_vertex_array_object', {
+  value: class {
+    createVertexArrayOES = vi.fn();
+    bindVertexArrayOES = vi.fn();
+    deleteVertexArrayOES = vi.fn();
+  },
+  configurable: true,
+  writable: true
+});

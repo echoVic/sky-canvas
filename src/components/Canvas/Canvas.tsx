@@ -2,6 +2,8 @@ import { InteractionMode } from '@sky-canvas/canvas-sdk'
 import React, { useEffect, useRef } from 'react'
 import { useCanvas } from '../../contexts'
 import { useCanvasStore } from '../../store/canvasStore'
+import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
+import { Canvas2DGraphicsContext } from '../../adapters'
 
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -9,12 +11,19 @@ const Canvas: React.FC = () => {
   
   // 使用Canvas上下文中的SDK实例
   const [sdkState, sdkActions] = useCanvas()
+  
+  // 使用Canvas交互hook
+  const { interactionState } = useCanvasInteraction(
+    canvasRef,
+    [sdkState, sdkActions],
+    selectedTool as any
+  )
 
   // 工具映射到工具名称
   const getToolName = (tool: string): string => {
     switch (tool) {
       case 'select': return 'select'
-      case 'hand': 
+      case 'hand':
       case 'pan': return 'pan'
       case 'zoom': return 'zoom'
       case 'draw': return 'draw'
@@ -52,6 +61,49 @@ const Canvas: React.FC = () => {
 
     initializeCanvas()
   }, [sdkState.isInitialized]) // 移除sdkActions依赖，避免循环
+
+  // 渲染循环
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !sdkState.isInitialized) return
+
+    const render = () => {
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      // 使用Canvas2DGraphicsContext包装原生context
+      const graphicsContext = new Canvas2DGraphicsContext(ctx, canvas)
+
+      // 清除画布
+      graphicsContext.clear()
+
+      // 渲染所有形状
+      sdkState.shapes.forEach(shape => {
+        if (shape.visible) {
+          shape.render(graphicsContext)
+        }
+      })
+
+      // 绘制选中形状的边框
+      sdkState.selectedShapes.forEach(shape => {
+        if (shape.visible) {
+          const bounds = shape.getBounds()
+          graphicsContext.save()
+          graphicsContext.setStrokeStyle('rgba(59, 130, 246, 0.8)')
+          graphicsContext.setLineWidth(2)
+          graphicsContext.setLineDash([4, 4])
+          graphicsContext.strokeRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4)
+          graphicsContext.setLineDash([])
+          graphicsContext.restore()
+        }
+      })
+    }
+
+    // 初始渲染
+    render()
+
+    // 如果需要动画循环，可以在这里添加 requestAnimationFrame
+  }, [sdkState.isInitialized, sdkState.shapes, sdkState.selectedShapes])
 
   // 同步工具选择到工具名称
   useEffect(() => {
@@ -109,6 +161,7 @@ const Canvas: React.FC = () => {
         className="absolute inset-0 w-full h-full"
         width={800}
         height={600}
+        style={{ cursor: interactionState.cursor }}
       />
       
       {/* 调试信息 */}
