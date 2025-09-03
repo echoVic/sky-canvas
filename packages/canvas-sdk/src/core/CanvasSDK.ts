@@ -18,6 +18,7 @@ import {
   InteractionMode
 } from '../interaction';
 import { IShape, IShapeEvent, IShapeSelectionEvent, IShapeUpdate } from '../scene/IShape';
+import { MultiSelectManager } from '../interaction/MultiSelectManager';
 
 /**
  * 渲染引擎类型
@@ -65,6 +66,7 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   private shapes: Map<string, IShape> = new Map();
   private layers: Map<string, IRenderLayer> = new Map();
   private selectedShapes: Set<string> = new Set();
+  private multiSelectManager: MultiSelectManager = new MultiSelectManager();
   private historyManager: HistoryManager = new HistoryManager();
   private isInitializedFlag = false;
   private config: ICanvasSDKConfig = {};
@@ -566,6 +568,52 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
     return Array.from(this.selectedShapes)
       .map(id => this.shapes.get(id))
       .filter((shape): shape is IShape => shape !== undefined);
+  }
+
+  /**
+   * 多选形状
+   * @param shapes 形状数组
+   */
+  multiSelect(shapes: IShape[]): void {
+    this.multiSelectManager.selectMultiple(shapes);
+    // 触发选择事件
+    shapes.forEach(shape => {
+      this.selectedShapes.add(shape.id);
+      this.emit('shapeSelected', { shape, selected: true });
+    });
+  }
+
+  /**
+   * 添加到选择
+   * @param shapes 形状或形状数组
+   */
+  addToSelection(shapes: IShape | IShape[]): void {
+    this.multiSelectManager.addToSelection(shapes);
+    const shapeArray = Array.isArray(shapes) ? shapes : [shapes];
+    shapeArray.forEach(shape => {
+      this.selectedShapes.add(shape.id);
+      this.emit('shapeSelected', { shape, selected: true });
+    });
+  }
+
+  /**
+   * 从选择中移除
+   * @param shapes 形状或形状数组
+   */
+  removeFromSelection(shapes: IShape | IShape[]): void {
+    this.multiSelectManager.removeFromSelection(shapes);
+    const shapeArray = Array.isArray(shapes) ? shapes : [shapes];
+    shapeArray.forEach(shape => {
+      this.selectedShapes.delete(shape.id);
+      this.emit('shapeDeselected', { shape, selected: false });
+    });
+  }
+
+  /**
+   * 获取多选管理器
+   */
+  getMultiSelectManager(): MultiSelectManager {
+    return this.multiSelectManager;
   }
 
   // === 点击测试 ===

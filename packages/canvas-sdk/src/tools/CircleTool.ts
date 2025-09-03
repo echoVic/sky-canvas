@@ -18,6 +18,7 @@ export class CircleTool implements IInteractionTool {
   private startPoint: IPoint | null = null;
   private currentShape: CircleShape | null = null;
   private shapeId: string | null = null;
+  private isShiftPressed = false; // 新增：Shift键状态
   
   // 回调函数
   private onSetCursor: ((cursor: string) => void) | null = null;
@@ -47,6 +48,7 @@ export class CircleTool implements IInteractionTool {
     this.startPoint = null;
     this.currentShape = null;
     this.shapeId = null;
+    this.isShiftPressed = false;
   }
 
   onMouseDown(event: IMouseEvent): boolean {
@@ -54,6 +56,7 @@ export class CircleTool implements IInteractionTool {
 
     this.isDrawing = true;
     this.startPoint = event.worldPosition;
+    this.isShiftPressed = event.shiftKey; // 记录Shift键状态
     
     // 创建新形状
     this.shapeId = `circle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -69,27 +72,34 @@ export class CircleTool implements IInteractionTool {
   onMouseMove(event: IMouseEvent): boolean {
     if (!this.isDrawing || !this.startPoint || !this.currentShape) return false;
 
-    // 计算圆形直径（取宽度和高度的最大值）
     const endPoint = event.worldPosition;
-    const width = Math.max(0, endPoint.x - this.startPoint.x);
-    const height = Math.max(0, endPoint.y - this.startPoint.y);
-    const diameter = Math.max(width, height);
+    this.isShiftPressed = event.shiftKey; // 更新Shift键状态
 
-    // 更新形状 - 保持起始点为左上角，向右下方扩展
-    this.currentShape.radius = diameter / 2;
+    // 根据Shift键状态决定是否约束为正圆
+    let radius: number;
+    if (this.isShiftPressed) {
+      // 约束为正圆：取x、y方向距离的最大值
+      const dx = Math.abs(endPoint.x - this.startPoint.x);
+      const dy = Math.abs(endPoint.y - this.startPoint.y);
+      radius = Math.max(dx, dy);
+    } else {
+      // 自由绘制：计算到起始点的距离
+      const dx = endPoint.x - this.startPoint.x;
+      const dy = endPoint.y - this.startPoint.y;
+      radius = Math.sqrt(dx * dx + dy * dy);
+    }
+
+    // 更新圆形
+    this.currentShape.radius = radius;
     
-    // 计算圆心位置（从起始点向右下方扩展）
-    const centerX = this.startPoint.x + this.currentShape.radius;
-    const centerY = this.startPoint.y + this.currentShape.radius;
-    
-    // 更新圆形的位置（position表示边界框的左上角）
+    // 更新边界框（圆心位置由startPoint确定）
     this.currentShape.position = {
-      x: this.startPoint.x,
-      y: this.startPoint.y
+      x: this.startPoint.x - radius,
+      y: this.startPoint.y - radius
     };
     this.currentShape.size = {
-      width: diameter,
-      height: diameter
+      width: radius * 2,
+      height: radius * 2
     };
 
     return true;
@@ -124,12 +134,20 @@ export class CircleTool implements IInteractionTool {
   }
 
   onKeyDown(key: string): boolean {
-    // 不处理键盘事件
+    // 记录Shift键按下
+    if (key === 'Shift') {
+      this.isShiftPressed = true;
+      return true;
+    }
     return false;
   }
 
   onKeyUp(key: string): boolean {
-    // 不处理键盘事件
+    // 记录Shift键释放
+    if (key === 'Shift') {
+      this.isShiftPressed = false;
+      return true;
+    }
     return false;
   }
 

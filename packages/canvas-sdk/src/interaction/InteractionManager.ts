@@ -12,6 +12,10 @@ import { Vector2 } from '../math';
 import { Scene } from '../scene/Scene';
 import { ISceneNode } from '../scene/SceneNode';
 import { Viewport } from '../scene/Viewport';
+import { SelectTool as NewSelectTool } from '../tools/SelectTool';
+import { RectangleTool } from '../tools/RectangleTool';
+import { LineTool } from '../tools/LineTool';
+import { CircleTool } from '../tools/CircleTool';
 import { CollisionDetector } from './CollisionDetection';
 import { SelectionManager, SelectionMode } from './SelectionManager';
 
@@ -46,117 +50,6 @@ export interface InteractionTool {
   onKeyUp(key: string): boolean;
 }
 
-/**
- * 选择工具
- */
-export class SelectTool implements InteractionTool {
-  name = 'select';
-  mode = InteractionMode.SELECT;
-  cursor = 'default';
-  enabled = true;
-
-  private _manager: InteractionManager;
-  private _isDragging = false;
-  private _dragStart: Point | null = null;
-  private _selectionRect: Rect | null = null;
-
-  constructor(manager: InteractionManager) {
-    this._manager = manager;
-  }
-
-  onActivate(): void {
-    this._manager.setCursor(this.cursor);
-  }
-
-  onDeactivate(): void {
-    this._isDragging = false;
-    this._dragStart = null;
-    this._selectionRect = null;
-  }
-
-  onMouseDown(event: MouseEvent): boolean {
-    const worldPos = this._manager.screenToWorld(event.screenPosition);
-    const hitNode = this._manager.hitTest(worldPos);
-
-    if (hitNode) {
-      // 选择节点
-      const mode = event.ctrlKey ? SelectionMode.TOGGLE : 
-                   event.shiftKey ? SelectionMode.ADDITIVE : 
-                   SelectionMode.SINGLE;
-      this._manager.select(hitNode, mode);
-    } else {
-      // 开始框选
-      this._isDragging = true;
-      this._dragStart = worldPos;
-      
-      if (!event.shiftKey && !event.ctrlKey) {
-        this._manager.clearSelection();
-      }
-    }
-
-    return true;
-  }
-
-  onMouseMove(event: MouseEvent): boolean {
-    if (this._isDragging && this._dragStart) {
-      const worldPos = this._manager.screenToWorld(event.screenPosition);
-      
-      // 更新选择框
-      this._selectionRect = {
-        x: Math.min(this._dragStart.x, worldPos.x),
-        y: Math.min(this._dragStart.y, worldPos.y),
-        width: Math.abs(worldPos.x - this._dragStart.x),
-        height: Math.abs(worldPos.y - this._dragStart.y)
-      };
-
-      return true;
-    }
-
-    return false;
-  }
-
-  onMouseUp(event: MouseEvent): boolean {
-    if (this._isDragging && this._selectionRect) {
-      // 框选
-      const mode = event.shiftKey ? SelectionMode.ADDITIVE : SelectionMode.MULTIPLE;
-      this._manager.selectInBounds(this._selectionRect, mode);
-      
-      this._isDragging = false;
-      this._dragStart = null;
-      this._selectionRect = null;
-      return true;
-    }
-
-    return false;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onGesture(_event: GestureEvent): boolean {
-    return false;
-  }
-
-  onKeyDown(key: string): boolean {
-    if (key === 'Delete' || key === 'Backspace') {
-      // 删除选中的节点
-      const selected = this._manager.getSelectedNodes();
-      for (const node of selected) {
-        node.removeFromParent();
-      }
-      this._manager.clearSelection();
-      return true;
-    }
-
-    return false;
-  }
-
-  onKeyUp(key: string): boolean {
-    return false;
-  }
-
-  getSelectionRect(): Rect | null {
-    return this._selectionRect;
-  }
-}
 
 /**
  * 平移工具
@@ -307,6 +200,7 @@ export class InteractionManager extends EventDispatcher {
   private _collisionDetector: CollisionDetector;
   private _gestureRecognizer: GestureRecognizer;
   private _inputState: InputState;
+  private _canvasSDK: any = null; // 暂时使用any类型，避免循环依赖
 
   private _tools: Map<string, InteractionTool> = new Map();
   private _activeTool: InteractionTool | null = null;
@@ -316,18 +210,22 @@ export class InteractionManager extends EventDispatcher {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _eventListeners: { [key: string]: (event: any) => void } = {};
 
-  constructor() {
+  constructor(canvasSDK?: any) {
     super();
     
+    this._canvasSDK = canvasSDK;
     this._selectionManager = new SelectionManager();
     this._collisionDetector = new CollisionDetector();
     this._gestureRecognizer = new GestureRecognizer();
     this._inputState = new InputState();
 
     // 注册默认工具
-    this.registerTool(new SelectTool(this));
+    this.registerTool(new NewSelectTool(canvasSDK));
     this.registerTool(new PanTool(this));
     this.registerTool(new ZoomTool(this));
+    this.registerTool(new RectangleTool());
+    this.registerTool(new LineTool());
+    this.registerTool(new CircleTool());
 
     // 设置默认工具
     this.setActiveTool('select');
@@ -625,6 +523,18 @@ export class InteractionManager extends EventDispatcher {
 
     this._inputState.setKeyDown(nativeEvent.key);
     
+    // 处理特殊键盘事件
+    if (nativeEvent.key === 'Delete' || nativeEvent.key === 'Backspace') {
+      // 删除选中的节点
+      const selectedNodes = this.getSelectedNodes();
+      for (const node of selectedNodes) {
+        node.removeFromParent();
+      }
+      this.clearSelection();
+      return;
+    }
+    
+    // 传递给活动工具处理
     if (this._activeTool) {
       this._activeTool.onKeyDown(nativeEvent.key);
     }
@@ -635,6 +545,7 @@ export class InteractionManager extends EventDispatcher {
 
     this._inputState.setKeyUp(nativeEvent.key);
     
+    // 传递给活动工具处理
     if (this._activeTool) {
       this._activeTool.onKeyUp(nativeEvent.key);
     }
@@ -681,7 +592,7 @@ export class InteractionManager extends EventDispatcher {
     }
     
     // 渲染选择框
-    const selectTool = this._tools.get('select') as SelectTool;
+    const selectTool = this._tools.get('select') as NewSelectTool;
     if (selectTool) {
       const selectionRect = selectTool.getSelectionRect();
       if (selectionRect) {
