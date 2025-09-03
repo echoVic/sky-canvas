@@ -3,6 +3,7 @@ import { IInteractionTool, InteractionMode, IMouseEvent } from '../interaction/t
 import { TransformController } from '../interaction/TransformController';
 import { CanvasSDK } from '../core/CanvasSDK';
 import { IShape } from '../scene/IShape';
+import { SnapManager, SnapResult } from '../interaction/SnapManager';
 
 export class SelectTool implements IInteractionTool {
   name = 'select';
@@ -13,12 +14,15 @@ export class SelectTool implements IInteractionTool {
   private isSelecting = false;
   private isTransforming = false;
   private startPoint: IPoint | null = null;
+  private currentPoint: IPoint | null = null; // 当前鼠标位置，用于捕捉
   private selectionRect: { x: number; y: number; width: number; height: number } | null = null;
   private transformController: TransformController;
+  private snapManager: SnapManager;
   private canvasSDK: CanvasSDK | null = null;
   
   constructor(canvasSDK?: CanvasSDK) {
     this.transformController = new TransformController();
+    this.snapManager = new SnapManager();
     if (canvasSDK) {
       this.canvasSDK = canvasSDK;
     }
@@ -99,25 +103,36 @@ export class SelectTool implements IInteractionTool {
   
   onMouseMove(event: IMouseEvent): boolean {
     const point = event.worldPosition;
+    this.currentPoint = point; // 保存当前点用于捕捉
+    
+    // 应用智能捕捉
+    let snappedPoint = point;
+    if (this.snapManager.isSnapEnabled() && this.canvasSDK) {
+      const allShapes = this.canvasSDK.getShapes();
+      const snapResult = this.snapManager.getSnapPosition(point, allShapes);
+      if (snapResult.type !== 'none') {
+        snappedPoint = snapResult.position;
+      }
+    }
     
     if (this.isTransforming && this.startPoint) {
       // 变形操作
       const delta = {
-        x: point.x - this.startPoint.x,
-        y: point.y - this.startPoint.y
+        x: snappedPoint.x - this.startPoint.x,
+        y: snappedPoint.y - this.startPoint.y
       };
       this.transformController.performTransform(delta);
-      this.startPoint = point;
+      this.startPoint = snappedPoint;
       return true;
     }
     
     if (this.isSelecting && this.startPoint) {
       // 框选操作
       this.selectionRect = {
-        x: Math.min(this.startPoint.x, point.x),
-        y: Math.min(this.startPoint.y, point.y),
-        width: Math.abs(point.x - this.startPoint.x),
-        height: Math.abs(point.y - this.startPoint.y)
+        x: Math.min(this.startPoint.x, snappedPoint.x),
+        y: Math.min(this.startPoint.y, snappedPoint.y),
+        width: Math.abs(snappedPoint.x - this.startPoint.x),
+        height: Math.abs(snappedPoint.y - this.startPoint.y)
       };
       return true;
     }
@@ -169,8 +184,24 @@ export class SelectTool implements IInteractionTool {
   }
   
   onKeyDown(key: string): boolean {
-    // 不处理键盘事件
-    return false;
+    // 处理快捷键
+    switch (key) {
+      case 'G':
+      case 'g':
+        // 切换网格捕捉
+        this.snapManager.enableGridSnap(!this.snapManager.getEnabledSnapTypes().includes('grid'));
+        return true;
+      case '[':
+        // 减小网格大小
+        this.snapManager.setGridSize(Math.max(5, this.snapManager.getGridSize() - 5));
+        return true;
+      case ']':
+        // 增大网格大小
+        this.snapManager.setGridSize(this.snapManager.getGridSize() + 5);
+        return true;
+      default:
+        return false;
+    }
   }
   
   onKeyUp(key: string): boolean {
@@ -206,5 +237,10 @@ export class SelectTool implements IInteractionTool {
     
     // 渲染变形控制器
     this.transformController.render(context);
+    
+    // 渲染捕捉辅助线
+    if (this.snapManager.isSnapEnabled() && this.currentPoint) {
+      this.snapManager.renderSnapGuides(context, this.currentPoint);
+    }
   }
 }

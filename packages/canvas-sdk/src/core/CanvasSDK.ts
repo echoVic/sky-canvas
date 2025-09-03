@@ -5,10 +5,14 @@ import {
   IGraphicsContextFactory
   // AdapterFactory  // 暂时注释以避免构建错误
   ,
+
+
   IPoint,
   IRenderLayer,
   RenderEngine
 } from '@sky-canvas/render-engine';
+import { Timeline } from '../animation/Timeline';
+import { TweenEngine } from '../animation/TweenEngine';
 import { HistoryManager } from '../core/HistoryManager';
 import { EventEmitter } from '../events/EventEmitter';
 import {
@@ -17,8 +21,11 @@ import {
   InteractionManager,
   InteractionMode
 } from '../interaction';
-import { IShape, IShapeEvent, IShapeSelectionEvent, IShapeUpdate } from '../scene/IShape';
 import { MultiSelectManager } from '../interaction/MultiSelectManager';
+import { ExportOptions, ImportExportManager } from '../io/ImportExportManager';
+import { AdvancedPathShape } from '../scene/AdvancedPathShape';
+import { IShape, IShapeEvent, IShapeSelectionEvent, IShapeUpdate } from '../scene/IShape';
+import { RichTextShape } from '../scene/RichTextShape';
 
 /**
  * 渲染引擎类型
@@ -68,6 +75,8 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
   private selectedShapes: Set<string> = new Set();
   private multiSelectManager: MultiSelectManager = new MultiSelectManager();
   private historyManager: HistoryManager = new HistoryManager();
+  private tweenEngine: TweenEngine = new TweenEngine();
+  private importExportManager: ImportExportManager = new ImportExportManager();
   private isInitializedFlag = false;
   private config: ICanvasSDKConfig = {};
 
@@ -1212,6 +1221,123 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
     return this.renderEngine ? this.renderEngine.getStats() : null;
   }
 
+  // === 动画API ===
+
+  /**
+   * 创建补间动画
+   * @param target 目标对象
+   * @param props 动画属性
+   * @param config 动画配置
+   */
+  animate(target: any, props: any, config: any = {}): any {
+    return this.tweenEngine.to(target, props, config);
+  }
+
+  /**
+   * 创建时间线
+   */
+  createTimeline(): Timeline {
+    return new Timeline();
+  }
+
+  /**
+   * 获取补间引擎
+   */
+  getTweenEngine(): TweenEngine {
+    return this.tweenEngine;
+  }
+
+  // === 高级功能API ===
+
+  /**
+   * 创建高级路径形状
+   */
+  createAdvancedPath(id: string, points: IPoint[] = []): AdvancedPathShape {
+    const path = new AdvancedPathShape(id, points);
+    this.addShape(path);
+    return path;
+  }
+
+  /**
+   * 获取高级路径形状
+   */
+  getAdvancedPath(id: string): AdvancedPathShape | undefined {
+    const shape = this.getShape(id);
+    return shape instanceof AdvancedPathShape ? shape : undefined;
+  }
+
+  /**
+   * 创建富文本形状
+   */
+  createRichText(id: string, text: string = '', position: IPoint = { x: 0, y: 0 }): RichTextShape {
+    const richText = new RichTextShape(id, text, position);
+    this.addShape(richText);
+    return richText;
+  }
+
+  /**
+   * 获取富文本形状
+   */
+  getRichText(id: string): RichTextShape | undefined {
+    const shape = this.getShape(id);
+    return shape instanceof RichTextShape ? shape : undefined;
+  }
+
+  /**
+   * 导出到SVG
+   */
+  exportToSVG(options?: { width?: number; height?: number }): string {
+    const shapes = this.getShapes();
+    return this.importExportManager.exportToSVG(shapes, options);
+  }
+
+  /**
+   * 导出到PNG
+   */
+  exportToPNG(canvas: HTMLCanvasElement, options?: ExportOptions): Promise<Blob> {
+    return this.importExportManager.exportToPNG(canvas, options);
+  }
+
+  /**
+   * 导出到JPEG
+   */
+  exportToJPEG(canvas: HTMLCanvasElement, options?: ExportOptions): Promise<Blob> {
+    return this.importExportManager.exportToJPEG(canvas, options);
+  }
+
+  /**
+   * 导出到JSON
+   */
+  exportToJSON(): string {
+    // 简化实现：需要访问场景对象
+    return this.importExportManager.exportToJSON({} as any);
+  }
+
+  /**
+   * 从JSON导入
+   */
+  importFromJSON(jsonData: string): void {
+    const scene = this.importExportManager.importFromJSON(jsonData);
+    // 需要将场景中的形状添加到当前SDK
+    console.warn('JSON import requires scene integration');
+  }
+
+  /**
+   * 从SVG导入
+   */
+  importFromSVG(svgData: string): IShape[] {
+    const shapes = this.importExportManager.importFromSVG(svgData);
+    shapes.forEach(shape => this.addShape(shape));
+    return shapes;
+  }
+
+  /**
+   * 从图像文件导入
+   */
+  async importFromImage(imageFile: File): Promise<any> {
+    return this.importExportManager.importFromImage(imageFile);
+  }
+
   // === 资源管理 ===
 
   /**
@@ -1226,6 +1352,9 @@ export class CanvasSDK extends EventEmitter<ICanvasSDKEvents> {
     this.shapes.clear();
     this.layers.clear();
     this.selectedShapes.clear();
+    
+    // 停止动画引擎
+    this.tweenEngine.stopAll();
     
     // 销毁渲染引擎
     if (this.renderEngine) {

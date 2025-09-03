@@ -591,18 +591,10 @@ export class InteractionManager extends EventDispatcher {
       return;
     }
     
-    // 渲染选择框
+    // 让选择工具渲染所有调试信息（包括选择框和捕捉辅助线）
     const selectTool = this._tools.get('select') as NewSelectTool;
-    if (selectTool) {
-      const selectionRect = selectTool.getSelectionRect();
-      if (selectionRect) {
-        ctx.save();
-        ctx.strokeStyle = '#007acc';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
-        ctx.restore();
-      }
+    if (selectTool && selectTool.renderSelectionBox) {
+      selectTool.renderSelectionBox(ctx);
     }
 
     // 渲染选中节点的边界框

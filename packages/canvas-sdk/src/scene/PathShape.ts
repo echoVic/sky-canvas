@@ -16,6 +16,11 @@ export class PathShape implements IShape {
   public visible: boolean = true;
   public zIndex: number = 0;
   
+  // 实现IRenderable接口的bounds属性
+  get bounds(): IRect {
+    return this.getBounds();
+  }
+  
   // 路径特有属性
   public points: IPoint[];
   public strokeColor: string;
@@ -212,5 +217,13 @@ export class PathShape implements IShape {
     const bounds = this.calculateBounds();
     this.position = { x: bounds.x, y: bounds.y };
     this.size = { width: bounds.width, height: bounds.height };
+  }
+  
+  /**
+   * 设置路径点
+   * @param points 路径点数组
+   */
+  setPoints(points: IPoint[]): void {
+    this.updatePoints(points);
   }
 }

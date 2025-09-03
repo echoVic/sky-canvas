@@ -22,7 +22,9 @@
       "WebSearch",
       "WebSearch",
       "WebSearch",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "WebFetch(domain:juejin.cn)",
+      "WebFetch(domain:blog.csdn.net)"
     ],
     "deny": [],
     "ask": []

@@ -10,6 +10,9 @@ import {
   IRenderEngineConfig 
 } from './IRenderEngine';
 import { IGraphicsContext, IGraphicsContextFactory, IPoint } from './IGraphicsContext';
+import { DirtyRegionManager } from './DirtyRegionManager';
+import { LayerCache } from './LayerCache';
+import { AdvancedBatcher } from '../batching/AdvancedBatcher';
 
 /**
  * 渲染层实现
@@ -64,6 +67,11 @@ export class RenderEngine implements IRenderEngine {
     objectsRendered: 0
   };
 
+  // 新增的性能优化组件
+  private dirtyRegionManager: DirtyRegionManager = new DirtyRegionManager();
+  private layerCache: LayerCache = new LayerCache();
+  private advancedBatcher: AdvancedBatcher = new AdvancedBatcher();
+
   private isRunningFlag = false;
   private animationId: number | null = null;
   private lastFrameTime = 0;
@@ -92,6 +100,9 @@ export class RenderEngine implements IRenderEngine {
     }
 
     this.context = await factory.createContext(canvas);
+    
+    // 设置批处理器的上下文
+    this.advancedBatcher.setContext(this.context);
     
     // 设置默认视口
     this.viewport.width = this.context.width;
@@ -126,6 +137,24 @@ export class RenderEngine implements IRenderEngine {
     }
   }
 
+  private renderRegion(region: any): void {
+    if (!this.context) return;
+    
+    // 保存当前上下文状态
+    this.context.save();
+    
+    // 设置裁剪区域
+    this.context.beginPath();
+    this.context.rect(region.x, region.y, region.width, region.height);
+    this.context.clip();
+    
+    // 渲染该区域内的所有层
+    this.renderLayers();
+    
+    // 恢复上下文状态
+    this.context.restore();
+  }
+
   render(): void {
     if (!this.context) {
       return;
@@ -133,17 +162,31 @@ export class RenderEngine implements IRenderEngine {
 
     const startTime = performance.now();
 
-    // 清空画布
-    this.context.clear();
+    // 优化脏区域
+    const dirtyRegions = this.dirtyRegionManager.optimizeDirtyRegions();
+    
+    if (dirtyRegions.length > 0) {
+      // 只重绘脏区域
+      dirtyRegions.forEach(region => {
+        this.renderRegion(region);
+      });
+    } else {
+      // 全屏重绘（首次渲染或需要全屏更新时）
+      // 清空画布
+      this.context.clear();
 
-    // 设置视口变换
-    this.context.save();
-    this.setupViewportTransform();
+      // 设置视口变换
+      this.context.save();
+      this.setupViewportTransform();
 
-    // 渲染所有层
-    this.renderLayers();
+      // 渲染所有层
+      this.renderLayers();
 
-    this.context.restore();
+      this.context.restore();
+    }
+
+    // 更新脏区域管理器为下一帧做准备
+    this.dirtyRegionManager.prepareNextFrame();
 
     // 更新统计信息
     const renderTime = performance.now() - startTime;
@@ -209,6 +252,35 @@ export class RenderEngine implements IRenderEngine {
     return { ...this.stats };
   }
 
+  // 新增的性能优化方法
+  /**
+   * 标记区域为脏区域
+   */
+  markRegionDirty(bounds: any): void {
+    this.dirtyRegionManager.markRegionDirty(bounds);
+  }
+
+  /**
+   * 使图层缓存失效
+   */
+  invalidateLayerCache(layerId: string): void {
+    this.layerCache.invalidateCache(layerId);
+  }
+
+  /**
+   * 获取缓存内存使用量
+   */
+  getCacheMemoryUsage(): number {
+    return this.layerCache.getCacheMemoryUsage();
+  }
+
+  /**
+   * 清理过期缓存
+   */
+  cleanupExpiredCache(): void {
+    this.layerCache.cleanupExpiredCache();
+  }
+
   dispose(): void {
     this.stop();
 
@@ -267,17 +339,88 @@ export class RenderEngine implements IRenderEngine {
 
       const renderables = layer.getRenderables();
 
-      for (const renderable of renderables) {
-        this.context.save();
-        renderable.render(this.context);
-        this.context.restore();
-        objectsRendered++;
+      // 检查图层是否可以缓存
+      if (this.canCacheLayer(layer, renderables)) {
+        // 从缓存渲染
+        try {
+          this.layerCache.renderFromCache(layer.id, this.context as any, { x: 0, y: 0 });
+          objectsRendered += renderables.length;
+        } catch (error) {
+          // 缓存失败则正常渲染
+          this.renderLayerRenderables(renderables);
+          objectsRendered += renderables.length;
+        }
+      } else {
+        // 使用批处理优化渲染
+        if (renderables.length > 10) {
+          // 使用批处理渲染
+          this.renderWithBatching(renderables);
+          objectsRendered += renderables.length;
+        } else {
+          // 正常渲染
+          this.renderLayerRenderables(renderables);
+          objectsRendered += renderables.length;
+        }
       }
 
       this.context.restore();
     }
 
     this.stats.objectsRendered = objectsRendered;
+  }
+
+  private renderLayerRenderables(renderables: IRenderable[]): void {
+    for (const renderable of renderables) {
+      this.context.save();
+      renderable.render(this.context);
+      
+      // 更新脏区域管理器中的形状状态
+      this.dirtyRegionManager.updateCurrentFrameShape(renderable as any);
+      
+      this.context.restore();
+    }
+  }
+
+  private renderWithBatching(renderables: IRenderable[]): void {
+    // 分类渲染对象以便批处理
+    const renderableGroups = this.groupRenderablesByType(renderables);
+    
+    // 对每组同类型渲染对象进行批处理渲染
+    for (const [renderableType, groupRenderables] of renderableGroups.entries()) {
+      if (groupRenderables.length > 10) {
+        // 使用实例化渲染
+        groupRenderables.forEach(renderable => {
+          this.advancedBatcher.addInstancedRenderable(renderable);
+        });
+        this.advancedBatcher.renderInstancedBatch(renderableType);
+      } else {
+        // 正常渲染
+        this.renderLayerRenderables(groupRenderables);
+      }
+    }
+  }
+
+  private groupRenderablesByType(renderables: IRenderable[]): Map<string, IRenderable[]> {
+    const groups = new Map<string, IRenderable[]>();
+    
+    renderables.forEach(renderable => {
+      const type = renderable.constructor.name;
+      const group = groups.get(type) || [];
+      group.push(renderable);
+      groups.set(type, group);
+    });
+    
+    return groups;
+  }
+
+  private canCacheLayer(layer: IRenderLayer, renderables: IRenderable[]): boolean {
+    // 静态图层可以缓存（没有动画或频繁变化的元素）
+    return renderables.every(renderable => !this.isRenderableAnimating(renderable));
+  }
+
+  private isRenderableAnimating(renderable: IRenderable): boolean {
+    // 简化实现，实际应用中需要检查动画状态
+    return false;
   }
 
   private updateStats(renderTime: number): void {
