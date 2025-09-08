@@ -52,11 +52,11 @@ export class RectangleShape implements IShape {
     context.save();
     
     // 设置样式
-    context.strokeStyle = this.strokeColor;
-    context.lineWidth = this.strokeWidth;
+    context.setStrokeStyle(this.strokeColor);
+    context.setLineWidth(this.strokeWidth);
     
     if (this.filled && this.fillColor) {
-      context.fillStyle = this.fillColor;
+      context.setFillStyle(this.fillColor);
       context.fillRect(this.position.x, this.position.y, this.size.width, this.size.height);
     }
     
@@ -76,9 +76,8 @@ export class RectangleShape implements IShape {
     const padding = 2;
     
     context.save();
-    context.strokeStyle = '#007AFF';
-    context.lineWidth = 2;
-    context.setLineDash([5, 5]);
+    context.setStrokeStyle('#007AFF');
+    context.setLineWidth(2);
     context.strokeRect(
       bounds.x - padding, 
       bounds.y - padding, 

@@ -1,5 +1,5 @@
 import { IPoint as Point, IRect as Rect } from '@sky-canvas/render-engine';
-import { Transform, Vector2 } from '../math';
+import { Transform, Vector2, MathUtils } from '../math';
 
 /**
  * 视口管理器
@@ -231,8 +231,8 @@ export class Viewport {
 
   applyToContext(ctx: CanvasRenderingContext2D): void {
     const transform = this.getTransform();
-    const matrix = transform.matrix;
-    const e = matrix.elements;
+    const matrix = transform.toMatrix();
+    const [a = 1, b = 0, c = 0, d = 1, e = 0, f = 0] = matrix;
     
     // 设置裁剪区域
     ctx.save();
@@ -247,7 +247,7 @@ export class Viewport {
     );
     
     // 应用变换
-    ctx.transform(e[0], e[1], e[3], e[4], e[6], e[7]);
+    ctx.transform(a, b, c, d, e, f);
   }
 
   restoreContext(ctx: CanvasRenderingContext2D): void {
@@ -276,7 +276,10 @@ export class Viewport {
         
         // 插值计算
         const currentZoom = startZoom + (targetZoom - startZoom) * eased;
-        const currentPan = startPan.lerp(targetPan, eased);
+        const currentPan = new Vector2(
+          MathUtils.lerp(startPan.x, targetPan.x, eased),
+          MathUtils.lerp(startPan.y, targetPan.y, eased)
+        );
         const currentRotation = startRotation + (targetRotation - startRotation) * eased;
         
         this.setZoom(currentZoom);
@@ -297,10 +300,11 @@ export class Viewport {
   // 私有方法
   private updateTransform(): void {
     // 创建变换：平移到中心 -> 缩放 -> 旋转 -> 平移偏移
-    this._transform = new Transform();
-    this._transform.setPosition(-this._pan.x * this._zoom, -this._pan.y * this._zoom);
-    this._transform.setScale(this._zoom, this._zoom);
-    this._transform.setRotation(this._rotation);
+    this._transform = new Transform(
+      new Vector2(this._zoom, this._zoom),
+      this._rotation,
+      new Vector2(-this._pan.x * this._zoom, -this._pan.y * this._zoom)
+    );
 
     // 创建逆变换
     this._inverseTransform = this._transform.inverse();
@@ -352,7 +356,7 @@ export class Viewport {
     return {
       bounds: this._bounds,
       zoom: this._zoom,
-      pan: this._pan.toArray(),
+      pan: [this._pan.x, this._pan.y],
       rotation: this._rotation,
       visibleWorldBounds: this.getVisibleWorldBounds(),
       constraints: {

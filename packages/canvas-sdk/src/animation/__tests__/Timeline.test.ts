@@ -1,4 +1,5 @@
 import { Timeline } from '../Timeline';
+import { vi } from 'vitest';
 import { Animation } from '../Animation';
 
 describe('Timeline', () => {
@@ -38,7 +39,7 @@ describe('Timeline', () => {
   });
 
   test('should add callback to timeline', () => {
-    const callback = jest.fn();
+    const callback = vi.fn();
     timeline.addCallback(callback, 500);
     
     expect(timeline.getDuration()).toBe(500);

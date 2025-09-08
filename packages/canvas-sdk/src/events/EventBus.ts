@@ -355,7 +355,7 @@ export class StateSynchronizationService {
         key,
         oldValue,
         newValue: value,
-        source
+        ...(source && { source })
       };
 
       subscribers.forEach(subscriber => {

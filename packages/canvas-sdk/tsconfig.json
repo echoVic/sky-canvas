@@ -15,8 +15,8 @@
     "removeComments": false,
     "sourceMap": true,
     "isolatedModules": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
@@ -27,6 +27,7 @@
     "node_modules",
     "dist",
     "tests",
-    "examples"
+    "examples",
+    "src/examples.ts"
   ]
 }

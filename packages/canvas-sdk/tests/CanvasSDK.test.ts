@@ -2,7 +2,7 @@
  * 画板SDK核心API测试
  */
 import { describe, test, expect, beforeEach, vi } from 'vitest';
-import { CanvasSDK } from '../src/core/CanvasSDK';
+import { CanvasSDK } from '../src/CanvasSDK';
 import { IShape } from '../src/scene/IShape';
 import { IPoint } from '@sky-canvas/render-engine';
 

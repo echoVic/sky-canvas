@@ -101,7 +101,10 @@ export abstract class SceneNode implements ISceneNode {
 
   removeAllChildren(): void {
     while (this.children.length > 0) {
-      this.removeChild(this.children[0]);
+      const child = this.children[0];
+      if (child) {
+        this.removeChild(child);
+      }
     }
   }
 
@@ -146,12 +149,16 @@ export abstract class SceneNode implements ISceneNode {
       new Vector2(localBounds.x, localBounds.y + localBounds.height)
     ];
 
-    const transformedCorners = worldTransform.transformPoints(corners);
+    const transformedCorners = corners.map(corner => worldTransform.transformPoint(corner));
     
-    let minX = transformedCorners[0].x;
-    let minY = transformedCorners[0].y;
-    let maxX = transformedCorners[0].x;
-    let maxY = transformedCorners[0].y;
+    if (transformedCorners.length === 0) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
+    
+    let minX = transformedCorners[0]!.x;
+    let minY = transformedCorners[0]!.y;
+    let maxX = transformedCorners[0]!.x;
+    let maxY = transformedCorners[0]!.y;
 
     for (const corner of transformedCorners) {
       minX = Math.min(minX, corner.x);
@@ -184,8 +191,10 @@ export abstract class SceneNode implements ISceneNode {
     // 先检查子节点（从前到后，即zIndex高的先检查）
     for (let i = this.children.length - 1; i >= 0; i--) {
       const child = this.children[i];
-      const hit = child.hitTest(point);
-      if (hit) return hit;
+      if (child) {
+        const hit = child.hitTest(point);
+        if (hit) return hit;
+      }
     }
 
     // 检查自身
@@ -222,7 +231,8 @@ export abstract class SceneNode implements ISceneNode {
   render(context: RenderContext): void {
     if (!this.visible) return;
 
-    const { ctx } = context;
+    // 检查是否为Canvas 2D上下文
+    const ctx = (context as any).ctx;
     
     // 只在Canvas 2D上下文中使用变换
     if (ctx instanceof CanvasRenderingContext2D) {
@@ -230,9 +240,10 @@ export abstract class SceneNode implements ISceneNode {
 
       // 应用世界变换
       const worldTransform = this.getWorldTransform();
-      const matrix = worldTransform.matrix;
-      const e = matrix.elements;
-      ctx.transform(e[0], e[1], e[3], e[4], e[6], e[7]);
+      const matrix = worldTransform.toMatrix();
+      if (matrix && matrix.length >= 6) {
+        ctx.transform(matrix[0]!, matrix[1]!, matrix[2]!, matrix[3]!, matrix[4]!, matrix[5]!);
+      }
     }
 
     // 渲染自身
@@ -318,7 +329,11 @@ export abstract class SceneNode implements ISceneNode {
       childCount: this.children.length,
       localBounds: this.getLocalBounds(),
       worldBounds: this.getWorldBounds(),
-      transform: this.transform.toObject()
+      transform: {
+        scale: { x: this.transform.scale.x, y: this.transform.scale.y },
+        rotation: this.transform.rotation,
+        translation: { x: this.transform.translation.x, y: this.transform.translation.y }
+      }
     };
   }
 }

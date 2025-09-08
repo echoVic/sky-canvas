@@ -61,9 +61,8 @@ export class DiamondShape implements IShape {
       context.save();
       
       // 设置样式
-      context.strokeStyle = this.strokeColor;
-      context.lineWidth = this.strokeWidth;
-      context.lineJoin = 'round';
+      context.setStrokeStyle(this.strokeColor);
+      context.setLineWidth(this.strokeWidth);
       
       const center = this.center;
       const halfWidth = this.size.width / 2;
@@ -78,7 +77,7 @@ export class DiamondShape implements IShape {
       context.closePath();
       
       if (this.filled && this.fillColor) {
-        context.fillStyle = this.fillColor;
+        context.setFillStyle(this.fillColor);
         context.fill();
       }
       

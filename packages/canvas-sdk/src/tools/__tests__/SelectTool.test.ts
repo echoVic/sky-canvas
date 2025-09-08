@@ -5,17 +5,18 @@ import { CanvasSDK } from '../../CanvasSDK';
 import { IMouseEvent } from '../../interaction/types';
 import { IShape } from '../../scene/IShape';
 import { SelectTool } from '../SelectTool';
+import { vi } from 'vitest';
 
 // 模拟CanvasSDK
-jest.mock('../../CanvasSDK', () => {
+vi.mock('../../CanvasSDK', () => {
   return {
-    CanvasSDK: jest.fn().mockImplementation(() => {
+    CanvasSDK: vi.fn().mockImplementation(() => {
       return {
-        getShapes: jest.fn(() => []),
-        getSelectedShapes: jest.fn(),
-        selectShape: jest.fn(),
-        clearSelection: jest.fn(),
-        isSelected: jest.fn()
+        getShapes: vi.fn(() => []),
+        getSelectedShapes: vi.fn(),
+        selectShape: vi.fn(),
+        clearSelection: vi.fn(),
+        isSelected: vi.fn()
       };
     })
   };
@@ -28,21 +29,35 @@ const createMockShape = (id: string): IShape => {
     position: { x: 0, y: 0 },
     size: { width: 100, height: 100 },
     getBounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-    render: jest.fn(),
-    hitTest: jest.fn(),
-    containsPoint: jest.fn()
+    render: vi.fn(),
+    hitTest: vi.fn()
+  } as unknown as IShape;
+};
+
+// 创建模拟鼠标事件的辅助函数
+const createMouseEvent = (button: number, ctrlKey: boolean = false, shiftKey: boolean = false): IMouseEvent => {
+  return {
+    type: 'mousedown',
+    screenPosition: { x: 50, y: 50 },
+    worldPosition: { x: 50, y: 50 },
+    button,
+    ctrlKey,
+    shiftKey,
+    altKey: false,
+    metaKey: false,
+    timestamp: Date.now()
   };
 };
 
 describe('SelectTool', () => {
   let selectTool: SelectTool;
-  let mockCanvasSDK: jest.Mocked<CanvasSDK>;
+  let mockCanvasSDK: any;
   let mockShape: IShape;
   let mockShapes: IShape[];
 
   beforeEach(() => {
     // 创建模拟的CanvasSDK
-    mockCanvasSDK = new CanvasSDK() as jest.Mocked<CanvasSDK>;
+    mockCanvasSDK = new (CanvasSDK as any)() as any;
     
     // 创建模拟的形状
     mockShape = createMockShape('test-shape-1');
@@ -69,8 +84,8 @@ describe('SelectTool', () => {
 
   describe('工具激活和停用', () => {
     it('应该正确激活工具', () => {
-      const mockSetCursor = jest.fn();
-      mockCanvasSDK.getInteractionManager = jest.fn().mockReturnValue({
+      const mockSetCursor = vi.fn();
+      mockCanvasSDK.getInteractionManager = vi.fn().mockReturnValue({
         setCursor: mockSetCursor
       });
 
@@ -95,19 +110,6 @@ describe('SelectTool', () => {
   });
 
   describe('鼠标事件处理', () => {
-    const createMouseEvent = (button: number, ctrlKey: boolean = false, shiftKey: boolean = false): IMouseEvent => {
-      return {
-        type: 'mousedown',
-        screenPosition: { x: 50, y: 50 },
-        worldPosition: { x: 50, y: 50 },
-        button,
-        ctrlKey,
-        shiftKey,
-        altKey: false,
-        metaKey: false,
-        timestamp: Date.now()
-      };
-    };
 
     it('应该处理左键点击', () => {
       const mouseEvent = createMouseEvent(0);
@@ -124,8 +126,8 @@ describe('SelectTool', () => {
     });
 
     it('应该处理点击已选择的形状', () => {
-      mockCanvasSDK.getSelectedShapes = jest.fn().mockReturnValue([mockShape]);
-      mockCanvasSDK.hitTest = jest.fn().mockReturnValue(mockShape);
+      mockCanvasSDK.getSelectedShapes = vi.fn().mockReturnValue([mockShape]);
+      mockCanvasSDK.hitTest = vi.fn().mockReturnValue(mockShape);
       
       const mouseEvent = createMouseEvent(0);
       const result = selectTool.onMouseDown(mouseEvent);
@@ -135,8 +137,8 @@ describe('SelectTool', () => {
     });
 
     it('应该处理点击未选择的形状', () => {
-      mockCanvasSDK.getSelectedShapes = jest.fn().mockReturnValue([]);
-      mockCanvasSDK.hitTest = jest.fn().mockReturnValue(mockShape);
+      mockCanvasSDK.getSelectedShapes = vi.fn().mockReturnValue([]);
+      mockCanvasSDK.hitTest = vi.fn().mockReturnValue(mockShape);
       
       const mouseEvent = createMouseEvent(0);
       const result = selectTool.onMouseDown(mouseEvent);
@@ -147,7 +149,7 @@ describe('SelectTool', () => {
     });
 
     it('应该开始框选当点击空白区域', () => {
-      mockCanvasSDK.hitTest = jest.fn().mockReturnValue(null);
+      mockCanvasSDK.hitTest = vi.fn().mockReturnValue(null);
       
       const mouseEvent = createMouseEvent(0);
       const result = selectTool.onMouseDown(mouseEvent);
@@ -200,7 +202,7 @@ describe('SelectTool', () => {
     it('应该结束框选操作', () => {
       selectTool.isSelectingState = true;
       selectTool.selectionRectState = { x: 0, y: 0, width: 100, height: 100 };
-      mockCanvasSDK.hitTestBounds = jest.fn().mockReturnValue(mockShapes);
+      mockCanvasSDK.hitTestBounds = vi.fn().mockReturnValue(mockShapes);
       
       const mouseEvent = createMouseEvent(0);
       const result = selectTool.onMouseUp(mouseEvent);
@@ -282,23 +284,23 @@ describe('SelectTool', () => {
   describe('渲染选择框', () => {
     it('应该渲染选择框和变形控制器', () => {
       const mockContext = {
-        save: jest.fn(),
+        save: vi.fn(),
         strokeStyle: '',
         lineWidth: 0,
-        setLineDash: jest.fn(),
-        strokeRect: jest.fn(),
-        restore: jest.fn(),
-        beginPath: jest.fn(),
-        moveTo: jest.fn(),
-        lineTo: jest.fn(),
-        stroke: jest.fn(),
-        fillRect: jest.fn(),
-        fill: jest.fn(),
-        arc: jest.fn()
+        setLineDash: vi.fn(),
+        strokeRect: vi.fn(),
+        restore: vi.fn(),
+        beginPath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        stroke: vi.fn(),
+        fillRect: vi.fn(),
+        fill: vi.fn(),
+        arc: vi.fn()
       } as unknown as CanvasRenderingContext2D;
 
       // 模拟transformController.render
-      selectTool['transformController'].render = jest.fn();
+      selectTool['transformController'].render = vi.fn();
       
       selectTool.renderSelectionBox(mockContext);
       

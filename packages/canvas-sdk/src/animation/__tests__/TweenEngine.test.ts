@@ -1,4 +1,5 @@
 import { TweenEngine } from '../TweenEngine';
+import { vi } from 'vitest';
 
 describe('TweenEngine', () => {
   let tweenEngine: TweenEngine;
@@ -10,10 +11,10 @@ describe('TweenEngine', () => {
       id: 'test-target',
       position: { x: 0, y: 0 },
       size: { width: 100, height: 100 },
-      setPosition: jest.fn(function(pos) { this.position = { ...pos }; }),
-      setSize: jest.fn(function(size) { this.size = { ...size }; }),
-      getPosition: jest.fn(function() { return { ...this.position }; }),
-      getSize: jest.fn(function() { return { ...this.size }; })
+      setPosition: vi.fn(function(this: any, pos) { this.position = { ...pos }; }),
+      setSize: vi.fn(function(this: any, size) { this.size = { ...size }; }),
+      getPosition: vi.fn(function(this: any) { return { ...this.position }; }),
+      getSize: vi.fn(function(this: any) { return { ...this.size }; })
     };
   });
 
@@ -72,8 +73,15 @@ describe('TweenEngine', () => {
   });
 
   test('should stop all animations', () => {
+    const mockTarget2 = {
+      id: 'test-target-2',
+      position: { x: 0, y: 0 },
+      setPosition: vi.fn(function(this: any, pos) { this.position = { ...pos }; }),
+      getPosition: vi.fn(function(this: any) { return { ...this.position }; })
+    };
+    
     tweenEngine.to(mockTarget, { x: 100 }, { duration: 1000 });
-    tweenEngine.to(mockTarget, { y: 100 }, { duration: 1000 });
+    tweenEngine.to(mockTarget2, { x: 100 }, { duration: 1000 });
     
     expect(tweenEngine.getActiveAnimationCount()).toBe(2);
     

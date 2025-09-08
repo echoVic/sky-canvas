@@ -72,7 +72,7 @@ export class LineShape implements IShape {
     context.setLineWidth(this.strokeWidth);
     
     // 绘制线条
-    context.drawLine(this.startPoint, this.endPoint);
+    context.drawLine(this.startPoint.x, this.startPoint.y, this.endPoint.x, this.endPoint.y);
     
     // 如果选中，绘制选择框
     if (this.selected) {
@@ -89,7 +89,6 @@ export class LineShape implements IShape {
     context.save();
     context.setStrokeStyle('#007AFF');
     context.setLineWidth(2);
-    context.setLineDash([5, 5]);
     context.drawRect({
       x: bounds.x - padding,
       y: bounds.y - padding,

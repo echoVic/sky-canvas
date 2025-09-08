@@ -308,7 +308,7 @@ export class GestureRecognizer extends EventDispatcher {
 
     // 滑动手势检测（在触摸结束时）
     if (this._activeTouches.size === 0) {
-      const velocity = this._gestureVelocity.magnitude();
+      const velocity = this._gestureVelocity.length();
       if (distance > this._config.swipeMinDistance && 
           duration < this._config.swipeMaxDuration &&
           velocity > this._config.swipeMinVelocity) {
@@ -412,6 +412,7 @@ export class GestureRecognizer extends EventDispatcher {
     const touches = Array.from(this._activeTouches.values());
     if (touches.length === 1) {
       const touch = touches[0];
+      if (!touch) return;
       const duration = currentTime - touch.startTime;
       const distance = touch.startPosition.distance(touch.currentPosition);
       

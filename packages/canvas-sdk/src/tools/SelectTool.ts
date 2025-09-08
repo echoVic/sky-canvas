@@ -4,6 +4,9 @@ import { SnapManager } from '../interaction/SnapManager';
 import { TransformController } from '../interaction/TransformController';
 import { IInteractionTool, IMouseEvent, InteractionMode } from '../interaction/types';
 import { IShape } from '../scene/IShape';
+import { InteractionManager } from '../interaction/InteractionManager';
+import { ISceneNode } from '../scene/SceneNode';
+import { SelectionMode } from '../interaction/SelectionManager';
 
 export class SelectTool implements IInteractionTool {
   name = 'select';
@@ -19,12 +22,16 @@ export class SelectTool implements IInteractionTool {
   private transformController: TransformController;
   private snapManager: SnapManager;
   private canvasSDK: CanvasSDK | null = null;
-  
-  constructor(canvasSDK?: CanvasSDK) {
+  private interactionManager: InteractionManager | null = null;
+
+  constructor(canvasSDK?: CanvasSDK, interactionManager?: InteractionManager) {
     this.transformController = new TransformController();
     this.snapManager = new SnapManager();
     if (canvasSDK) {
       this.canvasSDK = canvasSDK;
+    }
+    if (interactionManager) {
+      this.interactionManager = interactionManager;
     }
   }
   
@@ -33,6 +40,13 @@ export class SelectTool implements IInteractionTool {
    */
   setCanvasSDK(canvasSDK: CanvasSDK): void {
     this.canvasSDK = canvasSDK;
+  }
+
+  /**
+   * 设置InteractionManager实例
+   */
+  setInteractionManager(interactionManager: InteractionManager): void {
+    this.interactionManager = interactionManager;
   }
   
   onActivate(): void {
@@ -63,40 +77,79 @@ export class SelectTool implements IInteractionTool {
       return true;
     }
     
-    // 检查是否点击了已选择的形状
-    if (this.canvasSDK) {
-      const selectedShapes = this.canvasSDK.getSelectedShapes();
-      // 使用新API进行点击测试
-      let clickedShape: IShape | null = null;
-      const shapes = this.canvasSDK.getShapes();
-      for (const shape of shapes) {
-        if (shape.hitTest && shape.hitTest(point)) {
-          clickedShape = shape;
-          break;
-        }
-      }
+    // 使用InteractionManager进行点击测试和选择
+    const manager = this.interactionManager || (this.canvasSDK as any)?.interactionManager;
+    if (manager) {
+      // 进行点击测试
+      const clickedNode = manager.hitTest(point);
+      const selectedNodes = manager.getSelectedNodes();
       
-      if (clickedShape && selectedShapes.includes(clickedShape)) {
-        // 点击了已选择的形状，准备移动
+      if (clickedNode && selectedNodes.includes(clickedNode)) {
+        // 点击了已选择的节点，准备移动
         this.startPoint = point;
         return true;
       }
       
-      // 点击了未选择的形状或空白区域 - 使用新API
-      if (clickedShape) {
-        // 选择新的形状
-        if (!event.ctrlKey && !event.shiftKey) {
-          this.canvasSDK.clearSelection();
+      // 点击了未选择的节点或空白区域
+      if (clickedNode) {
+        // 选择新的节点
+        if (event.ctrlKey || event.shiftKey) {
+          // Ctrl/Shift+点击：使用累加模式
+          manager.select(clickedNode, SelectionMode.ADDITIVE);
+        } else {
+          // 普通点击：清除现有选择并选择新节点
+          manager.clearSelection();
+          manager.select(clickedNode);
         }
-        this.canvasSDK.selectShape(clickedShape.id);
-        this.transformController.setTargetShapes([clickedShape]);
         this.startPoint = point;
       } else {
         // 开始框选
         this.isSelecting = true;
         this.startPoint = point;
         if (!event.shiftKey) {
-          this.canvasSDK?.clearSelection();
+          manager.clearSelection();
+        }
+      }
+    } else {
+      // 回退到CanvasSDK方法（如果可用）
+      if (this.canvasSDK) {
+        const selectedShapes = this.canvasSDK.getSelectedShapes();
+        // 使用新API进行点击测试
+        let clickedShape: IShape | null = null;
+        const shapes = this.canvasSDK.getShapes();
+        for (const shape of shapes) {
+          if (shape.hitTest && shape.hitTest(point)) {
+            clickedShape = shape;
+            break;
+          }
+        }
+        
+        if (clickedShape && selectedShapes.includes(clickedShape)) {
+          // 点击了已选择的形状，准备移动
+          this.startPoint = point;
+          return true;
+        }
+        
+        // 点击了未选择的形状或空白区域 - 使用InteractionManager API
+        if (clickedShape) {
+          // 选择新的形状
+          if (this.interactionManager) {
+             if (event.ctrlKey || event.shiftKey) {
+               this.interactionManager.select(clickedShape as unknown as ISceneNode, SelectionMode.ADDITIVE);
+             } else {
+               this.interactionManager.clearSelection();
+               this.interactionManager.select(clickedShape as unknown as ISceneNode);
+             }
+           }
+          this.transformController.setTargetShapes([clickedShape]);
+          this.startPoint = point;
+        } else {
+          // 开始框选
+          this.isSelecting = true;
+          this.startPoint = point;
+          if (!event.shiftKey && this.interactionManager) {
+            this.interactionManager.clearSelection();
+          }
         }
       }
     }
@@ -152,35 +205,11 @@ export class SelectTool implements IInteractionTool {
       return true;
     }
     
-    if (this.isSelecting && this.selectionRect && this.canvasSDK) {
-      // 结束框选操作 - 使用新API
-      const shapes = this.canvasSDK.getShapes();
-      const selectedShapes: any[] = [];
+    if (this.isSelecting && this.selectionRect && this.interactionManager) {
+      // 结束框选操作 - 使用InteractionManager API
+      const selectionMode = event.shiftKey ? SelectionMode.ADDITIVE : SelectionMode.MULTIPLE;
+      this.interactionManager.selectInBounds(this.selectionRect, selectionMode);
       
-      shapes.forEach((shape: any) => {
-        const bounds = shape.getBounds ? shape.getBounds() : null;
-        if (bounds && this.boundsIntersect(this.selectionRect!, bounds)) {
-          selectedShapes.push(shape);
-        }
-      });
-      
-      if (selectedShapes.length > 0) {
-        if (event.shiftKey) {
-          // 添加到选择 - 使用现有的选择方法
-          selectedShapes.forEach(shape => {
-            if (!this.canvasSDK!.isSelected(shape.id)) {
-              this.canvasSDK!.selectShape(shape.id);
-            }
-          });
-        } else {
-          // 新的选择 - 先清空选择，然后选择所有
-          this.canvasSDK!.clearSelection();
-          selectedShapes.forEach(shape => {
-            this.canvasSDK!.selectShape(shape.id);
-          });
-        }
-        this.transformController.setTargetShapes(selectedShapes);
-      }
       this.isSelecting = false;
       this.startPoint = null;
       this.selectionRect = null;

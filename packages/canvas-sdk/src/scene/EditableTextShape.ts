@@ -1,7 +1,7 @@
 /**
  * 可编辑文本形状类 - 支持画布内直接编辑
  */
-import { IShape, ISize, ShapeType, IShapeUpdate } from './IShape';
+import { IShape, ISize, ShapeType, IShapeUpdate, IShapeData } from './IShape';
 import { IPoint, IRect } from '@sky-canvas/render-engine';
 
 export interface IEditableTextStyle {
@@ -28,6 +28,8 @@ export class EditableTextShape implements IShape {
   public size: ISize;
   public visible: boolean = true;
   public zIndex: number = 0;
+  public selected: boolean = false;
+  public locked: boolean = false;
   public text: string;
   public style: Required<IEditableTextStyle>;
   
@@ -408,7 +410,7 @@ export class EditableTextShape implements IShape {
   /**
    * 克隆形状
    */
-  clone(): EditableTextShape {
+  clone(): IShape {
     const cloned = new EditableTextShape(
       `${this.id}_copy_${Date.now()}`,
       { ...this.position },
@@ -436,6 +438,12 @@ export class EditableTextShape implements IShape {
     if (updates.zIndex !== undefined) {
       this.zIndex = updates.zIndex;
     }
+    if (updates.selected !== undefined) {
+      this.selected = updates.selected;
+    }
+    if (updates.locked !== undefined) {
+      this.locked = updates.locked;
+    }
   }
 
   /**
@@ -454,6 +462,49 @@ export class EditableTextShape implements IShape {
   setStyle(style: Partial<IEditableTextStyle>): void {
     Object.assign(this.style, style);
     this.updateTextMetrics();
+  }
+
+  /**
+   * 序列化形状数据
+   */
+  serialize(): IShapeData {
+    return {
+      id: this.id,
+      type: this.type,
+      position: this.position,
+      size: this.size,
+      visible: this.visible,
+      zIndex: this.zIndex,
+      selected: this.selected,
+      locked: this.locked,
+      text: this.text,
+      style: this.style
+    };
+  }
+
+  /**
+   * 反序列化形状数据
+   */
+  deserialize(data: IShapeData): void {
+    this.position = data.position;
+    this.size = data.size;
+    this.visible = data.visible;
+    this.zIndex = data.zIndex;
+    this.selected = data.selected;
+    this.locked = data.locked;
+    if (data.text) {
+      this.text = data.text;
+    }
+    if (data.style) {
+      Object.assign(this.style, data.style);
+    }
+  }
+
+  /**
+   * 获取边界（实现IRenderable接口）
+   */
+  get bounds(): IRect {
+    return this.getBounds();
   }
 
   /**

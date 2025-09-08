@@ -86,7 +86,7 @@ export class InstantiationService implements ServicesAccessor {
         this.services.set(identifier, instance);
       }
       
-      return instance;
+      return instance as T;
     } catch (error) {
       throw error;
     } finally {

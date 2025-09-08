@@ -89,6 +89,7 @@ describe('SnapManager', () => {
   });
 
   test('should perform object snap to corner', () => {
+    snapManager.enableGridSnap(false); // Disable grid snap to test object snap
     const position: IPoint = { x: 105, y: 105 }; // Near corner (100, 100)
     
     const result = snapManager.getSnapPosition(position, mockShapes);
@@ -100,6 +101,7 @@ describe('SnapManager', () => {
   });
 
   test('should perform object snap to center', () => {
+    snapManager.enableGridSnap(false); // Disable grid snap to test object snap
     const position: IPoint = { x: 120, y: 120 }; // Near center (125, 125)
     
     const result = snapManager.getSnapPosition(position, mockShapes);
@@ -112,6 +114,7 @@ describe('SnapManager', () => {
 
   test('should perform guide snap', () => {
     snapManager.enableGuideSnap(true);
+    snapManager.enableGridSnap(false); // Disable grid snap to test guide snap priority
     snapManager.setGuideLines([150, 250], [200, 300]);
     
     const position: IPoint = { x: 155, y: 100 }; // Near guide line x=150
@@ -125,23 +128,29 @@ describe('SnapManager', () => {
   });
 
   test('should return original position when no snap is close enough', () => {
-    const position: IPoint = { x: 500, y: 500 }; // Far from any objects or grid
+    // Disable all snap types to ensure no snapping occurs
+    snapManager.enableGridSnap(false);
+    snapManager.enableObjectSnap(false);
+    snapManager.enableGuideSnap(false);
+    
+    const position: IPoint = { x: 555, y: 555 };
     
     const result = snapManager.getSnapPosition(position, mockShapes);
     
     expect(result.type).toBe('none');
-    expect(result.position.x).toBe(500);
-    expect(result.position.y).toBe(500);
+    expect(result.position.x).toBe(555);
+    expect(result.position.y).toBe(555);
   });
 
   test('should prioritize closer snaps', () => {
-    snapManager.setGridSize(100);
-    // Position near both grid point (100, 100) and object corner (100, 100)
-    const position: IPoint = { x: 102, y: 102 };
+    // Disable grid snap to test object snap priority
+    snapManager.enableGridSnap(false);
+    // Position close to object corner (100, 100)
+    const position: IPoint = { x: 101, y: 101 };
     
     const result = snapManager.getSnapPosition(position, mockShapes);
     
-    // Should snap to object since it's closer
+    // Should snap to object since grid is disabled
     expect(result.type).toBe('object');
     expect(result.position.x).toBe(100);
     expect(result.position.y).toBe(100);

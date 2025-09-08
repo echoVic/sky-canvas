@@ -3,25 +3,23 @@
  * 采用 VSCode DI 架构设计
  */
 
-import { injectable, inject, optional } from './di/ServiceIdentifier';
 import type { ServicesAccessor } from './di/ServiceIdentifier';
-import { ServiceCollection } from './di/ServiceCollection';
-import { InstantiationService } from './di/InstantiationService';
+import { injectable } from './di/ServiceIdentifier';
 import * as ServiceIds from './di/ServiceIdentifiers';
 import {
-  ICanvasRenderingService,
-  IInteractionService,
-  IHistoryService,
   IAnimationService,
-  IEventBusService,
-  IShapeService,
-  ILayerService,
-  ISelectionService,
-  IViewportService,
-  IToolService,
-  IImportExportService,
+  ICanvasRenderingService,
   IConfigurationService,
-  ILogService
+  IEventBusService,
+  IHistoryService,
+  IImportExportService,
+  IInteractionService,
+  ILayerService,
+  ILogService,
+  ISelectionService,
+  IShapeService,
+  IToolService,
+  IViewportService
 } from './di/ServiceIdentifiers';
 
 /**

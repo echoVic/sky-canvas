@@ -1,12 +1,12 @@
 import { TextShape } from './TextShape';
 import { TextRange, TextFormat, TextRun, FontInfo, FontLoadStatus } from './TextTypes';
-import { IPoint, Rect, IGraphicsContext } from '@sky-canvas/render-engine';
+import { IPoint, IRect, IGraphicsContext } from '@sky-canvas/render-engine';
 import { IShape, IShapeUpdate, IShapeData, ShapeType } from './IShape';
 
 /**
  * 富文本形状
  */
-export class RichTextShape extends TextShape implements IShape {
+export class RichTextShape extends TextShape {
   readonly type: ShapeType = 'text';
   public visible: boolean = true;
   public zIndex: number = 0;
@@ -550,14 +550,14 @@ export class RichTextShape extends TextShape implements IShape {
   /**
    * 获取边界（只读属性，实现IRenderable接口）
    */
-  get bounds(): Rect {
+  get bounds(): IRect {
     return this.getBounds();
   }
 
   /**
    * 获取文本边界
    */
-  getBounds(): Rect {
+  getBounds(): IRect {
     const bounds = super.getBounds();
     
     // 计算所有文本运行的实际边界
@@ -669,7 +669,7 @@ export class RichTextShape extends TextShape implements IShape {
     }
     
     if (data.textRuns) {
-      this.textRuns = data.textRuns.map(run => ({ ...run }));
+      this.textRuns = data.textRuns.map((run: any) => ({ ...run }));
     }
   }
   
@@ -725,13 +725,13 @@ export class RichTextShape extends TextShape implements IShape {
     // 更新父类文本
     super.setText(text);
     // 重新计算尺寸
-    this.size = this.calculateTextSize();
+    this.size = this.calculateRichTextSize();
   }
   
   /**
    * 计算文本尺寸
    */
-  private calculateTextSize(): { width: number; height: number } {
+  private calculateRichTextSize(): { width: number; height: number } {
     // 创建临时canvas来测量文本尺寸
     const tempCanvas = document.createElement('canvas');
     const ctx = tempCanvas.getContext('2d');

@@ -1,5 +1,6 @@
 import { Animation } from '../Animation';
 import { Easing } from '../Easing';
+import { vi } from 'vitest';
 
 describe('Animation', () => {
   let mockTarget: any;
@@ -10,10 +11,10 @@ describe('Animation', () => {
       id: 'test-target',
       position: { x: 0, y: 0 },
       size: { width: 100, height: 100 },
-      setPosition: jest.fn(function(pos) { this.position = { ...pos }; }),
-      setSize: jest.fn(function(size) { this.size = { ...size }; }),
-      getPosition: jest.fn(function() { return { ...this.position }; }),
-      getSize: jest.fn(function() { return { ...this.size }; })
+      setPosition: vi.fn(function(this: any, pos) { this.position = { ...pos }; }),
+      setSize: vi.fn(function(this: any, size) { this.size = { ...size }; }),
+      getPosition: vi.fn(function(this: any) { return { ...this.position }; }),
+      getSize: vi.fn(function(this: any) { return { ...this.size }; })
     };
 
     animation = new Animation(
@@ -57,12 +58,12 @@ describe('Animation', () => {
   test('should handle update correctly', () => {
     // Mock performance.now
     const originalNow = performance.now;
-    performance.now = jest.fn(() => 0);
+    performance.now = vi.fn(() => 0);
     
     animation.play();
     
     // Simulate time passing
-    performance.now = jest.fn(() => 500);
+    performance.now = vi.fn(() => 500);
     const result = animation.update(16);
     
     expect(result).toBe(true);
@@ -72,14 +73,18 @@ describe('Animation', () => {
   });
 
   test('should apply values to target properties', () => {
-    // This test requires internal method access, so we'll test indirectly
-    animation.play();
-    
     // Mock performance.now for completion
     const originalNow = performance.now;
-    performance.now = jest.fn(() => 2000); // Beyond duration
+    let currentTime = 0;
+    performance.now = vi.fn(() => currentTime);
     
-    const result = animation.update(1000);
+    // Start animation at time 0
+    currentTime = 0;
+    animation.play();
+    
+    // Progress to completion (beyond duration of 1000ms)
+    currentTime = 1500;
+    const result = animation.update(0);
     
     // Animation should complete
     expect(result).toBe(false);
@@ -108,9 +113,9 @@ describe('Animation', () => {
   });
 
   test('should handle callback functions', () => {
-    const onStart = jest.fn();
-    const onUpdate = jest.fn();
-    const onComplete = jest.fn();
+    const onStart = vi.fn();
+    const onUpdate = vi.fn();
+    const onComplete = vi.fn();
     
     const callbackAnim = new Animation(
       mockTarget,
@@ -128,7 +133,7 @@ describe('Animation', () => {
     
     // Mock performance.now for completion
     const originalNow = performance.now;
-    performance.now = jest.fn(() => 2000);
+    performance.now = vi.fn(() => 2000);
     
     callbackAnim.update(1000);
     
@@ -137,7 +142,7 @@ describe('Animation', () => {
   });
 
   test('should handle repeat and yoyo', () => {
-    const onRepeat = jest.fn();
+    const onRepeat = vi.fn();
     
     const repeatAnim = new Animation(
       mockTarget,
@@ -155,7 +160,7 @@ describe('Animation', () => {
     
     // Mock performance.now for completion multiple times
     const originalNow = performance.now;
-    performance.now = jest.fn(() => 1000);
+    performance.now = vi.fn(() => 1000);
     
     repeatAnim.update(1000);
     

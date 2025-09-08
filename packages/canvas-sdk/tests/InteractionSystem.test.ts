@@ -1,12 +1,14 @@
-import { afterEach, beforeEach, describe, test, expect } from 'vitest';
-import { Circle, Rectangle } from '../src/core/shapes';
+import { afterEach, beforeEach, describe, test, expect, vi } from 'vitest';
 import { EventType } from '../src/events/EventSystem';
 import { InteractionManager, InteractionMode, PanTool, ZoomTool } from '../src/interaction/InteractionManager';
 import { SelectionMode } from '../src/interaction/SelectionManager';
 import { Transform, Vector2 } from '../src/math';
-import { Camera, Scene } from '../src/scene/Scene';
+import { Scene } from '../src/scene/Scene';
 import { Viewport } from '../src/scene/Viewport';
 import { ShapeNode, wrapShape } from '../src/scene/ShapeNode';
+import { SelectTool } from '../src/tools/SelectTool';
+import { CircleShape } from '../src/scene/CircleShape';
+import { RectangleShape } from '../src/scene/RectangleShape';
 
 // Mock Canvas API
 class MockCanvas {
@@ -14,9 +16,9 @@ class MockCanvas {
   height = 600;
   style = { cursor: 'default' };
   
-  addEventListener = jest.fn();
-  removeEventListener = jest.fn();
-  getBoundingClientRect = jest.fn(() => ({
+  addEventListener = vi.fn();
+  removeEventListener = vi.fn();
+  getBoundingClientRect = vi.fn(() => ({
     left: 0,
     top: 0,
     width: this.width,
@@ -26,21 +28,21 @@ class MockCanvas {
 
 // Mock CanvasRenderingContext2D
 class MockCanvasContext {
-  save = jest.fn();
-  restore = jest.fn();
-  translate = jest.fn();
-  rotate = jest.fn();
-  scale = jest.fn();
-  setTransform = jest.fn();
-  strokeRect = jest.fn();
-  fillRect = jest.fn();
-  beginPath = jest.fn();
-  arc = jest.fn();
-  stroke = jest.fn();
-  fill = jest.fn();
-  fillText = jest.fn();
-  strokeText = jest.fn();
-  setLineDash = jest.fn();
+  save = vi.fn();
+  restore = vi.fn();
+  translate = vi.fn();
+  rotate = vi.fn();
+  scale = vi.fn();
+  setTransform = vi.fn();
+  strokeRect = vi.fn();
+  fillRect = vi.fn();
+  beginPath = vi.fn();
+  arc = vi.fn();
+  stroke = vi.fn();
+  fill = vi.fn();
+  fillText = vi.fn();
+  strokeText = vi.fn();
+  setLineDash = vi.fn();
   
   strokeStyle = '#000000';
   fillStyle = '#000000';
@@ -60,43 +62,49 @@ describe('InteractionSystem', () => {
   beforeEach(() => {
     // 设置 mock
     canvas = new MockCanvas();
-    global.HTMLCanvasElement = jest.fn(() => canvas) as any;
+    global.HTMLCanvasElement = vi.fn(() => canvas) as any;
     global.window = {
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn()
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn()
     } as any;
 
     // 创建场景和视口
     scene = new Scene();
     viewport = new Viewport({ x: 0, y: 0, width: 800, height: 600 });
-    
-    const camera = new Camera('camera1');
-    camera.setViewport({ x: 0, y: 0, width: 800, height: 600 });
-    scene.setActiveCamera(camera);
 
     // 创建交互管理器
-    interactionManager = new InteractionManager();
-    interactionManager.initialize(canvas as any, scene, viewport);
+    try {
+      interactionManager = new InteractionManager(null);
+      interactionManager.initialize(canvas as any, scene, viewport);
+    } catch (error) {
+      console.error('Failed to create InteractionManager:', error);
+      throw error;
+    }
 
     // 创建测试图形
-    const rectShape1 = new Rectangle('rect1', 100, 100, 100, 50, false, { fillStyle: '#ff0000' });
+    const rectShape1 = new RectangleShape('rect1', { x: 100, y: 100 }, { width: 100, height: 50 });
     rect1 = wrapShape(rectShape1);
-    scene.addChild(rect1);
+    scene.addShape(rectShape1);
+    interactionManager.registerNode(rect1);
 
-    const rectShape2 = new Rectangle('rect2', 250, 150, 80, 80, false, { fillStyle: '#00ff00' });
+    const rectShape2 = new RectangleShape('rect2', { x: 250, y: 150 }, { width: 80, height: 80 });
     rect2 = wrapShape(rectShape2);
-    scene.addChild(rect2);
+    scene.addShape(rectShape2);
+    interactionManager.registerNode(rect2);
 
-    const circleShape = new Circle('circle1', 400, 200, 40, false, { fillStyle: '#0000ff' });
+    const circleShape = new CircleShape('circle1', { x: 400, y: 200 }, 40);
     circle = wrapShape(circleShape);
-    scene.addChild(circle);
+    scene.addShape(circleShape);
+    interactionManager.registerNode(circle);
 
     // 更新碰撞检测
     interactionManager.updateCollisionNodes();
   });
 
   afterEach(() => {
-    interactionManager.dispose();
+    if (interactionManager) {
+      interactionManager.dispose();
+    }
   });
 
   describe('工具管理', () => {
@@ -127,14 +135,14 @@ describe('InteractionSystem', () => {
         mode: InteractionMode.DRAW,
         cursor: 'crosshair',
         enabled: true,
-        onActivate: jest.fn(),
-        onDeactivate: jest.fn(),
-        onMouseDown: jest.fn(),
-        onMouseMove: jest.fn(),
-        onMouseUp: jest.fn(),
-        onGesture: jest.fn(),
-        onKeyDown: jest.fn(),
-        onKeyUp: jest.fn()
+        onActivate: vi.fn(),
+        onDeactivate: vi.fn(),
+        onMouseDown: vi.fn(),
+        onMouseMove: vi.fn(),
+        onMouseUp: vi.fn(),
+        onGesture: vi.fn(),
+        onKeyDown: vi.fn(),
+        onKeyUp: vi.fn()
       };
 
       interactionManager.registerTool(customTool);
@@ -198,7 +206,7 @@ describe('InteractionSystem', () => {
 
     test('应该检测到所有重叠的图形', () => {
       // 移动rect2到与rect1重叠
-      rect2.transform.setPosition(new Vector2(120, 110));
+        rect2.transform.translation = new Vector2(120, 110);
       interactionManager.updateCollisionNodes();
       
       const hitNodes = interactionManager.hitTestAll({ x: 120, y: 110 });
@@ -459,8 +467,8 @@ describe('InteractionSystem', () => {
 
       // 视口变换应该改变
       const currentTransform = viewport.getTransform();
-      expect(currentTransform.position.x).not.toBe(initialTransform.position.x);
-      expect(currentTransform.position.y).not.toBe(initialTransform.position.y);
+      expect(currentTransform.translation.x).not.toBe(initialTransform.translation.x);
+      expect(currentTransform.translation.y).not.toBe(initialTransform.translation.y);
     });
   });
 
@@ -552,13 +560,16 @@ describe('InteractionSystem', () => {
       // 创建大量节点
       const nodeCount = 1000;
       for (let i = 0; i < nodeCount; i++) {
-        const rectShape = new Rectangle(`rect-${i}`, 0, 0, 10, 10, false);
-        const rectNode = wrapShape(rectShape);
-        rectNode.transform = new Transform(new Vector2(
-          Math.random() * 800,
-          Math.random() * 600
-        ));
-        scene.addChild(rectNode);
+        const x = Math.random() * 800;
+        const y = Math.random() * 600;
+        
+        if (i % 2 === 0) {
+          const rectShape = new RectangleShape(`rect-${i}`, { x, y }, { width: 10, height: 10 });
+          scene.addShape(rectShape);
+        } else {
+          const circleShape = new CircleShape(`circle-${i}`, { x, y }, 5);
+          scene.addShape(circleShape);
+        }
       }
 
       const startTime = performance.now();

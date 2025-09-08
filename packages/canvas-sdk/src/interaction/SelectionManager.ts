@@ -356,13 +356,12 @@ export class SelectionManager extends EventDispatcher {
   ): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const event = new EventImpl(EventType.SELECTION_CHANGE) as any;
-    event.selectionEvent = {
-      type,
-      selected: Array.from(this._selectedNodes),
-      added,
-      removed,
-      target: added.length > 0 ? added[0] : (removed.length > 0 ? removed[0] : null)
-    } as SelectionEvent;
+    // 直接将选择事件数据放在事件对象上
+    event.selectedNodes = Array.from(this._selectedNodes);
+    event.addedNodes = added;
+    event.removedNodes = removed;
+    event.targetNode = added.length > 0 ? added[0] : (removed.length > 0 ? removed[0] : null);
+    event.selectionType = type;
 
     this.dispatchEvent(event);
   }

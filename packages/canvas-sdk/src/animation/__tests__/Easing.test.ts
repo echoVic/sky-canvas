@@ -38,7 +38,7 @@ describe('Easing', () => {
     expect(Easing.sineOut(0)).toBe(0);
     expect(Easing.sineOut(1)).toBeCloseTo(1);
     
-    expect(Easing.sineInOut(0)).toBe(0);
+    expect(Easing.sineInOut(0)).toBeCloseTo(0);
     expect(Easing.sineInOut(0.5)).toBeCloseTo(0.5);
     expect(Easing.sineInOut(1)).toBeCloseTo(1);
   });

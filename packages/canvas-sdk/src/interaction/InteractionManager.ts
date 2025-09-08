@@ -201,6 +201,8 @@ export class InteractionManager extends EventDispatcher {
   private _gestureRecognizer: GestureRecognizer;
   private _inputState: InputState;
   private _canvasSDK: any = null; // 暂时使用any类型，避免循环依赖
+  private _shapeToNodeMap: Map<string, ISceneNode> = new Map(); // 形状ID到节点的映射
+  private _registeredNodes: Map<string, ISceneNode> = new Map(); // 注册的节点映射
 
   private _tools: Map<string, InteractionTool> = new Map();
   private _activeTool: InteractionTool | null = null;
@@ -220,7 +222,8 @@ export class InteractionManager extends EventDispatcher {
     this._inputState = new InputState();
 
     // 注册默认工具
-    this.registerTool(new NewSelectTool(canvasSDK));
+    const selectTool = new NewSelectTool(canvasSDK, this);
+    this.registerTool(selectTool);
     this.registerTool(new PanTool(this));
     this.registerTool(new ZoomTool(this));
     this.registerTool(new RectangleTool());
@@ -320,9 +323,32 @@ export class InteractionManager extends EventDispatcher {
   }
 
   selectInBounds(bounds: Rect, mode?: SelectionMode): boolean {
+    // 直接从场景获取所有形状进行检测，避免空间网格问题
     if (!this._scene) return false;
-    const nodes = this._collisionDetector.boundsTest(bounds);
-    return this._selectionManager.select(nodes, mode);
+    
+    const shapes = this._scene.getShapes();
+    const intersectingNodes: ISceneNode[] = [];
+    
+    for (const shape of shapes) {
+      if (shape.visible) {
+        const shapeBounds = shape.getBounds();
+        
+        // 检查边界是否相交
+        const intersects = !(bounds.x + bounds.width < shapeBounds.x || 
+              shapeBounds.x + shapeBounds.width < bounds.x || 
+              bounds.y + bounds.height < shapeBounds.y || 
+              shapeBounds.y + shapeBounds.height < bounds.y);
+        
+        if (intersects) {
+          // 使用映射获取已存在的节点包装器
+          const existingNode = this._shapeToNodeMap.get(shape.id);
+          if (existingNode) {
+            intersectingNodes.push(existingNode);
+          }
+        }
+      }
+    }
+    return this._selectionManager.select(intersectingNodes, mode);
   }
 
   getSelectedNodes(): ISceneNode[] {
@@ -561,35 +587,65 @@ export class InteractionManager extends EventDispatcher {
     this.dispatchEvent(event);
   }
 
+  /**
+   * 注册ShapeNode实例
+   */
+  registerNode(node: ISceneNode): void {
+    this._registeredNodes.set(node.id, node);
+  }
+
+  /**
+   * 取消注册ShapeNode实例
+   */
+  unregisterNode(nodeId: string): void {
+    this._registeredNodes.delete(nodeId);
+  }
+
   // 更新碰撞检测节点
   updateCollisionNodes(): void {
     if (!this._scene) return;
 
     this._collisionDetector.clear();
+    this._shapeToNodeMap.clear();
     
-    const addNodeRecursive = (node: ISceneNode) => {
-      if (node.visible && node.enabled) {
-        this._collisionDetector.addNode(node);
+    // Scene类包含shapes，需要将shapes转换为可碰撞的节点
+    const shapes = this._scene.getShapes();
+    for (const shape of shapes) {
+      if (shape.visible) {
+        // 优先使用注册的节点，否则创建临时包装器
+        let nodeToUse: ISceneNode;
+        const registeredNode = this._registeredNodes.get(shape.id);
+        
+        if (registeredNode) {
+          nodeToUse = registeredNode;
+        } else {
+          // 将IShape包装为可碰撞的节点
+          // 这里需要创建一个临时的节点对象用于碰撞检测
+          nodeToUse = {
+            id: shape.id,
+            visible: shape.visible,
+            enabled: true,
+            getBounds: () => shape.getBounds(),
+            hitTest: (point: Point) => shape.hitTest(point)
+          } as any;
+        }
+        
+        this._collisionDetector.addNode(nodeToUse as any);
+        this._shapeToNodeMap.set(shape.id, nodeToUse);
       }
-      
-      for (const child of node.children) {
-        addNodeRecursive(child);
-      }
-    };
-
-    addNodeRecursive(this._scene);
+    }
   }
 
   // 渲染调试信息
   renderDebug(context: RenderContext): void {
     if (!this._enabled) return;
 
-    const { ctx } = context;
-    
     // 只在Canvas 2D上下文中渲染调试信息
-    if (!(ctx instanceof CanvasRenderingContext2D)) {
+    if (!(context instanceof CanvasRenderingContext2D)) {
       return;
     }
+    
+    const ctx = context;
     
     // 让选择工具渲染所有调试信息（包括选择框和捕捉辅助线）
     const selectTool = this._tools.get('select') as NewSelectTool;

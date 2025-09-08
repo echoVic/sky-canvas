@@ -28,6 +28,8 @@ export class TextShape implements IShape {
   public size: ISize;
   public visible: boolean = true;
   public zIndex: number = 0;
+  public selected: boolean = false;
+  public locked: boolean = false;
   public text: string;
   public style: ITextStyle;
 
@@ -92,10 +94,16 @@ export class TextShape implements IShape {
       const fontWeight = this.style.bold ? 'bold' : 'normal';
       const fontStyle = this.style.italic ? 'italic' : 'normal';
       
-      context.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
-      context.fillStyle = this.style.color || '#000000';
-      context.textAlign = this.style.align || 'left';
-      context.textBaseline = this.style.baseline || 'alphabetic';
+      // 准备文本样式
+      const textStyle = {
+        fontFamily,
+        fontSize,
+        fontWeight: fontWeight as any,
+        fontStyle: fontStyle as any,
+        textAlign: (this.style.align || 'left') as any,
+        textBaseline: (this.style.baseline || 'alphabetic') as any,
+        color: this.style.color || '#000000'
+      };
 
       // 计算渲染位置
       let x = this.position.x;
@@ -109,7 +117,7 @@ export class TextShape implements IShape {
       }
 
       // 渲染文本
-      context.fillText(this.text, x, y);
+      context.fillText(this.text, x, y, textStyle);
 
       // 如果有下划线
       if (this.style.underline) {
@@ -117,8 +125,8 @@ export class TextShape implements IShape {
         context.beginPath();
         context.moveTo(this.position.x, lineY);
         context.lineTo(this.position.x + this.size.width, lineY);
-        context.strokeStyle = this.style.color || '#000000';
-        context.lineWidth = 1;
+        context.setStrokeStyle(this.style.color || '#000000');
+        context.setLineWidth(1);
         context.stroke();
       }
 
@@ -147,7 +155,7 @@ export class TextShape implements IShape {
     );
   }
 
-  clone(): TextShape {
+  clone(): IShape {
     const cloned = new TextShape(
       `${this.id}_copy_${Date.now()}`,
       { ...this.position },
@@ -173,6 +181,73 @@ export class TextShape implements IShape {
   setStyle(style: Partial<ITextStyle>): void {
     this.style = { ...this.style, ...style };
     this.size = this.calculateTextSize();
+  }
+
+  /**
+   * 更新形状
+   */
+  update(update: IShapeUpdate): void {
+    if (update.position !== undefined) {
+      this.position = { ...this.position, ...update.position };
+    }
+    if (update.size !== undefined) {
+      this.size = { ...this.size, ...update.size };
+    }
+    if (update.visible !== undefined) {
+      this.visible = update.visible;
+    }
+    if (update.zIndex !== undefined) {
+      this.zIndex = update.zIndex;
+    }
+    if (update.selected !== undefined) {
+      this.selected = update.selected;
+    }
+    if (update.locked !== undefined) {
+      this.locked = update.locked;
+    }
+  }
+
+  /**
+   * 序列化形状数据
+   */
+  serialize(): IShapeData {
+    return {
+      id: this.id,
+      type: this.type,
+      position: this.position,
+      size: this.size,
+      visible: this.visible,
+      zIndex: this.zIndex,
+      selected: this.selected,
+      locked: this.locked,
+      text: this.text,
+      style: this.style
+    };
+  }
+
+  /**
+   * 反序列化形状数据
+   */
+  deserialize(data: IShapeData): void {
+    this.position = data.position;
+    this.size = data.size;
+    this.visible = data.visible;
+    this.zIndex = data.zIndex;
+    this.selected = data.selected;
+    this.locked = data.locked;
+    if (data.text) {
+      this.text = data.text;
+    }
+    if (data.style) {
+      this.style = { ...this.style, ...data.style };
+    }
+  }
+
+  /**
+   * 获取边界（实现IRenderable接口）
+   */
+  get bounds(): IRect {
+    return this.getBounds();
   }
 
   dispose(): void {

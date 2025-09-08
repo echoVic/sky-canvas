@@ -1,4 +1,4 @@
-import { IPoint, Rect } from '@sky-canvas/render-engine';
+import { IPoint, IRect } from '@sky-canvas/render-engine';
 
 /**
  * 文本范围接口

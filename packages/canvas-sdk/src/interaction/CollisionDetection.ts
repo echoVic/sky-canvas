@@ -152,7 +152,7 @@ export class SpatialGrid {
 
     for (let x = startX; x <= endX; x++) {
       for (let y = startY; y <= endY; y++) {
-        cells.add(this.getCellKey(x * this._cellSize, y * this._cellSize));
+        cells.add(`${x},${y}`);
       }
     }
 
@@ -312,7 +312,7 @@ export class CollisionDetector {
     if (!this.boundsIntersect(shapeA.bounds, shapeB.bounds)) {
       return {
         hasCollision: false,
-        distance: Vector2.distance(new Vector2(shapeA.center.x, shapeA.center.y), new Vector2(shapeB.center.x, shapeB.center.y)),
+        distance: new Vector2(shapeA.center.x, shapeA.center.y).distance(new Vector2(shapeB.center.x, shapeB.center.y)),
         normal: new Vector2(0, 0),
         penetration: 0,
         contactPoint: shapeA.center
