@@ -1,8 +1,8 @@
 /**
  * 路径形状实现
  */
-import { IPoint, IRect, IGraphicsContext } from '@sky-canvas/render-engine';
-import { IShape, ISize, ShapeType, IShapeUpdate, IShapeData } from './IShape';
+import { IGraphicsContext, IPoint, IRect } from '@sky-canvas/render-engine';
+import { IShape, IShapeData, IShapeUpdate, ISize, ShapeType } from './IShape';
 
 /**
  * 路径形状类
@@ -15,6 +15,8 @@ export class PathShape implements IShape {
   public size: ISize;
   public visible: boolean = true;
   public zIndex: number = 0;
+  public selected: boolean = false;
+  public locked: boolean = false;
   
   // 实现IRenderable接口的bounds属性
   get bounds(): IRect {
@@ -90,13 +92,11 @@ export class PathShape implements IShape {
       context.save();
       
       // 设置样式
-      context.strokeStyle = this.strokeColor;
-      context.lineWidth = this.strokeWidth;
-      context.lineCap = 'round';
-      context.lineJoin = 'round';
+      context.setStrokeStyle(this.strokeColor);
+      context.setLineWidth(this.strokeWidth);
       
       if (this.filled && this.fillColor) {
-        context.fillStyle = this.fillColor;
+        context.setFillStyle(this.fillColor);
       }
       
       // 绘制路径
@@ -140,8 +140,8 @@ export class PathShape implements IShape {
     const threshold = this.strokeWidth + 2;
     
     for (let i = 0; i < this.points.length - 1; i++) {
-      const p1 = this.points[i];
-      const p2 = this.points[i + 1];
+      const p1: IPoint = this.points[i] || { x: 0, y: 0 };
+      const p2: IPoint = this.points[i + 1] || { x: 0, y: 0 };
       
       if (p1 && p2) {
         const distance = this.pointToLineDistance(point, p1, p2);
@@ -198,7 +198,61 @@ export class PathShape implements IShape {
       this.fillColor
     );
   }
-  
+
+  update(update: IShapeUpdate): void {
+    if (update.position) {
+      this.position = { ...this.position, ...update.position };
+    }
+    if (update.size) {
+      this.size = { ...this.size, ...update.size };
+    }
+    if (update.visible !== undefined) {
+      this.visible = update.visible;
+    }
+    if (update.zIndex !== undefined) {
+      this.zIndex = update.zIndex;
+    }
+    if (update.selected !== undefined) {
+      this.selected = update.selected;
+    }
+    if (update.locked !== undefined) {
+      this.locked = update.locked;
+    }
+  }
+
+  serialize(): IShapeData {
+    return {
+      id: this.id,
+      type: this.type,
+      position: { ...this.position },
+      size: { ...this.size },
+      visible: this.visible,
+      zIndex: this.zIndex,
+      selected: this.selected,
+      locked: this.locked,
+      points: this.points.map(p => ({ ...p })),
+      strokeColor: this.strokeColor,
+      strokeWidth: this.strokeWidth,
+      filled: this.filled,
+      fillColor: this.fillColor
+    };
+  }
+
+  deserialize(data: IShapeData): void {
+    this.position = { ...data.position };
+    this.size = { ...data.size };
+    this.visible = data.visible;
+    this.zIndex = data.zIndex;
+    this.selected = data.selected;
+    this.locked = data.locked;
+    
+    if (data.points) this.points = data.points.map((p: IPoint) => ({ ...p }));
+    if (data.strokeColor) this.strokeColor = data.strokeColor;
+    if (data.strokeWidth !== undefined) this.strokeWidth = data.strokeWidth;
+    if (data.filled !== undefined) this.filled = data.filled;
+    if (data.fillColor) this.fillColor = data.fillColor;
+  }
+
   dispose(): void {
     // 清理资源
     this.points.length = 0;

@@ -1,40 +1,37 @@
-import { Point, Rect, RenderContext } from '../../types';
-import { Shape } from '../core/shapes';
+import { IPoint as Point, IRect as Rect, IGraphicsContext as RenderContext } from '@sky-canvas/render-engine';
+import { IShape } from './IShape';
 import { SceneNode } from './SceneNode';
 
 /**
  * 图形节点类 - 将Shape包装为SceneNode
  */
 export class ShapeNode extends SceneNode {
-  private _shape: Shape;
+  private _shape: IShape;
 
-  constructor(shape: Shape, name?: string) {
+  constructor(shape: IShape, name?: string) {
     super(shape.id, name || shape.id);
     this._shape = shape;
     
     // 同步属性
     this.visible = shape.visible;
     this.zIndex = shape.zIndex;
-    this.transform = shape.transform;
     
     // 设置局部边界
-    this.setLocalBounds(shape.bounds);
+    this.setLocalBounds(shape.getBounds());
   }
 
-  get shape(): Shape {
+  get shape(): IShape {
     return this._shape;
   }
 
   protected updateSelf(_deltaTime: number): void {
-    // 同步属性
-    this._shape.visible = this.visible;
-    this._shape.zIndex = this.zIndex;
-    this._shape.transform = this.transform;
+    // 形状属性同步由形状自身管理
+    // IShape的visible和zIndex是只读属性
   }
 
   protected renderSelf(context: RenderContext): void {
     // 委托给Shape进行渲染
-    this._shape.draw(context);
+    this._shape.render(context);
   }
 
   protected hitTestSelf(point: Point): boolean {
@@ -43,7 +40,7 @@ export class ShapeNode extends SceneNode {
   }
 
   protected getLocalBounds(): Rect {
-    return this._shape.bounds;
+    return this._shape.getBounds();
   }
 
   dispose(): void {
@@ -55,6 +52,6 @@ export class ShapeNode extends SceneNode {
 /**
  * 便利函数：将Shape包装为ShapeNode
  */
-export function wrapShape(shape: Shape, name?: string): ShapeNode {
+export function wrapShape(shape: IShape, name?: string): ShapeNode {
   return new ShapeNode(shape, name);
 }

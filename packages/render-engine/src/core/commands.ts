@@ -1,4 +1,4 @@
-import { Point } from '../../types';
+import { IPoint } from '../graphics/IGraphicsContext';
 import { RenderCommand, RenderState } from './index';
 
 // Canvas 2D特定的渲染上下文
@@ -58,8 +58,8 @@ export class DrawLineCommand implements RenderCommand {
   type = 'drawLine';
   
   constructor(
-    private start: Point,
-    private end: Point,
+    private start: IPoint,
+    private end: IPoint,
     private style?: Partial<RenderState>
   ) {}
 
@@ -152,7 +152,7 @@ export class DrawCircleCommand implements RenderCommand {
   type = 'drawCircle';
   
   constructor(
-    private center: Point,
+    private center: IPoint,
     private radius: number,
     private filled = false,
     private style?: Partial<RenderState>
@@ -199,7 +199,7 @@ export class DrawTextCommand implements RenderCommand {
   
   constructor(
     private text: string,
-    private position: Point,
+    private position: IPoint,
     private style?: Partial<RenderState> & {
       font?: string;
       textAlign?: CanvasTextAlign;

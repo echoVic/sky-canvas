@@ -1,6 +1,6 @@
-import { Point, Rect, RenderContext } from '../../types';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { Transform, Vector2 } from '../math';
-import { Drawable, RenderState } from './index';
+import { Drawable, RenderState, RenderContext } from './index';
 
 /**
  * 基础图形抽象类
@@ -10,25 +10,25 @@ export abstract class Shape implements Drawable {
   public visible: boolean = true;
   public zIndex: number = 0;
   public transform: Transform;
-  protected _bounds: Rect;
+  protected _bounds: IRect;
   protected _style: Partial<RenderState>;
 
-  constructor(id: string, bounds: Rect, style?: Partial<RenderState>) {
+  constructor(id: string, bounds: IRect, style?: Partial<RenderState>) {
     this.id = id;
     this._bounds = { ...bounds };
     this.transform = new Transform();
     this._style = style || {};
   }
 
-  get bounds(): Rect {
+  get bounds(): IRect {
     return { ...this._bounds };
   }
 
-  set bounds(value: Rect) {
+  set bounds(value: IRect) {
     this._bounds = { ...value };
   }
 
-  getBounds(): Rect {
+  getBounds(): IRect {
     // 应用变换后的边界框
     const corners = [
       new Vector2(this._bounds.x, this._bounds.y),
@@ -67,7 +67,7 @@ export abstract class Shape implements Drawable {
     this._style = { ...this._style, ...style };
   }
 
-  hitTest(point: Point): boolean {
+  hitTest(point: IPoint): boolean {
     // 将点变换到局部坐标系
     const localPoint = this.transform.inverseTransformPoint(new Vector2(point.x, point.y));
     return localPoint.x >= this._bounds.x && 
@@ -143,7 +143,7 @@ export class Circle extends Shape {
     this.filled = filled;
   }
 
-  get center(): Point {
+  get center(): IPoint {
     return {
       x: this._bounds.x + this.radius,
       y: this._bounds.y + this.radius
@@ -174,7 +174,7 @@ export class Circle extends Shape {
     ctx.restore();
   }
 
-  hitTest(point: Point): boolean {
+  hitTest(point: IPoint): boolean {
     const localPoint = this.transform.inverseTransformPoint(new Vector2(point.x, point.y));
     const center = this.center;
     const distance = Math.sqrt(
@@ -189,10 +189,10 @@ export class Circle extends Shape {
  * 线段图形
  */
 export class Line extends Shape {
-  public start: Point;
-  public end: Point;
+  public start: IPoint;
+  public end: IPoint;
 
-  constructor(id: string, start: Point, end: Point, style?: Partial<RenderState>) {
+  constructor(id: string, start: IPoint, end: IPoint, style?: Partial<RenderState>) {
     const minX = Math.min(start.x, end.x);
     const minY = Math.min(start.y, end.y);
     const maxX = Math.max(start.x, end.x);
@@ -228,7 +228,7 @@ export class Line extends Shape {
     ctx.restore();
   }
 
-  hitTest(point: Point): boolean {
+  hitTest(point: IPoint): boolean {
     const localPoint = this.transform.inverseTransformPoint(new Vector2(point.x, point.y));
     
     // 计算点到线段的距离

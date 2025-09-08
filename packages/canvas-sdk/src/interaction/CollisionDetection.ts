@@ -1,4 +1,4 @@
-import { Point, Rect } from '../../types';
+import { IPoint as Point, IRect as Rect } from '@sky-canvas/render-engine';
 import { Vector2 } from '../math';
 import { ISceneNode } from '../scene/SceneNode';
 

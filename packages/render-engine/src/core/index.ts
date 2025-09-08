@@ -1,5 +1,13 @@
-import { Point, Rect, RenderContext } from '../../types';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { Transform } from '../math';
+
+// 渲染上下文接口
+export interface RenderContext {
+  canvas: HTMLCanvasElement;
+  ctx: CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext;
+  viewport: IRect;
+  devicePixelRatio: number;
+}
 
 // 渲染状态接口
 export interface RenderState {
@@ -29,20 +37,20 @@ export interface Renderer {
   update(deltaTime: number): void;
   dispose(): void;
   clear(): void;
-  setViewport(viewport: Rect): void;
-  getViewport(): Rect;
+  setViewport(viewport: IRect): void;
+  getViewport(): IRect;
 }
 
 // 可绘制对象接口
 export interface Drawable {
   id: string;
-  bounds: Rect;
+  bounds: IRect;
   visible: boolean;
   zIndex: number;
   transform: Transform;
   draw(context: RenderContext): void;
-  hitTest(point: Point): boolean;
-  getBounds(): Rect;
+  hitTest(point: IPoint): boolean;
+  getBounds(): IRect;
   setTransform(transform: Transform): void;
 }
 
@@ -58,7 +66,7 @@ export interface RendererCapabilities {
 // 抽象渲染器基类
 export abstract class BaseRenderer implements Renderer {
   protected drawables: Drawable[] = [];
-  protected viewport: Rect = { x: 0, y: 0, width: 0, height: 0 };
+  protected viewport: IRect = { x: 0, y: 0, width: 0, height: 0 };
   protected renderState: RenderState;
   protected stateStack: RenderState[] = [];
 
@@ -99,7 +107,7 @@ export abstract class BaseRenderer implements Renderer {
     return this.drawables.find(d => d.id === id);
   }
 
-  getDrawablesInBounds(bounds: Rect): Drawable[] {
+  getDrawablesInBounds(bounds: IRect): Drawable[] {
     return this.drawables.filter(drawable => {
       if (!drawable.visible) return false;
       const drawableBounds = drawable.getBounds();
@@ -107,11 +115,11 @@ export abstract class BaseRenderer implements Renderer {
     });
   }
 
-  setViewport(viewport: Rect): void {
+  setViewport(viewport: IRect): void {
     this.viewport = { ...viewport };
   }
 
-  getViewport(): Rect {
+  getViewport(): IRect {
     return { ...this.viewport };
   }
 
@@ -138,7 +146,7 @@ export abstract class BaseRenderer implements Renderer {
     this.drawables.sort((a, b) => a.zIndex - b.zIndex);
   }
 
-  protected boundsIntersect(a: Rect, b: Rect): boolean {
+  protected boundsIntersect(a: IRect, b: IRect): boolean {
     return !(a.x + a.width < b.x || 
              b.x + b.width < a.x || 
              a.y + a.height < b.y || 

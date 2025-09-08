@@ -1,7 +1,7 @@
 /**
  * 基础图形原语接口
  */
-import { IPoint } from '../core/IGraphicsContext';
+import { IPoint } from '../graphics/IGraphicsContext';
 import { IRenderable } from '../core/IRenderEngine';
 
 /**

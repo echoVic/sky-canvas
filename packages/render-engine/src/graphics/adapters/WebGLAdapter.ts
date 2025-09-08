@@ -1,4 +1,4 @@
-import { IGraphicsContext, IGraphicsStyle, ITextStyle, IImageData, IGraphicsContextFactory, IGraphicsCapabilities, ITransform, IGraphicsState, IPoint, IColor } from '../IGraphicsContext';
+import { IGraphicsContext, IGraphicsStyle, ITextStyle, IImageData, IGraphicsContextFactory, IGraphicsCapabilities, ITransform, IGraphicsState, IPoint, IColor, IRect } from '../IGraphicsContext';
 import { IRenderCommand } from '../RenderCommand';
 
 /**
@@ -276,6 +276,37 @@ export class WebGLGraphicsContext implements IGraphicsContext {
 
   setOpacity(opacity: number): void {
     this.currentStyle.opacity = opacity;
+  }
+
+  setFillStyle(color: IColor | string): void {
+    this.setFillColor(color);
+  }
+
+  setStrokeStyle(color: IColor | string): void {
+    this.setStrokeColor(color);
+  }
+
+  drawLine(x1: number, y1: number, x2: number, y2: number): void {
+    // WebGL implementation placeholder
+    console.warn('drawLine not fully implemented in WebGL context');
+  }
+
+  drawRect(rect: IRect, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+    if (stroke) {
+      this.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    }
+  }
+
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillCircle(center.x, center.y, radius);
+    }
+    if (stroke) {
+      this.strokeCircle(center.x, center.y, radius);
+    }
   }
 
   setTextStyle(_style: Partial<ITextStyle>): void {

@@ -5,7 +5,7 @@
 
 import { BaseSystem } from './SystemManager';
 import { ExtensionType, Extension } from './ExtensionSystem';
-import { Rect } from '../../../types';
+import { IRect } from '../../graphics/IGraphicsContext';
 
 /**
  * 性能配置
@@ -41,10 +41,10 @@ export interface ICacheable {
  * 可剔除对象接口
  */
 export interface ICullable {
-  readonly bounds: Rect;
+  readonly bounds: IRect;
   readonly visible: boolean;
-  
-  isInViewport(viewport: Rect, margin?: number): boolean;
+
+  isInViewport(viewport: IRect, margin?: number): boolean;
 }
 
 /**
@@ -314,10 +314,10 @@ class CacheManager {
  * 视锥剔除器
  */
 class FrustumCuller {
-  private viewport: Rect = { x: 0, y: 0, width: 800, height: 600 };
+  private viewport: IRect = { x: 0, y: 0, width: 800, height: 600 };
   private margin: number = 50;
   
-  setViewport(viewport: Rect): void {
+  setViewport(viewport: IRect): void {
     this.viewport = { ...viewport };
   }
   
@@ -430,7 +430,7 @@ export class PerformanceSystem extends BaseSystem {
   /**
    * 视锥剔除
    */
-  cullObjects<T extends ICullable>(objects: T[], viewport: Rect): T[] {
+  cullObjects<T extends ICullable>(objects: T[], viewport: IRect): T[] {
     if (!this.config.enableCulling) {
       return objects;
     }

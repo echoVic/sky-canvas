@@ -48,6 +48,9 @@ const mockSDKActions = {
   clearShapes: vi.fn(),
   hitTest: vi.fn(),
   // 新增的交互系统方法
+  setActiveTool: vi.fn(() => true),
+  getActiveTool: vi.fn(),
+  registerTool: vi.fn(),
   setInteractionMode: vi.fn(),
   getInteractionManager: vi.fn(),
   registerInteractionTool: vi.fn(),

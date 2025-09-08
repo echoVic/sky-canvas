@@ -1,23 +1,21 @@
 /**
  * SelectTool 测试文件
  */
+import { CanvasSDK } from '../../CanvasSDK';
+import { IMouseEvent } from '../../interaction/types';
+import { IShape } from '../../scene/IShape';
 import { SelectTool } from '../SelectTool';
-import { CanvasSDK } from '../core/CanvasSDK';
-import { IShape } from '../scene/IShape';
-import { IPoint } from '@sky-canvas/render-engine';
 
 // 模拟CanvasSDK
-jest.mock('../core/CanvasSDK', () => {
+jest.mock('../../CanvasSDK', () => {
   return {
     CanvasSDK: jest.fn().mockImplementation(() => {
       return {
-        getInteractionManager: jest.fn(),
-        hitTest: jest.fn(),
+        getShapes: jest.fn(() => []),
         getSelectedShapes: jest.fn(),
         selectShape: jest.fn(),
         clearSelection: jest.fn(),
-        isSelected: jest.fn(),
-        hitTestBounds: jest.fn()
+        isSelected: jest.fn()
       };
     })
   };
@@ -82,27 +80,32 @@ describe('SelectTool', () => {
     });
 
     it('应该正确停用工具', () => {
-      selectTool.isSelecting = true;
-      selectTool.isTransforming = true;
-      selectTool.startPoint = { x: 10, y: 10 };
-      selectTool.selectionRect = { x: 0, y: 0, width: 100, height: 100 };
+      selectTool.isSelectingState = true;
+      selectTool.isTransformingState = true;
+      selectTool.startPointState = { x: 10, y: 10 };
+      selectTool.selectionRectState = { x: 0, y: 0, width: 100, height: 100 };
 
       selectTool.onDeactivate();
       
-      expect(selectTool.isSelecting).toBe(false);
-      expect(selectTool.isTransforming).toBe(false);
-      expect(selectTool.startPoint).toBeNull();
-      expect(selectTool.selectionRect).toBeNull();
+      expect(selectTool.isSelectingState).toBe(false);
+      expect(selectTool.isTransformingState).toBe(false);
+      expect(selectTool.startPointState).toBeNull();
+      expect(selectTool.selectionRectState).toBeNull();
     });
   });
 
   describe('鼠标事件处理', () => {
-    const createMouseEvent = (button: number, ctrlKey: boolean = false, shiftKey: boolean = false) => {
+    const createMouseEvent = (button: number, ctrlKey: boolean = false, shiftKey: boolean = false): IMouseEvent => {
       return {
+        type: 'mousedown',
+        screenPosition: { x: 50, y: 50 },
+        worldPosition: { x: 50, y: 50 },
         button,
         ctrlKey,
         shiftKey,
-        worldPosition: { x: 50, y: 50 }
+        altKey: false,
+        metaKey: false,
+        timestamp: Date.now()
       };
     };
 
@@ -128,7 +131,7 @@ describe('SelectTool', () => {
       const result = selectTool.onMouseDown(mouseEvent);
       
       expect(result).toBe(true);
-      expect(selectTool.startPoint).toEqual({ x: 50, y: 50 });
+      expect(selectTool.startPointState).toEqual({ x: 50, y: 50 });
     });
 
     it('应该处理点击未选择的形状', () => {
@@ -150,21 +153,30 @@ describe('SelectTool', () => {
       const result = selectTool.onMouseDown(mouseEvent);
       
       expect(result).toBe(true);
-      expect(selectTool.isSelecting).toBe(true);
-      expect(selectTool.startPoint).toEqual({ x: 50, y: 50 });
+      expect(selectTool.isSelectingState).toBe(true);
+      expect(selectTool.startPointState).toEqual({ x: 50, y: 50 });
     });
 
     it('应该处理鼠标移动时的框选', () => {
-      selectTool.isSelecting = true;
-      selectTool.startPoint = { x: 10, y: 10 };
+      selectTool.isSelectingState = true;
+      selectTool.startPointState = { x: 10, y: 10 };
       
-      const mouseEvent = createMouseEvent(0);
-      mouseEvent.worldPosition = { x: 100, y: 100 };
+      const mouseEvent: IMouseEvent = {
+        type: 'mousemove',
+        screenPosition: { x: 100, y: 100 },
+        worldPosition: { x: 100, y: 100 },
+        button: 0,
+        ctrlKey: false,
+        shiftKey: false,
+        altKey: false,
+        metaKey: false,
+        timestamp: Date.now()
+      };
       
       const result = selectTool.onMouseMove(mouseEvent);
       
       expect(result).toBe(true);
-      expect(selectTool.selectionRect).toEqual({
+      expect(selectTool.getSelectionRect()).toEqual({
         x: 10,
         y: 10,
         width: 90,
@@ -173,8 +185,8 @@ describe('SelectTool', () => {
     });
 
     it('应该处理鼠标移动时的变形操作', () => {
-      selectTool.isTransforming = true;
-      selectTool.startPoint = { x: 10, y: 10 };
+      selectTool.isTransformingState = true;
+      selectTool.startPointState = { x: 10, y: 10 };
       
       const mouseEvent = createMouseEvent(0);
       mouseEvent.worldPosition = { x: 100, y: 100 };
@@ -182,12 +194,12 @@ describe('SelectTool', () => {
       const result = selectTool.onMouseMove(mouseEvent);
       
       expect(result).toBe(true);
-      expect(selectTool.startPoint).toEqual({ x: 100, y: 100 });
+      expect(selectTool.startPointState).toEqual({ x: 100, y: 100 });
     });
 
     it('应该结束框选操作', () => {
-      selectTool.isSelecting = true;
-      selectTool.selectionRect = { x: 0, y: 0, width: 100, height: 100 };
+      selectTool.isSelectingState = true;
+      selectTool.selectionRectState = { x: 0, y: 0, width: 100, height: 100 };
       mockCanvasSDK.hitTestBounds = jest.fn().mockReturnValue(mockShapes);
       
       const mouseEvent = createMouseEvent(0);
@@ -196,19 +208,19 @@ describe('SelectTool', () => {
       expect(result).toBe(true);
       expect(mockCanvasSDK.clearSelection).toHaveBeenCalled();
       expect(mockCanvasSDK.selectShape).toHaveBeenCalledTimes(2);
-      expect(selectTool.isSelecting).toBe(false);
-      expect(selectTool.selectionRect).toBeNull();
+      expect(selectTool.isSelectingState).toBe(false);
+      expect(selectTool.selectionRectState).toBeNull();
     });
 
     it('应该结束变形操作', () => {
-      selectTool.isTransforming = true;
+      selectTool.isTransformingState = true;
       
       const mouseEvent = createMouseEvent(0);
       const result = selectTool.onMouseUp(mouseEvent);
       
       expect(result).toBe(true);
-      expect(selectTool.isTransforming).toBe(false);
-      expect(selectTool.startPoint).toBeNull();
+      expect(selectTool.isTransformingState).toBe(false);
+      expect(selectTool.startPointState).toBeNull();
     });
   });
 
@@ -247,15 +259,11 @@ describe('SelectTool', () => {
   describe('获取选择矩形', () => {
     it('应该返回当前的选择矩形', () => {
       // 通过模拟鼠标操作来设置selectionRect
-      selectTool['isSelecting'] = true;
-      selectTool['startPoint'] = { x: 0, y: 0 };
+      selectTool.isSelectingState = true;
+      selectTool.startPointState = { x: 0, y: 0 };
       
-      const mouseEvent = {
-        button: 0,
-        ctrlKey: false,
-        shiftKey: false,
-        worldPosition: { x: 100, y: 100 }
-      };
+      const mouseEvent = createMouseEvent(0);
+      mouseEvent.worldPosition = { x: 100, y: 100 };
       
       selectTool.onMouseMove(mouseEvent);
       

@@ -1,5 +1,4 @@
-import { IPoint } from '@sky-canvas/render-engine';
-import { IInteractionTool, InteractionMode, IMouseEvent } from '../interaction/types';
+import { IInteractionTool, IMouseEvent, InteractionMode } from '../interaction/types';
 import { AdvancedPathShape } from '../scene/AdvancedPathShape';
 
 /**
@@ -151,8 +150,10 @@ export class PathTool implements IInteractionTool {
     const points = this.currentPath.getControlPoints();
     if (points.length > 0) {
       const lastPoint = points[points.length - 1];
-      this.currentPath.removePoint(lastPoint.id);
-      return true;
+      if (lastPoint && lastPoint.id) {
+        this.currentPath.removePoint(lastPoint.id);
+        return true;
+      }
     }
     
     return false;

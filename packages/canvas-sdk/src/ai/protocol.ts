@@ -3,26 +3,26 @@
  * 为Sky Canvas画板SDK提供标准化的AI交互协议
  */
 
+import { CanvasSDK } from '../CanvasSDK';
 import { EventEmitter } from '../events/EventEmitter';
-import { CanvasSDK } from '../core/CanvasSDK';
 import { IShape } from '../scene/IShape';
 import {
-  IAIMessage,
-  IAIRequest,
-  IAIResponse,
+  AI_PROTOCOL_VERSION,
+  AICapability,
+  AIErrorType,
+  IAIError,
   IAIEvent,
   IAIExtensionConfig,
   IAIExtensionEvents,
+  IAIMessage,
+  IAIRequest,
   IAIRequestOptions,
-  IAIError,
+  IAIResponse,
   IAIResponsePayload,
-  AICapability,
-  AIErrorType,
-  OperationStatus,
-  MessagePriority,
-  AI_PROTOCOL_VERSION,
   ICanvasContext,
-  IShapeData
+  IShapeData,
+  MessagePriority,
+  OperationStatus
 } from './types';
 
 /**

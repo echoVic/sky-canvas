@@ -1,7 +1,7 @@
 /**
  * WebGL渲染器 - 高性能批量渲染实现
  */
-import { IPoint } from '../core/IGraphicsContext';
+import { IPoint } from '../graphics/IGraphicsContext';
 import { IRenderEngine, IRenderable, IViewport } from '../core/IRenderEngine';
 import { IWebGLContext } from './WebGLContext';
 

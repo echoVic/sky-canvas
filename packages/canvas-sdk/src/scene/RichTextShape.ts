@@ -548,6 +548,13 @@ export class RichTextShape extends TextShape implements IShape {
   }
   
   /**
+   * 获取边界（只读属性，实现IRenderable接口）
+   */
+  get bounds(): Rect {
+    return this.getBounds();
+  }
+
+  /**
    * 获取文本边界
    */
   getBounds(): Rect {

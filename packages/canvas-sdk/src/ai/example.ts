@@ -3,30 +3,29 @@
  * 展示如何使用Sky Canvas AI扩展协议
  */
 
-import { 
-  BaseAIExtension,
+import { CanvasSDK } from '../CanvasSDK';
+import {
   AIProtocolManager,
-  AIProtocolUtils
+  BaseAIExtension
 } from './protocol';
 import {
-  IAIRequest,
-  IAIResponse,
-  IAIExtensionConfig,
   AICapability,
   AIErrorType,
-  ITextGenerationRequest,
-  ITextGenerationResponse,
+  IAIExtensionConfig,
+  IAIRequest,
+  IAIResponse,
+  IAutoCompletionResponse,
+  ICanvasContext,
   IShapeCreationRequest,
   IShapeCreationResponse,
+  IShapeData,
   IShapeModificationRequest,
   IShapeModificationResponse,
-  IAutoCompletionResponse,
   ISmartSelectionResponse,
-  ICanvasContext,
-  IShapeData,
+  ITextGenerationRequest,
+  ITextGenerationResponse,
   ShapeType
 } from './types';
-import { CanvasSDK } from '../core/CanvasSDK';
 
 // ==================== 智能文本生成扩展 ====================
 

@@ -1,4 +1,4 @@
-import { Point, Rect } from '../../types';
+import { IPoint as Point, IRect as Rect } from '@sky-canvas/render-engine';
 import { Transform, Vector2 } from '../math';
 
 /**

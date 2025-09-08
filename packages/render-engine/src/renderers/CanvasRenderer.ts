@@ -1,5 +1,5 @@
-import { Point, Rect, RenderContext } from '../../types';
-import { BaseRenderer, Drawable, RendererCapabilities, RenderState } from '../core';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
+import { BaseRenderer, Drawable, RendererCapabilities, RenderState, RenderContext } from '../core';
 import { Transform } from '../math';
 
 export class CanvasRenderer extends BaseRenderer {
@@ -93,7 +93,7 @@ export class CanvasRenderer extends BaseRenderer {
   }
 
   // 绘制基础图形
-  drawLine(start: Point, end: Point, style?: Partial<RenderState>): void {
+  drawLine(start: IPoint, end: IPoint, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
@@ -130,7 +130,7 @@ export class CanvasRenderer extends BaseRenderer {
     }
   }
 
-  drawCircle(center: Point, radius: number, filled = false, style?: Partial<RenderState>): void {
+  drawCircle(center: IPoint, radius: number, filled = false, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
@@ -152,7 +152,7 @@ export class CanvasRenderer extends BaseRenderer {
     }
   }
 
-  drawText(text: string, position: Point, style?: Partial<RenderState> & { font?: string; textAlign?: CanvasTextAlign; textBaseline?: CanvasTextBaseline }): void {
+  drawText(text: string, position: IPoint, style?: Partial<RenderState> & { font?: string; textAlign?: CanvasTextAlign; textBaseline?: CanvasTextBaseline }): void {
     if (!this.currentContext) return;
     
     const { ctx } = this.currentContext;
@@ -197,7 +197,7 @@ export class CanvasRenderer extends BaseRenderer {
     }
   }
 
-  private isDrawableInViewport(drawable: Drawable, viewport: Rect): boolean {
+  private isDrawableInViewport(drawable: Drawable, viewport: IRect): boolean {
     const bounds = drawable.getBounds();
     return this.boundsIntersect(bounds, viewport);
   }

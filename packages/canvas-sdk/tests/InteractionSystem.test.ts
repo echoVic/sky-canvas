@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, test, expect } from 'vitest';
-import { Circle, Rectangle } from '../engine/core/shapes';
-import { EventType } from '../engine/events/EventSystem';
-import { InteractionManager, InteractionMode, PanTool, SelectTool, ZoomTool } from '../engine/interaction/InteractionManager';
-import { SelectionMode } from '../engine/interaction/SelectionManager';
-import { Transform, Vector2 } from '../engine/math';
-import { Camera, Scene } from '../engine/scene/Scene';
-import { Viewport } from '../engine/scene/Viewport';
-import { ShapeNode, wrapShape } from '../engine/scene/ShapeNode';
+import { Circle, Rectangle } from '../src/core/shapes';
+import { EventType } from '../src/events/EventSystem';
+import { InteractionManager, InteractionMode, PanTool, ZoomTool } from '../src/interaction/InteractionManager';
+import { SelectionMode } from '../src/interaction/SelectionManager';
+import { Transform, Vector2 } from '../src/math';
+import { Camera, Scene } from '../src/scene/Scene';
+import { Viewport } from '../src/scene/Viewport';
+import { ShapeNode, wrapShape } from '../src/scene/ShapeNode';
 
 // Mock Canvas API
 class MockCanvas {

@@ -3,7 +3,7 @@ import { Shader, ShaderSource, ShaderType } from '../core/RenderTypes';
 // 着色器编译结果
 export interface ShaderCompileResult {
   success: boolean;
-  shader?: globalThis.WebGLShader | GPUShaderModule;
+  shader?: globalThis.WebGLShader;
   error?: string;
   warnings?: string[];
 }

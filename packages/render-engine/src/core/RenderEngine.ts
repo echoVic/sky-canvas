@@ -9,7 +9,7 @@ import {
   IRenderStats, 
   IRenderEngineConfig 
 } from './IRenderEngine';
-import { IGraphicsContext, IGraphicsContextFactory, IPoint } from './IGraphicsContext';
+import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
 import { DirtyRegionManager } from './DirtyRegionManager';
 import { LayerCache } from './LayerCache';
 import { AdvancedBatcher } from '../batching/AdvancedBatcher';
@@ -138,7 +138,9 @@ export class RenderEngine implements IRenderEngine {
   }
 
   private renderRegion(region: any): void {
-    if (!this.context) return;
+    if (!this.context) {
+      return;
+    }
     
     // 保存当前上下文状态
     this.context.save();
@@ -370,6 +372,10 @@ export class RenderEngine implements IRenderEngine {
   }
 
   private renderLayerRenderables(renderables: IRenderable[]): void {
+    if (!this.context) {
+      return;
+    }
+    
     for (const renderable of renderables) {
       this.context.save();
       renderable.render(this.context);

@@ -2,7 +2,7 @@
  * 基础图形原语抽象类
  * 提供通用功能的默认实现
  */
-import { IGraphicsContext, IPoint, IRect } from '../core/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
 import { GraphicPrimitiveType, IGraphicPrimitive } from './IGraphicPrimitive';
 
 /**

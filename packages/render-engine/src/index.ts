@@ -5,10 +5,10 @@
 
 // 核心类型和接口
 export type {
-  ColorStyle, IGraphicsContext,
+  IGraphicsContext,
   IGraphicsContextFactory, IImageData, IPoint,
   IRect
-} from './core/IGraphicsContext';
+} from './graphics/IGraphicsContext';
 
 export type {
   IRenderable, IRenderEngine, IRenderEngineConfig, IRenderLayer, IRenderStats, IViewport

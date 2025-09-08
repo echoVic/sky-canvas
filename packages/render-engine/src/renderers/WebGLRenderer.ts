@@ -1,5 +1,5 @@
-import { Point, Rect, RenderContext } from '../../types';
-import { BaseRenderer, Drawable, RendererCapabilities, RenderState } from '../core';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
+import { BaseRenderer, Drawable, RendererCapabilities, RenderState, RenderContext } from '../core';
 import {
   BlendMode,
   Buffer,
@@ -262,7 +262,7 @@ export class WebGLRenderer extends BaseRenderer {
     console.log('Performed memory cleanup due to memory pressure');
   }
 
-  private cullAndSortDrawables(viewport: Rect): Drawable[] {
+  private cullAndSortDrawables(viewport: IRect): Drawable[] {
     const visible = this.drawables.filter(drawable => 
       drawable.visible && this.isDrawableInViewport(drawable, viewport)
     );
@@ -330,7 +330,7 @@ export class WebGLRenderer extends BaseRenderer {
     this.stats.shaderSwitches = 0;
   }
 
-  private updateProjectionMatrix(viewport: Rect): void {
+  private updateProjectionMatrix(viewport: IRect): void {
     // 创建正交投影矩阵
     const left = viewport.x;
     const right = viewport.x + viewport.width;
@@ -365,7 +365,7 @@ export class WebGLRenderer extends BaseRenderer {
     }
   }
 
-  private calculateTransformMatrix(bounds: Rect, transform?: any): Matrix3x3 {
+  private calculateTransformMatrix(bounds: IRect, transform?: any): Matrix3x3 {
     let matrix = Matrix3x3.identity();
     
     // 应用位移
@@ -576,7 +576,7 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   // 绘制基础图形方法
-  drawLine(start: Point, end: Point, style?: Partial<RenderState>): void {
+  drawLine(start: IPoint, end: IPoint, style?: Partial<RenderState>): void {
     // 实现线段绘制
     this.addLineToCurrentBatch(start, end, style);
   }
@@ -586,12 +586,12 @@ export class WebGLRenderer extends BaseRenderer {
     this.addRectToCurrentBatch(x, y, width, height, filled, style);
   }
 
-  drawCircle(center: Point, radius: number, filled = false, style?: Partial<RenderState>): void {
+  drawCircle(center: IPoint, radius: number, filled = false, style?: Partial<RenderState>): void {
     // 实现圆形绘制
     this.addCircleToCurrentBatch(center, radius, filled, style);
   }
 
-  private addLineToCurrentBatch(start: Point, end: Point, style?: Partial<RenderState>): void {
+  private addLineToCurrentBatch(start: IPoint, end: IPoint, style?: Partial<RenderState>): void {
     if (!this.currentBatch) return;
 
     const color: [number, number, number, number] = [1, 1, 1, 1];
@@ -651,7 +651,7 @@ export class WebGLRenderer extends BaseRenderer {
     }
   }
 
-  private addCircleToCurrentBatch(center: Point, radius: number, filled: boolean, style?: Partial<RenderState>): void {
+  private addCircleToCurrentBatch(center: IPoint, radius: number, filled: boolean, style?: Partial<RenderState>): void {
     if (!this.currentBatch) return;
 
     const segments = Math.max(8, Math.min(64, Math.floor(radius / 2)));
@@ -714,7 +714,7 @@ export class WebGLRenderer extends BaseRenderer {
     return [1, 1, 1, 1]; // 默认白色
   }
 
-  private isDrawableInViewport(drawable: Drawable, viewport: Rect): boolean {
+  private isDrawableInViewport(drawable: Drawable, viewport: IRect): boolean {
     const bounds = drawable.getBounds();
     return this.boundsIntersect(bounds, viewport);
   }

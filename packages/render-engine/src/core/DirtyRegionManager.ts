@@ -1,5 +1,5 @@
 import { Rectangle } from '../math/Rectangle';
-import { IShape } from '../../types';
+import { IRenderable } from './IRenderEngine';
 
 /**
  * 形状快照接口
@@ -23,7 +23,7 @@ export class DirtyRegionManager {
    * 标记区域为脏区域
    */
   markRegionDirty(bounds: Rectangle, reason: string = 'unknown'): void {
-    this.dirtyRegions.push({ ...bounds });
+    this.dirtyRegions.push(bounds.clone());
   }
   
   /**
@@ -82,23 +82,18 @@ export class DirtyRegionManager {
    * 合并两个矩形
    */
   private mergeRectangles(rect1: Rectangle, rect2: Rectangle): Rectangle {
-    const minX = Math.min(rect1.x, rect2.x);
-    const minY = Math.min(rect1.y, rect2.y);
-    const maxX = Math.max(rect1.x + rect1.width, rect2.x + rect2.width);
-    const maxY = Math.max(rect1.y + rect1.height, rect2.y + rect2.height);
+    const left = Math.min(rect1.x, rect2.x);
+    const top = Math.min(rect1.y, rect2.y);
+    const right = Math.max(rect1.x + rect1.width, rect2.x + rect2.width);
+    const bottom = Math.max(rect1.y + rect1.height, rect2.y + rect2.height);
     
-    return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY
-    };
+    return new Rectangle(left, top, right - left, bottom - top);
   }
   
   /**
    * 检查形状是否需要重新绘制
    */
-  shouldRedrawShape(shape: IShape): boolean {
+  shouldRedrawShape(shape: IRenderable): boolean {
     const id = shape.id;
     const currentSnapshot = this.createShapeSnapshot(shape);
     const lastSnapshot = this.lastFrameShapes.get(id);
@@ -120,10 +115,11 @@ export class DirtyRegionManager {
   /**
    * 创建形状快照
    */
-  private createShapeSnapshot(shape: IShape): ShapeSnapshot {
+  private createShapeSnapshot(shape: IRenderable): ShapeSnapshot {
+    const bounds = shape.getBounds();
     return {
       id: shape.id,
-      bounds: shape.getBounds(),
+      bounds: new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height),
       visible: shape.visible,
       zIndex: shape.zIndex
     };
@@ -132,7 +128,7 @@ export class DirtyRegionManager {
   /**
    * 更新当前帧的形状状态
    */
-  updateCurrentFrameShape(shape: IShape): void {
+  updateCurrentFrameShape(shape: IRenderable): void {
     const snapshot = this.createShapeSnapshot(shape);
     this.currentFrameShapes.set(snapshot.id, snapshot);
   }

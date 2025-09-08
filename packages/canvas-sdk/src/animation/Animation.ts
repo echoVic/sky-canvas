@@ -122,7 +122,9 @@ export class Animation {
     if (this.elapsed < 0) return true;
     
     const progress = this.getProgress();
-    const easedProgress = this.config.easing(progress);
+    const easedProgress = typeof this.config.easing === 'function' 
+      ? this.config.easing(progress)
+      : progress;
     
     // 应用动画值
     this.applyValues(easedProgress);

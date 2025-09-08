@@ -124,7 +124,7 @@ export interface IToolService {
 export interface ICanvas {
   readonly id: string;
   readonly element: HTMLCanvasElement;
-  readonly context: CanvasRenderingContext2D | WebGLRenderingContext | GPURenderPassEncoder;
+  readonly context: CanvasRenderingContext2D | WebGLRenderingContext | any; // WebGPU context
   resize(width: number, height: number): void;
   dispose(): void;
 }

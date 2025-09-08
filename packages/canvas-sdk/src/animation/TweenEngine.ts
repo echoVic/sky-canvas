@@ -152,7 +152,7 @@ export class TweenEngine {
    */
   update(deltaTime: number): void {
     if (this.activeAnimations.size === 0) {
-      this.stop();
+      this.stopEngine();
       return;
     }
     
@@ -178,15 +178,22 @@ export class TweenEngine {
   }
   
   /**
-   * 停止动画引擎
+   * 停止动画引擎（私有）
    */
-  stop(): void {
+  private stopEngine(): void {
     if (!this.isRunning) return;
     
     this.isRunning = false;
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
+  }
+  
+  /**
+   * 停止动画引擎（公共）
+   */
+  stopTweenEngine(): void {
+    this.stopEngine();
   }
   
   /**
@@ -227,7 +234,7 @@ export class TweenEngine {
       animation.stop();
     }
     this.activeAnimations.clear();
-    this.stop();
+    this.stopEngine();
   }
   
   /**

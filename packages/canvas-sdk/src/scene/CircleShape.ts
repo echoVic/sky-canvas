@@ -58,48 +58,55 @@ export class CircleShape implements IShape {
   render(context: IGraphicsContext): void {
     if (!this.visible) return;
     
-    context.save();
-    
-    // 设置样式
-    context.strokeStyle = this.strokeColor;
-    context.lineWidth = this.strokeWidth;
-    
-    const center = this.center;
-    
-    context.beginPath();
-    context.arc(center.x, center.y, this.radius, 0, 2 * Math.PI);
-    
-    if (this.filled && this.fillColor) {
-      context.fillStyle = this.fillColor;
-      context.fill();
+    // 检查是否是Canvas 2D上下文
+    if (context && typeof (context as any).beginPath === 'function') {
+      const ctx = context as any as CanvasRenderingContext2D;
+      ctx.save();
+      
+      // 设置样式
+      ctx.strokeStyle = this.strokeColor;
+      ctx.lineWidth = this.strokeWidth;
+      
+      const center = this.center;
+      
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, this.radius, 0, 2 * Math.PI);
+      
+      if (this.filled && this.fillColor) {
+        ctx.fillStyle = this.fillColor;
+        ctx.fill();
+      }
+      
+      // 描边
+      ctx.stroke();
+      
+      // 如果选中，绘制选择框
+      if (this.selected) {
+        this.renderSelection(context);
+      }
+      
+      ctx.restore();
     }
-    
-    // 描边
-    context.stroke();
-    
-    // 如果选中，绘制选择框
-    if (this.selected) {
-      this.renderSelection(context);
-    }
-    
-    context.restore();
   }
   
   private renderSelection(context: IGraphicsContext): void {
-    const bounds = this.getBounds();
-    const padding = 2;
-    
-    context.save();
-    context.strokeStyle = '#007AFF';
-    context.lineWidth = 2;
-    context.setLineDash([5, 5]);
-    context.strokeRect(
-      bounds.x - padding, 
-      bounds.y - padding, 
-      bounds.width + padding * 2, 
-      bounds.height + padding * 2
-    );
-    context.restore();
+    if (context && typeof (context as any).strokeRect === 'function') {
+      const ctx = context as any as CanvasRenderingContext2D;
+      const bounds = this.getBounds();
+      const padding = 2;
+      
+      ctx.save();
+      ctx.strokeStyle = '#007AFF';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeRect(
+        bounds.x - padding, 
+        bounds.y - padding, 
+        bounds.width + padding * 2, 
+        bounds.height + padding * 2
+      );
+      ctx.restore();
+    }
   }
   
   getBounds(): IRect {

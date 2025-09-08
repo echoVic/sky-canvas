@@ -2,7 +2,7 @@
  * 空间分割和剔除优化系统
  * 提供高效的空间查询和视锥剔除功能
  */
-import { IPoint, IRect } from '../core/IGraphicsContext';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { IRenderCommand } from '../commands/IRenderCommand';
 
 /**

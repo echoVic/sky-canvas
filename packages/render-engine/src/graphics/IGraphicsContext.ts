@@ -118,6 +118,8 @@ export interface IGraphicsContext {
   setStyle(style: Partial<IGraphicsStyle>): void;
   setFillColor(color: IColor | string): void;
   setStrokeColor(color: IColor | string): void;
+  setFillStyle(color: IColor | string): void;
+  setStrokeStyle(color: IColor | string): void;
   setLineWidth(width: number): void;
   setOpacity(opacity: number): void;
 
@@ -136,15 +138,18 @@ export interface IGraphicsContext {
   arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void;
   rect(x: number, y: number, width: number, height: number): void;
   
-  // 填充和描边
+  // 绘制方法
   fill(): void;
   stroke(): void;
   fillRect(x: number, y: number, width: number, height: number): void;
   strokeRect(x: number, y: number, width: number, height: number): void;
+  drawLine(x1: number, y1: number, x2: number, y2: number): void;
+  drawRect(rect: IRect, fill?: boolean, stroke?: boolean): void;
   
   // 圆形绘制
   fillCircle(x: number, y: number, radius: number): void;
   strokeCircle(x: number, y: number, radius: number): void;
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void;
   
   // 文本绘制
   fillText(text: string, x: number, y: number, style?: ITextStyle): void;

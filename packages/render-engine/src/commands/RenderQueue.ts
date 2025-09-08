@@ -2,7 +2,7 @@
  * 渲染命令队列和批处理管理器
  * 负责收集、排序、分组和执行渲染命令
  */
-import { IRect, IGraphicsContext } from '../core/IGraphicsContext';
+import { IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
 import { IRenderCommand, MaterialKey, RenderCommandType } from './IRenderCommand';
 
 /**

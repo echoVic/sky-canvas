@@ -112,7 +112,7 @@ describe('TweenEngine', () => {
     tweenEngine.start();
     expect(tweenEngine.isRunningAnimation()).toBe(true);
     
-    tweenEngine.stop();
+    tweenEngine.stopTweenEngine();
     expect(tweenEngine.isRunningAnimation()).toBe(false);
   });
 });

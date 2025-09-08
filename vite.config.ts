@@ -7,9 +7,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@sky-canvas/canvas-sdk': resolve(__dirname, 'packages/canvas-sdk/src'),
     },
   },
   server: {
     open: true
+  },
+  build: {
+    rollupOptions: {
+      external: ['reflect-metadata']
+    }
   }
 })

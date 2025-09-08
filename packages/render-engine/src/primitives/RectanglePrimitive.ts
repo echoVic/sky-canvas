@@ -1,7 +1,7 @@
 /**
  * 矩形图形原语实现
  */
-import { IGraphicsContext, IPoint, IRect } from '../core/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
 import { GraphicPrimitive } from './GraphicPrimitive';
 import { IRectanglePrimitive } from './IGraphicPrimitive';
 

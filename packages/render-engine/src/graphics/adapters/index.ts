@@ -20,11 +20,11 @@ export enum GraphicsAdapterType {
 }
 
 // 适配器工厂映射
-export const ADAPTER_FACTORIES: Record<GraphicsAdapterType, () => IGraphicsContextFactory> = {
+const ADAPTER_FACTORIES = {
   [GraphicsAdapterType.CANVAS_2D]: () => new Canvas2DGraphicsContextFactory(),
   [GraphicsAdapterType.WEBGL]: () => new WebGLGraphicsContextFactory(),
-  [GraphicsAdapterType.WEBGPU]: () => new WebGPUGraphicsContextFactory()
-};
+  [GraphicsAdapterType.WEBGPU]: () => new WebGPUGraphicsContextFactory(),
+} as const;
 
 /**
  * 创建图形适配器工厂

@@ -1,4 +1,4 @@
-import { CircleTool, RectangleTool, DiamondTool, TextTool } from '@sky-canvas/canvas-sdk'
+import { CircleTool, DiamondTool, RectangleTool, TextTool } from '@sky-canvas/canvas-sdk'
 import React, { useEffect, useRef } from 'react'
 import { useCanvas } from '../../contexts'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
@@ -57,32 +57,32 @@ const Canvas: React.FC = () => {
         })
         
         // 注册SDK工具
-        // 创建工具实例时传入必需的回调函数
+        // 创建工具实例并设置回调函数
         const interactionManager = sdkActions.getInteractionManager()
         if (interactionManager) {
-          const rectangleTool = new RectangleTool(
-            interactionManager,
-            (cursor: string) => {
+          const rectangleTool = new RectangleTool()
+          rectangleTool.setCallbacks({
+            onSetCursor: (cursor: string) => {
               if (interactionManager) {
                 interactionManager.setCursor(cursor)
               }
             },
-            (shape: any) => {
+            onAddShape: (shape: any) => {
               sdkActions.addShape(shape)
             }
-          )
+          })
           
-          const circleTool = new CircleTool(
-            interactionManager,
-            (cursor: string) => {
+          const circleTool = new CircleTool()
+          circleTool.setCallbacks({
+            onSetCursor: (cursor: string) => {
               if (interactionManager) {
                 interactionManager.setCursor(cursor)
               }
             },
-            (shape: any) => {
+            onAddShape: (shape: any) => {
               sdkActions.addShape(shape)
             }
-          )
+          })
           
           const diamondTool = new DiamondTool(
             interactionManager,

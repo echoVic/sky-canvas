@@ -4,16 +4,17 @@
  */
 
 import {
+  IColor,
+  IGraphicsCapabilities,
   IGraphicsContext,
+  IGraphicsContextFactory,
   IGraphicsState,
   IGraphicsStyle,
-  ITextStyle,
   IImageData,
   IPoint,
-  ITransform,
-  IColor,
-  IGraphicsContextFactory,
-  IGraphicsCapabilities
+  IRect,
+  ITextStyle,
+  ITransform
 } from '../IGraphicsContext';
 
 /**
@@ -156,8 +157,41 @@ export class Canvas2DGraphicsContext implements IGraphicsContext {
   }
 
   setLineWidth(width: number): void {
-    this.ctx.lineWidth = width;
     this.currentState.style.lineWidth = width;
+    this.ctx.lineWidth = width;
+  }
+
+  setFillStyle(color: IColor | string): void {
+    this.setFillColor(color);
+  }
+
+  setStrokeStyle(color: IColor | string): void {
+    this.setStrokeColor(color);
+  }
+
+  drawLine(x1: number, y1: number, x2: number, y2: number): void {
+    this.beginPath();
+    this.moveTo(x1, y1);
+    this.lineTo(x2, y2);
+    this.stroke();
+  }
+
+  drawRect(rect: IRect, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+    if (stroke) {
+      this.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    }
+  }
+
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillCircle(center.x, center.y, radius);
+    }
+    if (stroke) {
+      this.strokeCircle(center.x, center.y, radius);
+    }
   }
 
   setOpacity(opacity: number): void {

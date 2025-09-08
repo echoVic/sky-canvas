@@ -1,7 +1,7 @@
 /**
  * 路径图形原语实现
  */
-import { IGraphicsContext, IPoint, IRect } from '../core/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
 import { GraphicPrimitive } from './GraphicPrimitive';
 import { IPathPrimitive } from './IGraphicPrimitive';
 
@@ -70,7 +70,7 @@ export class PathPrimitive extends GraphicPrimitive implements IPathPrimitive {
       const prevPoint = points[i - 1];
       const currentPoint = points[i];
       if (prevPoint && currentPoint) {
-        context.drawLine(prevPoint, currentPoint);
+        context.drawLine(prevPoint.x, prevPoint.y, currentPoint.x, currentPoint.y);
       }
     }
   }

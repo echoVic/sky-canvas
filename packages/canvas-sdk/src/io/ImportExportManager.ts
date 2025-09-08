@@ -1,6 +1,6 @@
 import { IShape } from '../scene/IShape';
 import { Scene } from '../scene/Scene';
-import { Rect } from '@sky-canvas/render-engine';
+import { IRect } from '@sky-canvas/render-engine';
 
 /**
  * 导出选项接口
@@ -174,8 +174,8 @@ export class ImportExportManager {
     return {
       id: shape.id,
       type: shape.constructor.name,
-      position: shape.getPosition(),
-      size: shape.getSize(),
+      position: shape.position,
+      size: shape.size,
       visible: shape.visible,
       zIndex: shape.zIndex,
       // 添加其他形状特定的属性

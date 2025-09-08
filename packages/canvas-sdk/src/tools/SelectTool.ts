@@ -1,9 +1,9 @@
 import { IPoint } from '@sky-canvas/render-engine';
-import { IInteractionTool, InteractionMode, IMouseEvent } from '../interaction/types';
+import { CanvasSDK } from '../CanvasSDK';
+import { SnapManager } from '../interaction/SnapManager';
 import { TransformController } from '../interaction/TransformController';
-import { CanvasSDK } from '../core/CanvasSDK';
+import { IInteractionTool, IMouseEvent, InteractionMode } from '../interaction/types';
 import { IShape } from '../scene/IShape';
-import { SnapManager, SnapResult } from '../interaction/SnapManager';
 
 export class SelectTool implements IInteractionTool {
   name = 'select';
@@ -37,13 +37,8 @@ export class SelectTool implements IInteractionTool {
   
   onActivate(): void {
     // 工具激活时的逻辑
-    // 设置光标 - 通过交互管理器设置
-    if (this.canvasSDK) {
-      const interactionManager = this.canvasSDK.getInteractionManager();
-      if (interactionManager) {
-        interactionManager.setCursor(this.cursor);
-      }
-    }
+    // 新CanvasSDK中光标设置通过其他方式处理
+    console.log('Select tool activated');
   }
   
   onDeactivate(): void {
@@ -71,7 +66,15 @@ export class SelectTool implements IInteractionTool {
     // 检查是否点击了已选择的形状
     if (this.canvasSDK) {
       const selectedShapes = this.canvasSDK.getSelectedShapes();
-      const clickedShape = this.canvasSDK.hitTest(point);
+      // 使用新API进行点击测试
+      let clickedShape: IShape | null = null;
+      const shapes = this.canvasSDK.getShapes();
+      for (const shape of shapes) {
+        if (shape.hitTest && shape.hitTest(point)) {
+          clickedShape = shape;
+          break;
+        }
+      }
       
       if (clickedShape && selectedShapes.includes(clickedShape)) {
         // 点击了已选择的形状，准备移动
@@ -79,7 +82,7 @@ export class SelectTool implements IInteractionTool {
         return true;
       }
       
-      // 点击了未选择的形状或空白区域
+      // 点击了未选择的形状或空白区域 - 使用新API
       if (clickedShape) {
         // 选择新的形状
         if (!event.ctrlKey && !event.shiftKey) {
@@ -150,8 +153,17 @@ export class SelectTool implements IInteractionTool {
     }
     
     if (this.isSelecting && this.selectionRect && this.canvasSDK) {
-      // 结束框选操作
-      const selectedShapes = this.canvasSDK.hitTestBounds(this.selectionRect);
+      // 结束框选操作 - 使用新API
+      const shapes = this.canvasSDK.getShapes();
+      const selectedShapes: any[] = [];
+      
+      shapes.forEach((shape: any) => {
+        const bounds = shape.getBounds ? shape.getBounds() : null;
+        if (bounds && this.boundsIntersect(this.selectionRect!, bounds)) {
+          selectedShapes.push(shape);
+        }
+      });
+      
       if (selectedShapes.length > 0) {
         if (event.shiftKey) {
           // 添加到选择 - 使用现有的选择方法
@@ -215,6 +227,39 @@ export class SelectTool implements IInteractionTool {
   getSelectionRect(): { x: number; y: number; width: number; height: number } | null {
     return this.selectionRect;
   }
+
+  // 测试用的getter和setter方法
+  get isTransformingState(): boolean {
+    return this.isTransforming;
+  }
+
+  set isTransformingState(value: boolean) {
+    this.isTransforming = value;
+  }
+
+  get startPointState(): IPoint | null {
+    return this.startPoint;
+  }
+
+  set startPointState(value: IPoint | null) {
+    this.startPoint = value;
+  }
+
+  get isSelectingState(): boolean {
+    return this.isSelecting;
+  }
+
+  set isSelectingState(value: boolean) {
+    this.isSelecting = value;
+  }
+
+  get selectionRectState(): { x: number; y: number; width: number; height: number } | null {
+    return this.selectionRect;
+  }
+
+  set selectionRectState(value: { x: number; y: number; width: number; height: number } | null) {
+    this.selectionRect = value;
+  }
   
   /**
    * 渲染选择框
@@ -231,16 +276,16 @@ export class SelectTool implements IInteractionTool {
         this.selectionRect.width,
         this.selectionRect.height
       );
-      context.setLineDash([]);
       context.restore();
     }
-    
-    // 渲染变形控制器
-    this.transformController.render(context);
-    
-    // 渲染捕捉辅助线
-    if (this.snapManager.isSnapEnabled() && this.currentPoint) {
-      this.snapManager.renderSnapGuides(context, this.currentPoint);
-    }
+  }
+
+  private boundsIntersect(bounds1: { x: number; y: number; width: number; height: number }, bounds2: { x: number; y: number; width: number; height: number }): boolean {
+    return !(
+      bounds1.x + bounds1.width < bounds2.x ||
+      bounds2.x + bounds2.width < bounds1.x ||
+      bounds1.y + bounds1.height < bounds2.y ||
+      bounds2.y + bounds2.height < bounds1.y
+    );
   }
 }

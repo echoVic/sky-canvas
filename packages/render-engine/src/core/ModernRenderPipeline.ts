@@ -2,7 +2,7 @@
  * 现代化渲染管道
  * 集成命令系统、变换系统和WebGL后端
  */
-import { IGraphicsContext, IRect } from '../core/IGraphicsContext';
+import { IGraphicsContext, IRect } from '../graphics/IGraphicsContext';
 import { IRenderEngine, IViewport } from '../core/IRenderEngine';
 import { IRenderCommand } from '../commands/IRenderCommand';
 import { ICommandRenderer, CommandRendererFactory } from '../commands/CommandRenderer';

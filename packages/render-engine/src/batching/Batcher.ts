@@ -3,7 +3,7 @@
  * 基于材质、纹理和渲染状态智能合并渲染命令
  */
 import { IRenderCommand, MaterialKey, RenderCommandType } from '../commands/IRenderCommand';
-import { IRect } from '../core/IGraphicsContext';
+import { IRect } from '../graphics/IGraphicsContext';
 import { Matrix2D } from '../math/Transform';
 
 /**

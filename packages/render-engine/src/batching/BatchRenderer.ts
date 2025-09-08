@@ -2,7 +2,7 @@
  * 批处理渲染器
  * 将批处理数据高效地渲染到GPU
  */
-import { IGraphicsContext } from '../core/IGraphicsContext';
+import { IGraphicsContext } from '../graphics/IGraphicsContext';
 import { IShaderProgram, ShaderManager } from '../webgl/ShaderManager';
 import { IBuffer, IVertexArray, BufferType, BufferUsage, IVertexLayout as WebGLVertexLayout, IVertexAttribute } from '../webgl/BufferManager';
 import { IBatchData, IVertexLayout as BatchVertexLayout } from './Batcher';

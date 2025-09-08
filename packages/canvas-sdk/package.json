@@ -29,13 +29,16 @@
   ],
   "author": "Sky Canvas Team",
   "license": "MIT",
+  "dependencies": {
+    "reflect-metadata": "^0.1.14"
+  },
   "peerDependencies": {
     "@sky-canvas/render-engine": "workspace:^1.0.0"
   },
   "devDependencies": {
     "@sky-canvas/render-engine": "workspace:^1.0.0",
-    "@vitest/ui": "^1.0.0",
     "@vitest/coverage-v8": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
     "jsdom": "^22.0.0",
     "typescript": "^5.8.0",
     "vitest": "^1.0.0"

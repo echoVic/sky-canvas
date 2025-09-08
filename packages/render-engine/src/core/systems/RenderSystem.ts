@@ -5,7 +5,8 @@
 
 import { BaseSystem } from './SystemManager';
 import { ExtensionType, Extension } from './ExtensionSystem';
-import { Rect, RenderContext } from '../../../types';
+import { IRect } from '../../graphics/IGraphicsContext';
+import { RenderContext } from '../index';
 import { BaseRenderer } from '../index';
 
 /**
@@ -13,12 +14,12 @@ import { BaseRenderer } from '../index';
  */
 export interface IRenderObject {
   readonly id: string;
-  readonly bounds: Rect;
+  readonly bounds: IRect;
   readonly visible: boolean;
   readonly zIndex: number;
   
   render(renderer: BaseRenderer, context: RenderContext): void;
-  getBounds(): Rect;
+  getBounds(): IRect;
   hitTest(point: { x: number; y: number }): boolean;
 }
 
@@ -82,7 +83,7 @@ export class RenderSystem extends BaseSystem {
   private renderer: BaseRenderer | null = null;
   private context: RenderContext | null = null;
   private layers = new Map<string, IRenderLayer>();
-  private viewport: Rect = { x: 0, y: 0, width: 800, height: 600 };
+  private viewport: IRect = { x: 0, y: 0, width: 800, height: 600 };
   
   // 性能统计
   private stats = {
@@ -132,7 +133,7 @@ export class RenderSystem extends BaseSystem {
   /**
    * 设置视口
    */
-  setViewport(viewport: Rect): void {
+  setViewport(viewport: IRect): void {
     this.viewport = { ...viewport };
   }
   

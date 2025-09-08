@@ -17,8 +17,8 @@ interface Listener<T> {
 }
 
 class LinkedList<T> {
-  private _first?: Node<T>;
-  private _last?: Node<T>;
+  private _first: Node<T> | undefined;
+  private _last: Node<T> | undefined;
   private _size = 0;
 
   get size(): number {
@@ -75,8 +75,8 @@ class LinkedList<T> {
 
 class Node<T> {
   element: T;
-  next?: Node<T>;
-  prev?: Node<T>;
+  next: Node<T> | undefined;
+  prev: Node<T> | undefined;
 
   constructor(element: T) {
     this.element = element;

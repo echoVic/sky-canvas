@@ -130,6 +130,58 @@ export class DiamondShape implements IShape {
     );
   }
   
+  update(update: IShapeUpdate): void {
+    if (update.position) {
+      this.position = { ...this.position, ...update.position };
+    }
+    if (update.size) {
+      this.size = { ...this.size, ...update.size };
+    }
+    if (update.visible !== undefined) {
+      this.visible = update.visible;
+    }
+    if (update.zIndex !== undefined) {
+      this.zIndex = update.zIndex;
+    }
+    if (update.selected !== undefined) {
+      this.selected = update.selected;
+    }
+    if (update.locked !== undefined) {
+      this.locked = update.locked;
+    }
+  }
+
+  serialize(): IShapeData {
+    return {
+      id: this.id,
+      type: this.type,
+      position: { ...this.position },
+      size: { ...this.size },
+      visible: this.visible,
+      zIndex: this.zIndex,
+      selected: this.selected,
+      locked: this.locked,
+      strokeColor: this.strokeColor,
+      strokeWidth: this.strokeWidth,
+      filled: this.filled,
+      fillColor: this.fillColor
+    };
+  }
+
+  deserialize(data: IShapeData): void {
+    this.position = { ...data.position };
+    this.size = { ...data.size };
+    this.visible = data.visible;
+    this.zIndex = data.zIndex;
+    this.selected = data.selected;
+    this.locked = data.locked;
+    
+    if (data.strokeColor) this.strokeColor = data.strokeColor;
+    if (data.strokeWidth !== undefined) this.strokeWidth = data.strokeWidth;
+    if (data.filled !== undefined) this.filled = data.filled;
+    if (data.fillColor) this.fillColor = data.fillColor;
+  }
+
   dispose(): void {
     // 清理资源
   }

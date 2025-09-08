@@ -235,12 +235,13 @@ export class GestureRecognizer extends EventDispatcher {
       const touch1 = touches[0];
       const touch2 = touches[1];
       
-      // 计算距离和角度
-      const currentDistance = touch1.currentPosition.distance(touch2.currentPosition);
-      const currentAngle = Math.atan2(
-        touch2.currentPosition.y - touch1.currentPosition.y,
-        touch2.currentPosition.x - touch1.currentPosition.x
-      );
+      if (touch1 && touch2) {
+        // 计算距离和角度
+        const currentDistance = touch1.currentPosition.distance(touch2.currentPosition);
+        const currentAngle = Math.atan2(
+          touch2.currentPosition.y - touch1.currentPosition.y,
+          touch2.currentPosition.x - touch1.currentPosition.x
+        );
       
       if (this._gestureState === GestureState.POSSIBLE) {
         this._initialDistance = currentDistance;
@@ -248,8 +249,9 @@ export class GestureRecognizer extends EventDispatcher {
         this._gestureScale = 1.0;
         this._gestureRotation = 0;
       } else {
-        this._gestureScale = currentDistance / this._initialDistance;
-        this._gestureRotation = currentAngle - this._initialAngle;
+          this._gestureScale = currentDistance / this._initialDistance;
+          this._gestureRotation = currentAngle - this._initialAngle;
+        }
       }
     }
   }
@@ -276,6 +278,8 @@ export class GestureRecognizer extends EventDispatcher {
    */
   private recognizeSingleTouchGestures(): void {
     const touch = Array.from(this._activeTouches.values())[0];
+    if (!touch) return;
+    
     const currentTime = performance.now();
     const duration = currentTime - touch.startTime;
     const distance = touch.startPosition.distance(touch.currentPosition);

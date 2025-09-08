@@ -5,12 +5,12 @@
 
 import { Emitter, IDisposable, IEvent } from '../events/EventBus';
 import {
-  ExtensionRegistry,
-  ExtensionState,
-  IExtension,
-  IExtensionContext,
-  IExtensionInstance,
-  IMemento
+    ExtensionRegistry,
+    ExtensionState,
+    IExtension,
+    IExtensionContext,
+    IExtensionInstance,
+    IMemento
 } from './ExtensionRegistry';
 
 export interface IActivationEvent {
@@ -218,6 +218,9 @@ export class ExtensionLifecycleManager {
     
     try {
       // 动态加载扩展模块
+      if (!extension.manifest?.main) {
+        throw new Error(`Extension ${extension.id} has no main entry point`);
+      }
       const modulePath = `${extension.extensionLocation}/${extension.manifest.main}`;
       const extensionModule = await import(modulePath);
 

@@ -1,7 +1,7 @@
 /**
  * 圆形图形原语实现
  */
-import { IPoint, IRect, IGraphicsContext } from '../core/IGraphicsContext';
+import { IPoint, IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
 import { ICirclePrimitive } from './IGraphicPrimitive';
 import { GraphicPrimitive } from './GraphicPrimitive';
 

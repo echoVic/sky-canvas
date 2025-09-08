@@ -2,9 +2,10 @@ import { BaseRenderer } from '../core';
 import { RendererType } from '../core/RenderTypes';
 import { CanvasRenderer } from './CanvasRenderer';
 import { WebGLRenderer } from './WebGLRenderer';
-import { WebGPURenderer } from './WebGPURenderer';
+import { WebGPURenderer } from './WebGPURenderer'; // Temporarily disabled
 
-export { CanvasRenderer, WebGLRenderer, WebGPURenderer };
+export { CanvasRenderer, WebGLRenderer };
+export { WebGPURenderer }; // Temporarily disabled
 
 export class RendererFactory {
   static createCanvasRenderer(): CanvasRenderer {
@@ -15,8 +16,8 @@ export class RendererFactory {
     return new WebGLRenderer();
   }
 
-  static createWebGPURenderer(): WebGPURenderer {
-    return new WebGPURenderer();
+  static createWebGPURenderer(canvas: HTMLCanvasElement): WebGPURenderer {
+    return new WebGPURenderer(canvas);
   }
 
   static async createRenderer(type: RendererType, canvas: HTMLCanvasElement): Promise<BaseRenderer | null> {
@@ -34,7 +35,7 @@ export class RendererFactory {
         }
         break;
       case RendererType.WEBGPU:
-        renderer = new WebGPURenderer();
+        renderer = new WebGPURenderer(canvas);
         if (renderer.initialize && !await renderer.initialize(canvas)) {
           return null;
         }

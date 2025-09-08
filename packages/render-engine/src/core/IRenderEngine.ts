@@ -1,7 +1,7 @@
 /**
  * 渲染引擎核心接口定义
  */
-import { IPoint, IRect, IGraphicsContext } from './IGraphicsContext';
+import { IPoint, IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
 
 /**
  * 可渲染对象接口

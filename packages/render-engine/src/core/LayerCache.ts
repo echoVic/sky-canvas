@@ -1,3 +1,6 @@
+import { IRenderable } from './IRenderEngine';
+import { IGraphicsContext } from '../graphics/IGraphicsContext';
+
 /**
  * 缓存策略接口
  */
@@ -52,7 +55,7 @@ export class LayerCache {
     
     renderables.forEach(renderable => {
       if (renderable.visible) {
-        renderable.render(context);
+        renderable.render(context as IGraphicsContext);
       }
     });
     

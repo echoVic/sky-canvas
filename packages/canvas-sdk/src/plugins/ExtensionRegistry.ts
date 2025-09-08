@@ -61,8 +61,8 @@ export interface IExtensionInstance {
   readonly extension: IExtension;
   state: ExtensionState;
   module?: any;
-  context?: IExtensionContext;
-  activationPromise?: Promise<void>;
+  context?: IExtensionContext | undefined;
+  activationPromise?: Promise<void> | undefined;
 }
 
 export interface IExtensionContext {

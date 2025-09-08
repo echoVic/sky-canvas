@@ -1,4 +1,4 @@
-import { Point, Rect } from '../../types';
+import { IPoint as Point, IRect as Rect } from '@sky-canvas/render-engine';
 import { EventDispatcher, EventImpl, EventType } from '../events/EventSystem';
 import { ISceneNode } from '../scene/SceneNode';
 
@@ -101,8 +101,10 @@ export class SelectionManager extends EventDispatcher {
         
         // 选择新节点（只选择第一个）
         const nodeToSelect = filteredNodes[0];
-        this._selectedNodes.add(nodeToSelect);
-        added.push(nodeToSelect);
+        if (nodeToSelect) {
+          this._selectedNodes.add(nodeToSelect);
+          added.push(nodeToSelect);
+        }
         break;
       }
 
@@ -212,7 +214,7 @@ export class SelectionManager extends EventDispatcher {
 
   getLastSelected(): ISceneNode | null {
     const nodes = Array.from(this._selectedNodes);
-    return nodes.length > 0 ? nodes[nodes.length - 1] : null;
+    return nodes.length > 0 ? (nodes[nodes.length - 1] || null) : null;
   }
 
   // 区域选择
@@ -235,7 +237,7 @@ export class SelectionManager extends EventDispatcher {
     // 从前到后查找第一个命中的节点
     for (let i = nodes.length - 1; i >= 0; i--) {
       const node = nodes[i];
-      if (this.canSelect(node) && node.hitTest(point)) {
+      if (node && this.canSelect(node) && node.hitTest(point)) {
         return this.select(node, mode || this._selectionMode);
       }
     }

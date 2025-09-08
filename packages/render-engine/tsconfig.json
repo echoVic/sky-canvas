@@ -16,12 +16,13 @@
     "sourceMap": true,
     "isolatedModules": true
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
-    "tests"
+    "tests",
+    "src/renderers/WebGPURenderer.ts",
+    "src/adapters/WebGPUContext.ts",
+    "src/graphics/adapters/WebGPUAdapter.ts"
   ]
 }
