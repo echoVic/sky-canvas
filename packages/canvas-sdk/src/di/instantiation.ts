@@ -40,7 +40,7 @@ export interface IInstantiationService extends ServicesAccessor {
   /**
    * 创建子作用域
    */
-  createChild(services: ServiceCollection): IInstantiationService;
+  createChild(services: IServiceCollection): IInstantiationService;
 }
 
 /**

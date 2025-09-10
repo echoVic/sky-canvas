@@ -4,7 +4,7 @@
  */
 
 import { Container, ContainerConfig } from './container/Container';
-import { ShapeManager } from './business/ShapeManager';
+import { CanvasManager } from './managers/CanvasManager';
 import { 
   IEventBusService,
   ICanvasRenderingService,
@@ -37,7 +37,7 @@ export interface ICanvasSDKConfig {
  */
 export class CanvasSDK {
   private container: Container;
-  private shapeManager: ShapeManager;
+  private canvasManager?: CanvasManager;
   private isInitialized = false;
   private canvas: HTMLCanvasElement | null = null;
   private config: ICanvasSDKConfig = {};
@@ -52,7 +52,6 @@ export class CanvasSDK {
 
   constructor() {
     this.container = new Container();
-    this.shapeManager = new ShapeManager(); // 业务组件直接创建
   }
 
   /**
@@ -124,6 +123,9 @@ export class CanvasSDK {
         this.logger?.debug('Interaction service initialized');
       }
 
+      // 创建 Canvas 管理器（需要在服务初始化后）
+      this.canvasManager = new CanvasManager(this.container);
+      
       this.setupEventHandlers();
       this.isInitialized = true;
 
@@ -184,48 +186,74 @@ export class CanvasSDK {
    * 添加形状
    */
   addShape(shapeData: any): void {
-    const view = this.shapeManager.addShape(shapeData);
-    this.renderingService?.addRenderable(view);
-    this.eventBus?.emit('shape:added', { shape: shapeData });
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    this.canvasManager.addShape(shapeData);
+    
+    // 将可渲染对象添加到渲染服务
+    const renderables = this.canvasManager.getRenderables();
+    const newRenderable = renderables.find(r => (r as any).id === shapeData.id);
+    if (newRenderable) {
+      this.renderingService?.addRenderable(newRenderable);
+    }
   }
 
   /**
    * 移除形状
    */
   removeShape(id: string): void {
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
     this.renderingService?.removeRenderable(id);
-    this.shapeManager.removeShape(id);
-    this.eventBus?.emit('shape:removed', { id });
+    this.canvasManager.removeShape(id);
   }
 
   /**
    * 更新形状
    */
   updateShape(id: string, updates: any): void {
-    this.shapeManager.updateShape(id, updates);
-    this.eventBus?.emit('shape:updated', { id, updates });
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    this.canvasManager.updateShape(id, updates);
   }
 
   /**
    * 获取形状
    */
   getShape(id: string): any | undefined {
-    return this.shapeManager.getShapeEntity(id);
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.getSelectedShapes().find(s => s.id === id);
   }
 
   /**
    * 获取所有形状
    */
   getShapes(): any[] {
-    return this.shapeManager.getAllShapeEntities();
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.getRenderables();
   }
 
   /**
    * 清空所有形状
    */
   clearShapes(): void {
-    this.shapeManager.clear();
-    this.eventBus?.emit('shapes:cleared', {});
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    this.canvasManager.clear();
   }
 
   // ============== 选择系统 API ==============
@@ -234,23 +262,33 @@ export class CanvasSDK {
    * 选择形状
    */
   selectShape(id: string): void {
-    this.shapeManager.selectShape(id);
-    this.eventBus?.emit('shape:selected', { id, selected: true });
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    this.canvasManager.selectShape(id);
   }
 
   /**
    * 取消选择形状
    */
   deselectShape(id: string): void {
-    this.shapeManager.deselectShape(id);
-    this.eventBus?.emit('shape:deselected', { id, selected: false });
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    this.canvasManager.deselectShape(id);
   }
 
   /**
    * 清空选择
    */
   clearSelection(): void {
-    this.shapeManager.clearSelection();
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    this.canvasManager.clearSelection();
     this.eventBus?.emit('selection:cleared', {});
   }
 
@@ -258,21 +296,33 @@ export class CanvasSDK {
    * 获取选中的形状ID
    */
   getSelectedShapeIds(): string[] {
-    return this.shapeManager.getSelectedShapeIds();
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.getSelectedShapes().map(s => s.id);
   }
 
   /**
    * 获取选中的形状
    */
   getSelectedShapes(): any[] {
-    return this.shapeManager.getSelectedShapeEntities();
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.getSelectedShapes();
   }
 
   /**
    * 检查形状是否被选中
    */
   isSelected(id: string): boolean {
-    return this.shapeManager.isShapeSelected(id);
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.isShapeSelected(id);
   }
 
   // ============== 交互系统 API ==============
@@ -281,14 +331,19 @@ export class CanvasSDK {
    * 设置形状悬停状态
    */
   setShapeHovered(id: string, hovered: boolean): void {
-    this.shapeManager.setShapeHovered(id, hovered);
+    // TODO: 实现 hover 状态管理
+    // this.canvasManager.setShapeHovered(id, hovered);
   }
 
   /**
    * 点击测试
    */
   hitTest(x: number, y: number): string | null {
-    return this.shapeManager.hitTest(x, y);
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.hitTest(x, y);
   }
 
   /**
@@ -393,7 +448,11 @@ export class CanvasSDK {
    * 获取形状统计信息
    */
   getShapeStats(): any {
-    return this.shapeManager.getStats();
+    if (!this.canvasManager) {
+      throw new Error('Canvas SDK not initialized');
+    }
+    
+    return this.canvasManager.getStats();
   }
 
   /**
@@ -464,7 +523,11 @@ export class CanvasSDK {
     }
 
     // 清理形状管理器
-    this.shapeManager.clear();
+    if (!this.canvasManager) {
+      return;
+    }
+    
+    this.canvasManager.dispose();
 
     // 清理 DI 容器
     this.container.dispose();

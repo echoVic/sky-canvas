@@ -5,7 +5,7 @@
 
 import { CanvasSDK } from '../CanvasSDK';
 import { EventEmitter } from '../events/EventEmitter';
-import { IShape } from '../scene/IShape';
+import { IShapeEntity } from '../models/entities/Shape';
 import {
   AI_PROTOCOL_VERSION,
   AICapability,
@@ -80,7 +80,7 @@ export interface IAIExtension {
  * AI协议管理器
  * 负责管理AI扩展的注册、通信和协调
  */
-export class AIProtocolManager extends EventEmitter<IAIExtensionEvents> {
+export class AIProtocolManager extends EventEmitter {
   private extensions: Map<string, IAIExtension> = new Map();
   private activeRequests: Map<string, IAIRequest> = new Map();
   private canvasSDK: CanvasSDK;
@@ -419,12 +419,12 @@ export class AIProtocolManager extends EventEmitter<IAIExtensionEvents> {
    * 转换形状为数据格式
    * @param shape 形状对象
    */
-  private convertShapeToData(shape: IShape): IShapeData {
+  private convertShapeToData(shape: IShapeEntity): IShapeData {
     return {
       id: shape.id,
       type: shape.type,
-      position: shape.position,
-      size: shape.size,
+      position: shape.transform.position,
+      size: (shape as any).size || { width: 0, height: 0 }, // 临时处理
       style: {}, // TODO: 从实际形状获取样式信息
       visible: shape.visible,
       zIndex: shape.zIndex,
@@ -479,7 +479,7 @@ export class AIProtocolManager extends EventEmitter<IAIExtensionEvents> {
  * 抽象AI扩展基类
  * 提供AI扩展的基础实现
  */
-export abstract class BaseAIExtension extends EventEmitter<IAIExtensionEvents> implements IAIExtension {
+export abstract class BaseAIExtension extends EventEmitter implements IAIExtension {
   protected _config: IAIExtensionConfig;
   protected _isConnected: boolean = false;
 

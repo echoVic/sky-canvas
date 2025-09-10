@@ -47,3 +47,11 @@ export {
   type IInteractionService as InteractionServiceInterface,
   type ITool 
 } from './interaction/interactionService';
+
+// 选择服务
+export { 
+  ISelectionService, 
+  SelectionService,
+  type ISelectionService as SelectionServiceInterface,
+  type SelectionMode 
+} from './selection/selectionService';

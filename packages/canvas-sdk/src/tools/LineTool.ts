@@ -2,7 +2,7 @@
  * 线条工具实现
  */
 import { IPoint } from '@sky-canvas/render-engine';
-import { IInteractionTool, InteractionMode, IMouseEvent } from '../interaction/types';
+import { IInteractionTool, InteractionMode, IMouseEvent } from './types';
 import { LineShape } from '../scene/LineShape';
 
 /**

@@ -9,8 +9,12 @@ import 'reflect-metadata';
 // 核心服务标识符和装饰器
 export {
   createServiceIdentifier, getInjectTokens,
-  getOptionalInjectTokens, inject, INJECT_METADATA_KEY, injectable, INJECTABLE_METADATA_KEY, isInjectable, optional, OPTIONAL_INJECT_METADATA_KEY, ServiceDescriptor, ServiceIdentifier, ServiceLifecycle, ServicesAccessor,
+  getOptionalInjectTokens, inject, INJECT_METADATA_KEY, injectable, INJECTABLE_METADATA_KEY, isInjectable, optional, OPTIONAL_INJECT_METADATA_KEY, ServicesAccessor,
   ServiceScope
+} from './ServiceIdentifier';
+
+export type {
+  ServiceDescriptor, ServiceIdentifier, ServiceLifecycle
 } from './ServiceIdentifier';
 
 // 依赖描述符
@@ -33,9 +37,13 @@ export {
 
 // 依赖注入高级特性
 export {
-  createDecorator, DI_DEPENDENCIES, DI_TARGET, getDependencies, isAsyncDescriptor, isSyncDescriptor, multiInject, ServiceLifetime, type BrandedService, type IInstantiationService,
-  type IInstantiationServiceOptions, type IServiceCollection, type Optional,
-  type ServiceRegistration
+  DI_DEPENDENCIES, DI_TARGET, getDependencies, isAsyncDescriptor, isSyncDescriptor, ServiceLifetime
+} from './instantiation';
+
+export type {
+  BrandedService, IInstantiationService,
+  IInstantiationServiceOptions, IServiceCollection, Optional,
+  ServiceRegistration
 } from './instantiation';
 
 // 服务集合

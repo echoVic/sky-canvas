@@ -16,8 +16,10 @@ import {
   IHistoryService,
   IInteractionService,
   ILogService,
+  ISelectionService,
   InteractionService,
   LogService,
+  SelectionService,
   type LogLevel
 } from '../services';
 
@@ -78,6 +80,9 @@ export class Container {
 
     // 配置服务
     this.serviceCollection.addSingleton(IConfigurationService, ConfigurationService);
+    
+    // 选择服务
+    this.serviceCollection.addSingleton(ISelectionService, SelectionService);
   }
 
   /**

@@ -7,6 +7,9 @@ export { CircleTool } from './CircleTool';
 export { LineTool } from './LineTool';
 export { RectangleTool } from './RectangleTool';
 
+// 工具类型和接口
+export * from './types';
+
 // 工具接口 - 与服务中的接口保持一致
 export interface ITool {
   name: string;

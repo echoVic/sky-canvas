@@ -1,4 +1,4 @@
-import { IInteractionTool, IMouseEvent, InteractionMode } from '../interaction/types';
+import { IInteractionTool, IMouseEvent, InteractionMode } from './types';
 import { AdvancedPathShape } from '../scene/AdvancedPathShape';
 
 /**

@@ -15,8 +15,15 @@ export * from './di';
 
 // 为了兼容性，也提供直接导出
 export {
-  Inject, Injectable, InstantiationService, Optional,
-  ServiceCollection, ServiceIdentifier,
+  inject as Inject,
+  injectable as Injectable,
+  InstantiationService,
+  ServiceCollection
+} from './di';
+
+export type {
+  Optional,
+  ServiceIdentifier,
   ServiceLifecycle
 } from './di';
 
@@ -26,9 +33,11 @@ export {
 
 // 核心 SDK
 export {
-  CanvasSDK,
-  type ICanvasSDKConfig,
-  type ICanvasSDKEvents
+  CanvasSDK
+} from './CanvasSDK';
+
+export type {
+  ICanvasSDKConfig
 } from './CanvasSDK';
 
 // MVVM服务支持（通过DI集成）
@@ -46,35 +55,33 @@ export * from './services';
 // 旧版核心类型和接口（保留兼容性）
 // =========================================
 
-// 核心类型和接口
-export type {
-  IShape, IShapeEvent,
-  IShapeSelectionEvent, IShapeUpdate, ISize,
-  ShapeType
-} from './scene/IShape';
-
-// 形状实现
-export { PathShape } from './scene/PathShape';
-
-export type {
-  ICommand
-} from './core/HistoryManager';
-
-// 历史记录管理器 (为了兼容性)
-export { HistoryManager } from './core/HistoryManager';
-
-// 旧版 Canvas SDK 已移除
-// LegacyCanvasSDK 已完全迁移到新的 CanvasSDK
+// 注意：形状相关类型已移动到 models 中
 
 // =========================================
-// 业务层组件 - 复杂业务逻辑
+// 历史记录系统 - 撤销重做、事务、命令模式
+// =========================================
+export {
+  CollectionAddCommand, CollectionMoveCommand, CollectionRemoveCommand, CommandBuilder, CompositeCommand, FunctionCommand, HistoryManager, MultiPropertyChangeCommand, PropertyChangeCommand, transactional,
+  transactionalAsync, TransactionManager
+} from './history';
+
+// 明确导出ICommand以解决歧义
+export type { ICommand } from './history/HistoryManager';
+
+// =========================================
+// 业务层组件 - 复杂业务逻辑  
 // =========================================
 export * from './business';
 
 // =========================================
+// 管理器层 - 协调 Services 和 Business 层
+// =========================================
+export * from './managers';
+
+// =========================================
 // 工具系统
 // =========================================
-export * from './tools/index';
+export { CircleTool, LineTool, RectangleTool } from './tools';
 
 // =========================================
 // 插件系统
@@ -92,10 +99,14 @@ export * from './ai/index';
 export * from './utils/index';
 
 // =========================================
-// 场景与数据模型
+// 数据模型 - 使用 MVVM 架构中的 Model 层
 // =========================================
 export * from './models';
-export * from './scene';
+
+// =========================================
+// 事件系统
+// =========================================
+export * from './events';
 
 // =========================================
 // 便捷的默认导出
