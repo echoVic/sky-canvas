@@ -1,6 +1,6 @@
 /**
  * 形状实体模型
- * MVVM架构中的Model层 - 纯数据实体
+ * MVVM架构中的Model层 - 纯数据模型，不包含渲染逻辑
  */
 
 export interface IPoint {
@@ -23,12 +23,13 @@ export interface IStyle {
   fillColor?: string;
   strokeColor?: string;
   strokeWidth?: number;
+  lineWidth?: number; // 兼容旧代码
   opacity?: number;
   lineDash?: number[];
 }
 
 /**
- * 基础形状实体
+ * 基础形状实体 - 纯数据模型
  */
 export interface IShapeEntity {
   id: string;
@@ -91,7 +92,7 @@ export type ShapeEntity = IRectangleEntity | ICircleEntity | IPathEntity | IText
  */
 export class ShapeEntityFactory {
   private static generateId(): string {
-    return `shape_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `shape_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   static createRectangle(

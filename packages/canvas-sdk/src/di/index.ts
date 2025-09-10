@@ -1,40 +1,52 @@
 /**
- * 依赖注入系统统一导出
+ * 依赖注入系统 - 完全重构版本
+ * 基于 VSCode DI 架构，删除所有冗余内容
  */
 
-// 引入 reflect-metadata 以支持依赖注入
+// 引入 reflect-metadata 支持
 import 'reflect-metadata';
 
 // 核心服务标识符和装饰器
-export { 
-  ServiceIdentifier, 
-  ServiceLifecycle, 
-  injectable, 
-  inject, 
-  optional,
-  // 辅助函数
-  isInjectable,
-  getInjectTokens,
-  getOptionalInjectTokens
+export {
+  createServiceIdentifier, getInjectTokens,
+  getOptionalInjectTokens, inject, INJECT_METADATA_KEY, injectable, INJECTABLE_METADATA_KEY, isInjectable, optional, OPTIONAL_INJECT_METADATA_KEY, ServiceDescriptor, ServiceIdentifier, ServiceLifecycle, ServicesAccessor,
+  ServiceScope
 } from './ServiceIdentifier';
 
-// 服务集合和注册
-export { 
+// 依赖描述符
+export {
+  AsyncDescriptor, SyncDescriptor, type ServiceDescriptor as ServiceDescriptorType, type SyncDescriptor0
+} from './descriptors';
+
+// 依赖关系图
+export {
+  Graph,
+  type Node
+} from './graph';
+
+// 插件系统和装饰器
+export {
+  extension,
+  extensionPoint, ExtensionPointRegistry, getSingleton,
+  registerSingleton, service, SingletonServiceRegistry, type IExtensionDescriptor, type IExtensionPointDescriptor
+} from './extensions';
+
+// 依赖注入高级特性
+export {
+  createDecorator, DI_DEPENDENCIES, DI_TARGET, getDependencies, isAsyncDescriptor, isSyncDescriptor, multiInject, ServiceLifetime, type BrandedService, type IInstantiationService,
+  type IInstantiationServiceOptions, type IServiceCollection, type Optional,
+  type ServiceRegistration
+} from './instantiation';
+
+// 服务集合
+export {
   ServiceCollection,
-  type ServiceDescriptor,
   type Newable,
   type ServiceFactory,
-  type ServiceInstance,
-  type ServicesAccessor
+  type ServiceInstance
 } from './ServiceCollection';
 
 // 实例化服务
-export { InstantiationService } from './InstantiationService';
-
-// 服务接口与标识符
-export * from './ServiceIdentifiers';
-
-// 便捷的别名导出
-export { injectable as Injectable } from './ServiceIdentifier';
-export { inject as Inject } from './ServiceIdentifier';
-export { optional as Optional } from './ServiceIdentifier';
+export {
+  CircularDependencyError, DependencyResolutionError, InstantiationService, ServiceNotRegisteredError
+} from './InstantiationService';

@@ -7,12 +7,14 @@ export { CircleTool } from './CircleTool';
 export { LineTool } from './LineTool';
 export { RectangleTool } from './RectangleTool';
 
-// 从interaction/tools.ts导出更多工具
-export { DiamondTool, TextTool } from '../interaction/tools';
-
-// TODO: 实现更多工具系统
+// 工具接口 - 与服务中的接口保持一致
 export interface ITool {
   name: string;
   activate(): void;
   deactivate(): void;
+  handleMouseDown?(event: MouseEvent): void;
+  handleMouseMove?(event: MouseEvent): void;
+  handleMouseUp?(event: MouseEvent): void;
+  handleKeyDown?(event: KeyboardEvent): void;
+  handleKeyUp?(event: KeyboardEvent): void;
 }

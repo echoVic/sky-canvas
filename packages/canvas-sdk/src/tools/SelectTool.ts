@@ -1,12 +1,25 @@
 import { IPoint } from '@sky-canvas/render-engine';
 import { CanvasSDK } from '../CanvasSDK';
-import { SnapManager } from '../interaction/SnapManager';
-import { TransformController } from '../interaction/TransformController';
-import { IInteractionTool, IMouseEvent, InteractionMode } from '../interaction/types';
+import { SelectionManager, SelectionMode } from '../business/selection/SelectionManager';
 import { IShape } from '../scene/IShape';
-import { InteractionManager } from '../interaction/InteractionManager';
 import { ISceneNode } from '../scene/SceneNode';
-import { SelectionMode } from '../interaction/SelectionManager';
+
+// 临时接口定义，应该统一到工具系统中
+interface IInteractionTool {
+  name: string;
+  mode: string;
+  cursor?: string;
+  enabled?: boolean;
+}
+
+enum InteractionMode {
+  SELECT = 'select'
+}
+
+interface IMouseEvent {
+  point: IPoint;
+  originalEvent: MouseEvent;
+}
 
 export class SelectTool implements IInteractionTool {
   name = 'select';

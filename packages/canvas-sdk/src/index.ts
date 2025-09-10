@@ -34,45 +34,13 @@ export {
 // MVVM服务支持（通过DI集成）
 // MVVM模式通过依赖注入服务提供，而不是独立的SDK
 
-// SDK 工厂
-export {
-  CanvasSDKFactory, 
-  canvasSDKFactory, 
-  createCanvasSDK, 
-  createCanvasSDKWithPlugins, 
-  createCanvasSDKWithServices, 
-  createDebugCanvasSDK,
-  createMVVMCanvasSDK,
-  type CanvasSDKFactoryOptions, 
-  type ICanvasSDKPlugin
-} from './CanvasSDKFactory';
-
-// MVVM扩展
-export {
-  CanvasSDKMVVMExtension,
-  addMVVMExtension,
-  type IMVVMExtensionConfig
-} from './CanvasSDKMVVMExtension';
+// SDK 基础支持
+// 注意：简化的架构中直接使用 CanvasSDK，不需要额外的工厂类
 
 // =========================================
-// 服务实现（适用于扩展）
+// 服务层导出
 // =========================================
-export { ConfigurationService } from './services/ConfigurationService';
-export { EventBusService } from './services/EventBusService';
-export { LogService } from './services/LogService';
-
-// MVVM 集成服务
-export {
-  createEnhancedServiceManager, EnhancedServiceManager, getServiceManager,
-  initializeGlobalServiceManager
-} from './services/EnhancedServiceManager';
-export { MVVMIntegrationService } from './services/MVVMIntegrationService';
-
-// 服务标识符（为了兼容性）
-export {
-  IConfigurationService as IConfigurationServiceId, IEventBusService as IEventBusServiceId,
-  ILogService as ILogServiceId
-} from './di/ServiceIdentifiers';
+export * from './services';
 
 // =========================================
 // 旧版核心类型和接口（保留兼容性）
@@ -98,13 +66,10 @@ export { HistoryManager } from './core/HistoryManager';
 // 旧版 Canvas SDK 已移除
 // LegacyCanvasSDK 已完全迁移到新的 CanvasSDK
 
-// 事件发射器 (为了兼容性)
-export { EventEmitter } from './events/EventEmitter';
-
 // =========================================
-// 交互系统 - 保留完整导出
+// 业务层组件 - 复杂业务逻辑
 // =========================================
-export * from './interaction/index';
+export * from './business';
 
 // =========================================
 // 工具系统
@@ -127,59 +92,22 @@ export * from './ai/index';
 export * from './utils/index';
 
 // =========================================
-// MVVM 架构支持
+// 场景与数据模型
 // =========================================
 export * from './models';
-export * from './viewmodels';
-export * from './views';
+export * from './scene';
 
 // =========================================
 // 便捷的默认导出
 // =========================================
 
-// 导入所需的函数和类以用于默认导出
+// 导入核心类
 import { CanvasSDK } from './CanvasSDK';
-import {
-  canvasSDKFactory,
-  createCanvasSDK,
-  createCanvasSDKWithPlugins,
-  createDebugCanvasSDK
-} from './CanvasSDKFactory';
 import { InstantiationService, ServiceCollection } from './di';
-// 移除独立MVVM SDK的引用
-import {
-  createEnhancedServiceManager,
-  initializeGlobalServiceManager
-} from './services/EnhancedServiceManager';
-import { createMVVMCanvasSDK } from './CanvasSDKFactory';
-import { addMVVMExtension } from './CanvasSDKMVVMExtension';
-
-// MVVM使用示例
-export { 
-  IntegratedMVVMExample, 
-  createIntegratedMVVMExample, 
-  runIntegratedMVVMExample 
-} from './examples/IntegratedMVVMExample';
 
 export default {
-  // SDK 构造函数
-  create: createCanvasSDK,
-  createWithPlugins: createCanvasSDKWithPlugins,
-  createDebug: createDebugCanvasSDK,
-  createMVVM: createMVVMCanvasSDK,
-  
-  // 工厂实例
-  factory: canvasSDKFactory,
-  
   // 核心类
   CanvasSDK,
   ServiceCollection,
   InstantiationService,
-  
-  // MVVM扩展
-  addMVVMExtension,
-  
-  // 服务管理器
-  createEnhancedServiceManager,
-  initializeGlobalServiceManager
 };

@@ -1,0 +1,224 @@
+/**
+ * 交互服务
+ */
+
+import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
+import { IEventBusService } from '../eventBus/eventBusService';
+import { ILogService } from '../logging/logService';
+
+/**
+ * 工具接口
+ */
+export interface ITool {
+  name: string;
+  activate(): void;
+  deactivate(): void;
+  handleMouseDown?(event: MouseEvent): void;
+  handleMouseMove?(event: MouseEvent): void;
+  handleMouseUp?(event: MouseEvent): void;
+  handleKeyDown?(event: KeyboardEvent): void;
+  handleKeyUp?(event: KeyboardEvent): void;
+}
+
+/**
+ * 交互服务接口
+ */
+export interface IInteractionService {
+  initialize(canvas: HTMLCanvasElement): void;
+  setActiveTool(toolName: string | null): boolean;
+  getActiveTool(): ITool | null;
+  registerTool(tool: ITool): void;
+  unregisterTool(name: string): void;
+  setEnabled(enabled: boolean): void;
+  isEnabled(): boolean;
+  dispose(): void;
+}
+
+/**
+ * 交互服务标识符
+ */
+export const IInteractionService = createServiceIdentifier<IInteractionService>('InteractionService');
+
+/**
+ * 交互服务实现
+ */
+@injectable
+export class InteractionService implements IInteractionService {
+  private canvas?: HTMLCanvasElement;
+  private activeTool: ITool | null = null;
+  private tools = new Map<string, ITool>();
+  private enabled = true;
+  private eventListeners: Array<{ element: any; event: string; handler: any }> = [];
+
+  constructor(
+    @inject(IEventBusService) private eventBus: IEventBusService,
+    @inject(ILogService) private logger: ILogService
+  ) {}
+
+  initialize(canvas: HTMLCanvasElement): void {
+    this.canvas = canvas;
+    this.setupEventListeners();
+    this.eventBus.emit('interaction:initialized', { canvas });
+    this.logger.info('Interaction service initialized');
+  }
+
+  private setupEventListeners(): void {
+    if (!this.canvas) return;
+
+    const mouseDownHandler = (event: MouseEvent) => {
+      if (this.enabled && this.activeTool?.handleMouseDown) {
+        this.activeTool.handleMouseDown(event);
+      }
+    };
+
+    const mouseMoveHandler = (event: MouseEvent) => {
+      if (this.enabled && this.activeTool?.handleMouseMove) {
+        this.activeTool.handleMouseMove(event);
+      }
+    };
+
+    const mouseUpHandler = (event: MouseEvent) => {
+      if (this.enabled && this.activeTool?.handleMouseUp) {
+        this.activeTool.handleMouseUp(event);
+      }
+    };
+
+    const keyDownHandler = (event: KeyboardEvent) => {
+      if (this.enabled && this.activeTool?.handleKeyDown) {
+        this.activeTool.handleKeyDown(event);
+      }
+    };
+
+    const keyUpHandler = (event: KeyboardEvent) => {
+      if (this.enabled && this.activeTool?.handleKeyUp) {
+        this.activeTool.handleKeyUp(event);
+      }
+    };
+
+    // 添加事件监听器
+    this.canvas.addEventListener('mousedown', mouseDownHandler);
+    this.canvas.addEventListener('mousemove', mouseMoveHandler);
+    this.canvas.addEventListener('mouseup', mouseUpHandler);
+    document.addEventListener('keydown', keyDownHandler);
+    document.addEventListener('keyup', keyUpHandler);
+
+    // 保存监听器引用以便清理
+    this.eventListeners.push(
+      { element: this.canvas, event: 'mousedown', handler: mouseDownHandler },
+      { element: this.canvas, event: 'mousemove', handler: mouseMoveHandler },
+      { element: this.canvas, event: 'mouseup', handler: mouseUpHandler },
+      { element: document, event: 'keydown', handler: keyDownHandler },
+      { element: document, event: 'keyup', handler: keyUpHandler }
+    );
+  }
+
+  setActiveTool(toolName: string | null): boolean {
+    // 停用当前工具
+    if (this.activeTool) {
+      this.activeTool.deactivate();
+      this.activeTool = null;
+    }
+
+    if (!toolName) {
+      this.eventBus.emit('interaction:tool_changed', { toolName: null });
+      this.logger.debug('Active tool cleared');
+      return true;
+    }
+
+    const tool = this.tools.get(toolName);
+    if (tool) {
+      this.activeTool = tool;
+      this.activeTool.activate();
+      
+      this.eventBus.emit('interaction:tool_changed', { toolName, tool });
+      this.logger.debug('Active tool changed', toolName);
+      return true;
+    }
+
+    this.logger.warn('Tool not found', toolName);
+    return false;
+  }
+
+  getActiveTool(): ITool | null {
+    return this.activeTool;
+  }
+
+  registerTool(tool: ITool): void {
+    if (this.tools.has(tool.name)) {
+      this.logger.warn('Tool already registered, replacing', tool.name);
+    }
+    
+    this.tools.set(tool.name, tool);
+    this.eventBus.emit('interaction:tool_registered', { toolName: tool.name, tool });
+    this.logger.debug('Tool registered', tool.name);
+  }
+
+  unregisterTool(name: string): void {
+    const tool = this.tools.get(name);
+    if (tool) {
+      // 如果当前工具被移除，先停用它
+      if (this.activeTool === tool) {
+        this.setActiveTool(null);
+      }
+      
+      this.tools.delete(name);
+      this.eventBus.emit('interaction:tool_unregistered', { toolName: name });
+      this.logger.debug('Tool unregistered', name);
+    }
+  }
+
+  setEnabled(enabled: boolean): void {
+    const wasEnabled = this.enabled;
+    this.enabled = enabled;
+    
+    if (wasEnabled !== enabled) {
+      this.eventBus.emit('interaction:enabled_changed', { enabled });
+      this.logger.debug('Interaction enabled state changed', enabled);
+    }
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  dispose(): void {
+    // 停用当前工具
+    if (this.activeTool) {
+      this.activeTool.deactivate();
+      this.activeTool = null;
+    }
+
+    // 移除所有事件监听器
+    this.eventListeners.forEach(({ element, event, handler }) => {
+      element.removeEventListener(event, handler);
+    });
+    this.eventListeners = [];
+
+    // 清理工具
+    this.tools.clear();
+    
+    this.eventBus.emit('interaction:disposed', {});
+    this.logger.info('Interaction service disposed');
+  }
+
+  /**
+   * 获取所有注册的工具
+   */
+  getAllTools(): ITool[] {
+    return Array.from(this.tools.values());
+  }
+
+  /**
+   * 获取工具名称列表
+   */
+  getToolNames(): string[] {
+    return Array.from(this.tools.keys());
+  }
+
+  /**
+   * 检查工具是否已注册
+   */
+  hasTool(name: string): boolean {
+    return this.tools.has(name);
+  }
+}
