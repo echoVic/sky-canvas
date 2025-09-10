@@ -1,177 +1,244 @@
 /**
- * 工具管理器
- * 管理所有交互工具的生命周期和状态
+ * 工具管理器 - 协调工具 ViewModels、快捷键、历史等复杂交互逻辑
+ * 纯业务协调单元，协调多个工具 ViewModels
  */
 
-import { CanvasManager } from './CanvasManager';
-import { SelectTool } from '../tools/SelectTool';
-import { RectangleTool } from '../tools/RectangleTool';
-import { CircleTool } from '../tools/CircleTool';
-import { LineTool } from '../tools/LineTool';
-import { IInteractionTool, InteractionMode } from '../tools/types';
+import { ICanvasManager } from './CanvasManager';
+import { ISelectToolViewModel, IRectangleToolViewModel } from '../viewmodels/tools';
+import { IShortcutService, IHistoryService, IEventBusService, ILogService } from '../services';
 
 /**
- * 工具管理器
+ * 工具管理器接口
  */
-export class ToolManager {
-  private canvasManager: CanvasManager;
-  private tools: Map<string, IInteractionTool> = new Map();
-  private currentTool: IInteractionTool | null = null;
+export interface IToolManager {
+  // 工具管理
+  activateTool(toolName: string): boolean;
+  getCurrentToolName(): string | null;
+  getAvailableTools(): string[];
+  
+  // 事件处理
+  handleMouseDown(event: any): void;
+  handleMouseMove(event: any): void;
+  handleMouseUp(event: any): void;
+  handleKeyDown(event: KeyboardEvent): void;
+  handleKeyUp(event: KeyboardEvent): void;
+  
+  // 状态查询
+  getCurrentCursor(): string;
+  
+  dispose(): void;
+}
 
-  constructor(canvasManager: CanvasManager) {
-    this.canvasManager = canvasManager;
-    this.initializeTools();
+/**
+ * 工具管理器实现
+ */
+export class ToolManager implements IToolManager {
+  private toolViewModels: Map<string, any> = new Map();
+  private currentToolName: string | null = null;
+
+  constructor(
+    private canvasManager: ICanvasManager,
+    private selectToolViewModel: ISelectToolViewModel,
+    private rectangleToolViewModel: IRectangleToolViewModel,
+    private shortcutService: IShortcutService,
+    private historyService: IHistoryService,
+    private eventBus: IEventBusService,
+    private logService: ILogService
+  ) {
+    this.initializeToolViewModels();
+    this.registerShortcuts();
+    this.logService.info('ToolManager initialized');
   }
 
   /**
-   * 初始化所有工具
+   * 初始化所有工具 ViewModels
    */
-  private initializeTools(): void {
-    // 创建所有工具实例，传入 CanvasManager
-    const tools = [
-      new SelectTool(this.canvasManager),
-      new RectangleTool(this.canvasManager),
-      new CircleTool(this.canvasManager),
-      new LineTool(this.canvasManager)
-    ];
-
-    // 注册所有工具
-    tools.forEach(tool => {
-      this.tools.set(tool.name, tool);
-    });
+  private initializeToolViewModels(): void {
+    // 注册工具 ViewModels
+    this.toolViewModels.set('select', this.selectToolViewModel);
+    this.toolViewModels.set('rectangle', this.rectangleToolViewModel);
+    // TODO: 添加其他工具 ViewModels
+    // this.toolViewModels.set('circle', this.circleToolViewModel);
+    // this.toolViewModels.set('line', this.lineToolViewModel);
+    // this.toolViewModels.set('path', this.pathToolViewModel);
 
     // 默认激活选择工具
     this.activateTool('select');
   }
 
   /**
+   * 注册工具快捷键
+   */
+  private registerShortcuts(): void {
+    // 工具切换快捷键
+    this.shortcutService.register('tool-select', { key: 's' }, () => {
+      this.activateTool('select');
+    });
+
+    this.shortcutService.register('tool-rectangle', { key: 'r' }, () => {
+      this.activateTool('rectangle');
+    });
+
+    this.shortcutService.register('tool-circle', { key: 'c' }, () => {
+      this.activateTool('circle');
+    });
+
+    this.shortcutService.register('tool-line', { key: 'l' }, () => {
+      this.activateTool('line');
+    });
+
+    // 通用操作快捷键
+    this.shortcutService.register('copy', { key: 'c', ctrlKey: true }, () => {
+      this.canvasManager.copySelectedShapes();
+    });
+
+    this.shortcutService.register('cut', { key: 'x', ctrlKey: true }, () => {
+      this.canvasManager.cutSelectedShapes();
+    });
+
+    this.shortcutService.register('paste', { key: 'v', ctrlKey: true }, () => {
+      this.canvasManager.paste();
+    });
+
+    this.shortcutService.register('undo', { key: 'z', ctrlKey: true }, () => {
+      this.canvasManager.undo();
+    });
+
+    this.shortcutService.register('redo', { key: 'y', ctrlKey: true }, () => {
+      this.canvasManager.redo();
+    });
+
+    // 启用快捷键服务
+    this.shortcutService.enable();
+  }
+
+  /**
    * 激活工具
    */
   activateTool(toolName: string): boolean {
-    const tool = this.tools.get(toolName);
-    if (!tool) {
+    const toolViewModel = this.toolViewModels.get(toolName);
+    if (!toolViewModel) {
       console.warn(`Tool '${toolName}' not found`);
       return false;
     }
 
     // 停用当前工具
-    if (this.currentTool) {
-      this.currentTool.deactivate();
+    if (this.currentToolName) {
+      const currentTool = this.toolViewModels.get(this.currentToolName);
+      if (currentTool && currentTool.deactivate) {
+        currentTool.deactivate();
+      }
     }
 
     // 激活新工具
-    this.currentTool = tool;
-    this.currentTool.activate();
+    this.currentToolName = toolName;
+    if (toolViewModel.activate) {
+      toolViewModel.activate();
+    }
 
-    console.log(`Tool activated: ${toolName}`);
+    this.eventBus.emit('tool:activated', { toolName });
+    this.logService.info(`Tool activated: ${toolName}`);
     return true;
-  }
-
-  /**
-   * 获取当前工具
-   */
-  getCurrentTool(): IInteractionTool | null {
-    return this.currentTool;
   }
 
   /**
    * 获取当前工具名称
    */
   getCurrentToolName(): string | null {
-    return this.currentTool?.name || null;
-  }
-
-  /**
-   * 获取当前交互模式
-   */
-  getCurrentMode(): InteractionMode | null {
-    return this.currentTool?.mode || null;
-  }
-
-  /**
-   * 检查工具是否存在
-   */
-  hasTool(toolName: string): boolean {
-    return this.tools.has(toolName);
+    return this.currentToolName;
   }
 
   /**
    * 获取所有工具名称
    */
   getAvailableTools(): string[] {
-    return Array.from(this.tools.keys());
+    return Array.from(this.toolViewModels.keys());
   }
 
   /**
-   * 获取工具
-   */
-  getTool(toolName: string): IInteractionTool | undefined {
-    return this.tools.get(toolName);
-  }
-
-  /**
-   * 添加自定义工具
-   */
-  addTool(tool: IInteractionTool): void {
-    this.tools.set(tool.name, tool);
-  }
-
-  /**
-   * 移除工具
-   */
-  removeTool(toolName: string): boolean {
-    if (this.currentTool?.name === toolName) {
-      this.currentTool.deactivate();
-      this.currentTool = null;
-    }
-    
-    return this.tools.delete(toolName);
-  }
-
-  /**
-   * 委托鼠标事件到当前工具
+   * 处理鼠标按下事件
    */
   handleMouseDown(event: any): void {
-    this.currentTool?.onMouseDown?.(event);
-  }
-
-  handleMouseMove(event: any): void {
-    this.currentTool?.onMouseMove?.(event);
-  }
-
-  handleMouseUp(event: any): void {
-    this.currentTool?.onMouseUp?.(event);
+    if (!this.currentToolName) return;
+    
+    const currentTool = this.toolViewModels.get(this.currentToolName);
+    if (currentTool && currentTool.handleMouseDown) {
+      currentTool.handleMouseDown(event.point.x, event.point.y, event);
+    }
   }
 
   /**
-   * 委托键盘事件到当前工具
+   * 处理鼠标移动事件
+   */
+  handleMouseMove(event: any): void {
+    if (!this.currentToolName) return;
+    
+    const currentTool = this.toolViewModels.get(this.currentToolName);
+    if (currentTool && currentTool.handleMouseMove) {
+      currentTool.handleMouseMove(event.point.x, event.point.y, event);
+    }
+  }
+
+  /**
+   * 处理鼠标抬起事件
+   */
+  handleMouseUp(event: any): void {
+    if (!this.currentToolName) return;
+    
+    const currentTool = this.toolViewModels.get(this.currentToolName);
+    if (currentTool && currentTool.handleMouseUp) {
+      currentTool.handleMouseUp(event.point.x, event.point.y, event);
+    }
+  }
+
+  /**
+   * 处理键盘按下事件
    */
   handleKeyDown(event: KeyboardEvent): void {
-    this.currentTool?.onKeyDown?.(event);
-  }
-
-  handleKeyUp(event: KeyboardEvent): void {
-    this.currentTool?.onKeyUp?.(event);
+    if (!this.currentToolName) return;
+    
+    const currentTool = this.toolViewModels.get(this.currentToolName);
+    if (currentTool && currentTool.handleKeyDown) {
+      currentTool.handleKeyDown(event);
+    }
   }
 
   /**
-   * 获取当前工具的光标样式
+   * 处理键盘抬起事件
+   */
+  handleKeyUp(event: KeyboardEvent): void {
+    if (!this.currentToolName) return;
+    
+    const currentTool = this.toolViewModels.get(this.currentToolName);
+    if (currentTool && currentTool.handleKeyUp) {
+      currentTool.handleKeyUp(event);
+    }
+  }
+
+  /**
+   * 获取当前鼠标样式
    */
   getCurrentCursor(): string {
-    return this.currentTool?.cursor || 'default';
+    if (!this.currentToolName) return 'default';
+    
+    const currentTool = this.toolViewModels.get(this.currentToolName);
+    return currentTool?.state?.cursor || 'default';
   }
 
   /**
-   * 销毁工具管理器
+   * 销毁管理器
    */
   dispose(): void {
-    // 停用当前工具
-    if (this.currentTool) {
-      this.currentTool.deactivate();
-      this.currentTool = null;
-    }
-
-    // 清空所有工具
-    this.tools.clear();
+    // 停用所有工具
+    this.toolViewModels.forEach((tool, name) => {
+      if (tool.deactivate) {
+        tool.deactivate();
+      }
+    });
+    
+    // 禁用快捷键
+    this.shortcutService.disable();
+    
+    this.logService.info('ToolManager disposed');
   }
 }

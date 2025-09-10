@@ -3,7 +3,36 @@
  * 管理所有扩展点和扩展的注册与激活
  */
 
-import { Emitter, IDisposable, IEvent } from '../events/EventBus';
+import { EventEmitter } from 'eventemitter3';
+
+export interface IDisposable {
+  dispose(): void;
+}
+
+export interface IEvent<T> {
+  (listener: (e: T) => any): IDisposable;
+}
+
+class Emitter<T> {
+  private emitter = new EventEmitter();
+  
+  fire(data: T): void {
+    this.emitter.emit('event', data);
+  }
+  
+  get event(): IEvent<T> {
+    return (listener: (e: T) => any) => {
+      this.emitter.on('event', listener);
+      return {
+        dispose: () => this.emitter.off('event', listener)
+      };
+    };
+  }
+  
+  dispose(): void {
+    this.emitter.removeAllListeners();
+  }
+}
 
 export interface JSONSchema {
   type: string;

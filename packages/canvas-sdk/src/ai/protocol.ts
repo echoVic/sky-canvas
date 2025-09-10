@@ -4,7 +4,7 @@
  */
 
 import { CanvasSDK } from '../CanvasSDK';
-import { EventEmitter } from '../events/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 import { IShapeEntity } from '../models/entities/Shape';
 import {
   AI_PROTOCOL_VERSION,
@@ -329,9 +329,8 @@ export class AIProtocolManager extends EventEmitter {
     this.activeRequests.clear();
     this.messageHandlers.clear();
 
-    // 清理事件监听器 
-    // 使用基类dispose方法或手动清理
-    (this as any).removeAllListeners?.() || this.dispose();
+    // 清理事件监听器
+    this.removeAllListeners();
   }
 
   // ==================== 私有方法 ====================

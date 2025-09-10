@@ -4,7 +4,7 @@
  */
 
 import { ShapeEntity } from '../../models/entities/Shape';
-import { IShapeRepository, IRepositoryEvent } from '../../models/repositories/IShapeRepository';
+import { IRepositoryEvent, IShapeRepository } from '../../models/repositories/IShapeRepository';
 
 export interface IViewportState {
   x: number;

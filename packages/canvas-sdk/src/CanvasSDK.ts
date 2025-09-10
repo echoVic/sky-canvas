@@ -5,13 +5,13 @@
 
 import { Container, ContainerConfig } from './container/Container';
 import { CanvasManager } from './managers/CanvasManager';
-import { 
-  IEventBusService,
+import {
   ICanvasRenderingService,
   IConfigurationService,
-  ILogService,
+  IEventBusService,
   IHistoryService,
   IInteractionService,
+  ILogService,
   type LogLevel
 } from './services';
 
@@ -537,5 +537,3 @@ export class CanvasSDK {
     this.logger?.info('Canvas SDK disposed');
   }
 }
-
-// 删除工厂函数，直接使用 new CanvasSDK() 创建实例

@@ -1,28 +1,60 @@
 /**
- * 视口 ViewModel 实现
- * 使用 Valtio 管理视口状态
+ * 视口 ViewModel 实现 - 中等复杂度
+ * 使用 ZoomService + ConfigurationService，不需要 Manager
  */
 
 import { proxy, snapshot } from 'valtio';
-import { ShapeEntity } from '../models/entities/Shape';
-import { ShapeAdapter } from '../models/entities/ShapeAdapter';
+import { inject, injectable } from '../di/ServiceIdentifier';
+import { IZoomService } from '../services/zoom/zoomService';
+import { IConfigurationService } from '../services/configuration/configurationService';
+import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewportViewModel, IViewportState } from './interfaces/IViewModel';
-import { IEventBusService } from '../di/ServiceIdentifiers';
 
+@injectable
 export class ViewportViewModel implements IViewportViewModel {
   private readonly _state: IViewportState;
 
   constructor(
-    private eventBus: IEventBusService
+    @inject(IZoomService) private zoomService: IZoomService,
+    @inject(IConfigurationService) private configService: IConfigurationService,
+    @inject(IEventBusService) private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IViewportState>({
-      x: 0,
-      y: 0,
-      width: 800,
-      height: 600,
-      zoom: 1
+      x: this.configService.get('viewport.x', 0),
+      y: this.configService.get('viewport.y', 0),
+      width: this.configService.get('viewport.width', 800),
+      height: this.configService.get('viewport.height', 600),
+      zoom: this.zoomService.getCurrentZoom()
     });
+
+    this.setupEventListeners();
+  }
+
+  /**
+   * 设置事件监听器
+   */
+  private setupEventListeners(): void {
+    // 监听缩放服务的变化，同步缩放级别
+    this.eventBus.on('zoom:changed', (data: any) => {
+      this._state.zoom = data.zoom;
+    });
+  }
+
+  /**
+   * 保存视口位置到配置
+   */
+  private saveViewportPosition(): void {
+    this.configService.set('viewport.x', this._state.x);
+    this.configService.set('viewport.y', this._state.y);
+  }
+
+  /**
+   * 保存视口尺寸到配置
+   */
+  private saveViewportSize(): void {
+    this.configService.set('viewport.width', this._state.width);
+    this.configService.set('viewport.height', this._state.height);
   }
 
   get state(): IViewportState {
@@ -48,6 +80,19 @@ export class ViewportViewModel implements IViewportViewModel {
     // 更新状态
     Object.assign(this._state, viewport);
 
+    // 保存到配置
+    if (viewport.x !== undefined || viewport.y !== undefined) {
+      this.saveViewportPosition();
+    }
+    if (viewport.width !== undefined || viewport.height !== undefined) {
+      this.saveViewportSize();
+    }
+    
+    // 如果设置了缩放，更新 ZoomService
+    if (viewport.zoom !== undefined) {
+      this.zoomService.setZoom(viewport.zoom);
+    }
+
     // 发布事件
     this.eventBus.emit('viewport:changed', {
       old: oldViewport,
@@ -62,6 +107,9 @@ export class ViewportViewModel implements IViewportViewModel {
     this._state.x += deltaX;
     this._state.y += deltaY;
 
+    // 保存位置到配置
+    this.saveViewportPosition();
+
     // 发布事件
     this.eventBus.emit('viewport:panned', {
       deltaX,
@@ -73,31 +121,37 @@ export class ViewportViewModel implements IViewportViewModel {
 
   zoom(factor: number, centerX?: number, centerY?: number): void {
     const oldViewport = this.getSnapshot();
+    const currentZoom = this._state.zoom;
+    const newZoom = currentZoom * factor;
     
-    // 限制缩放范围
-    const newZoom = Math.max(0.1, Math.min(10, this._state.zoom * factor));
-    
-    if (centerX !== undefined && centerY !== undefined) {
-      // 以指定点为中心缩放
-      const zoomDelta = newZoom - this._state.zoom;
-      const worldCenterX = (centerX - this._state.x) / this._state.zoom;
-      const worldCenterY = (centerY - this._state.y) / this._state.zoom;
+    // 使用 ZoomService 来管理缩放
+    if (this.zoomService.setZoom(newZoom, centerX, centerY)) {
+      // ZoomService 会发布 zoom:changed 事件，我们在事件监听器中更新状态
       
-      this._state.x -= worldCenterX * zoomDelta;
-      this._state.y -= worldCenterY * zoomDelta;
-    }
-    
-    this._state.zoom = newZoom;
+      // 如果有中心点，更新视口位置
+      if (centerX !== undefined && centerY !== undefined) {
+        const actualNewZoom = this.zoomService.getCurrentZoom();
+        const zoomDelta = actualNewZoom - currentZoom;
+        const worldCenterX = (centerX - this._state.x) / currentZoom;
+        const worldCenterY = (centerY - this._state.y) / currentZoom;
+        
+        this._state.x -= worldCenterX * zoomDelta;
+        this._state.y -= worldCenterY * zoomDelta;
+        
+        // 保存视口位置到配置
+        this.saveViewportPosition();
+      }
 
-    // 发布事件
-    this.eventBus.emit('viewport:zoomed', {
-      factor,
-      zoom: newZoom,
-      centerX,
-      centerY,
-      viewport: this.getSnapshot(),
-      old: oldViewport
-    });
+      // 发布视口特定的缩放事件
+      this.eventBus.emit('viewport:zoomed', {
+        factor,
+        zoom: this.zoomService.getCurrentZoom(),
+        centerX,
+        centerY,
+        viewport: this.getSnapshot(),
+        old: oldViewport
+      });
+    }
   }
 
   fitToContent(shapes: ShapeEntity[]): void {

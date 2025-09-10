@@ -1,8 +1,8 @@
 /**
- * 常用命令实现
+ * 历史记录命令实现
  */
 
-import { ICommand } from './HistoryManager';
+import { ICommand } from './historyService';
 
 /**
  * 属性更改命令 - 最常用的命令类型
@@ -12,7 +12,7 @@ export class PropertyChangeCommand<T, K extends keyof T> implements ICommand {
   private property: K;
   private oldValue: T[K];
   private newValue: T[K];
-  private description: string;
+  public description: string;
 
   constructor(
     target: T,
@@ -50,7 +50,7 @@ export class MultiPropertyChangeCommand<T> implements ICommand {
     oldValue: any;
     newValue: any;
   }> = [];
-  private description: string;
+  public description: string;
 
   constructor(target: T, description?: string) {
     this.target = target;
@@ -94,7 +94,7 @@ export class CollectionAddCommand<T> implements ICommand {
   private collection: T[];
   private item: T;
   private index: number;
-  private description: string;
+  public description: string;
 
   constructor(collection: T[], item: T, index?: number, description?: string) {
     this.collection = collection;
@@ -123,7 +123,7 @@ export class CollectionRemoveCommand<T> implements ICommand {
   private collection: T[];
   private item: T;
   private index: number;
-  private description: string;
+  public description: string;
 
   constructor(collection: T[], item: T, description?: string) {
     this.collection = collection;
@@ -157,7 +157,7 @@ export class CollectionMoveCommand<T> implements ICommand {
   private fromIndex: number;
   private toIndex: number;
   private item: T;
-  private description: string;
+  public description: string;
 
   constructor(collection: T[], fromIndex: number, toIndex: number, description?: string) {
     this.collection = collection;
@@ -193,7 +193,7 @@ export class CollectionMoveCommand<T> implements ICommand {
 export class FunctionCommand implements ICommand {
   private executeFunction: () => void;
   private undoFunction: () => void;
-  private description: string;
+  public description: string;
 
   constructor(
     executeFunction: () => void,
@@ -224,7 +224,7 @@ export class FunctionCommand implements ICommand {
 export class AsyncCommandWrapper implements ICommand {
   private asyncExecute: () => Promise<void>;
   private asyncUndo: () => Promise<void>;
-  private description: string;
+  public description: string;
   private isExecuted: boolean = false;
 
   constructor(
@@ -261,6 +261,68 @@ export class AsyncCommandWrapper implements ICommand {
 
   toString(): string {
     return `${this.description} (async)`;
+  }
+}
+
+/**
+ * 复合命令 - 包含多个子命令的命令
+ */
+export class CompositeCommand implements ICommand {
+  private commands: ICommand[] = [];
+  public description: string;
+
+  constructor(description: string = 'Composite Operation') {
+    this.description = description;
+  }
+
+  /**
+   * 添加子命令
+   */
+  add(command: ICommand): void {
+    this.commands.push(command);
+  }
+
+  /**
+   * 执行所有子命令
+   */
+  execute(): void {
+    for (const command of this.commands) {
+      command.execute();
+    }
+  }
+
+  /**
+   * 按相反顺序撤销所有子命令
+   */
+  undo(): void {
+    for (let i = this.commands.length - 1; i >= 0; i--) {
+      this.commands[i].undo();
+    }
+  }
+
+  /**
+   * 获取子命令数量
+   */
+  size(): number {
+    return this.commands.length;
+  }
+
+  /**
+   * 检查是否为空
+   */
+  isEmpty(): boolean {
+    return this.commands.length === 0;
+  }
+
+  /**
+   * 清空所有子命令
+   */
+  clear(): void {
+    this.commands = [];
+  }
+
+  toString(): string {
+    return `${this.description} (${this.commands.length} commands)`;
   }
 }
 
@@ -334,5 +396,12 @@ export class CommandBuilder {
     description?: string
   ): FunctionCommand {
     return new FunctionCommand(executeFunction, undoFunction, description);
+  }
+
+  /**
+   * 创建复合命令
+   */
+  static createComposite(description?: string): CompositeCommand {
+    return new CompositeCommand(description);
   }
 }

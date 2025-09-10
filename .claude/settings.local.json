@@ -27,7 +27,8 @@
       "WebFetch(domain:blog.csdn.net)",
       "Bash(echo $?)",
       "Bash(pnpm --filter @sky-canvas/canvas-sdk build --verbose)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": [],
     "ask": []

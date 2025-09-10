@@ -1,53 +1,67 @@
 /**
- * Canvas 总管理器 - 协调 Services 和 Business 层
- * 为视图层提供统一的操作接口
+ * Canvas 管理器 - 纯业务协调单元
+ * 协调形状管理、选择管理、历史管理等复杂业务逻辑
+ * 不再直接依赖 DI 容器，而是通过构造函数注入所需服务
  */
 
-import { Container } from '../container/Container';
 import { IRenderable } from '@sky-canvas/render-engine';
-import { ShapeManager } from '../business/ShapeManager';
-import { SelectionManager } from '../business/selection/SelectionManager';
-import { ISelectionService, IEventBusService, IHistoryService, ILogService } from '../services';
 import { ShapeEntity } from '../models/entities/Shape';
+import { IClipboardService, IEventBusService, IHistoryService, ILogService, ISelectionService } from '../services';
+import { IShapeService } from '../services/shape/shapeService';
 
 /**
- * Canvas 管理器
- * 集成 DI Services 和 Business Managers，为视图层提供统一接口
+ * Canvas 管理器接口
  */
-export class CanvasManager {
-  private shapeManager: ShapeManager;
-  private selectionManager: SelectionManager;
+export interface ICanvasManager {
+  // 形状管理
+  addShape(entity: ShapeEntity): void;
+  removeShape(id: string): void;
+  updateShape(id: string, updates: Partial<ShapeEntity>): void;
+  getRenderables(): IRenderable[];
+  hitTest(x: number, y: number): string | null;
   
-  // DI Services
-  private selectionService: ISelectionService;
-  private eventBus: IEventBusService;
-  private historyService: IHistoryService;
-  private logService: ILogService;
+  // 选择管理
+  selectShape(id: string): void;
+  deselectShape(id: string): void;
+  clearSelection(): void;
+  getSelectedShapes(): ShapeEntity[];
+  isShapeSelected(id: string): boolean;
+  
+  // 剪贴板操作
+  copySelectedShapes(): void;
+  cutSelectedShapes(): void;
+  paste(): ShapeEntity[];
+  
+  // 历史操作
+  undo(): void;
+  redo(): void;
+  
+  // 状态查询
+  getStats(): any;
+  clear(): void;
+  dispose(): void;
+}
 
-  constructor(private container: Container) {
-    // 初始化 Business 层
-    this.shapeManager = new ShapeManager();
-    this.selectionManager = new SelectionManager();
-    
-    // 获取 DI Services
-    this.selectionService = container.get<ISelectionService>('ISelectionService');
-    this.eventBus = container.get<IEventBusService>('IEventBusService');
-    this.historyService = container.get<IHistoryService>('IHistoryService');
-    this.logService = container.get<ILogService>('ILogService');
-    
+/**
+ * Canvas 管理器实现
+ * 纯业务逻辑，不包含 DI 管理
+ */
+export class CanvasManager implements ICanvasManager {
+  constructor(
+    private shapeService: IShapeService,
+    private selectionService: ISelectionService,
+    private eventBus: IEventBusService,
+    private historyService: IHistoryService,
+    private logService: ILogService,
+    private clipboardService: IClipboardService
+  ) {
     this.setupIntegration();
   }
 
   /**
-   * 设置 Services 和 Business 层的集成
+   * 设置 Services 集成
    */
   private setupIntegration(): void {
-    // 将 Business 层的选择变化同步到 Service 层
-    this.selectionManager.on('selectionChanged', (event) => {
-      this.selectionService.select(event.selected);
-      this.eventBus.emit('canvas:selectionChanged', event);
-    });
-    
     // 记录操作日志
     this.logService.info('CanvasManager initialized');
   }
@@ -58,12 +72,12 @@ export class CanvasManager {
    * 添加形状
    */
   addShape(entity: ShapeEntity): void {
-    const view = this.shapeManager.addShape(entity);
+    const view = this.shapeService.addShape(entity);
     
     // 记录到历史
     this.historyService.execute({
       execute: () => {}, // 已经执行了，不需要重复
-      undo: () => this.shapeManager.removeShape(entity.id)
+      undo: () => this.shapeService.removeShape(entity.id)
     });
     
     // 发布事件
@@ -75,15 +89,15 @@ export class CanvasManager {
    * 移除形状
    */
   removeShape(id: string): void {
-    const entity = this.shapeManager.getShapeEntity(id);
+    const entity = this.shapeService.getShapeEntity(id);
     if (!entity) return;
     
-    this.shapeManager.removeShape(id);
+    this.shapeService.removeShape(id);
     
     // 记录到历史
     this.historyService.execute({
       execute: () => {},  // 已经执行了，不需要重复
-      undo: () => this.shapeManager.addShape(entity)
+      undo: () => this.shapeService.addShape(entity)
     });
     
     // 发布事件
@@ -95,10 +109,10 @@ export class CanvasManager {
    * 更新形状
    */
   updateShape(id: string, updates: Partial<ShapeEntity>): void {
-    const oldEntity = this.shapeManager.getShapeEntity(id);
+    const oldEntity = this.shapeService.getShapeEntity(id);
     if (!oldEntity) return;
     
-    this.shapeManager.updateShape(id, updates);
+    this.shapeService.updateShape(id, updates);
     
     // 记录到历史 - 保存旧值用于撤销
     const oldValues = { 
@@ -107,7 +121,7 @@ export class CanvasManager {
     };
     this.historyService.execute({
       execute: () => {},  // 已经执行了，不需要重复
-      undo: () => this.shapeManager.updateShape(id, oldValues)
+      undo: () => this.shapeService.updateShape(id, oldValues)
     });
     
     // 发布事件
@@ -119,14 +133,14 @@ export class CanvasManager {
    * 获取所有可渲染对象
    */
   getRenderables(): IRenderable[] {
-    return this.shapeManager.getRenderables();
+    return this.shapeService.getRenderables();
   }
 
   /**
    * 点击测试
    */
   hitTest(x: number, y: number): string | null {
-    return this.shapeManager.hitTest(x, y);
+    return this.shapeService.hitTest(x, y);
   }
 
   // === 选择管理 ===
@@ -135,47 +149,126 @@ export class CanvasManager {
    * 选择形状
    */
   selectShape(id: string): void {
-    const entity = this.shapeManager.getShapeEntity(id);
+    const entity = this.shapeService.getShapeEntity(id);
     if (!entity) return;
     
-    // 使用 Business 层的选择管理
-    this.selectionManager.select(entity);
+    // 使用 SelectionService 管理选择状态
+    this.selectionService.select([entity]);
     
-    // 同步到 ShapeManager 的视觉状态
-    this.shapeManager.selectShape(id);
+    // TODO: 通过 ShapeService 更新视觉状态
+    // const view = this.shapeService.getShapeView(id);
+    // if (view) view.setSelected(true);
+    
+    // 发布事件
+    this.eventBus.emit('canvas:shapeSelected', { id, entity });
+    this.logService.debug(`Shape selected: ${id}`);
   }
 
   /**
    * 取消选择形状
    */
   deselectShape(id: string): void {
-    const entity = this.shapeManager.getShapeEntity(id);
+    const entity = this.shapeService.getShapeEntity(id);
     if (!entity) return;
     
-    this.selectionManager.deselect(entity);
-    this.shapeManager.deselectShape(id);
+    // 使用 SelectionService 管理选择状态
+    this.selectionService.deselect([entity]);
+    
+    // TODO: 通过 ShapeService 更新视觉状态
+    // const view = this.shapeService.getShapeView(id);
+    // if (view) view.setSelected(false);
+    
+    // 发布事件
+    this.eventBus.emit('canvas:shapeDeselected', { id, entity });
+    this.logService.debug(`Shape deselected: ${id}`);
   }
 
   /**
    * 清空选择
    */
   clearSelection(): void {
-    this.selectionManager.clearSelection();
-    this.shapeManager.clearSelection();
+    // 清空 SelectionService 的状态
+    this.selectionService.clearSelection();
+    
+    // TODO: 通过 ShapeService 清空视觉状态
+    // const views = this.shapeService.getAllShapeViews();
+    // views.forEach(view => view.setSelected(false));
+    
+    // 发布事件
+    this.eventBus.emit('canvas:selectionCleared', {});
+    this.logService.debug('Selection cleared');
   }
 
   /**
    * 获取选中的形状
    */
   getSelectedShapes(): ShapeEntity[] {
-    return this.shapeManager.getSelectedShapeEntities();
+    return this.selectionService.getSelectedShapes() as ShapeEntity[];
   }
 
   /**
    * 检查是否选中
    */
   isShapeSelected(id: string): boolean {
-    return this.shapeManager.isShapeSelected(id);
+    const entity = this.shapeService.getShapeEntity(id);
+    return entity ? this.selectionService.isSelected(entity) : false;
+  }
+
+  // === 剪贴板操作 ===
+  
+  /**
+   * 复制选中的形状
+   */
+  copySelectedShapes(): void {
+    const selectedShapes = this.getSelectedShapes();
+    if (selectedShapes.length === 0) return;
+    
+    this.clipboardService.copy(selectedShapes);
+    this.eventBus.emit('canvas:shapesCopied', { count: selectedShapes.length });
+    this.logService.debug(`Copied ${selectedShapes.length} shapes`);
+  }
+
+  /**
+   * 剪切选中的形状
+   */
+  cutSelectedShapes(): void {
+    const selectedShapes = this.getSelectedShapes();
+    if (selectedShapes.length === 0) return;
+    
+    // 先复制到剪贴板
+    this.clipboardService.cut(selectedShapes);
+    
+    // 然后删除选中的形状
+    selectedShapes.forEach(shape => {
+      this.removeShape(shape.id);
+    });
+    
+    this.eventBus.emit('canvas:shapesCut', { count: selectedShapes.length });
+    this.logService.debug(`Cut ${selectedShapes.length} shapes`);
+  }
+
+  /**
+   * 粘贴形状
+   */
+  paste(): ShapeEntity[] {
+    const pastedShapes = this.clipboardService.paste();
+    if (!pastedShapes || pastedShapes.length === 0) return [];
+    
+    // 添加粘贴的形状
+    pastedShapes.forEach(shape => {
+      this.addShape(shape);
+    });
+    
+    // 选中粘贴的形状
+    this.clearSelection();
+    pastedShapes.forEach(shape => {
+      this.selectShape(shape.id);
+    });
+    
+    this.eventBus.emit('canvas:shapesPasted', { count: pastedShapes.length });
+    this.logService.debug(`Pasted ${pastedShapes.length} shapes`);
+    
+    return pastedShapes;
   }
 
   // === 历史操作 ===
@@ -205,8 +298,12 @@ export class CanvasManager {
     shapes: { totalShapes: number; selectedShapes: number; visibleShapes: number; shapesByType: Record<string, number> };
     history: { canUndo: boolean; canRedo: boolean };
   } {
+    const shapeStats = this.shapeService.getStats();
     return {
-      shapes: this.shapeManager.getStats(),
+      shapes: {
+        ...shapeStats,
+        selectedShapes: this.selectionService.getSelectionCount()
+      },
       history: {
         canUndo: this.historyService.canUndo(),
         canRedo: this.historyService.canRedo()
@@ -218,8 +315,7 @@ export class CanvasManager {
    * 清空画布
    */
   clear(): void {
-    this.shapeManager.clear();
-    this.selectionManager.clearSelection();
+    this.shapeService.clear();
     this.selectionService.clearSelection();
     this.historyService.clear();
     
@@ -231,7 +327,7 @@ export class CanvasManager {
    * 销毁管理器
    */
   dispose(): void {
-    this.shapeManager.clear();
+    this.shapeService.clear();
     this.logService.info('CanvasManager disposed');
   }
 }

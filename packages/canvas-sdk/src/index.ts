@@ -27,10 +27,6 @@ export type {
   ServiceLifecycle
 } from './di';
 
-// =========================================
-// 核心SDK与工厂
-// =========================================
-
 // 核心 SDK
 export {
   CanvasSDK
@@ -39,12 +35,6 @@ export {
 export type {
   ICanvasSDKConfig
 } from './CanvasSDK';
-
-// MVVM服务支持（通过DI集成）
-// MVVM模式通过依赖注入服务提供，而不是独立的SDK
-
-// SDK 基础支持
-// 注意：简化的架构中直接使用 CanvasSDK，不需要额外的工厂类
 
 // =========================================
 // 服务层导出
@@ -60,18 +50,27 @@ export * from './services';
 // =========================================
 // 历史记录系统 - 撤销重做、事务、命令模式
 // =========================================
+// 历史服务和命令
 export {
-  CollectionAddCommand, CollectionMoveCommand, CollectionRemoveCommand, CommandBuilder, CompositeCommand, FunctionCommand, HistoryManager, MultiPropertyChangeCommand, PropertyChangeCommand, transactional,
+  AsyncCommandWrapper, CollectionAddCommand, CollectionMoveCommand, CollectionRemoveCommand, CommandBuilder, CompositeCommand, FunctionCommand, HistoryService, MultiPropertyChangeCommand, PropertyChangeCommand
+} from './services';
+
+// 事务管理器
+export {
+  transactional,
   transactionalAsync, TransactionManager
-} from './history';
+} from './managers';
 
-// 明确导出ICommand以解决歧义
-export type { ICommand } from './history/HistoryManager';
+// 类型导出
+export type { ITransactionManager } from './managers';
+export type {
+  ICommand, IHistoryService
+} from './services';
 
 // =========================================
-// 业务层组件 - 复杂业务逻辑  
+// 业务层组件 - 已重构到 Managers 和 Services
 // =========================================
-export * from './business';
+// 业务逻辑现在由 Managers 和 Services 处理
 
 // =========================================
 // 管理器层 - 协调 Services 和 Business 层
@@ -79,9 +78,9 @@ export * from './business';
 export * from './managers';
 
 // =========================================
-// 工具系统
+// ViewModel 层 - MVVM 架构
 // =========================================
-export { CircleTool, LineTool, RectangleTool } from './tools';
+export * from './viewmodels';
 
 // =========================================
 // 插件系统
@@ -104,9 +103,9 @@ export * from './utils/index';
 export * from './models';
 
 // =========================================
-// 事件系统
+// 类型定义
 // =========================================
-export * from './events';
+export * from './models/types';
 
 // =========================================
 // 便捷的默认导出

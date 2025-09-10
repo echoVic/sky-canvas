@@ -10,10 +10,17 @@ export * from './SceneViewModel';
 export * from './ViewportViewModel';
 export * from './SelectionViewModel';
 
-// 画布视图模型（保持兼容性）
-// export * from './canvas/CanvasViewModel';
+// 简单 ViewModels（直接使用 Services）
+export * from './ThemeViewModel';
+export * from './ZoomViewModel';
+
+// 复杂 ViewModels（使用 Managers）
+export * from './CanvasViewModel';
+export * from './ToolViewModel';
+
+// 工具 ViewModels
+export * from './tools';
 
 // 其他视图模型（扩展时添加）
 // export * from './shapes/ShapeViewModel';
-// export * from './tools/ToolViewModel';
 // export * from './history/HistoryViewModel';

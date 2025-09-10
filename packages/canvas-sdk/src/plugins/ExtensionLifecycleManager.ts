@@ -3,15 +3,38 @@
  * 管理扩展的激活、停用和生命周期
  */
 
-import { Emitter, IDisposable, IEvent } from '../events/EventBus';
 import {
     ExtensionRegistry,
     ExtensionState,
     IExtension,
     IExtensionContext,
     IExtensionInstance,
-    IMemento
+    IMemento,
+    IDisposable,
+    IEvent
 } from './ExtensionRegistry';
+import { EventEmitter } from 'eventemitter3';
+
+class Emitter<T> {
+  private emitter = new EventEmitter();
+  
+  fire(data: T): void {
+    this.emitter.emit('event', data);
+  }
+  
+  get event(): IEvent<T> {
+    return (listener: (e: T) => any) => {
+      this.emitter.on('event', listener);
+      return {
+        dispose: () => this.emitter.off('event', listener)
+      };
+    };
+  }
+  
+  dispose(): void {
+    this.emitter.removeAllListeners();
+  }
+}
 
 export interface IActivationEvent {
   readonly extensionId: string;
