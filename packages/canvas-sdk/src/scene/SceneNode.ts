@@ -1,5 +1,5 @@
 import { IPoint as Point, IRect as Rect, IGraphicsContext as RenderContext } from '@sky-canvas/render-engine';
-import { Transform, Vector2 } from '../math';
+import { Transform, Vector2 } from '@sky-canvas/render-engine';
 
 /**
  * 场景节点接口
@@ -240,7 +240,7 @@ export abstract class SceneNode implements ISceneNode {
 
       // 应用世界变换
       const worldTransform = this.getWorldTransform();
-      const matrix = worldTransform.toMatrix();
+      const matrix = worldTransform.matrix.toArray();
       if (matrix && matrix.length >= 6) {
         ctx.transform(matrix[0]!, matrix[1]!, matrix[2]!, matrix[3]!, matrix[4]!, matrix[5]!);
       }
@@ -332,7 +332,7 @@ export abstract class SceneNode implements ISceneNode {
       transform: {
         scale: { x: this.transform.scale.x, y: this.transform.scale.y },
         rotation: this.transform.rotation,
-        translation: { x: this.transform.translation.x, y: this.transform.translation.y }
+        translation: { x: this.transform.position.x, y: this.transform.position.y }
       }
     };
   }

@@ -2,9 +2,9 @@
  * 扩展管理器单元测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ExtensionManager } from '../../engine/plugins/core/ExtensionManager';
-import { ExtensionPoint, ExtensionProvider, ExtensionPointDeclaration, ExtensionPointType } from '../../engine/plugins/types/PluginTypes';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ExtensionManager } from '../../src/plugins/core/ExtensionManager';
+import { ExtensionPointDeclaration, ExtensionPointType, ExtensionProvider } from '../../src/plugins/types/PluginTypes';
 
 // Mock扩展提供者
 class MockExtensionProvider implements ExtensionProvider {

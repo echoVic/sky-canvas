@@ -2,8 +2,8 @@
  * 性能监控器单元测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PerformanceMonitor } from '../../engine/plugins/performance/PerformanceMonitor';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PerformanceMonitor } from '../../src/plugins/performance/PerformanceMonitor';
 
 describe('PerformanceMonitor', () => {
   let performanceMonitor: PerformanceMonitor;

@@ -61,25 +61,8 @@ export type {
   ISpatialNode
 } from './culling/SpatialPartitioning';
 
-// 数学和变换系统
-export type {
-  CoordinateSystem, CoordinateSystemManager,
-  IViewportConfig, Matrix2D,
-  TransformStack
-} from './math/Transform';
+// 数学和变换系统（通过 export * from './math/index' 导出）
 
-export type {
-  Matrix3x3,
-  Matrix3
-} from './math/Matrix3';
-
-export type {
-  Rectangle
-} from './math/Rectangle';
-
-export type {
-  Vector2
-} from './math/Vector2';
 
 // 图形原语
 export type {
@@ -122,3 +105,47 @@ export * from './adapters/index';
 
 // 工具函数
 export * from './utils/index';
+
+// 事件系统
+export * from './events/index';
+
+// 资源管理
+export * from './resources/index';
+
+// 性能监控
+export * from './performance/index';
+
+// 文本渲染
+export * from './text/index';
+
+// 动画系统
+// TODO: 解决类型兼容性问题后启用
+// export * from './animation/index';
+
+// 滤镜系统  
+// TODO: 解决类型兼容性问题后启用
+// export * from './effects/index';
+
+// 性能基准测试
+export * from './benchmark/index';
+
+// 物理引擎
+export * from './physics/index';
+
+// 粒子系统
+export * from './particles/index';
+
+// 高级路径操作
+export * from './paths/index';
+
+// 插件系统
+export * from './plugins/index';
+
+// 调试工具
+export * from './debug/index';
+
+// 场景编辑器
+export * from './editor/index';
+
+// 组件库
+export * from './components/index';

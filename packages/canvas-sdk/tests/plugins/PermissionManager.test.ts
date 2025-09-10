@@ -2,9 +2,9 @@
  * 权限管理器单元测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PermissionManager } from '../../engine/plugins/core/PermissionManager';
-import { PluginPermission } from '../../engine/plugins/types/PluginTypes';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PermissionManager } from '../../src/plugins/core/PermissionManager';
+import { PluginPermission } from '../../src/plugins/types/PluginTypes';
 
 describe('PermissionManager', () => {
   let permissionManager: PermissionManager;

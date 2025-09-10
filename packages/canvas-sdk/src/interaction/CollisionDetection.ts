@@ -1,9 +1,15 @@
-import { IPoint as Point, IRect as Rect } from '@sky-canvas/render-engine';
-import { Vector2 } from '../math';
+import {
+  GeometryUtils,
+  ISpatialObject,
+  IPoint as Point,
+  IRect as Rect,
+  SpatialPartitionManager,
+  Vector2
+} from '@sky-canvas/render-engine';
 import { ISceneNode } from '../scene/SceneNode';
 
 /**
- * 碰撞检测类型枚举
+ * 碰撞检测类型枚举 - 保持向后兼容
  */
 export enum CollisionType {
   POINT = 'point',
@@ -13,7 +19,7 @@ export enum CollisionType {
 }
 
 /**
- * 碰撞形状接口
+ * 碰撞形状接口 - 保持向后兼容
  */
 export interface CollisionShape {
   type: CollisionType;
@@ -69,108 +75,86 @@ export interface RaycastResult {
 }
 
 /**
- * 空间分割网格
+ * 场景节点适配器 - 将 ISceneNode 适配为 ISpatialObject
+ */
+class SceneNodeSpatialAdapter implements ISpatialObject {
+  constructor(private node: ISceneNode) {}
+
+  get id(): string {
+    return this.node.id;
+  }
+
+  getBounds(): Rect {
+    return this.node.getBounds();
+  }
+
+  get originalNode(): ISceneNode {
+    return this.node;
+  }
+}
+
+/**
+ * 空间分割网格 - 现在基于 Render Engine 实现
  */
 export class SpatialGrid {
-  private _cellSize: number;
-  private _grid: Map<string, Set<ISceneNode>> = new Map();
-  private _nodeCells: Map<ISceneNode, Set<string>> = new Map();
+  private _spatialManager: SpatialPartitionManager<SceneNodeSpatialAdapter>;
+  private _nodeAdapters: Map<ISceneNode, SceneNodeSpatialAdapter> = new Map();
 
   constructor(cellSize: number = 100) {
-    this._cellSize = cellSize;
+    this._spatialManager = new SpatialPartitionManager<SceneNodeSpatialAdapter>(cellSize);
   }
 
   insert(node: ISceneNode): void {
-    const bounds = node.getBounds();
-    const cells = this.getCellsForBounds(bounds);
-    
-    this._nodeCells.set(node, cells);
-    
-    for (const cellKey of cells) {
-      if (!this._grid.has(cellKey)) {
-        this._grid.set(cellKey, new Set());
-      }
-      this._grid.get(cellKey)!.add(node);
-    }
+    const adapter = new SceneNodeSpatialAdapter(node);
+    this._nodeAdapters.set(node, adapter);
+    this._spatialManager.insert(adapter);
   }
 
   remove(node: ISceneNode): void {
-    const cells = this._nodeCells.get(node);
-    if (!cells) return;
-
-    for (const cellKey of cells) {
-      const cell = this._grid.get(cellKey);
-      if (cell) {
-        cell.delete(node);
-        if (cell.size === 0) {
-          this._grid.delete(cellKey);
-        }
-      }
+    const adapter = this._nodeAdapters.get(node);
+    if (adapter) {
+      this._spatialManager.remove(adapter);
+      this._nodeAdapters.delete(node);
     }
-
-    this._nodeCells.delete(node);
   }
 
   update(node: ISceneNode): void {
-    this.remove(node);
-    this.insert(node);
+    const adapter = this._nodeAdapters.get(node);
+    if (adapter) {
+      this._spatialManager.update(adapter);
+    }
   }
 
   query(bounds: Rect): Set<ISceneNode> {
-    const cells = this.getCellsForBounds(bounds);
+    const adapters = this._spatialManager.query(bounds);
     const result = new Set<ISceneNode>();
-
-    for (const cellKey of cells) {
-      const cell = this._grid.get(cellKey);
-      if (cell) {
-        for (const node of cell) {
-          result.add(node);
-        }
-      }
+    
+    for (const adapter of adapters) {
+      result.add(adapter.originalNode);
     }
-
+    
     return result;
   }
 
   queryPoint(point: Point): Set<ISceneNode> {
-    const cellKey = this.getCellKey(point.x, point.y);
-    return this._grid.get(cellKey) || new Set();
+    const adapters = this._spatialManager.queryPoint(point);
+    const result = new Set<ISceneNode>();
+    
+    for (const adapter of adapters) {
+      result.add(adapter.originalNode);
+    }
+    
+    return result;
   }
 
   clear(): void {
-    this._grid.clear();
-    this._nodeCells.clear();
+    this._spatialManager.clear();
+    this._nodeAdapters.clear();
   }
 
-  private getCellsForBounds(bounds: Rect): Set<string> {
-    const cells = new Set<string>();
-    
-    const startX = Math.floor(bounds.x / this._cellSize);
-    const endX = Math.floor((bounds.x + bounds.width) / this._cellSize);
-    const startY = Math.floor(bounds.y / this._cellSize);
-    const endY = Math.floor((bounds.y + bounds.height) / this._cellSize);
-
-    for (let x = startX; x <= endX; x++) {
-      for (let y = startY; y <= endY; y++) {
-        cells.add(`${x},${y}`);
-      }
-    }
-
-    return cells;
-  }
-
-  private getCellKey(x: number, y: number): string {
-    const cellX = Math.floor(x / this._cellSize);
-    const cellY = Math.floor(y / this._cellSize);
-    return `${cellX},${cellY}`;
-  }
 
   getDebugInfo(): object {
-    return {
-      cellSize: this._cellSize,
-      gridSize: this._grid.size,
-      totalNodes: this._nodeCells.size
-    };
+    return this._spatialManager.getDebugInfo();
   }
 }
 
@@ -356,208 +340,112 @@ export class CollisionDetector {
   }
 
   private raycastBounds(origin: Point, direction: Vector2, maxDistance: number, bounds: Rect): RaycastResult {
-    const originVec = new Vector2(origin.x, origin.y);
+    // 使用 Render Engine 的射线投射实现
+    const result = GeometryUtils.raycastBounds(origin, direction, maxDistance, bounds);
     
-    // AABB射线相交测试
-    const invDir = new Vector2(1 / direction.x, 1 / direction.y);
-    const t1 = (bounds.x - origin.x) * invDir.x;
-    const t2 = (bounds.x + bounds.width - origin.x) * invDir.x;
-    const t3 = (bounds.y - origin.y) * invDir.y;
-    const t4 = (bounds.y + bounds.height - origin.y) * invDir.y;
-
-    const tmin = Math.max(Math.min(t1, t2), Math.min(t3, t4));
-    const tmax = Math.min(Math.max(t1, t2), Math.max(t3, t4));
-
-    if (tmax < 0 || tmin > tmax || tmin > maxDistance) {
-      return { hit: false, node: null, point: origin, distance: Infinity, normal: new Vector2(0, 0) };
-    }
-
-    const t = tmin > 0 ? tmin : tmax;
-    const hitPoint = originVec.add(direction.multiplyScalar(t));
-    
-    // 计算法线
-    let normal = new Vector2(0, 0);
-    const center = new Vector2(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-    const toHit = hitPoint.subtract(center);
-    
-    if (Math.abs(toHit.x) > Math.abs(toHit.y)) {
-      normal = new Vector2(toHit.x > 0 ? 1 : -1, 0);
-    } else {
-      normal = new Vector2(0, toHit.y > 0 ? 1 : -1);
-    }
-
     return {
-      hit: true,
+      hit: result.hit,
       node: null,
-      point: { x: hitPoint.x, y: hitPoint.y },
-      distance: t,
-      normal
+      point: result.point,
+      distance: result.distance,
+      normal: result.normal
     };
   }
 
   private circleCircleCollision(circleA: CircleShape, circleB: CircleShape): CollisionResult {
-    const centerA = new Vector2(circleA.center.x, circleA.center.y);
-    const centerB = new Vector2(circleB.center.x, circleB.center.y);
-    const distance = centerA.distance(centerB);
-    const radiusSum = circleA.radius + circleB.radius;
-
-    if (distance <= radiusSum) {
-      const normal = centerB.subtract(centerA).normalize();
-      const penetration = radiusSum - distance;
-      const contactPoint = centerA.add(normal.multiplyScalar(circleA.radius));
-
-      return {
-        hasCollision: true,
-        distance,
-        normal,
-        penetration,
-        contactPoint: { x: contactPoint.x, y: contactPoint.y }
-      };
-    }
-
+    // 转换为 Render Engine 的几何格式
+    const geomA = GeometryUtils.createCircleGeometry(circleA.center, circleA.radius);
+    const geomB = GeometryUtils.createCircleGeometry(circleB.center, circleB.radius);
+    
+    // 使用 Render Engine 的碰撞检测
+    const result = GeometryUtils.circleCircleCollision(geomA, geomB);
+    
     return {
-      hasCollision: false,
-      distance,
-      normal: new Vector2(0, 0),
-      penetration: 0,
-      contactPoint: circleA.center
+      hasCollision: result.hasCollision,
+      distance: result.distance,
+      normal: result.normal,
+      penetration: result.penetration,
+      contactPoint: result.contactPoint
     };
   }
 
   private rectRectCollision(rectA: RectShape, rectB: RectShape): CollisionResult {
-    const boundsA = rectA.bounds;
-    const boundsB = rectB.bounds;
-
-    if (this.boundsIntersect(boundsA, boundsB)) {
-      const centerA = new Vector2(rectA.center.x, rectA.center.y);
-      const centerB = new Vector2(rectB.center.x, rectB.center.y);
-      const distance = centerA.distance(centerB);
-
-      // 计算重叠区域
-      const overlapX = Math.min(boundsA.x + boundsA.width, boundsB.x + boundsB.width) - Math.max(boundsA.x, boundsB.x);
-      const overlapY = Math.min(boundsA.y + boundsA.height, boundsB.y + boundsB.height) - Math.max(boundsA.y, boundsB.y);
-      
-      let normal: Vector2;
-      let penetration: number;
-
-      if (overlapX < overlapY) {
-        normal = new Vector2(centerB.x > centerA.x ? 1 : -1, 0);
-        penetration = overlapX;
-      } else {
-        normal = new Vector2(0, centerB.y > centerA.y ? 1 : -1);
-        penetration = overlapY;
-      }
-
-      const contactPoint = centerA.add(normal.multiplyScalar(penetration / 2));
-
-      return {
-        hasCollision: true,
-        distance,
-        normal,
-        penetration,
-        contactPoint: { x: contactPoint.x, y: contactPoint.y }
-      };
-    }
-
+    // 转换为 Render Engine 的几何格式
+    const geomA = GeometryUtils.createRectGeometry(
+      rectA.bounds.x, rectA.bounds.y, rectA.bounds.width, rectA.bounds.height
+    );
+    const geomB = GeometryUtils.createRectGeometry(
+      rectB.bounds.x, rectB.bounds.y, rectB.bounds.width, rectB.bounds.height
+    );
+    
+    // 使用 Render Engine 的碰撞检测
+    const result = GeometryUtils.rectRectCollision(geomA, geomB);
+    
     return {
-      hasCollision: false,
-      distance: new Vector2(rectA.center.x, rectA.center.y).distance(new Vector2(rectB.center.x, rectB.center.y)),
-      normal: new Vector2(0, 0),
-      penetration: 0,
-      contactPoint: rectA.center
+      hasCollision: result.hasCollision,
+      distance: result.distance,
+      normal: result.normal,
+      penetration: result.penetration,
+      contactPoint: result.contactPoint
     };
   }
 
   private circleRectCollision(circle: CircleShape, rect: RectShape): CollisionResult {
-    const circleCenter = new Vector2(circle.center.x, circle.center.y);
-    const rectBounds = rect.bounds;
-
-    // 找到矩形上最接近圆心的点
-    const closestX = Math.max(rectBounds.x, Math.min(circleCenter.x, rectBounds.x + rectBounds.width));
-    const closestY = Math.max(rectBounds.y, Math.min(circleCenter.y, rectBounds.y + rectBounds.height));
-    const closest = new Vector2(closestX, closestY);
-
-    const distance = circleCenter.distance(closest);
-
-    if (distance <= circle.radius) {
-      const normal = circleCenter.subtract(closest).normalize();
-      const penetration = circle.radius - distance;
-      const contactPoint = closest;
-
-      return {
-        hasCollision: true,
-        distance,
-        normal,
-        penetration,
-        contactPoint: { x: contactPoint.x, y: contactPoint.y }
-      };
-    }
-
+    // 转换为 Render Engine 的几何格式
+    const circleGeom = GeometryUtils.createCircleGeometry(circle.center, circle.radius);
+    const rectGeom = GeometryUtils.createRectGeometry(
+      rect.bounds.x, rect.bounds.y, rect.bounds.width, rect.bounds.height
+    );
+    
+    // 使用 Render Engine 的碰撞检测
+    const result = GeometryUtils.circleRectCollision(circleGeom, rectGeom);
+    
     return {
-      hasCollision: false,
-      distance,
-      normal: new Vector2(0, 0),
-      penetration: 0,
-      contactPoint: circle.center
+      hasCollision: result.hasCollision,
+      distance: result.distance,
+      normal: result.normal,
+      penetration: result.penetration,
+      contactPoint: result.contactPoint
     };
   }
 
   private boundsCollision(boundsA: Rect, boundsB: Rect): CollisionResult {
-    if (this.boundsIntersect(boundsA, boundsB)) {
-      const centerA = new Vector2(boundsA.x + boundsA.width / 2, boundsA.y + boundsA.height / 2);
-      const centerB = new Vector2(boundsB.x + boundsB.width / 2, boundsB.y + boundsB.height / 2);
-      const distance = centerA.distance(centerB);
-
-      return {
-        hasCollision: true,
-        distance,
-        normal: centerB.subtract(centerA).normalize(),
-        penetration: 0,
-        contactPoint: { x: centerA.x, y: centerA.y }
-      };
-    }
-
+    // 使用 Render Engine 的边界碰撞检测
+    const result = GeometryUtils.boundsCollision(boundsA, boundsB);
+    
     return {
-      hasCollision: false,
-      distance: Infinity,
-      normal: new Vector2(0, 0),
-      penetration: 0,
-      contactPoint: { x: boundsA.x, y: boundsA.y }
+      hasCollision: result.hasCollision,
+      distance: result.distance,
+      normal: result.normal,
+      penetration: result.penetration,
+      contactPoint: result.contactPoint
     };
   }
 
   private boundsIntersect(a: Rect, b: Rect): boolean {
-    return !(a.x + a.width < b.x || 
-             b.x + b.width < a.x || 
-             a.y + a.height < b.y || 
-             b.y + b.height < a.y);
+    // 使用 Render Engine 的几何运算
+    return GeometryUtils.boundsIntersect(a, b);
   }
 
   // 工具方法
   createCircleShape(center: Point, radius: number): CircleShape {
+    const circleGeometry = GeometryUtils.createCircleGeometry(center, radius);
     return {
       type: CollisionType.CIRCLE,
-      center,
-      radius,
-      bounds: {
-        x: center.x - radius,
-        y: center.y - radius,
-        width: radius * 2,
-        height: radius * 2
-      }
+      center: circleGeometry.center,
+      radius: (circleGeometry as any).radius,
+      bounds: circleGeometry.bounds
     };
   }
 
   createRectShape(bounds: Rect): RectShape {
+    const rectGeometry = GeometryUtils.createRectGeometry(bounds.x, bounds.y, bounds.width, bounds.height);
     return {
       type: CollisionType.RECT,
-      center: {
-        x: bounds.x + bounds.width / 2,
-        y: bounds.y + bounds.height / 2
-      },
-      width: bounds.width,
-      height: bounds.height,
-      bounds
+      center: rectGeometry.center,
+      width: (rectGeometry as any).width,
+      height: (rectGeometry as any).height,
+      bounds: rectGeometry.bounds
     };
   }
 

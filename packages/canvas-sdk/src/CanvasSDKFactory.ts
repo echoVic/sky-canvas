@@ -28,6 +28,12 @@ import { EventBusService } from './services/EventBusService';
 import { LogService } from './services/LogService';
 import { ShapeService } from './services/ShapeService';
 
+// MVVM服务实现
+import { MemoryShapeRepositoryService } from './services/ShapeRepositoryService';
+import { CanvasViewModelService } from './services/CanvasViewModelService';
+import { IShapeRepositoryService, ICanvasViewModelService } from './di/MVVMServiceIdentifiers';
+import { addMVVMExtension, IMVVMExtensionConfig } from './CanvasSDKMVVMExtension';
+
 /**
  * 插件接口
  */
@@ -51,6 +57,8 @@ export interface CanvasSDKFactoryOptions {
   debug?: boolean;
   /** 是否预加载单例服务 */
   preloadSingletons?: boolean;
+  /** MVVM模式配置 */
+  mvvm?: IMVVMExtensionConfig;
 }
 
 /**
@@ -138,6 +146,17 @@ export class CanvasSDKFactory {
       const logger = accessor.get(ServiceIds.ILogService);
       return new ImportExportService(eventBus, logger);
     });
+
+    // MVVM服务注册
+    services.addSingleton(IShapeRepositoryService, (accessor: any) => {
+      return new MemoryShapeRepositoryService();
+    });
+    
+    services.addSingleton(ICanvasViewModelService, (accessor: any) => {
+      const repository = accessor.get(IShapeRepositoryService);
+      const eventBus = accessor.get(ServiceIds.IEventBusService);
+      return new CanvasViewModelService(repository, eventBus);
+    });
     
     // 注册 SDK 本身
     services.addSingleton(ServiceIds.ICanvasSDK, (accessor: any) => new CanvasSDK(accessor as any));
@@ -199,7 +218,8 @@ export class CanvasSDKFactory {
       customServices,
       plugins = [],
       debug = false,
-      preloadSingletons = true
+      preloadSingletons = true,
+      mvvm
     } = options;
     
     try {
@@ -236,6 +256,13 @@ export class CanvasSDKFactory {
         ...config
       });
       
+      // 配置MVVM扩展
+      if (mvvm?.enableMVVM !== false) { // 默认启用
+        const mvvmExtension = addMVVMExtension(sdk);
+        await mvvmExtension.enable(mvvm || {});
+        (sdk as any).mvvm = mvvmExtension;
+      }
+      
       // 激活插件
       if (plugins.length > 0) {
         this.activatePlugins(sdk, plugins);
@@ -245,6 +272,9 @@ export class CanvasSDKFactory {
       if (debug) {
         const stats = instantiationService.getStats();
         console.log('Canvas SDK created:', stats);
+        if (mvvm?.enableMVVM !== false) {
+          console.log('MVVM extension enabled');
+        }
       }
       
       return sdk;
@@ -312,6 +342,22 @@ export async function createDebugCanvasSDK(
   return createCanvasSDK(canvas, config, { 
     debug: true,
     preloadSingletons: true
+  });
+}
+
+/**
+ * 创建启用MVVM模式的 SDK
+ */
+export async function createMVVMCanvasSDK(
+  canvas: HTMLCanvasElement,
+  config: ICanvasSDKConfig = {},
+  mvvmConfig: IMVVMExtensionConfig = {}
+): Promise<CanvasSDK> {
+  return createCanvasSDK(canvas, config, { 
+    mvvm: { 
+      enableMVVM: true, 
+      ...mvvmConfig 
+    }
   });
 }
 

@@ -186,3 +186,5 @@ This project uses specific, well-established libraries:
 - ahooks for React utilities
 
 When adding new features, first check if the required functionality already exists in the current dependency set before suggesting new libraries.
+
+Don’t use any for typescript type. Find the most suitable type first. If you really can’t find it, use unknown.

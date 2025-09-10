@@ -329,8 +329,9 @@ export class AIProtocolManager extends EventEmitter<IAIExtensionEvents> {
     this.activeRequests.clear();
     this.messageHandlers.clear();
 
-    // 清理事件监听器
-    this.removeAllListeners();
+    // 清理事件监听器 
+    // 使用基类dispose方法或手动清理
+    (this as any).removeAllListeners?.() || this.dispose();
   }
 
   // ==================== 私有方法 ====================

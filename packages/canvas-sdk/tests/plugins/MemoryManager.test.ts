@@ -2,8 +2,8 @@
  * 内存管理器单元测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { MemoryManager } from '../../engine/plugins/performance/MemoryManager';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryManager } from '../../src/plugins/performance/MemoryManager';
 
 // Mock资源类型
 interface MockResource {

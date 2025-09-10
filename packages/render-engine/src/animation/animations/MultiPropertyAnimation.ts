@@ -1,0 +1,219 @@
+/**
+ * 多属性动画
+ * 同时对多个属性进行补间动画
+ */
+
+import { BaseAnimation } from '../core/BaseAnimation';
+import { MultiPropertyAnimationConfig } from '../types/AnimationTypes';
+
+interface PropertyState {
+  property: string;
+  fromValue: number;
+  toValue: number;
+  initialValue: number;
+}
+
+export class MultiPropertyAnimation extends BaseAnimation {
+  private target: Record<string, any>;
+  private properties: PropertyState[] = [];
+
+  constructor(config: MultiPropertyAnimationConfig) {
+    super(config);
+    
+    this.target = config.target;
+    
+    // 初始化属性状态
+    for (const [property, values] of Object.entries(config.properties)) {
+      const currentValue = this.getCurrentPropertyValue(property);
+      
+      this.properties.push({
+        property,
+        fromValue: values.from !== undefined ? values.from : currentValue,
+        toValue: values.to,
+        initialValue: currentValue
+      });
+    }
+  }
+
+  protected applyAnimation(progress: number): void {
+    if (!this.target || typeof this.target !== 'object') {
+      console.warn(`Animation target is not valid`);
+      return;
+    }
+
+    // 同时更新所有属性
+    for (const propState of this.properties) {
+      const currentValue = this.lerp(
+        propState.fromValue,
+        propState.toValue,
+        progress
+      );
+      
+      try {
+        this.setNestedProperty(this.target, propState.property, currentValue);
+      } catch (error) {
+        console.error(`Failed to set property ${propState.property}:`, error);
+      }
+    }
+  }
+
+  /**
+   * 线性插值
+   */
+  private lerp(from: number, to: number, t: number): number {
+    return from + (to - from) * t;
+  }
+
+  /**
+   * 获取当前属性值
+   */
+  private getCurrentPropertyValue(property: string): number {
+    try {
+      const value = this.getNestedProperty(this.target, property);
+      return typeof value === 'number' ? value : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * 获取嵌套属性值
+   */
+  private getNestedProperty(obj: any, path: string): any {
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : undefined;
+    }, obj);
+  }
+
+  /**
+   * 设置嵌套属性值
+   */
+  private setNestedProperty(obj: any, path: string, value: number): void {
+    const keys = path.split('.');
+    const lastKey = keys.pop()!;
+    
+    // 导航到最后一级对象
+    const target = keys.reduce((current, key) => {
+      if (!current[key] || typeof current[key] !== 'object') {
+        current[key] = {};
+      }
+      return current[key];
+    }, obj);
+
+    target[lastKey] = value;
+  }
+
+  /**
+   * 重置所有属性到初始值
+   */
+  reset(): this {
+    for (const propState of this.properties) {
+      this.setNestedProperty(
+        this.target,
+        propState.property,
+        propState.initialValue
+      );
+    }
+    return this;
+  }
+
+  /**
+   * 添加新的属性动画
+   */
+  addProperty(
+    property: string,
+    to: number,
+    from?: number
+  ): this {
+    const currentValue = this.getCurrentPropertyValue(property);
+    
+    this.properties.push({
+      property,
+      fromValue: from !== undefined ? from : currentValue,
+      toValue: to,
+      initialValue: currentValue
+    });
+    
+    return this;
+  }
+
+  /**
+   * 移除属性动画
+   */
+  removeProperty(property: string): this {
+    this.properties = this.properties.filter(
+      prop => prop.property !== property
+    );
+    return this;
+  }
+
+  /**
+   * 更新属性的目标值
+   */
+  updateProperty(
+    property: string,
+    to: number,
+    from?: number
+  ): this {
+    const propState = this.properties.find(p => p.property === property);
+    if (propState) {
+      propState.toValue = to;
+      if (from !== undefined) {
+        propState.fromValue = from;
+      }
+    } else {
+      this.addProperty(property, to, from);
+    }
+    return this;
+  }
+
+  /**
+   * 获取所有属性信息
+   */
+  getPropertiesInfo() {
+    return this.properties.map(propState => ({
+      property: propState.property,
+      from: propState.fromValue,
+      to: propState.toValue,
+      current: this.getCurrentPropertyValue(propState.property)
+    }));
+  }
+
+  /**
+   * 获取特定属性信息
+   */
+  getPropertyInfo(property: string) {
+    const propState = this.properties.find(p => p.property === property);
+    if (!propState) {
+      return null;
+    }
+
+    return {
+      property: propState.property,
+      from: propState.fromValue,
+      to: propState.toValue,
+      current: this.getCurrentPropertyValue(propState.property)
+    };
+  }
+
+  /**
+   * 创建反向动画
+   */
+  reverse(): MultiPropertyAnimation {
+    const reversedProperties: Record<string, { from?: number; to: number }> = {};
+    
+    for (const propState of this.properties) {
+      reversedProperties[propState.property] = {
+        from: propState.toValue,
+        to: propState.fromValue
+      };
+    }
+
+    return new MultiPropertyAnimation({
+      duration: this.duration,
+      target: this.target,
+      properties: reversedProperties,
+      easing: this._easingFunction
+    });
+  }
+}

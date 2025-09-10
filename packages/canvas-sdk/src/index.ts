@@ -31,10 +31,28 @@ export {
   type ICanvasSDKEvents
 } from './CanvasSDK';
 
+// MVVM服务支持（通过DI集成）
+// MVVM模式通过依赖注入服务提供，而不是独立的SDK
+
 // SDK 工厂
 export {
-  CanvasSDKFactory, canvasSDKFactory, createCanvasSDK, createCanvasSDKWithPlugins, createCanvasSDKWithServices, createDebugCanvasSDK, type CanvasSDKFactoryOptions, type ICanvasSDKPlugin
+  CanvasSDKFactory, 
+  canvasSDKFactory, 
+  createCanvasSDK, 
+  createCanvasSDKWithPlugins, 
+  createCanvasSDKWithServices, 
+  createDebugCanvasSDK,
+  createMVVMCanvasSDK,
+  type CanvasSDKFactoryOptions, 
+  type ICanvasSDKPlugin
 } from './CanvasSDKFactory';
+
+// MVVM扩展
+export {
+  CanvasSDKMVVMExtension,
+  addMVVMExtension,
+  type IMVVMExtensionConfig
+} from './CanvasSDKMVVMExtension';
 
 // =========================================
 // 服务实现（适用于扩展）
@@ -42,6 +60,13 @@ export {
 export { ConfigurationService } from './services/ConfigurationService';
 export { EventBusService } from './services/EventBusService';
 export { LogService } from './services/LogService';
+
+// MVVM 集成服务
+export {
+  createEnhancedServiceManager, EnhancedServiceManager, getServiceManager,
+  initializeGlobalServiceManager
+} from './services/EnhancedServiceManager';
+export { MVVMIntegrationService } from './services/MVVMIntegrationService';
 
 // 服务标识符（为了兼容性）
 export {
@@ -102,6 +127,13 @@ export * from './ai/index';
 export * from './utils/index';
 
 // =========================================
+// MVVM 架构支持
+// =========================================
+export * from './models';
+export * from './viewmodels';
+export * from './views';
+
+// =========================================
 // 便捷的默认导出
 // =========================================
 
@@ -114,12 +146,27 @@ import {
   createDebugCanvasSDK
 } from './CanvasSDKFactory';
 import { InstantiationService, ServiceCollection } from './di';
+// 移除独立MVVM SDK的引用
+import {
+  createEnhancedServiceManager,
+  initializeGlobalServiceManager
+} from './services/EnhancedServiceManager';
+import { createMVVMCanvasSDK } from './CanvasSDKFactory';
+import { addMVVMExtension } from './CanvasSDKMVVMExtension';
+
+// MVVM使用示例
+export { 
+  IntegratedMVVMExample, 
+  createIntegratedMVVMExample, 
+  runIntegratedMVVMExample 
+} from './examples/IntegratedMVVMExample';
 
 export default {
   // SDK 构造函数
   create: createCanvasSDK,
   createWithPlugins: createCanvasSDKWithPlugins,
   createDebug: createDebugCanvasSDK,
+  createMVVM: createMVVMCanvasSDK,
   
   // 工厂实例
   factory: canvasSDKFactory,
@@ -127,5 +174,12 @@ export default {
   // 核心类
   CanvasSDK,
   ServiceCollection,
-  InstantiationService
+  InstantiationService,
+  
+  // MVVM扩展
+  addMVVMExtension,
+  
+  // 服务管理器
+  createEnhancedServiceManager,
+  initializeGlobalServiceManager
 };

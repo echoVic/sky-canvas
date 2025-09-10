@@ -1,8 +1,13 @@
 /**
- * 事件系统实现
+ * 事件系统实现 - 现在基于统一的 Render Engine 事件系统
  */
-import { IPoint } from '@sky-canvas/render-engine';
-import { IMouseEvent, ITouchEvent, IGestureEvent } from './types';
+import {
+  InputEventFactory,
+  IPoint,
+  EventDispatcher as RenderEventDispatcher,
+  InputEventListener as RenderEventListener
+} from '@sky-canvas/render-engine';
+import { IGestureEvent, IMouseEvent, ITouchEvent } from './types';
 
 /**
  * 事件类型枚举
@@ -29,42 +34,38 @@ export enum EventType {
 }
 
 /**
- * 事件调度器
+ * 事件调度器 - 现在基于统一的 Render Engine 事件系统
  */
 export class EventDispatcher {
-  private listeners = new Map<string, Set<Function>>();
+  private _renderDispatcher: RenderEventDispatcher;
+
+  constructor() {
+    this._renderDispatcher = new RenderEventDispatcher();
+  }
 
   addEventListener(type: string, listener: Function): void {
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
-    }
-    this.listeners.get(type)!.add(listener);
+    this._renderDispatcher.addEventListener(type, listener as RenderEventListener);
   }
 
   removeEventListener(type: string, listener: Function): void {
-    const listeners = this.listeners.get(type);
-    if (listeners) {
-      listeners.delete(listener);
-      if (listeners.size === 0) {
-        this.listeners.delete(type);
-      }
-    }
+    this._renderDispatcher.removeEventListener(type, listener as RenderEventListener);
   }
 
   dispatchEvent(event: any): void {
-    const listeners = this.listeners.get(event.type);
-    if (listeners) {
-      listeners.forEach(listener => listener(event));
-    }
+    this._renderDispatcher.dispatchEvent(event);
   }
 
   removeAllListeners(): void {
-    this.listeners.clear();
+    this._renderDispatcher.removeAllListeners();
+  }
+
+  dispose(): void {
+    this._renderDispatcher.dispose();
   }
 }
 
 /**
- * 事件工厂
+ * 事件工厂 - 现在基于统一的 Render Engine 事件工厂
  */
 export class EventFactory {
   static createMouseEvent(
@@ -73,6 +74,14 @@ export class EventFactory {
     worldPosition: IPoint,
     screenPosition?: IPoint
   ): IMouseEvent {
+    // 使用 Render Engine 的事件工厂创建事件
+    const renderEvent = InputEventFactory.createMouseEvent(
+      type,
+      nativeEvent,
+      worldPosition
+    );
+    
+    // 转换为 Canvas SDK 的接口格式
     return {
       type,
       screenPosition: screenPosition || { x: nativeEvent.clientX, y: nativeEvent.clientY },
@@ -82,7 +91,7 @@ export class EventFactory {
       shiftKey: nativeEvent.shiftKey,
       altKey: nativeEvent.altKey,
       metaKey: nativeEvent.metaKey,
-      timestamp: Date.now()
+      timestamp: renderEvent.timestamp
     };
   }
 
@@ -91,10 +100,18 @@ export class EventFactory {
     nativeEvent: TouchEvent,
     worldPositions: IPoint[]
   ): ITouchEvent {
+    // 使用 Render Engine 的事件工厂创建事件
+    const renderEvent = InputEventFactory.createTouchEvent(
+      type,
+      nativeEvent,
+      worldPositions
+    );
+    
+    // 转换为 Canvas SDK 的接口格式
     return {
       type,
       touches: worldPositions,
-      timestamp: Date.now()
+      timestamp: renderEvent.timestamp
     };
   }
 
@@ -111,7 +128,7 @@ export class EventFactory {
       deltaTranslation,
       deltaScale,
       deltaRotation,
-      timestamp: Date.now()
+      timestamp: performance.now()
     };
   }
 }

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, test, expect, vi } from 'vitest';
 import { EventType } from '../src/events/EventSystem';
 import { InteractionManager, InteractionMode, PanTool, ZoomTool } from '../src/interaction/InteractionManager';
 import { SelectionMode } from '../src/interaction/SelectionManager';
-import { Transform, Vector2 } from '../src/math';
+import { Transform, Vector2 } from '@sky-canvas/render-engine';
 import { Scene } from '../src/scene/Scene';
 import { Viewport } from '../src/scene/Viewport';
 import { ShapeNode, wrapShape } from '../src/scene/ShapeNode';

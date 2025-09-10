@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PluginManager } from '../../engine/plugins/core/PluginManager';
-import { PluginStatus, PluginPermission, Plugin, PluginManifest, PluginContext } from '../../engine/plugins/types/PluginTypes';
+import { PluginManager } from '../../src/plugins/core/PluginManager';
+import { PluginStatus, PluginPermission, Plugin, PluginManifest, PluginContext } from '../../src/plugins/types/PluginTypes';
 
 // Mock插件实现
 class MockPlugin implements Plugin {

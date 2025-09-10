@@ -1,5 +1,5 @@
 import { IPoint as Point, IRect as Rect } from '@sky-canvas/render-engine';
-import { Transform, Vector2, MathUtils } from '../math';
+import { Transform, Vector2, MathUtils } from '@sky-canvas/render-engine';
 
 /**
  * 视口管理器
@@ -231,7 +231,7 @@ export class Viewport {
 
   applyToContext(ctx: CanvasRenderingContext2D): void {
     const transform = this.getTransform();
-    const matrix = transform.toMatrix();
+    const matrix = transform.matrix.toArray();
     const [a = 1, b = 0, c = 0, d = 1, e = 0, f = 0] = matrix;
     
     // 设置裁剪区域

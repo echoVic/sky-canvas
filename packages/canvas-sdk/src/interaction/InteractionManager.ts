@@ -8,7 +8,7 @@ import {
   MouseEvent
 } from '../events/EventSystem';
 import { GestureRecognizer } from '../events/GestureRecognizer';
-import { Vector2 } from '../math';
+import { Vector2 } from '@sky-canvas/render-engine';
 import { Scene } from '../scene/Scene';
 import { ISceneNode } from '../scene/SceneNode';
 import { Viewport } from '../scene/Viewport';

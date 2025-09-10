@@ -3,6 +3,9 @@ export { Matrix3x3, Matrix3 } from './Matrix3';
 export { Rectangle } from './Rectangle';
 export { Transform } from './Transform';
 export { Vector2 } from './Vector2';
+export * from './Geometry';
+export * from './SpatialPartitioning';
+export * from './CollisionDetection';
 
 // 导出兼容的工具类
 // 定义基础几何类型，以避免跨包依赖

@@ -1,6 +1,5 @@
-// import { Point } from '../../types'; // 未使用，暂时注释
-import { Vector2 } from '../math';
-import { EventType, GestureEvent, TouchEvent, EventFactory, EventDispatcher } from './EventSystem';
+import { Vector2 } from '@sky-canvas/render-engine';
+import { EventDispatcher, EventFactory, EventType, GestureEvent, TouchEvent } from './EventSystem';
 
 /**
  * 手势类型枚举

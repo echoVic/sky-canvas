@@ -1,8 +1,15 @@
-import { IPoint as Point } from '@sky-canvas/render-engine';
-import { Vector2 } from '../math';
+import {
+  IBaseEvent,
+  InputEventFactory,
+  IPoint as Point,
+  BaseEvent as RenderBaseEvent,
+  EventDispatcher as RenderEventDispatcher,
+  InputEventListener as RenderEventListener,
+  Vector2
+} from '@sky-canvas/render-engine';
 
 /**
- * 事件类型枚举
+ * 事件类型枚举 - 现在继承自 Render Engine
  */
 export enum EventType {
   // 鼠标事件
@@ -33,19 +40,26 @@ export enum EventType {
 }
 
 /**
- * 基础事件接口
+ * 基础事件接口 - 现在继承自 Render Engine
  */
-export interface BaseEvent {
+export interface BaseEvent extends IBaseEvent {
   type: EventType;
-  timestamp: number;
-  preventDefault(): void;
-  stopPropagation(): void;
-  isDefaultPrevented(): boolean;
-  isPropagationStopped(): boolean;
 }
 
 /**
- * 指针事件接口
+ * Canvas SDK 基础事件实现
+ */
+export class CanvasBaseEvent extends RenderBaseEvent implements BaseEvent {
+  public type: EventType;
+
+  constructor(type: EventType) {
+    super(type);
+    this.type = type;
+  }
+}
+
+/**
+ * 指针事件接口 - 现在继承自 Render Engine
  */
 export interface PointerEvent extends BaseEvent {
   pointerId: number;
@@ -60,7 +74,7 @@ export interface PointerEvent extends BaseEvent {
 }
 
 /**
- * 鼠标事件接口
+ * 鼠标事件接口 - 现在继承自 Render Engine
  */
 export interface MouseEvent extends PointerEvent {
   deltaX?: number;
@@ -69,7 +83,7 @@ export interface MouseEvent extends PointerEvent {
 }
 
 /**
- * 触摸点接口
+ * 触摸点接口 - 现在继承自 Render Engine
  */
 export interface Touch {
   identifier: number;
@@ -81,7 +95,7 @@ export interface Touch {
 }
 
 /**
- * 触摸事件接口
+ * 触摸事件接口 - 现在继承自 Render Engine
  */
 export interface TouchEvent extends BaseEvent {
   touches: Touch[];
@@ -90,7 +104,7 @@ export interface TouchEvent extends BaseEvent {
 }
 
 /**
- * 手势事件接口
+ * 手势事件接口 - 现在继承自 Render Engine
  */
 export interface GestureEvent extends BaseEvent {
   center: Point;
@@ -108,137 +122,78 @@ export interface GestureEvent extends BaseEvent {
 export type EventListener<T extends BaseEvent = BaseEvent> = (event: T) => void;
 
 /**
- * 事件实现基类
+ * 事件实现基类 - 现在继承自 Render Engine
  */
-export class EventImpl implements BaseEvent {
-  public type: EventType;
-  public timestamp: number;
-  private _defaultPrevented: boolean = false;
-  private _propagationStopped: boolean = false;
-
+export class EventImpl extends CanvasBaseEvent {
   constructor(type: EventType) {
-    this.type = type;
-    this.timestamp = performance.now();
-  }
-
-  preventDefault(): void {
-    this._defaultPrevented = true;
-  }
-
-  stopPropagation(): void {
-    this._propagationStopped = true;
-  }
-
-  isDefaultPrevented(): boolean {
-    return this._defaultPrevented;
-  }
-
-  isPropagationStopped(): boolean {
-    return this._propagationStopped;
+    super(type);
   }
 }
 
 /**
- * 事件分发器
+ * 事件分发器 - 现在基于 Render Engine 实现
  */
 export class EventDispatcher {
-  private _listeners: Map<EventType, Set<EventListener>> = new Map();
-  private _onceListeners: Map<EventType, Set<EventListener>> = new Map();
+  private _renderDispatcher: RenderEventDispatcher;
+
+  constructor() {
+    this._renderDispatcher = new RenderEventDispatcher();
+  }
 
   /**
-   * 添加事件监听器
+   * 添加事件监听器（兼容旧接口）
    */
   addEventListener<T extends BaseEvent>(
     type: EventType, 
     listener: EventListener<T>,
     once: boolean = false
   ): void {
-    const listenersMap = once ? this._onceListeners : this._listeners;
-    
-    if (!listenersMap.has(type)) {
-      listenersMap.set(type, new Set());
-    }
-    
-    listenersMap.get(type)!.add(listener as EventListener);
+    this._renderDispatcher.addEventListener(type, listener as RenderEventListener, once);
   }
 
   /**
-   * 移除事件监听器
+   * 移除事件监听器（兼容旧接口）
    */
   removeEventListener<T extends BaseEvent>(
     type: EventType, 
     listener: EventListener<T>
   ): void {
-    const listeners = this._listeners.get(type);
-    if (listeners) {
-      listeners.delete(listener as EventListener);
-    }
-    
-    const onceListeners = this._onceListeners.get(type);
-    if (onceListeners) {
-      onceListeners.delete(listener as EventListener);
-    }
+    this._renderDispatcher.removeEventListener(type, listener as RenderEventListener);
   }
 
   /**
-   * 分发事件
+   * 分发事件（兼容旧接口）
    */
   dispatchEvent(event: BaseEvent): boolean {
-    const listeners = this._listeners.get(event.type);
-    const onceListeners = this._onceListeners.get(event.type);
-    
-    // 执行普通监听器
-    if (listeners) {
-      for (const listener of listeners) {
-        if (event.isPropagationStopped()) break;
-        listener(event);
-      }
-    }
-    
-    // 执行一次性监听器
-    if (onceListeners) {
-      for (const listener of onceListeners) {
-        if (event.isPropagationStopped()) break;
-        listener(event);
-      }
-      // 清空一次性监听器
-      onceListeners.clear();
-    }
-    
-    return !event.isDefaultPrevented();
+    return this._renderDispatcher.dispatchEvent(event);
   }
 
   /**
-   * 移除所有监听器
+   * 移除所有监听器（兼容旧接口）
    */
   removeAllListeners(type?: EventType): void {
-    if (type) {
-      this._listeners.delete(type);
-      this._onceListeners.delete(type);
-    } else {
-      this._listeners.clear();
-      this._onceListeners.clear();
-    }
+    this._renderDispatcher.removeAllListeners(type);
   }
 
   /**
-   * 检查是否有监听器
+   * 检查是否有监听器（兼容旧接口）
    */
   hasListeners(type: EventType): boolean {
-    const listeners = this._listeners.get(type);
-    const onceListeners = this._onceListeners.get(type);
-    
-    return (listeners?.size ?? 0) > 0 || (onceListeners?.size ?? 0) > 0;
+    return this._renderDispatcher.hasListeners(type);
   }
 
   /**
-   * 获取监听器数量
+   * 获取监听器数量（兼容旧接口）
    */
   getListenerCount(type: EventType): number {
-    const listeners = this._listeners.get(type);
-    const onceListeners = this._onceListeners.get(type);
-    
-    return (listeners?.size || 0) + (onceListeners?.size || 0);
+    return this._renderDispatcher.getListenerCount(type);
+  }
+
+  /**
+   * 销毁分发器
+   */
+  dispose(): void {
+    this._renderDispatcher.dispose();
   }
 }
 
@@ -353,7 +308,7 @@ export class InputState {
 }
 
 /**
- * 事件工厂
+ * 事件工厂 - 现在委托给 Render Engine 的工厂
  */
 export class EventFactory {
   static createMouseEvent(
@@ -361,27 +316,14 @@ export class EventFactory {
     nativeEvent: globalThis.MouseEvent,
     worldPosition: Point
   ): MouseEvent {
-    const baseEvent = new EventImpl(type);
-    const event = baseEvent as unknown as MouseEvent;
-    
-    event.pointerId = 1; // 鼠标总是ID为1
-    event.screenPosition = { x: nativeEvent.clientX, y: nativeEvent.clientY };
-    event.worldPosition = worldPosition;
-    event.button = nativeEvent.button;
-    event.buttons = nativeEvent.buttons;
-    event.ctrlKey = nativeEvent.ctrlKey;
-    event.shiftKey = nativeEvent.shiftKey;
-    event.altKey = nativeEvent.altKey;
-    event.metaKey = nativeEvent.metaKey;
-    
-    if (type === EventType.MOUSE_WHEEL && 'deltaX' in nativeEvent) {
-      const wheelEvent = nativeEvent as WheelEvent;
-      event.deltaX = wheelEvent.deltaX;
-      event.deltaY = wheelEvent.deltaY;
-      event.deltaZ = wheelEvent.deltaZ;
-    }
-    
-    return event;
+    const renderEvent = InputEventFactory.createMouseEvent(
+      type,
+      nativeEvent,
+      worldPosition
+    );
+    // 添加 Canvas SDK 特定的类型信息
+    (renderEvent as any).type = type;
+    return renderEvent as MouseEvent;
   }
 
   static createTouchEvent(
@@ -389,31 +331,14 @@ export class EventFactory {
     nativeEvent: globalThis.TouchEvent,
     worldPositions: Point[]
   ): TouchEvent {
-    const baseEvent = new EventImpl(type);
-    const event = baseEvent as unknown as TouchEvent;
-    
-    const createTouch = (nativeTouch: globalThis.Touch, worldPos: Point): Touch => ({
-      identifier: nativeTouch.identifier,
-      screenPosition: { x: nativeTouch.clientX, y: nativeTouch.clientY },
-      worldPosition: worldPos,
-      force: nativeTouch.force,
-      radiusX: nativeTouch.radiusX,
-      radiusY: nativeTouch.radiusY
-    });
-    
-    event.touches = Array.from(nativeEvent.touches).map((touch, i) => 
-      createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
+    const renderEvent = InputEventFactory.createTouchEvent(
+      type,
+      nativeEvent,
+      worldPositions
     );
-    
-    event.changedTouches = Array.from(nativeEvent.changedTouches).map((touch, i) => 
-      createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
-    );
-    
-    event.targetTouches = Array.from(nativeEvent.targetTouches).map((touch, i) => 
-      createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
-    );
-    
-    return event;
+    // 添加 Canvas SDK 特定的类型信息
+    (renderEvent as any).type = type;
+    return renderEvent as TouchEvent;
   }
 
   static createGestureEvent(
@@ -426,17 +351,18 @@ export class EventFactory {
     deltaRotation: number = 0,
     deltaTranslation: Vector2 = new Vector2(0, 0)
   ): GestureEvent {
-    const baseEvent = new EventImpl(type);
-    const event = baseEvent as unknown as GestureEvent;
-    
-    event.center = center;
-    event.scale = scale;
-    event.rotation = rotation;
-    event.velocity = velocity;
-    event.deltaScale = deltaScale;
-    event.deltaRotation = deltaRotation;
-    event.deltaTranslation = deltaTranslation;
-    
-    return event;
+    const renderEvent = InputEventFactory.createGestureEvent(
+      type,
+      center,
+      scale,
+      rotation,
+      velocity,
+      deltaScale,
+      deltaRotation,
+      deltaTranslation
+    );
+    // 添加 Canvas SDK 特定的类型信息
+    (renderEvent as any).type = type;
+    return renderEvent as GestureEvent;
   }
 }

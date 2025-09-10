@@ -529,3 +529,8 @@ export class ImportExportService implements IImportExportService {
     return null; // TODO: 实现图像导入
   }
 }
+
+// ============== MVVM 集成 ==============
+
+// 导出 MVVM 集成服务
+export { MVVMIntegrationService } from './MVVMIntegrationService';

@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PluginContextImpl } from '../../engine/plugins/core/PluginContext';
-import { PluginPermission } from '../../engine/plugins/types/PluginTypes';
+import { PluginContextImpl } from '../../src/plugins/core/PluginContext';
+import { PluginPermission } from '../../src/plugins/types/PluginTypes';
 
 // Mock依赖
 const mockCanvas = {

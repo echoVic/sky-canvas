@@ -24,7 +24,10 @@
       "WebSearch",
       "Bash(git add:*)",
       "WebFetch(domain:juejin.cn)",
-      "WebFetch(domain:blog.csdn.net)"
+      "WebFetch(domain:blog.csdn.net)",
+      "Bash(echo $?)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk build --verbose)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
