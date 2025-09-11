@@ -4,14 +4,14 @@
  */
 
 import {
-  FilterType,
-  FilterParameters,
-  FilterResult,
-  FilterContext,
-  IFilter
+    FilterContext,
+    FilterParameters,
+    FilterResult,
+    FilterType,
+    IFilter
 } from '../types/FilterTypes';
 
-export abstract class BaseFilter implements IFilter {
+export abstract class BaseFilter<T extends FilterParameters = FilterParameters> implements IFilter {
   abstract readonly type: FilterType;
   abstract readonly name: string;
   abstract readonly description: string;
@@ -44,7 +44,7 @@ export abstract class BaseFilter implements IFilter {
       }
 
       // 执行具体的滤镜处理
-      const processedImageData = await this.processFilter(context, parameters);
+      const processedImageData = await this.processFilter(context, parameters as T);
       
       const endTime = performance.now();
       const processingTime = endTime - startTime;
@@ -76,7 +76,7 @@ export abstract class BaseFilter implements IFilter {
    */
   protected abstract processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: T
   ): Promise<ImageData>;
 
   /**
@@ -113,18 +113,18 @@ export abstract class BaseFilter implements IFilter {
       }
     }
 
-    return this.validateSpecificParameters(parameters);
+    return this.validateSpecificParameters(parameters as T);
   }
 
   /**
    * 验证特定滤镜的参数（子类实现）
    */
-  protected abstract validateSpecificParameters(parameters: FilterParameters): boolean;
+  protected abstract validateSpecificParameters(parameters: T): boolean;
 
   /**
    * 获取默认参数（子类实现）
    */
-  abstract getDefaultParameters(): FilterParameters;
+  abstract getDefaultParameters(): T;
 
   /**
    * 预估处理时间

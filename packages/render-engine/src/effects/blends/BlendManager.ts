@@ -2,19 +2,18 @@
  * 混合管理器
  */
 
-import {
-  IBlendManager,
-  IBlendOperation,
-  BlendLayer,
-  BlendColorWithMode,
-  BlendColor,
-  BlendResult,
-  BlendStats,
-  BlendEvents,
-  BlendPerformanceConfig,
-  BlendMode
-} from '../types/BlendTypes';
 import { EventEmitter } from '../../animation/core/EventEmitter';
+import {
+    BlendColor,
+    BlendColorWithMode,
+    BlendEvents,
+    BlendLayer,
+    BlendMode,
+    BlendResult,
+    BlendStats,
+    IBlendManager,
+    IBlendOperation
+} from '../types/BlendTypes';
 
 export class BlendManager extends EventEmitter<BlendEvents> implements IBlendManager {
   private operations: Map<string, IBlendOperation> = new Map();
@@ -127,7 +126,7 @@ export class BlendManager extends EventEmitter<BlendEvents> implements IBlendMan
   }
 
   clear(): void {
-    for (const operation of this.operations.values()) {
+    for (const operation of Array.from(this.operations.values())) {
       operation.dispose();
     }
     this.operations.clear();
@@ -205,7 +204,7 @@ export class BlendManager extends EventEmitter<BlendEvents> implements IBlendMan
   }
 
   private getBlendOperationByMode(mode: BlendMode): IBlendOperation | undefined {
-    for (const operation of this.operations.values()) {
+    for (const operation of Array.from(this.operations.values())) {
       if (operation.mode === mode) {
         return operation;
       }

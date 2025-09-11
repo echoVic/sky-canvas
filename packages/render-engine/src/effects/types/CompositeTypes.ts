@@ -120,12 +120,12 @@ export interface CompositeResult {
 
 // 复合事件类型
 export type CompositeEvents = {
-  compositeOperationAdded: ICompositeOperation;
-  compositeOperationRemoved: string;
-  compositeOperationUpdated: ICompositeOperation;
-  compositeStarted: CompositeLayer[];
-  compositeCompleted: CompositeResult;
-  compositeError: Error;
+  compositeOperationAdded: (operation: ICompositeOperation) => void;
+  compositeOperationRemoved: (operationId: string) => void;
+  compositeOperationUpdated: (operation: ICompositeOperation) => void;
+  compositeStarted: (layers: CompositeLayer[]) => void;
+  compositeCompleted: (result: CompositeResult) => void;
+  compositeError: (error: Error) => void;
 };
 
 // 复合统计信息

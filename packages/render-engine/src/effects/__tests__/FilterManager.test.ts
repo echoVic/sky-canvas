@@ -4,7 +4,14 @@
 
 import './setup';
 import { FilterManager } from '../FilterManager';
-import { FilterType } from '../types/FilterTypes';
+import { 
+  FilterType, 
+  BrightnessParameters, 
+  ContrastParameters,
+  SaturationParameters,
+  GaussianBlurParameters,
+  FilterParameters 
+} from '../types/FilterTypes';
 
 describe('FilterManager', () => {
   let filterManager: FilterManager;
@@ -44,9 +51,9 @@ describe('FilterManager', () => {
       imageData.data[i + 3] = 255;
     }
 
-    const params = {
+    const params: BrightnessParameters = {
       type: FilterType.BRIGHTNESS,
-      brightness: 20,
+      brightness: 50,
       opacity: 1,
       enabled: true
     };
@@ -65,7 +72,7 @@ describe('FilterManager', () => {
       type: 'nonexistent-filter' as FilterType,
       enabled: true,
       opacity: 1
-    };
+    } as FilterParameters;
 
     const result = await filterManager.applyFilter(imageData, params);
     
@@ -76,7 +83,7 @@ describe('FilterManager', () => {
   it('当滤镜禁用时应该跳过处理', async () => {
     const imageData = new ImageData(10, 10);
     
-    const params = {
+    const params: BrightnessParameters = {
       type: FilterType.BRIGHTNESS,
       brightness: 50,
       opacity: 1,
@@ -108,14 +115,14 @@ describe('FilterManager', () => {
           opacity: 1,
           enabled: true,
           priority: 1
-        },
+        } as BrightnessParameters,
         {
           type: FilterType.CONTRAST,
           contrast: 15,
           opacity: 1,
           enabled: true,
           priority: 2
-        }
+        } as ContrastParameters
       ]
     };
 
@@ -137,21 +144,21 @@ describe('FilterManager', () => {
           opacity: 1,
           enabled: true,
           priority: 1
-        },
+        } as BrightnessParameters,
         {
           type: FilterType.CONTRAST,
           contrast: 10,
           opacity: 1,
           enabled: true,
           priority: 3 // 更高优先级，应该先执行
-        },
+        } as ContrastParameters,
         {
           type: FilterType.SATURATION,
           saturation: 10,
           opacity: 1,
           enabled: true,
           priority: 2
-        }
+        } as SaturationParameters
       ]
     };
 
@@ -169,7 +176,7 @@ describe('FilterManager', () => {
   it('应该能够创建预览', async () => {
     const imageData = new ImageData(100, 100);
     
-    const params = {
+    const params: GaussianBlurParameters = {
       type: FilterType.GAUSSIAN_BLUR,
       radius: 5,
       quality: 'medium' as const,
@@ -188,20 +195,20 @@ describe('FilterManager', () => {
   it('应该能够估算处理时间', () => {
     const imageData = new ImageData(100, 100);
     
-    const params = [
+    const params: FilterParameters[] = [
       {
         type: FilterType.BRIGHTNESS,
         brightness: 20,
         opacity: 1,
         enabled: true
-      },
+      } as BrightnessParameters,
       {
         type: FilterType.GAUSSIAN_BLUR,
         radius: 10,
         quality: 'high' as const,
         opacity: 1,
         enabled: true
-      }
+      } as GaussianBlurParameters
     ];
 
     const estimatedTime = filterManager.estimateProcessingTime(imageData, params);
@@ -224,7 +231,7 @@ describe('FilterManager', () => {
   it('应该正确处理事件', (done) => {
     const imageData = new ImageData(5, 5);
     
-    const params = {
+    const params: BrightnessParameters = {
       type: FilterType.BRIGHTNESS,
       brightness: 10,
       opacity: 1,

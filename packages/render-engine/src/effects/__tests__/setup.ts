@@ -9,6 +9,7 @@ global.ImageData = class ImageData {
   width: number;
   height: number;
   data: Uint8ClampedArray;
+  colorSpace: PredefinedColorSpace;
 
   constructor(widthOrData: number | Uint8ClampedArray, height?: number) {
     if (typeof widthOrData === 'number') {
@@ -20,6 +21,7 @@ global.ImageData = class ImageData {
       this.width = Math.sqrt(widthOrData.length / 4);
       this.height = this.width;
     }
+    this.colorSpace = 'srgb';
   }
 };
 

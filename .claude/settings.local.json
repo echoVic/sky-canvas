@@ -30,7 +30,8 @@
       "Bash(find:*)",
       "Bash(pnpm add:*)",
       "Bash(tree:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pnpm list:*)"
     ],
     "deny": [],
     "ask": []

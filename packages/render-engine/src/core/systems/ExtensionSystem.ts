@@ -59,7 +59,7 @@ export interface ExtensionConstructor<T extends IExtension = IExtension> {
 /**
  * 扩展注册表
  */
-class ExtensionRegistry {
+export class ExtensionRegistry {
   private extensions = new Map<ExtensionType, Map<string, ExtensionConstructor>>();
   private initialized = new Set<string>();
   
@@ -162,6 +162,20 @@ class ExtensionRegistry {
         typeMap.delete(name);
       }
     }
+  }
+
+  /**
+   * 释放资源
+   */
+  dispose(): void {
+    // 销毁所有扩展
+    for (const [type, typeMap] of this.extensions) {
+      for (const [name, extension] of typeMap) {
+        this.destroyExtension(extension);
+      }
+    }
+    this.extensions.clear();
+    this.initialized.clear();
   }
   
   /**

@@ -3,15 +3,14 @@
  * 支持可配置的模糊半径和质量设置
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  GaussianBlurParameters
+    FilterContext,
+    FilterType,
+    GaussianBlurParameters
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class GaussianBlurFilter extends BaseFilter {
+export class GaussianBlurFilter extends BaseFilter<GaussianBlurParameters> {
   readonly type = FilterType.GAUSSIAN_BLUR;
   readonly name = 'Gaussian Blur';
   readonly description = 'Applies Gaussian blur effect with configurable radius and quality';
@@ -23,17 +22,16 @@ export class GaussianBlurFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: GaussianBlurParameters
   ): Promise<ImageData> {
-    const params = parameters as GaussianBlurParameters;
     const { sourceImageData } = context;
     
-    if (params.radius <= 0) {
+    if (parameters.radius <= 0) {
       return this.cloneImageData(sourceImageData);
     }
 
     // 根据质量设置调整实际半径
-    const actualRadius = this.adjustRadiusForQuality(params.radius, params.quality);
+    const actualRadius = this.adjustRadiusForQuality(parameters.radius, parameters.quality);
     
     // 生成高斯核
     const kernel = this.generateGaussianKernel(actualRadius);
@@ -43,8 +41,8 @@ export class GaussianBlurFilter extends BaseFilter {
     const verticalBlurred = this.applyVerticalBlur(horizontalBlurred, kernel);
     
     // 应用不透明度
-    if (params.opacity !== undefined && params.opacity < 1) {
-      return this.applyOpacity(verticalBlurred, params.opacity);
+    if (parameters.opacity !== undefined && parameters.opacity < 1) {
+      return this.applyOpacity(verticalBlurred, parameters.opacity);
     }
     
     return verticalBlurred;
@@ -184,14 +182,13 @@ export class GaussianBlurFilter extends BaseFilter {
   /**
    * 验证高斯模糊特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as GaussianBlurParameters;
+  protected validateSpecificParameters(parameters: GaussianBlurParameters): boolean {
     
-    if (typeof params.radius !== 'number' || params.radius < 0 || params.radius > 100) {
+    if (typeof parameters.radius !== 'number' || parameters.radius < 0 || parameters.radius > 100) {
       return false;
     }
     
-    if (params.quality && !['low', 'medium', 'high'].includes(params.quality)) {
+    if (parameters.quality && !['low', 'medium', 'high'].includes(parameters.quality)) {
       return false;
     }
     
@@ -214,11 +211,10 @@ export class GaussianBlurFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
-    const params = parameters as GaussianBlurParameters;
-    const quality = params.quality || 'medium';
+  protected getComplexityFactor(parameters: GaussianBlurParameters): number {
+    const quality = parameters.quality || 'medium';
     
-    let factor = Math.max(1, params.radius / 5); // 基于半径的因子
+    let factor = Math.max(1, parameters.radius / 5); // 基于半径的因子
     
     switch (quality) {
       case 'low':

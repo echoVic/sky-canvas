@@ -58,7 +58,7 @@ export class PhysicsSync {
       emit: (event: string, data: any) => {
         this.handlePhysicsEvent(event, data);
       },
-      on: () => {},
+      on: () => ({ dispose: () => {} }),
       off: () => {},
       dispose: () => {}
     });

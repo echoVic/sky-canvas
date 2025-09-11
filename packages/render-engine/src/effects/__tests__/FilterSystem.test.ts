@@ -2,17 +2,22 @@
  * 滤镜系统测试
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  FilterManager,
-  GaussianBlurFilter,
-  BrightnessFilter,
-  FilterType,
-  FilterContext,
-  applyGaussianBlur,
   applyBrightness,
-  FilterPresets
+  applyGaussianBlur,
+  BrightnessFilter,
+  FilterContext,
+  FilterManager,
+  FilterPresets,
+  FilterType,
+  GaussianBlurFilter
 } from '../filters';
+import {
+  BrightnessParameters,
+  FilterParameters,
+  GaussianBlurParameters
+} from '../types/FilterTypes';
 
 // Mock DOM APIs
 Object.defineProperty(global, 'document', {
@@ -89,7 +94,7 @@ describe('滤镜系统', () => {
     });
 
     it('应该能够应用单个滤镜', async () => {
-      const parameters = {
+      const parameters: BrightnessParameters = {
         type: FilterType.BRIGHTNESS,
         brightness: 50,
         enabled: true,
@@ -111,14 +116,14 @@ describe('滤镜系统', () => {
             brightness: 20,
             enabled: true,
             opacity: 1
-          },
+          } as BrightnessParameters,
           {
             type: FilterType.GAUSSIAN_BLUR,
             radius: 3,
             quality: 'medium' as const,
             enabled: true,
             opacity: 1
-          }
+          } as GaussianBlurParameters
         ]
       };
 
@@ -158,20 +163,20 @@ describe('滤镜系统', () => {
     });
 
     it('应该预估处理时间', () => {
-      const parameters = [
+      const parameters: FilterParameters[] = [
         {
           type: FilterType.BRIGHTNESS,
           brightness: 20,
           enabled: true,
           opacity: 1
-        },
+        } as BrightnessParameters,
         {
           type: FilterType.GAUSSIAN_BLUR,
           radius: 5,
           quality: 'medium' as const,
           enabled: true,
           opacity: 1
-        }
+        } as GaussianBlurParameters
       ];
 
       const estimatedTime = filterManager.estimateProcessingTime(100, 100, parameters);
@@ -195,7 +200,7 @@ describe('滤镜系统', () => {
     });
 
     it('应该验证参数', () => {
-      const validParams = {
+      const validParams: GaussianBlurParameters = {
         type: FilterType.GAUSSIAN_BLUR,
         radius: 5,
         quality: 'medium' as const,
@@ -203,7 +208,7 @@ describe('滤镜系统', () => {
         opacity: 1
       };
 
-      const invalidParams = {
+      const invalidParams: GaussianBlurParameters = {
         type: FilterType.GAUSSIAN_BLUR,
         radius: -1, // 无效半径
         quality: 'medium' as const,
@@ -216,7 +221,7 @@ describe('滤镜系统', () => {
     });
 
     it('应该应用高斯模糊', async () => {
-      const parameters = {
+      const parameters: GaussianBlurParameters = {
         type: FilterType.GAUSSIAN_BLUR,
         radius: 3,
         quality: 'medium' as const,

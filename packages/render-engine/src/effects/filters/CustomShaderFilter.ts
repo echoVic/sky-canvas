@@ -3,17 +3,16 @@
  * 支持用户编写GLSL着色器进行自定义图像处理
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  CustomShaderParameters
+    CustomShaderParameters,
+    FilterContext,
+    FilterType
 } from '../types/FilterTypes';
 import { WebGLRenderer } from '../webgl/WebGLRenderer';
 import { WebGLShaderManager } from '../webgl/WebGLShaderManager';
+import { BaseFilter } from './BaseFilter';
 
-export class CustomShaderFilter extends BaseFilter {
+export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
   readonly type = FilterType.CUSTOM_SHADER;
   readonly name = 'Custom Shader';
   readonly description = 'Apply custom GLSL shaders for advanced image effects';
@@ -58,10 +57,9 @@ export class CustomShaderFilter extends BaseFilter {
    * 处理自定义着色器滤镜
    */
   protected async processFilter(
-    context: FilterContext,
-    parameters: FilterParameters
+    context: FilterContext, 
+    parameters: CustomShaderParameters
   ): Promise<ImageData> {
-    const params = parameters as CustomShaderParameters;
     const { sourceImageData } = context;
 
     // 检查WebGL支持
@@ -73,10 +71,10 @@ export class CustomShaderFilter extends BaseFilter {
     
     try {
       // 创建唯一的程序ID
-      const programId = this.generateProgramId(params);
+      const programId = this.generateProgramId(parameters);
       
       // 编译着色器程序
-      const success = this.compileShaderProgram(renderer, programId, params);
+      const success = this.compileShaderProgram(renderer, programId, parameters);
       if (!success) {
         throw new Error('Failed to compile shader program');
       }
@@ -92,7 +90,7 @@ export class CustomShaderFilter extends BaseFilter {
         const result = renderer.renderWithShader(
           programId,
           inputTexture,
-          params.uniforms || {},
+          parameters.uniforms || {},
           sourceImageData.width,
           sourceImageData.height
         );
@@ -117,11 +115,11 @@ export class CustomShaderFilter extends BaseFilter {
   private compileShaderProgram(
     renderer: WebGLRenderer,
     programId: string,
-    params: CustomShaderParameters
+    parameters: CustomShaderParameters
   ): boolean {
     // 验证着色器代码
-    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', params.vertexShader);
-    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', params.fragmentShader);
+    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader);
+    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', parameters.fragmentShader);
 
     if (vertexErrors.length > 0) {
       console.error('Vertex shader validation errors:', vertexErrors);
@@ -136,17 +134,17 @@ export class CustomShaderFilter extends BaseFilter {
     // 创建着色器程序
     return renderer.createShaderProgram(
       programId,
-      params.vertexShader,
-      params.fragmentShader
+      parameters.vertexShader,
+      parameters.fragmentShader
     );
   }
 
   /**
    * 生成程序ID
    */
-  private generateProgramId(params: CustomShaderParameters): string {
+  private generateProgramId(parameters: CustomShaderParameters): string {
     // 使用着色器代码的哈希作为ID
-    const content = params.vertexShader + params.fragmentShader;
+    const content = parameters.vertexShader + parameters.fragmentShader;
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
@@ -172,20 +170,19 @@ export class CustomShaderFilter extends BaseFilter {
   /**
    * 验证自定义着色器参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as CustomShaderParameters;
+  protected validateSpecificParameters(parameters: CustomShaderParameters): boolean {
 
-    if (typeof params.vertexShader !== 'string' || !params.vertexShader.trim()) {
+    if (typeof parameters.vertexShader !== 'string' || !parameters.vertexShader.trim()) {
       return false;
     }
 
-    if (typeof params.fragmentShader !== 'string' || !params.fragmentShader.trim()) {
+    if (typeof parameters.fragmentShader !== 'string' || !parameters.fragmentShader.trim()) {
       return false;
     }
 
     // 验证着色器代码基本语法
-    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', params.vertexShader);
-    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', params.fragmentShader);
+    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader);
+    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', parameters.fragmentShader);
 
     return vertexErrors.length === 0 && fragmentErrors.length === 0;
   }
@@ -227,7 +224,7 @@ export class CustomShaderFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(parameters: CustomShaderParameters): number {
     // 自定义着色器复杂度难以预测，使用中等值
     return 2.0;
   }

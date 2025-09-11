@@ -3,15 +3,14 @@
  * 支持外发光和内发光效果
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  GlowParameters
+    FilterContext,
+    FilterType,
+    GlowParameters
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class GlowFilter extends BaseFilter {
+export class GlowFilter extends BaseFilter<GlowParameters> {
   readonly type = FilterType.GLOW;
   readonly name = 'Glow';
   readonly description = 'Adds a glow effect around the image';
@@ -23,22 +22,21 @@ export class GlowFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext,
-    parameters: FilterParameters
+    parameters: GlowParameters
   ): Promise<ImageData> {
-    const params = parameters as GlowParameters;
     const { sourceImageData } = context;
     
     // 如果模糊半径和强度都为0，返回原图
-    if (params.blur === 0 && params.strength === 0) {
+    if (parameters.blur === 0 && parameters.strength === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
     // 解析发光颜色
-    const glowColor = this.parseColor(params.color);
-    const quality = params.quality || 'medium';
+    const glowColor = this.parseColor(parameters.color);
+    const quality = parameters.quality || 'medium';
     
     // 计算扩展的画布尺寸以容纳发光效果
-    const blurRadius = Math.max(0, params.blur);
+    const blurRadius = Math.max(0, parameters.blur);
     const padding = Math.ceil(blurRadius * 2);
     
     const extendedWidth = sourceImageData.width + padding * 2;
@@ -56,7 +54,7 @@ export class GlowFilter extends BaseFilter {
       originalOffsetX,
       originalOffsetY,
       glowColor,
-      params.strength
+      parameters.strength
     );
     
     // 第二步：应用多次模糊来增强发光效果
@@ -74,8 +72,8 @@ export class GlowFilter extends BaseFilter {
     );
     
     // 第四步：增强发光强度
-    if (params.strength > 1) {
-      this.enhanceGlow(blurredGlow, params.strength, originalOffsetX, originalOffsetY, sourceImageData);
+    if (parameters.strength > 1) {
+      this.enhanceGlow(blurredGlow, parameters.strength, originalOffsetX, originalOffsetY, sourceImageData);
     }
     
     // 裁剪回原始尺寸（保持发光效果）
@@ -388,20 +386,19 @@ export class GlowFilter extends BaseFilter {
   /**
    * 验证发光特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as GlowParameters;
+  protected validateSpecificParameters(parameters: GlowParameters): boolean {
     
-    if (typeof params.blur !== 'number' ||
-        typeof params.strength !== 'number' ||
-        typeof params.color !== 'string') {
+    if (typeof parameters.blur !== 'number' ||
+        typeof parameters.strength !== 'number' ||
+        typeof parameters.color !== 'string') {
       return false;
     }
     
-    if (params.blur < 0 || params.strength < 0) {
+    if (parameters.blur < 0 || parameters.strength < 0) {
       return false;
     }
     
-    if (params.quality && !['low', 'medium', 'high'].includes(params.quality)) {
+    if (parameters.quality && !['low', 'medium', 'high'].includes(parameters.quality)) {
       return false;
     }
     
@@ -426,9 +423,8 @@ export class GlowFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
-    const params = parameters as GlowParameters;
-    return 3.0 + (params.blur / 5) + (params.strength / 2); // 发光效果计算复杂
+  protected getComplexityFactor(parameters: GlowParameters): number {
+    return 3.0 + (parameters.blur / 5) + (parameters.strength / 2); // 发光效果计算复杂
   }
 
   /**

@@ -210,7 +210,7 @@ export interface PostProcessLayer {
   effects: IPostProcessEffect[];
   enabled: boolean;
   blend?: {
-    mode: string;
+    mode: GlobalCompositeOperation;
     opacity: number;
   };
 }
@@ -225,12 +225,12 @@ export interface PostProcessResult {
 
 // 后处理事件类型
 export type PostProcessEvents = {
-  effectAdded: IPostProcessEffect;
-  effectRemoved: string;
-  effectUpdated: IPostProcessEffect;
-  processStarted: PostProcessLayer[];
-  processCompleted: PostProcessResult;
-  processError: Error;
+  effectAdded: (effect: IPostProcessEffect) => void;
+  effectRemoved: (effectId: string) => void;
+  effectUpdated: (effect: IPostProcessEffect) => void;
+  processStarted: (layers: PostProcessLayer[]) => void;
+  processCompleted: (result: PostProcessResult) => void;
+  processError: (error: Error) => void;
 };
 
 // 后处理统计信息

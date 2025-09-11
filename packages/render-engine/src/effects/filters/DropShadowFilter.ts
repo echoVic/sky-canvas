@@ -3,15 +3,14 @@
  * 支持可配置的投影效果
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  DropShadowParameters
+    DropShadowParameters,
+    FilterContext,
+    FilterType
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class DropShadowFilter extends BaseFilter {
+export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
   readonly type = FilterType.DROP_SHADOW;
   readonly name = 'Drop Shadow';
   readonly description = 'Adds a drop shadow effect to the image';
@@ -22,26 +21,25 @@ export class DropShadowFilter extends BaseFilter {
    * 处理投影滤镜
    */
   protected async processFilter(
-    context: FilterContext,
-    parameters: FilterParameters
+    context: FilterContext, 
+    parameters: DropShadowParameters
   ): Promise<ImageData> {
-    const params = parameters as DropShadowParameters;
     const { sourceImageData } = context;
     
     // 如果偏移和模糊都为0，返回原图
-    if (params.offsetX === 0 && params.offsetY === 0 && params.blur === 0) {
+    if (parameters.offsetX === 0 && parameters.offsetY === 0 && parameters.blur === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
     // 解析颜色
-    const shadowColor = this.parseColor(params.color);
-    const shadowOpacity = (params.opacity ?? 1) * (shadowColor.a / 255);
+    const shadowColor = this.parseColor(parameters.color);
+    const shadowOpacity = (parameters.opacity ?? 1) * (shadowColor.a / 255);
     
     // 计算扩展的画布尺寸以容纳阴影
-    const blurRadius = Math.max(0, params.blur);
+    const blurRadius = Math.max(0, parameters.blur);
     const padding = Math.ceil(blurRadius * 2);
-    const shadowOffsetX = Math.round(params.offsetX);
-    const shadowOffsetY = Math.round(params.offsetY);
+    const shadowOffsetX = Math.round(parameters.offsetX);
+    const shadowOffsetY = Math.round(parameters.offsetY);
     
     const extendedWidth = sourceImageData.width + padding * 2 + Math.abs(shadowOffsetX);
     const extendedHeight = sourceImageData.height + padding * 2 + Math.abs(shadowOffsetY);
@@ -337,17 +335,16 @@ export class DropShadowFilter extends BaseFilter {
   /**
    * 验证投影特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as DropShadowParameters;
+  protected validateSpecificParameters(parameters: DropShadowParameters): boolean {
     
-    if (typeof params.offsetX !== 'number' ||
-        typeof params.offsetY !== 'number' ||
-        typeof params.blur !== 'number' ||
-        typeof params.color !== 'string') {
+    if (typeof parameters.offsetX !== 'number' ||
+        typeof parameters.offsetY !== 'number' ||
+        typeof parameters.blur !== 'number' ||
+        typeof parameters.color !== 'string') {
       return false;
     }
     
-    if (params.blur < 0) {
+    if (parameters.blur < 0) {
       return false;
     }
     
@@ -372,9 +369,8 @@ export class DropShadowFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
-    const params = parameters as DropShadowParameters;
-    return 2.5 + (params.blur / 10); // 阴影效果相对复杂
+  protected getComplexityFactor(parameters: DropShadowParameters): number {
+    return 2.5 + (parameters.blur / 10); // 阴影效果相对复杂
   }
 
   /**

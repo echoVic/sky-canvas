@@ -144,12 +144,12 @@ export interface BlendPerformanceConfig {
 
 // 混合事件类型
 export type BlendEvents = {
-  blendOperationAdded: IBlendOperation;
-  blendOperationRemoved: string;
-  blendOperationUpdated: IBlendOperation;
-  blendStarted: BlendLayer[];
-  blendCompleted: BlendResult;
-  blendError: Error;
+  blendOperationAdded: (operation: IBlendOperation) => void;
+  blendOperationRemoved: (operationId: string) => void;
+  blendOperationUpdated: (operation: IBlendOperation) => void;
+  blendStarted: (layers: BlendLayer[]) => void;
+  blendCompleted: (result: BlendResult) => void;
+  blendError: (error: Error) => void;
 };
 
 // 混合统计信息

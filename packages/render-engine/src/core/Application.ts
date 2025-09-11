@@ -3,20 +3,19 @@
  * 统一管理所有核心服务和生命周期
  */
 
-import { ServiceCollection, InstantiationService, ServiceIdentifier } from './ServiceCollection';
-import { 
-  ICanvasService, 
-  IRenderEngineService, 
-  IInteractionService, 
+import { EventBus, IDisposable } from '../events/EventBus';
+import { ExtensionRegistry } from './systems/ExtensionSystem';
+import { LazyLoadingService } from './LazyLoadingService';
+import { InstantiationService, ServiceCollection, ServiceIdentifier } from './ServiceCollection';
+import {
+  ICanvasService,
   IConfigurationService,
   IEventBusService,
   IExtensionService,
+  IInteractionService,
+  IRenderEngineService,
   ServiceRegistry
 } from './ServiceRegistry';
-import { EventBus, StateSynchronizationService, IDisposable } from '../events/EventBus';
-import { ExtensionPointRegistry, ExtensionRegistry, createBuiltinExtensionPoints } from '../plugins/ExtensionRegistry';
-import { ExtensionLifecycleManager } from '../plugins/ExtensionLifecycleManager';
-import { LazyLoadingService } from './LazyLoadingService';
 import { VirtualizationManager } from './VirtualizationManager';
 
 export interface IApplicationServices {
@@ -57,14 +56,11 @@ export class SkyCanvasApplication {
   
   // 核心组件
   private _eventBus: EventBus;
-  private _stateSyncService: StateSynchronizationService;
   private _lazyLoadingService: LazyLoadingService;
   private _virtualizationManager: VirtualizationManager;
   
   // 扩展系统
-  private _extensionPointRegistry: ExtensionPointRegistry;
   private _extensionRegistry: ExtensionRegistry;
-  private _extensionLifecycleManager: ExtensionLifecycleManager;
   
   private _options: IApplicationOptions;
 
@@ -79,17 +75,11 @@ export class SkyCanvasApplication {
 
     this._serviceCollection = new ServiceCollection();
     this._eventBus = new EventBus();
-    this._stateSyncService = new StateSynchronizationService(this._eventBus);
     this._lazyLoadingService = new LazyLoadingService();
     this._virtualizationManager = new VirtualizationManager();
     
     // 初始化扩展系统
-    this._extensionPointRegistry = new ExtensionPointRegistry();
-    this._extensionRegistry = new ExtensionRegistry(this._extensionPointRegistry);
-    this._extensionLifecycleManager = new ExtensionLifecycleManager(this._extensionRegistry);
-    
-    // 创建内置扩展点
-    createBuiltinExtensionPoints(this._extensionPointRegistry);
+    this._extensionRegistry = new ExtensionRegistry();
   }
 
   /**
@@ -119,7 +109,7 @@ export class SkyCanvasApplication {
       }
       
       // 5. 触发启动完成事件
-      this._eventBus.fire('applicationStarted', {
+      this._eventBus.emit('applicationStarted', {
         timestamp: Date.now(),
         services: Object.keys(this._services)
       });
@@ -159,12 +149,7 @@ export class SkyCanvasApplication {
     return this._eventBus;
   }
 
-  /**
-   * 获取状态同步服务
-   */
-  getStateSyncService(): StateSynchronizationService {
-    return this._stateSyncService;
-  }
+
 
   /**
    * 获取懒加载服务
@@ -187,12 +172,7 @@ export class SkyCanvasApplication {
     return this._extensionRegistry;
   }
 
-  /**
-   * 获取扩展生命周期管理器
-   */
-  getExtensionLifecycleManager(): ExtensionLifecycleManager {
-    return this._extensionLifecycleManager;
-  }
+
 
   /**
    * 获取应用程序状态
@@ -214,7 +194,7 @@ export class SkyCanvasApplication {
     try {
       // 1. 停用所有扩展
       if (this._options.enableExtensions) {
-        await this._extensionLifecycleManager.deactivateAllExtensions();
+        // Extension deactivation logic would go here
       }
 
       // 2. 销毁核心服务
@@ -225,13 +205,10 @@ export class SkyCanvasApplication {
       // 3. 销毁系统组件
       this._virtualizationManager.dispose();
       this._lazyLoadingService.dispose();
-      this._stateSyncService.dispose();
       this._eventBus.dispose();
       
       // 4. 销毁扩展系统
-      this._extensionLifecycleManager.dispose();
       this._extensionRegistry.dispose();
-      this._extensionPointRegistry.dispose();
 
       this._state = ApplicationState.Disposed;
       
@@ -289,7 +266,7 @@ export class SkyCanvasApplication {
     }
 
     // 触发启动完成激活事件
-    this._extensionLifecycleManager.fireActivationEvent('onStartupFinished');
+    // Extension activation logic would go here
   }
 
   private async _disposeCoreServices(): Promise<void> {

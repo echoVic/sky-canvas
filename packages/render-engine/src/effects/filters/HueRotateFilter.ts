@@ -3,15 +3,14 @@
  * 支持色相的旋转调整
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  HueRotateParameters
+    FilterContext,
+    FilterType,
+    HueRotateParameters
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class HueRotateFilter extends BaseFilter {
+export class HueRotateFilter extends BaseFilter<HueRotateParameters> {
   readonly type = FilterType.HUE_ROTATE;
   readonly name = 'Hue Rotate';
   readonly description = 'Rotates the hue of the image';
@@ -23,12 +22,11 @@ export class HueRotateFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: HueRotateParameters
   ): Promise<ImageData> {
-    const params = parameters as HueRotateParameters;
     const { sourceImageData } = context;
     
-    if (params.angle === 0 || params.angle === 360) {
+    if (parameters.angle === 0 || parameters.angle === 360) {
       return this.cloneImageData(sourceImageData);
     }
 
@@ -36,7 +34,7 @@ export class HueRotateFilter extends BaseFilter {
     const data = result.data;
     
     // 将角度转换为弧度
-    const angleRad = (params.angle * Math.PI) / 180;
+    const angleRad = (parameters.angle * Math.PI) / 180;
     
     // 预计算色相旋转矩阵的值
     const cosA = Math.cos(angleRad);
@@ -57,7 +55,7 @@ export class HueRotateFilter extends BaseFilter {
       const hsl = this.rgbToHsl(r, g, b);
       
       // 旋转色相
-      hsl.h = (hsl.h + params.angle) % 360;
+      hsl.h = (hsl.h + parameters.angle) % 360;
       if (hsl.h < 0) hsl.h += 360;
       
       // 转换回RGB
@@ -70,8 +68,8 @@ export class HueRotateFilter extends BaseFilter {
     }
 
     // 应用不透明度
-    if (params.opacity !== undefined && params.opacity < 1) {
-      return this.applyOpacity(result, params.opacity);
+    if (parameters.opacity !== undefined && parameters.opacity < 1) {
+      return this.applyOpacity(result, parameters.opacity);
     }
     
     return result;
@@ -141,10 +139,9 @@ export class HueRotateFilter extends BaseFilter {
   /**
    * 验证色相旋转特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as HueRotateParameters;
+  protected validateSpecificParameters(parameters: HueRotateParameters): boolean {
     
-    if (typeof params.angle !== 'number') {
+    if (typeof parameters.angle !== 'number') {
       return false;
     }
     
@@ -166,7 +163,7 @@ export class HueRotateFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(parameters: HueRotateParameters): number {
     return 1.5; // 色相旋转需要RGB-HSL转换，较复杂
   }
 

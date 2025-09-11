@@ -3,15 +3,14 @@
  * 支持亮度的增减调整
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  BrightnessParameters
+    BrightnessParameters,
+    FilterContext,
+    FilterType
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class BrightnessFilter extends BaseFilter {
+export class BrightnessFilter extends BaseFilter<BrightnessParameters> {
   readonly type = FilterType.BRIGHTNESS;
   readonly name = 'Brightness';
   readonly description = 'Adjusts the brightness of the image';
@@ -23,12 +22,11 @@ export class BrightnessFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: BrightnessParameters
   ): Promise<ImageData> {
-    const params = parameters as BrightnessParameters;
     const { sourceImageData } = context;
     
-    if (params.brightness === 0) {
+    if (parameters.brightness === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
@@ -36,7 +34,7 @@ export class BrightnessFilter extends BaseFilter {
     const data = result.data;
     
     // 将亮度值从-100~100转换为调整因子
-    const adjustment = params.brightness * 2.55; // 转换为0-255范围的调整值
+    const adjustment = parameters.brightness * 2.55; // 转换为0-255范围的调整值
     
     for (let i = 0; i < data.length; i += 4) {
       // 调整RGB通道，保持Alpha不变
@@ -47,8 +45,8 @@ export class BrightnessFilter extends BaseFilter {
     }
 
     // 应用不透明度
-    if (params.opacity !== undefined && params.opacity < 1) {
-      return this.applyOpacity(result, params.opacity);
+    if (parameters.opacity !== undefined && parameters.opacity < 1) {
+      return this.applyOpacity(result, parameters.opacity);
     }
     
     return result;
@@ -57,12 +55,10 @@ export class BrightnessFilter extends BaseFilter {
   /**
    * 验证亮度特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as BrightnessParameters;
-    
-    if (typeof params.brightness !== 'number' || 
-        params.brightness < -100 || 
-        params.brightness > 100) {
+  protected validateSpecificParameters(parameters: BrightnessParameters): boolean {
+    if (typeof parameters.brightness !== 'number' || 
+        parameters.brightness < -100 || 
+        parameters.brightness > 100) {
       return false;
     }
     
@@ -84,7 +80,7 @@ export class BrightnessFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(parameters: BrightnessParameters): number {
     return 0.5; // 亮度调整是最简单的操作之一
   }
 

@@ -2,17 +2,16 @@
  * 后处理效果管理器
  */
 
-import {
-  IPostProcessManager,
-  IPostProcessEffect,
-  PostProcessLayer,
-  PostProcessResult,
-  PostProcessStats,
-  PostProcessEvents,
-  PostProcessPerformanceConfig,
-  PostProcessType
-} from '../types/PostProcessTypes';
 import { EventEmitter } from '../../animation/core/EventEmitter';
+import {
+    IPostProcessEffect,
+    IPostProcessManager,
+    PostProcessEvents,
+    PostProcessLayer,
+    PostProcessResult,
+    PostProcessStats,
+    PostProcessType
+} from '../types/PostProcessTypes';
 
 export class PostProcessManager extends EventEmitter<PostProcessEvents> implements IPostProcessManager {
   private effects: Map<string, IPostProcessEffect> = new Map();
@@ -197,7 +196,7 @@ export class PostProcessManager extends EventEmitter<PostProcessEvents> implemen
   }
 
   clear(): void {
-    for (const effect of this.effects.values()) {
+    for (const effect of Array.from(this.effects.values())) {
       effect.dispose();
     }
     this.effects.clear();
@@ -306,7 +305,7 @@ export class PostProcessManager extends EventEmitter<PostProcessEvents> implemen
 
   // 便捷方法：重置所有效果
   resetAllEffects(): void {
-    for (const effect of this.effects.values()) {
+    for (const effect of Array.from(this.effects.values())) {
       effect.updateConfig({ enabled: false, intensity: 0 });
     }
   }
@@ -320,7 +319,7 @@ export class PostProcessManager extends EventEmitter<PostProcessEvents> implemen
   } {
     const effectTypes: Record<PostProcessType, number> = {} as Record<PostProcessType, number>;
     
-    for (const effect of this.effects.values()) {
+    for (const effect of Array.from(this.effects.values())) {
       effectTypes[effect.type] = (effectTypes[effect.type] || 0) + 1;
     }
 

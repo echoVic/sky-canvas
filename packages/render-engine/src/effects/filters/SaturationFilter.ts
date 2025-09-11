@@ -3,15 +3,14 @@
  * 支持饱和度的增减调整
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  SaturationParameters
+    FilterContext,
+    FilterType,
+    SaturationParameters
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class SaturationFilter extends BaseFilter {
+export class SaturationFilter extends BaseFilter<SaturationParameters> {
   readonly type = FilterType.SATURATION;
   readonly name = 'Saturation';
   readonly description = 'Adjusts the saturation of the image';
@@ -23,12 +22,11 @@ export class SaturationFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: SaturationParameters
   ): Promise<ImageData> {
-    const params = parameters as SaturationParameters;
     const { sourceImageData } = context;
     
-    if (params.saturation === 0) {
+    if (parameters.saturation === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
@@ -36,7 +34,7 @@ export class SaturationFilter extends BaseFilter {
     const data = result.data;
     
     // 将饱和度值从-100~100转换为调整因子
-    const saturation = 1 + (params.saturation / 100);
+    const saturation = 1 + (parameters.saturation / 100);
     
     // 计算灰度权重 (ITU-R BT.709标准)
     const lumR = 0.2126;
@@ -60,8 +58,8 @@ export class SaturationFilter extends BaseFilter {
     }
 
     // 应用不透明度
-    if (params.opacity !== undefined && params.opacity < 1) {
-      return this.applyOpacity(result, params.opacity);
+    if (parameters.opacity !== undefined && parameters.opacity < 1) {
+      return this.applyOpacity(result, parameters.opacity);
     }
     
     return result;
@@ -70,12 +68,11 @@ export class SaturationFilter extends BaseFilter {
   /**
    * 验证饱和度特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as SaturationParameters;
+  protected validateSpecificParameters(parameters: SaturationParameters): boolean {
     
-    if (typeof params.saturation !== 'number' || 
-        params.saturation < -100 || 
-        params.saturation > 100) {
+    if (typeof parameters.saturation !== 'number' || 
+        parameters.saturation < -100 || 
+        parameters.saturation > 100) {
       return false;
     }
     
@@ -97,7 +94,7 @@ export class SaturationFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(parameters: SaturationParameters): number {
     return 0.8; // 饱和度调整需要计算亮度，稍复杂
   }
 

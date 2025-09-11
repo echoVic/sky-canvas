@@ -2,10 +2,11 @@
  * 自定义着色器滤镜测试
  */
 
+import { vi } from 'vitest';
 import '../../__tests__/setup';
-import { CustomShaderFilter } from '../CustomShaderFilter';
 import { FilterType } from '../../types/FilterTypes';
 import { WebGLShaderManager } from '../../webgl/WebGLShaderManager';
+import { CustomShaderFilter } from '../CustomShaderFilter';
 
 // 模拟WebGL支持
 const mockWebGLContext = {

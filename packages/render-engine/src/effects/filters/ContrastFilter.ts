@@ -3,15 +3,14 @@
  * 支持对比度的增减调整
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  ContrastParameters
+    ContrastParameters,
+    FilterContext,
+    FilterType
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class ContrastFilter extends BaseFilter {
+export class ContrastFilter extends BaseFilter<ContrastParameters> {
   readonly type = FilterType.CONTRAST;
   readonly name = 'Contrast';
   readonly description = 'Adjusts the contrast of the image';
@@ -23,12 +22,11 @@ export class ContrastFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: ContrastParameters
   ): Promise<ImageData> {
-    const params = parameters as ContrastParameters;
     const { sourceImageData } = context;
     
-    if (params.contrast === 0) {
+    if (parameters.contrast === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
@@ -38,7 +36,7 @@ export class ContrastFilter extends BaseFilter {
     // 将对比度值从-100~100转换为调整因子
     // 对比度公式: newValue = (oldValue - 128) * factor + 128
     // factor = (100 + contrast) / 100
-    const factor = (100 + params.contrast) / 100;
+    const factor = (100 + parameters.contrast) / 100;
     
     for (let i = 0; i < data.length; i += 4) {
       // 调整RGB通道，保持Alpha不变
@@ -54,8 +52,8 @@ export class ContrastFilter extends BaseFilter {
     }
 
     // 应用不透明度
-    if (params.opacity !== undefined && params.opacity < 1) {
-      return this.applyOpacity(result, params.opacity);
+    if (parameters.opacity !== undefined && parameters.opacity < 1) {
+      return this.applyOpacity(result, parameters.opacity);
     }
     
     return result;
@@ -64,12 +62,11 @@ export class ContrastFilter extends BaseFilter {
   /**
    * 验证对比度特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as ContrastParameters;
+  protected validateSpecificParameters(parameters: ContrastParameters): boolean {
     
-    if (typeof params.contrast !== 'number' || 
-        params.contrast < -100 || 
-        params.contrast > 100) {
+    if (typeof parameters.contrast !== 'number' || 
+        parameters.contrast < -100 || 
+        parameters.contrast > 100) {
       return false;
     }
     
@@ -91,7 +88,7 @@ export class ContrastFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(parameters: ContrastParameters): number {
     return 0.6; // 对比度调整比亮度稍复杂
   }
 

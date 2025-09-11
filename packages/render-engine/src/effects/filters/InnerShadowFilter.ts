@@ -3,15 +3,14 @@
  * 在图像内部创建阴影效果
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
   FilterContext,
+  FilterType,
   InnerShadowParameters
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class InnerShadowFilter extends BaseFilter {
+export class InnerShadowFilter extends BaseFilter<InnerShadowParameters> {
   readonly type = FilterType.INNER_SHADOW;
   readonly name = 'Inner Shadow';
   readonly description = 'Adds an inner shadow effect to the image';
@@ -22,30 +21,29 @@ export class InnerShadowFilter extends BaseFilter {
    * 处理内阴影滤镜
    */
   protected async processFilter(
-    context: FilterContext,
-    parameters: FilterParameters
+    context: FilterContext, 
+    parameters: InnerShadowParameters
   ): Promise<ImageData> {
-    const params = parameters as InnerShadowParameters;
     const { sourceImageData } = context;
     
     // 如果偏移和模糊都为0，返回原图
-    if (params.offsetX === 0 && params.offsetY === 0 && params.blur === 0) {
+    if (parameters.offsetX === 0 && parameters.offsetY === 0 && parameters.blur === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
     // 解析颜色
-    const shadowColor = this.parseColor(params.color);
-    const shadowOpacity = (params.opacity ?? 1) * (shadowColor.a / 255);
+    const shadowColor = this.parseColor(parameters.color);
+    const shadowOpacity = (parameters.opacity ?? 1) * (shadowColor.a / 255);
     
     const result = this.cloneImageData(sourceImageData);
     
     // 第一步：创建反向蒙版（边缘检测）
-    const edgeMask = this.createEdgeMask(sourceImageData, params.offsetX, params.offsetY);
+    const edgeMask = this.createEdgeMask(sourceImageData, parameters.offsetX, parameters.offsetY);
     
     // 第二步：对边缘蒙版应用模糊
     let blurredMask = edgeMask;
-    if (params.blur > 0) {
-      blurredMask = await this.applyGaussianBlur(edgeMask, params.blur);
+    if (parameters.blur > 0) {
+      blurredMask = await this.applyGaussianBlur(edgeMask, parameters.blur);
     }
     
     // 第三步：将内阴影合成到原图上
@@ -261,17 +259,16 @@ export class InnerShadowFilter extends BaseFilter {
   /**
    * 验证内阴影特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as InnerShadowParameters;
+  protected validateSpecificParameters(parameters: InnerShadowParameters): boolean {
     
-    if (typeof params.offsetX !== 'number' ||
-        typeof params.offsetY !== 'number' ||
-        typeof params.blur !== 'number' ||
-        typeof params.color !== 'string') {
+    if (typeof parameters.offsetX !== 'number' ||
+        typeof parameters.offsetY !== 'number' ||
+        typeof parameters.blur !== 'number' ||
+        typeof parameters.color !== 'string') {
       return false;
     }
     
-    if (params.blur < 0) {
+    if (parameters.blur < 0) {
       return false;
     }
     
@@ -296,9 +293,8 @@ export class InnerShadowFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
-    const params = parameters as InnerShadowParameters;
-    return 2.0 + (params.blur / 10); // 内阴影处理较复杂
+  protected getComplexityFactor(parameters: InnerShadowParameters): number {
+    return 2.0 + (parameters.blur / 10); // 内阴影处理较复杂
   }
 
   /**

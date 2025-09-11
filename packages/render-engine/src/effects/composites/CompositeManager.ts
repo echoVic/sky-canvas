@@ -2,17 +2,16 @@
  * 复合操作管理器
  */
 
-import {
-  ICompositeManager,
-  ICompositeOperation,
-  CompositeLayer,
-  CompositeResult,
-  CompositeStats,
-  CompositeEvents,
-  CompositePerformanceConfig,
-  CompositeOperation
-} from '../types/CompositeTypes';
 import { EventEmitter } from '../../animation/core/EventEmitter';
+import {
+    CompositeEvents,
+    CompositeLayer,
+    CompositeOperation,
+    CompositeResult,
+    CompositeStats,
+    ICompositeManager,
+    ICompositeOperation
+} from '../types/CompositeTypes';
 
 export class CompositeManager extends EventEmitter<CompositeEvents> implements ICompositeManager {
   private operations: Map<string, ICompositeOperation> = new Map();
@@ -94,7 +93,7 @@ export class CompositeManager extends EventEmitter<CompositeEvents> implements I
   }
 
   clear(): void {
-    for (const operation of this.operations.values()) {
+    for (const operation of Array.from(this.operations.values())) {
       operation.dispose();
     }
     this.operations.clear();
@@ -221,7 +220,7 @@ export class CompositeManager extends EventEmitter<CompositeEvents> implements I
   }
 
   private getCompositeOperationByType(operation: CompositeOperation): ICompositeOperation | undefined {
-    for (const op of this.operations.values()) {
+    for (const op of Array.from(this.operations.values())) {
       if (op.operation === operation) {
         return op;
       }

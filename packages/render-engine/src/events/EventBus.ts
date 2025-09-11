@@ -1,6 +1,9 @@
 /**
  * 事件总线接口和实现
+ * 基于 EventEmitter3 提供类型安全的事件处理
  */
+
+import { EventEmitter as EventEmitter3 } from 'eventemitter3';
 
 /**
  * 可释放资源的接口
@@ -18,122 +21,134 @@ export type EventListener<T = any> = (event: T) => void;
  * 事件总线接口
  */
 export interface IEventBus {
-  on<T = any>(eventType: string, listener: EventListener<T>): void;
+  on<T = any>(eventType: string, listener: EventListener<T>): IDisposable;
   off<T = any>(eventType: string, listener: EventListener<T>): void;
   emit<T = any>(eventType: string, event: T): void;
   dispose(): void;
 }
 
 /**
- * 事件总线类
+ * 基于 EventEmitter3 的事件总线类
  */
 export class EventBus implements IEventBus, IDisposable {
-  private listeners: Map<string, Set<EventListener>> = new Map();
+  private emitter: EventEmitter3;
+
+  constructor() {
+    this.emitter = new EventEmitter3();
+  }
 
   /**
    * 添加事件监听器
    */
-  on<T = any>(eventType: string, listener: EventListener<T>): void {
-    if (!this.listeners.has(eventType)) {
-      this.listeners.set(eventType, new Set());
-    }
-    this.listeners.get(eventType)!.add(listener);
+  on<T = any>(eventType: string, listener: EventListener<T>): IDisposable {
+    this.emitter.on(eventType, listener);
+    
+    // 返回可释放的对象
+    return {
+      dispose: () => {
+        this.off(eventType, listener);
+      }
+    };
   }
 
   /**
    * 移除事件监听器
    */
   off<T = any>(eventType: string, listener: EventListener<T>): void {
-    const listeners = this.listeners.get(eventType);
-    if (listeners) {
-      listeners.delete(listener);
-      if (listeners.size === 0) {
-        this.listeners.delete(eventType);
-      }
-    }
+    this.emitter.off(eventType, listener);
   }
 
   /**
    * 触发事件
    */
   emit<T = any>(eventType: string, event: T): void {
-    const listeners = this.listeners.get(eventType);
-    if (listeners) {
-      listeners.forEach(listener => {
-        try {
-          listener(event);
-        } catch (error) {
-          console.error(`Error in event listener for ${eventType}:`, error);
-        }
-      });
-    }
+    this.emitter.emit(eventType, event);
   }
 
   /**
    * 一次性事件监听器
    */
-  once<T = any>(eventType: string, listener: EventListener<T>): void {
-    const onceListener = (event: T) => {
-      this.off(eventType, onceListener);
-      listener(event);
+  once<T = any>(eventType: string, listener: EventListener<T>): IDisposable {
+    this.emitter.once(eventType, listener);
+    
+    return {
+      dispose: () => {
+        this.off(eventType, listener);
+      }
     };
-    this.on(eventType, onceListener);
   }
 
   /**
    * 清理所有监听器
    */
   dispose(): void {
-    this.listeners.clear();
+    this.emitter.removeAllListeners();
   }
 
   /**
    * 获取事件类型列表
    */
   getEventTypes(): string[] {
-    return Array.from(this.listeners.keys());
+    return this.emitter.eventNames() as string[];
   }
 
   /**
    * 获取指定事件的监听器数量
    */
   getListenerCount(eventType: string): number {
-    const listeners = this.listeners.get(eventType);
-    return listeners ? listeners.size : 0;
+    return this.emitter.listenerCount(eventType);
   }
 }
 
 /**
  * 类型安全的事件发射器
- * 基于EventBus，但提供更强的类型支持
+ * 基于 EventEmitter3，提供更强的类型支持
  */
-export class EventEmitter<TEvents extends Record<string, any>> extends EventBus {
+export class EventEmitter<TEvents extends Record<string, any>> {
+  private emitter: EventEmitter3;
+
+  constructor() {
+    this.emitter = new EventEmitter3();
+  }
+
   /**
    * 添加类型安全的事件监听器
    */
-  on<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): void {
-    super.on(event as string, listener);
+  on<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): IDisposable {
+    this.emitter.on(event as string, listener);
+    
+    return {
+      dispose: () => {
+        this.off(event, listener);
+      }
+    };
   }
 
   /**
    * 移除类型安全的事件监听器
    */
   off<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): void {
-    super.off(event as string, listener);
+    this.emitter.off(event as string, listener);
   }
 
   /**
    * 发射类型安全的事件
    */
   emit<K extends keyof TEvents>(event: K, data: TEvents[K]): void {
-    super.emit(event as string, data);
+    this.emitter.emit(event as string, data);
   }
 
   /**
    * 添加类型安全的一次性事件监听器
    */
-  once<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): void {
-    super.once(event as string, listener);
+  once<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): IDisposable {
+    this.emitter.once(event as string, listener);
+    
+    return {
+      dispose: () => {
+        this.off(event, listener);
+      }
+    };
   }
 
   /**
@@ -141,13 +156,9 @@ export class EventEmitter<TEvents extends Record<string, any>> extends EventBus 
    */
   removeAllListeners<K extends keyof TEvents>(event?: K): void {
     if (event) {
-      const listeners = (this as any).listeners.get(event as string);
-      if (listeners) {
-        listeners.clear();
-        (this as any).listeners.delete(event as string);
-      }
+      this.emitter.removeAllListeners(event as string);
     } else {
-      (this as any).listeners.clear();
+      this.emitter.removeAllListeners();
     }
   }
 
@@ -155,14 +166,21 @@ export class EventEmitter<TEvents extends Record<string, any>> extends EventBus 
    * 获取事件监听器数量
    */
   listenerCount<K extends keyof TEvents>(event: K): number {
-    return this.getListenerCount(event as string);
+    return this.emitter.listenerCount(event as string);
   }
 
   /**
    * 获取所有事件名称
    */
   eventNames(): (keyof TEvents)[] {
-    return this.getEventTypes() as (keyof TEvents)[];
+    return this.emitter.eventNames() as (keyof TEvents)[];
+  }
+
+  /**
+   * 清理所有监听器
+   */
+  dispose(): void {
+    this.emitter.removeAllListeners();
   }
 }
 

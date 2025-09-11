@@ -3,15 +3,14 @@
  * 支持可调节的灰度化效果
  */
 
-import { BaseFilter } from './BaseFilter';
 import {
-  FilterType,
-  FilterParameters,
-  FilterContext,
-  GrayscaleParameters
+    FilterContext,
+    FilterType,
+    GrayscaleParameters
 } from '../types/FilterTypes';
+import { BaseFilter } from './BaseFilter';
 
-export class GrayscaleFilter extends BaseFilter {
+export class GrayscaleFilter extends BaseFilter<GrayscaleParameters> {
   readonly type = FilterType.GRAYSCALE;
   readonly name = 'Grayscale';
   readonly description = 'Converts the image to grayscale';
@@ -23,12 +22,11 @@ export class GrayscaleFilter extends BaseFilter {
    */
   protected async processFilter(
     context: FilterContext, 
-    parameters: FilterParameters
+    parameters: GrayscaleParameters
   ): Promise<ImageData> {
-    const params = parameters as GrayscaleParameters;
     const { sourceImageData } = context;
     
-    if (params.amount === 0) {
+    if (parameters.amount === 0) {
       return this.cloneImageData(sourceImageData);
     }
 
@@ -49,15 +47,15 @@ export class GrayscaleFilter extends BaseFilter {
       const gray = r * lumR + g * lumG + b * lumB;
       
       // 根据amount参数混合原色和灰度
-      data[i] = this.clamp(r + (gray - r) * params.amount);
-      data[i + 1] = this.clamp(g + (gray - g) * params.amount);
-      data[i + 2] = this.clamp(b + (gray - b) * params.amount);
+      data[i] = this.clamp(r + (gray - r) * parameters.amount);
+      data[i + 1] = this.clamp(g + (gray - g) * parameters.amount);
+      data[i + 2] = this.clamp(b + (gray - b) * parameters.amount);
       // data[i + 3] = data[i + 3]; // Alpha保持不变
     }
 
     // 应用不透明度
-    if (params.opacity !== undefined && params.opacity < 1) {
-      return this.applyOpacity(result, params.opacity);
+    if (parameters.opacity !== undefined && parameters.opacity < 1) {
+      return this.applyOpacity(result, parameters.opacity);
     }
     
     return result;
@@ -66,12 +64,11 @@ export class GrayscaleFilter extends BaseFilter {
   /**
    * 验证灰度特定参数
    */
-  protected validateSpecificParameters(parameters: FilterParameters): boolean {
-    const params = parameters as GrayscaleParameters;
+  protected validateSpecificParameters(parameters: GrayscaleParameters): boolean {
     
-    if (typeof params.amount !== 'number' || 
-        params.amount < 0 || 
-        params.amount > 1) {
+    if (typeof parameters.amount !== 'number' || 
+        parameters.amount < 0 || 
+        parameters.amount > 1) {
       return false;
     }
     
@@ -93,7 +90,7 @@ export class GrayscaleFilter extends BaseFilter {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(parameters: GrayscaleParameters): number {
     return 0.7; // 灰度转换相对简单
   }
 
