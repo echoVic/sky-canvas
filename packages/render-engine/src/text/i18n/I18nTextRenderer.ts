@@ -12,7 +12,7 @@ import {
   TextRun,
   GlyphInfo
 } from '../types/I18nTextTypes';
-import { TextStyle, Color, FillStyle, GradientType } from '../types/RichTextTypes';
+import { TextStyle, Color, FillStyle, LinearGradient, RadialGradient, ShadowStyle, StrokeStyle, TextAlign as RichTextAlign } from '../types/RichTextTypes';
 import { I18nTextLayout } from './I18nTextLayout';
 
 export interface I18nRenderOptions {
@@ -26,6 +26,26 @@ export interface I18nRenderOptions {
 
 export class I18nTextRenderer {
   private layoutManager = new I18nTextLayout();
+  
+  /**
+   * 转换I18n TextAlign到RichText TextAlign
+   */
+  private convertTextAlign(i18nAlign: TextAlign): RichTextAlign {
+    switch (i18nAlign) {
+      case TextAlign.START:
+      case TextAlign.LEFT:
+        return RichTextAlign.LEFT;
+      case TextAlign.END:
+      case TextAlign.RIGHT:
+        return RichTextAlign.RIGHT;
+      case TextAlign.CENTER:
+        return RichTextAlign.CENTER;
+      case TextAlign.JUSTIFY:
+        return RichTextAlign.JUSTIFY;
+      default:
+        return RichTextAlign.LEFT;
+    }
+  }
   
   /**
    * 渲染国际化文本
@@ -46,12 +66,11 @@ export class I18nTextRenderer {
     );
 
     // 2. 应用对齐
-    if (renderOptions.maxWidth) {
+    if (renderOptions.maxWidth && i18nOptions.textAlign) {
       this.layoutManager.applyTextAlignment(
         layout,
-        renderOptions.maxWidth,
-        i18nOptions.textAlign,
-        i18nOptions.direction
+        this.convertTextAlign(i18nOptions.textAlign),
+        renderOptions.maxWidth
       );
     }
 
@@ -205,7 +224,7 @@ export class I18nTextRenderer {
       const char = String.fromCodePoint(...glyph.codePoints);
       
       // 渲染文本阴影
-      if (style.textShadow) {
+      if (style.shadow) {
         this.renderTextShadow(ctx, char, glyph.position.x, glyph.position.y, style);
       }
 
@@ -229,7 +248,7 @@ export class I18nTextRenderer {
       const char = String.fromCodePoint(...glyph.codePoints);
       
       // 渲染文本阴影
-      if (style.textShadow) {
+      if (style.shadow) {
         this.renderTextShadow(ctx, char, glyph.position.x, glyph.position.y, style);
       }
 
@@ -268,10 +287,12 @@ export class I18nTextRenderer {
    * 应用填充样式
    */
   private applyFillStyle(ctx: CanvasRenderingContext2D, fillStyle: FillStyle, fallbackColor?: Color): void {
-    if (fillStyle.type === 'solid') {
-      ctx.fillStyle = this.colorToString(fillStyle.color);
-    } else if (fillStyle.type === 'gradient' && fillStyle.gradient) {
-      const gradient = this.createGradient(ctx, fillStyle.gradient);
+    if ('r' in fillStyle) {
+      // 是 Color 类型
+      ctx.fillStyle = this.colorToString(fillStyle);
+    } else if ('type' in fillStyle) {
+      // 是渐变类型
+      const gradient = this.createGradient(ctx, fillStyle);
       if (gradient) {
         ctx.fillStyle = gradient;
       } else if (fallbackColor) {
@@ -283,19 +304,19 @@ export class I18nTextRenderer {
   /**
    * 创建渐变
    */
-  private createGradient(ctx: CanvasRenderingContext2D, gradient: any): CanvasGradient | null {
+  private createGradient(ctx: CanvasRenderingContext2D, gradient: LinearGradient | RadialGradient): CanvasGradient | null {
     try {
       let canvasGradient: CanvasGradient;
 
-      if (gradient.type === GradientType.LINEAR) {
+      if (gradient.type === 'linear') {
         canvasGradient = ctx.createLinearGradient(
-          gradient.start.x, gradient.start.y,
-          gradient.end.x, gradient.end.y
+          gradient.x0, gradient.y0,
+          gradient.x1, gradient.y1
         );
-      } else if (gradient.type === GradientType.RADIAL) {
+      } else if (gradient.type === 'radial') {
         canvasGradient = ctx.createRadialGradient(
-          gradient.center.x, gradient.center.y, gradient.innerRadius,
-          gradient.center.x, gradient.center.y, gradient.outerRadius
+          gradient.x0, gradient.y0, gradient.r0,
+          gradient.x1, gradient.y1, gradient.r1
         );
       } else {
         return null;
@@ -338,9 +359,9 @@ export class I18nTextRenderer {
     y: number,
     style: TextStyle
   ): void {
-    if (!style.textShadow) return;
+    if (!style.shadow) return;
 
-    const shadow = style.textShadow;
+    const shadow = style.shadow;
     ctx.save();
 
     ctx.fillStyle = this.colorToString(shadow.color);
@@ -365,10 +386,10 @@ export class I18nTextRenderer {
     ctx.fillText(char, x, y);
 
     // 渲染描边文本
-    if (style.strokeStyle && style.strokeWidth && style.strokeWidth > 0) {
+    if (style.strokeStyle && style.strokeStyle.width && style.strokeStyle.width > 0) {
       ctx.save();
-      ctx.strokeStyle = this.colorToString(style.strokeStyle);
-      ctx.lineWidth = style.strokeWidth;
+      ctx.strokeStyle = this.colorToString(style.strokeStyle.color);
+      ctx.lineWidth = style.strokeStyle.width;
       ctx.strokeText(char, x, y);
       ctx.restore();
     }

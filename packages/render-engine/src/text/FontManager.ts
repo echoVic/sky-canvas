@@ -114,8 +114,8 @@ class Font implements IFont {
 
           await this.fontFace.load();
           
-          if (!document.fonts.has(this.fontFace)) {
-            document.fonts.add(this.fontFace);
+          if (!document.fonts.check(`1em ${this.config.family}`)) {
+            (document.fonts as any).add(this.fontFace);
           }
 
           this.size = this.buffer.byteLength;
@@ -151,8 +151,8 @@ class Font implements IFont {
   }
 
   unload(): void {
-    if (this.fontFace && document.fonts.has(this.fontFace)) {
-      document.fonts.delete(this.fontFace);
+    if (this.fontFace && document.fonts.check(`1em ${this.config.family}`)) {
+      (document.fonts as any).delete(this.fontFace);
     }
     
     this.fontFace = undefined;
@@ -420,10 +420,10 @@ export class FontManager extends EventEmitter<FontEvents> implements IFontManage
       const font = await loadingPromise;
       this.fonts.set(key, font);
       this.cache.set(key, font, 3600); // 缓存1小时
-      this.emit('loaded', font);
+      this.emit('loaded', { font });
       return font;
     } catch (error) {
-      this.emit('error', null, error);
+      this.emit('error', { font: null, error: error as Error });
       throw error;
     } finally {
       this.loadingPromises.delete(key);
@@ -433,7 +433,7 @@ export class FontManager extends EventEmitter<FontEvents> implements IFontManage
   private async performFontLoad(config: FontConfig): Promise<IFont> {
     const font = new Font(config);
     
-    this.emit('loading', font);
+    this.emit('loading', { font });
 
     try {
       await font.load();
@@ -443,7 +443,7 @@ export class FontManager extends EventEmitter<FontEvents> implements IFontManage
       if (config.fallbacks && config.fallbacks.length > 0) {
         const fallbackFont = await this.loadFallbackFont(config);
         if (fallbackFont) {
-          this.emit('fallback', font, fallbackFont);
+          this.emit('fallback', { font, fallbackFont });
           return fallbackFont;
         }
       }
@@ -506,7 +506,7 @@ export class FontManager extends EventEmitter<FontEvents> implements IFontManage
     for (const [key, font] of this.fonts.entries()) {
       if (key.startsWith(`${family}|`)) {
         font.unload();
-        this.emit('unload', font);
+        this.emit('unload', { font });
         toDelete.push(key);
       }
     }

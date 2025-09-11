@@ -31,11 +31,11 @@ interface LoadingTask {
 }
 
 interface FontLoaderEvents {
-  'progress': (id: string, progress: FontLoadingProgress) => void;
-  'loaded': (id: string, buffer: ArrayBuffer) => void;
-  'error': (id: string, error: FontError) => void;
-  'started': (id: string, source: FontSource) => void;
-  'cancelled': (id: string) => void;
+  'progress': { id: string; progress: FontLoadingProgress };
+  'loaded': { id: string; buffer: ArrayBuffer };
+  'error': { id: string; error: FontError };
+  'started': { id: string; source: FontSource };
+  'cancelled': { id: string };
 }
 
 export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontLoader {
@@ -116,7 +116,7 @@ export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontL
     };
 
     this.loadingTasks.set(id, task);
-    this.emit('started', id, source);
+    this.emit('started', { id, source });
 
     try {
       // 设置超时
@@ -141,7 +141,7 @@ export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontL
       // 清理任务
       this.loadingTasks.delete(id);
       
-      this.emit('loaded', id, buffer);
+      this.emit('loaded', { id, buffer });
       task.resolve(buffer);
       
       return buffer;
@@ -157,7 +157,7 @@ export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontL
             source
           );
       
-      this.emit('error', id, fontError);
+      this.emit('error', { id, error: fontError });
       task.reject(fontError);
       throw fontError;
     }
@@ -314,7 +314,7 @@ export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontL
     }
 
     // 触发进度事件
-    this.emit('progress', task.id, { ...progress });
+    this.emit('progress', { id: task.id, progress: { ...progress } });
     
     // 调用用户回调
     if (task.options.onProgress) {
@@ -406,7 +406,7 @@ export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontL
     if (task) {
       task.abortController.abort();
       this.loadingTasks.delete(id);
-      this.emit('cancelled', id);
+      this.emit('cancelled', { id });
       task.reject(error);
     }
   }

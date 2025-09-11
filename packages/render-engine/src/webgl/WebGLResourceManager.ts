@@ -61,8 +61,11 @@ export interface FramebufferConfig {
   samples?: number; // MSAA样本数
 }
 
+// WebGL资源对象类型
+type WebGLResource = WebGLTexture | WebGLFramebuffer | WebGLRenderbuffer | WebGLShader | WebGLProgram | WebGLBuffer;
+
 // 资源引用
-export interface ResourceRef<T = WebGLObject> {
+export interface ResourceRef<T = WebGLResource> {
   id: string;
   resource: T;
   metadata: ResourceMetadata;
@@ -182,17 +185,30 @@ export class TextureManager {
     const internalFormat = config.internalFormat || format;
 
     // 上传数据
-    this.gl.texImage2D(
-      this.gl.TEXTURE_2D,
-      0,
-      internalFormat,
-      config.width,
-      config.height,
-      0,
-      format,
-      type,
-      data || null
-    );
+    if (data instanceof HTMLImageElement || data instanceof ImageData) {
+      // 处理图像数据
+      this.gl.texImage2D(
+        this.gl.TEXTURE_2D,
+        0,
+        internalFormat,
+        format,
+        type,
+        data
+      );
+    } else {
+      // 处理二进制数据
+      this.gl.texImage2D(
+        this.gl.TEXTURE_2D,
+        0,
+        internalFormat,
+        config.width,
+        config.height,
+        0,
+        format,
+        type,
+        data || null
+      );
+    }
 
     // 设置过滤参数
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, 
@@ -271,23 +287,42 @@ export class TextureManager {
     this.gl.bindTexture(this.gl.TEXTURE_2D, ref.resource);
     
     if (width !== undefined && height !== undefined) {
-      this.gl.texSubImage2D(
-        this.gl.TEXTURE_2D,
-        0,
-        x, y, width, height,
-        config.format || this.gl.RGBA,
-        config.type || this.gl.UNSIGNED_BYTE,
-        data
-      );
+      if (data instanceof HTMLImageElement || data instanceof ImageData) {
+        // 处理图像数据
+        this.gl.texSubImage2D(
+          this.gl.TEXTURE_2D,
+          0,
+          x, y,
+          config.format || this.gl.RGBA,
+          config.type || this.gl.UNSIGNED_BYTE,
+          data
+        );
+      } else {
+        // 处理二进制数据
+        this.gl.texSubImage2D(
+          this.gl.TEXTURE_2D,
+          0,
+          x, y, width, height,
+          config.format || this.gl.RGBA,
+          config.type || this.gl.UNSIGNED_BYTE,
+          data
+        );
+      }
     } else {
-      this.gl.texImage2D(
-        this.gl.TEXTURE_2D,
-        0,
-        config.internalFormat || config.format || this.gl.RGBA,
-        config.format || this.gl.RGBA,
-        config.type || this.gl.UNSIGNED_BYTE,
-        data as any
-      );
+      if (data instanceof HTMLImageElement || data instanceof ImageData) {
+        // 处理图像数据
+        this.gl.texImage2D(
+          this.gl.TEXTURE_2D,
+          0,
+          config.internalFormat || config.format || this.gl.RGBA,
+          config.format || this.gl.RGBA,
+          config.type || this.gl.UNSIGNED_BYTE,
+          data
+        );
+      } else {
+        // 处理二进制数据，需要指定尺寸
+        throw new Error('Binary data requires width and height parameters');
+      }
     }
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);

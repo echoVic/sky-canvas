@@ -38,6 +38,13 @@ export class EasingFunctions {
     return Array.from(this.functions.keys());
   }
 
+  /**
+   * 直接访问线性缓动函数
+   */
+  static get linear(): EasingFunction {
+    return this.get(EasingType.LINEAR);
+  }
+
   private static initializeFunctions(): void {
     // 线性
     this.functions.set(EasingType.LINEAR, (t: number) => t);

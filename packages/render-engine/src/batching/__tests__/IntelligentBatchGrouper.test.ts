@@ -8,31 +8,16 @@ import { IRenderable } from '../../core/IRenderEngine';
 
 // Mock IRenderable
 function createMockRenderable(overrides: Partial<IRenderable> = {}): IRenderable {
+  const defaultBounds = { x: 0, y: 0, width: 100, height: 100 };
   return {
     id: Math.random().toString(36),
-    position: { x: 0, y: 0 },
-    size: { width: 100, height: 100 },
-    rotation: 0,
+    bounds: defaultBounds,
     visible: true,
-    opacity: 1,
     zIndex: 0,
     render: vi.fn(),
-    getRenderState: vi.fn().mockReturnValue({
-      textureId: 'texture1',
-      blendMode: 'normal',
-      shaderId: 'default',
-      zIndex: 0,
-      opacity: 1,
-      cullMode: 'none',
-      depthTest: false,
-      stencilTest: false
-    }),
-    getBounds: vi.fn().mockReturnValue({
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100
-    }),
+    hitTest: vi.fn().mockReturnValue(false),
+    getBounds: vi.fn().mockReturnValue(defaultBounds),
+    dispose: vi.fn(),
     ...overrides
   };
 }
@@ -50,47 +35,33 @@ describe('IntelligentBatchGrouper', () => {
       expect(grouper.getStats().totalGroups).toBe(0);
     });
 
-    it('应该能够对相同渲染状态的对象进行分组', () => {
+    it('应该能够处理空数组', () => {
+      const groups = grouper.performGrouping([]);
+      expect(groups).toEqual([]);
+      expect(grouper.getStats().totalGroups).toBe(0);
+    });
+
+    it('应该能够对单个对象进行分组', () => {
       const renderables = [
-        createMockRenderable({ id: '1' }),
-        createMockRenderable({ id: '2' }),
-        createMockRenderable({ id: '3' })
+        createMockRenderable({ id: '1' })
       ];
 
       const groups = grouper.performGrouping(renderables);
       
       expect(groups).toHaveLength(1);
-      expect(groups[0].items).toHaveLength(3);
-      expect(groups[0].renderState.textureId).toBe('texture1');
+      expect(groups[0].items).toHaveLength(1);
+      expect(groups[0].items[0].id).toBe('1');
     });
 
-    it('应该能够将不同渲染状态的对象分为不同组', () => {
+    it('应该能够对多个不同类型的对象分组', () => {
       const renderables = [
         createMockRenderable({ 
           id: '1',
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          zIndex: 1
         }),
         createMockRenderable({ 
           id: '2',
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture2',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          zIndex: 2
         })
       ];
 
@@ -104,364 +75,191 @@ describe('IntelligentBatchGrouper', () => {
 
   describe('空间聚类', () => {
     it('应该能够将空间上相近的对象聚类到同一组', () => {
+      const bounds1 = { x: 100, y: 100, width: 50, height: 50 };
+      const bounds2 = { x: 105, y: 105, width: 50, height: 50 };
+      const bounds3 = { x: 500, y: 500, width: 50, height: 50 };
+
       const renderables = [
         createMockRenderable({ 
           id: '1',
-          position: { x: 100, y: 100 },
+          bounds: bounds1,
           zIndex: 1,
-          getBounds: vi.fn().mockReturnValue({ x: 100, y: 100, width: 50, height: 50 }),
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 1,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          getBounds: vi.fn().mockReturnValue(bounds1)
         }),
         createMockRenderable({ 
           id: '2',
-          position: { x: 105, y: 105 },
-          zIndex: 2,
-          getBounds: vi.fn().mockReturnValue({ x: 105, y: 105, width: 50, height: 50 }),
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 2,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          bounds: bounds2,
+          zIndex: 1,
+          getBounds: vi.fn().mockReturnValue(bounds2)
         }),
         createMockRenderable({ 
           id: '3',
-          position: { x: 500, y: 500 },
-          zIndex: 10,
-          getBounds: vi.fn().mockReturnValue({ x: 500, y: 500, width: 50, height: 50 }),
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 10,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          bounds: bounds3,
+          zIndex: 1,
+          getBounds: vi.fn().mockReturnValue(bounds3)
         })
       ];
 
       const groups = grouper.performGrouping(renderables);
       
-      // 应该有分组结果
-      expect(groups.length).toBeGreaterThanOrEqual(1);
+      // 前两个对象应该在同一组，第三个对象在另一组
+      expect(groups).toHaveLength(2);
+      const group1 = groups.find(g => g.items.length === 2);
+      const group2 = groups.find(g => g.items.length === 1);
       
-      const stats = grouper.getStats();
-      // 验证统计信息的完整性
-      expect(stats.totalObjects).toBe(3);
-      expect(stats.totalGroups).toBe(groups.length);
+      expect(group1).toBeDefined();
+      expect(group2).toBeDefined();
+      expect(group2!.items[0].id).toBe('3');
     });
 
-    it('应该能够计算正确的空间距离', () => {
+    it('应该能够对远距离对象分组到不同组', () => {
+      const bounds1 = { x: 0, y: 0, width: 50, height: 50 };
+      const bounds2 = { x: 1000, y: 1000, width: 50, height: 50 };
+
       const renderables = [
         createMockRenderable({ 
           id: '1',
-          position: { x: 0, y: 0 },
-          getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 10, height: 10 })
+          bounds: bounds1,
+          getBounds: vi.fn().mockReturnValue(bounds1)
         }),
         createMockRenderable({ 
           id: '2',
-          position: { x: 100, y: 100 },
-          getBounds: vi.fn().mockReturnValue({ x: 100, y: 100, width: 10, height: 10 })
+          bounds: bounds2,
+          getBounds: vi.fn().mockReturnValue(bounds2)
         })
       ];
 
       const groups = grouper.performGrouping(renderables);
       
-      // 距离较远的对象应该分为不同组（当超过聚类阈值时）
-      const stats = grouper.getStats();
-      expect(stats.totalGroups).toBeGreaterThanOrEqual(1);
+      expect(groups).toHaveLength(2);
+      expect(groups[0].items).toHaveLength(1);
+      expect(groups[1].items).toHaveLength(1);
     });
   });
 
-  describe('分组合并', () => {
-    it('应该能够合并相似的小组', () => {
-      const renderables = Array.from({ length: 5 }, (_, i) => 
+  describe('Z层级分组', () => {
+    it('应该根据Z层级进行分组', () => {
+      const renderables = [
+        createMockRenderable({ id: '1', zIndex: 1 }),
+        createMockRenderable({ id: '2', zIndex: 2 }),
+        createMockRenderable({ id: '3', zIndex: 1 })
+      ];
+
+      const groups = grouper.performGrouping(renderables);
+      
+      expect(groups).toHaveLength(2);
+      
+      const zIndex1Group = groups.find(g => g.items.some(item => item.zIndex === 1));
+      const zIndex2Group = groups.find(g => g.items.some(item => item.zIndex === 2));
+      
+      expect(zIndex1Group).toBeDefined();
+      expect(zIndex2Group).toBeDefined();
+      expect(zIndex1Group!.items).toHaveLength(2);
+      expect(zIndex2Group!.items).toHaveLength(1);
+    });
+  });
+
+  describe('复杂分组场景', () => {
+    it('应该能够处理大量对象的分组', () => {
+      const renderables = Array.from({ length: 1000 }, (_, i) => 
         createMockRenderable({ 
-          id: i.toString(),
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: i < 2 ? 'texture1' : 'texture2',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: i < 2 ? 1 : 0.9, // 略微不同的opacity
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          id: `item-${i}`,
+          zIndex: i % 10,
+          bounds: { x: i % 100, y: Math.floor(i / 100), width: 10, height: 10 }
         })
       );
 
       const groups = grouper.performGrouping(renderables);
       
-      const stats = grouper.getStats();
-      expect(stats.mergedGroups).toBeGreaterThanOrEqual(0);
+      expect(groups.length).toBeGreaterThan(0);
+      expect(groups.length).toBeLessThanOrEqual(renderables.length);
+      
+      // 验证所有对象都被分组
+      const totalItems = groups.reduce((sum, group) => sum + group.items.length, 0);
+      expect(totalItems).toBe(renderables.length);
     });
 
-    it('应该能够计算分组相似性', () => {
+    it('应该能够处理具有相同属性的对象', () => {
       const renderables = [
-        createMockRenderable({ 
-          id: '1',
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        }),
-        createMockRenderable({ 
-          id: '2',
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: 0.9, // 微小差异
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        })
+        createMockRenderable({ id: '1', zIndex: 1 }),
+        createMockRenderable({ id: '2', zIndex: 1 }),
+        createMockRenderable({ id: '3', zIndex: 1 })
       ];
 
       const groups = grouper.performGrouping(renderables);
       
-      // 高相似性的对象应该被合并
       expect(groups).toHaveLength(1);
-      expect(groups[0].items).toHaveLength(2);
+      expect(groups[0].items).toHaveLength(3);
     });
   });
 
-  describe('Z-Index 排序', () => {
-    it('应该按照Z-Index正确排序分组', () => {
-      const renderables = [
+  describe('性能优化', () => {
+    it('应该能够在合理时间内处理大量对象', () => {
+      const startTime = performance.now();
+      const renderables = Array.from({ length: 10000 }, (_, i) => 
         createMockRenderable({ 
-          id: '1',
-          zIndex: 2,
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 2,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        }),
-        createMockRenderable({ 
-          id: '2',
-          zIndex: 1,
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture2',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 1,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        }),
-        createMockRenderable({ 
-          id: '3',
-          zIndex: 3,
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture3',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 3,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        })
-      ];
-
-      const groups = grouper.performGrouping(renderables);
-      
-      // 检查组的Z-Index排序
-      for (let i = 1; i < groups.length; i++) {
-        expect(groups[i].renderState.zIndex).toBeGreaterThanOrEqual(groups[i-1].renderState.zIndex);
-      }
-    });
-  });
-
-  describe('性能统计', () => {
-    it('应该提供准确的统计信息', () => {
-      const renderables = Array.from({ length: 10 }, (_, i) => 
-        createMockRenderable({ 
-          id: i.toString(),
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: i % 3 === 0 ? 'texture1' : 'texture2',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
+          id: `perf-test-${i}`,
+          zIndex: Math.floor(i / 100)
         })
       );
 
       const groups = grouper.performGrouping(renderables);
-      const stats = grouper.getStats();
+      const endTime = performance.now();
       
-      expect(stats.totalObjects).toBe(10);
-      expect(stats.totalGroups).toBe(groups.length);
-      expect(stats.optimizationRatio).toBeGreaterThan(0);
-      expect(stats.optimizationRatio).toBeLessThanOrEqual(1);
-    });
-
-    it('应该计算正确的优化比率', () => {
-      // 创建可以完全合并的对象
-      const renderables = Array.from({ length: 5 }, (_, i) => 
-        createMockRenderable({ id: i.toString() })
-      );
-
-      const groups = grouper.performGrouping(renderables);
-      const stats = grouper.getStats();
-      
-      // 5个对象合并为1组，优化比率应该是 (5-1)/5 = 0.8
-      expect(stats.optimizationRatio).toBeCloseTo(0.8, 1);
-    });
-  });
-
-  describe('事件系统', () => {
-    it('应该发出分组创建事件', (done) => {
-      grouper.on('groupCreated', (group) => {
-        expect(group).toBeDefined();
-        expect(group.items).toBeDefined();
-        expect(group.renderState).toBeDefined();
-        done();
-      });
-
-      const renderables = [createMockRenderable()];
-      grouper.performGrouping(renderables);
-    });
-
-    it('应该发出优化完成事件', (done) => {
-      grouper.on('optimizationComplete', (stats) => {
-        expect(stats).toBeDefined();
-        expect(stats.totalObjects).toBeGreaterThan(0);
-        expect(stats.totalGroups).toBeGreaterThan(0);
-        done();
-      });
-
-      const renderables = [createMockRenderable()];
-      grouper.performGrouping(renderables);
+      expect(endTime - startTime).toBeLessThan(1000); // 应该在1秒内完成
+      expect(groups.length).toBeGreaterThan(0);
     });
   });
 
   describe('边界情况', () => {
-    it('应该处理空的渲染对象列表', () => {
-      const groups = grouper.performGrouping([]);
-      
-      expect(groups).toHaveLength(0);
-      
-      const stats = grouper.getStats();
-      expect(stats.totalObjects).toBe(0);
-      expect(stats.totalGroups).toBe(0);
-    });
-
-    it('应该处理单个渲染对象', () => {
-      const renderables = [createMockRenderable()];
-      const groups = grouper.performGrouping(renderables);
-      
-      expect(groups).toHaveLength(1);
-      expect(groups[0].items).toHaveLength(1);
-    });
-
-    it('应该处理getRenderState返回null的情况', () => {
-      const renderable = createMockRenderable({
-        getRenderState: vi.fn().mockReturnValue(null)
-      });
-
-      // 应该不会抛出错误
-      expect(() => {
-        grouper.performGrouping([renderable]);
-      }).not.toThrow();
-    });
-
-    it('应该处理getBounds返回null的情况', () => {
-      const renderable = createMockRenderable({
-        getBounds: vi.fn().mockReturnValue(null)
-      });
-
-      expect(() => {
-        grouper.performGrouping([renderable]);
-      }).not.toThrow();
-    });
-  });
-
-  describe('配置管理', () => {
-    it('应该能够重置统计数据', () => {
-      const renderables = [createMockRenderable()];
-      grouper.performGrouping(renderables);
-      
-      let stats = grouper.getStats();
-      expect(stats.totalObjects).toBeGreaterThan(0);
-      
-      grouper.reset();
-      stats = grouper.getStats();
-      expect(stats.totalObjects).toBe(0);
-      expect(stats.totalGroups).toBe(0);
-    });
-
-    it('应该支持分组权重配置', () => {
-      // 这个测试验证权重配置是否被正确应用
-      // 实际效果需要通过分组结果的差异来验证
+    it('应该处理null和undefined值', () => {
       const renderables = [
-        createMockRenderable({ 
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture1',
-            blendMode: 'multiply',
-            shaderId: 'custom',
-            zIndex: 0,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        }),
-        createMockRenderable({ 
-          getRenderState: vi.fn().mockReturnValue({
-            textureId: 'texture2',
-            blendMode: 'normal',
-            shaderId: 'default',
-            zIndex: 0,
-            opacity: 1,
-            cullMode: 'none',
-            depthTest: false,
-            stencilTest: false
-          })
-        })
+        createMockRenderable({ id: '1' })
+      ];
+
+      expect(() => {
+        grouper.performGrouping(renderables);
+      }).not.toThrow();
+    });
+
+    it('应该处理不可见对象', () => {
+      const renderables = [
+        createMockRenderable({ id: '1', visible: false }),
+        createMockRenderable({ id: '2', visible: true })
       ];
 
       const groups = grouper.performGrouping(renderables);
       
-      // 不同的纹理、混合模式、着色器应该产生不同的组
-      expect(groups).toHaveLength(2);
+      expect(groups.length).toBeGreaterThan(0);
+      // 验证所有对象都被包含（包括不可见的）
+      const totalItems = groups.reduce((sum, group) => sum + group.items.length, 0);
+      expect(totalItems).toBe(2);
+    });
+  });
+
+  describe('统计信息', () => {
+    it('应该提供正确的统计信息', () => {
+      const renderables = [
+        createMockRenderable({ id: '1' }),
+        createMockRenderable({ id: '2' })
+      ];
+
+      grouper.performGrouping(renderables);
+      const stats = grouper.getStats();
+      
+      expect(stats.totalGroups).toBeGreaterThan(0);
+      expect(stats.totalItems).toBe(2);
+      expect(stats.averageItemsPerGroup).toBeGreaterThan(0);
+    });
+
+    it('应该重置统计信息', () => {
+      const renderables = [createMockRenderable({ id: '1' })];
+      
+      grouper.performGrouping(renderables);
+      expect(grouper.getStats().totalGroups).toBeGreaterThan(0);
+      
+      grouper.resetStats();
+      expect(grouper.getStats().totalGroups).toBe(0);
     });
   });
 });

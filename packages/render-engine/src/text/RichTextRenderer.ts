@@ -18,6 +18,7 @@ import {
   RadialGradient,
   ColorUtils,
   TextDecoration,
+  FontWeight,
   TextTransform,
   TextAlign,
   VerticalAlign
@@ -207,7 +208,7 @@ export class RichTextRenderer implements IRichTextRenderer {
             // 在这个片段中
             const relativeIndex = index - currentIndex;
             const partialText = fragment.text.substring(0, relativeIndex);
-            const partialWidth = this.measureText(partialText, fragment.style);
+            const partialWidth = this.measureTextWidth(partialText, fragment.style);
             
             return {
               x: currentX + partialWidth,
@@ -668,7 +669,7 @@ export class RichTextRenderer implements IRichTextRenderer {
       return cached.width || 0;
     }
     
-    const width = this.measureText(fragment.text, fragment.style) || 0;
+    const width = this.measureTextWidth(fragment.text, fragment.style) || 0;
     
     this.measurementCache.set(cacheKey, { key: cacheKey, width, height: 0 });
     return width;
@@ -693,7 +694,7 @@ export class RichTextRenderer implements IRichTextRenderer {
   /**
    * 测量文本宽度
    */
-  private measureText(text: string, style: TextStyle | undefined): number {
+  private measureTextWidth(text: string, style: TextStyle | undefined): number {
     if (!text) return 0;
     
     this.setFont(this.tempContext, style);
@@ -734,7 +735,7 @@ export class RichTextRenderer implements IRichTextRenderer {
     let currentWidth = 0;
     
     for (let i = 0; i < text.length; i++) {
-      const charWidth = this.measureText(text.charAt(i), fragment.style);
+      const charWidth = this.measureTextWidth(text.charAt(i), fragment.style);
       
       if (relativeX < currentWidth + charWidth / 2) {
         return baseIndex + i;
@@ -774,7 +775,7 @@ export class RichTextRenderer implements IRichTextRenderer {
       case VerticalAlign.BOTTOM:
         return 'bottom';
       default:
-        return 'baseline';
+        return 'alphabetic';
     }
   }
 

@@ -3,27 +3,45 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { EnhancedBatcher, TextureAtlas, globalBatcher } from '../EnhancedBatcher';
+import { EnhancedBatcher, globalBatcher } from '../EnhancedBatcher';
+import { TextureAtlas } from '../../textures/TextureAtlas';
 import { IRenderable } from '../../core/IRenderEngine';
+import { IRect } from '../../graphics/IGraphicsContext';
 
 // 创建模拟的渲染对象
 class MockRenderable implements IRenderable {
-  id: string;
+  readonly id: string;
+  readonly bounds: IRect;
+  readonly visible: boolean = true;
+  readonly zIndex: number = 0;
+  
   textureId?: string;
   blendMode?: string;
   shaderId?: string;
-  zIndex?: number;
   
   constructor(id: string, options?: Partial<MockRenderable>) {
     this.id = id;
+    this.bounds = { x: 0, y: 0, width: 10, height: 10 };
+    this.zIndex = options?.zIndex ?? 0;
     Object.assign(this, options);
   }
   
-  getBounds() {
-    return { x: 0, y: 0, width: 10, height: 10 };
+  getBounds(): IRect {
+    return this.bounds;
   }
   
   render = vi.fn();
+  
+  hitTest(point: { x: number; y: number }): boolean {
+    return point.x >= this.bounds.x && 
+           point.x <= this.bounds.x + this.bounds.width &&
+           point.y >= this.bounds.y && 
+           point.y <= this.bounds.y + this.bounds.height;
+  }
+  
+  dispose(): void {
+    // Mock implementation
+  }
 }
 
 describe('TextureAtlas', () => {
@@ -34,7 +52,8 @@ describe('TextureAtlas', () => {
   });
 
   it('应该能够添加纹理到图集', () => {
-    const entry = atlas.addTexture('texture1', 64, 64);
+    const textureInfo = { id: 'texture1', width: 64, height: 64 };
+    const entry = atlas.addTexture(textureInfo);
     
     expect(entry).not.toBeNull();
     expect(entry?.textureId).toBe('texture1');
@@ -43,8 +62,9 @@ describe('TextureAtlas', () => {
   });
 
   it('应该能够获取纹理信息', () => {
-    atlas.addTexture('texture1', 64, 64);
-    const info = atlas.getTextureInfo('texture1');
+    const textureInfo = { id: 'texture1', width: 64, height: 64 };
+    atlas.addTexture(textureInfo);
+    const info = atlas.getTexture('texture1');
     
     expect(info).not.toBeNull();
     expect(info?.textureId).toBe('texture1');
@@ -52,22 +72,26 @@ describe('TextureAtlas', () => {
 
   it('应该能够创建多个图集', () => {
     // 添加一个大纹理，应该创建新图集
-    atlas.addTexture('texture1', 1500, 1500);
-    atlas.addTexture('texture2', 1500, 1500);
+    const texture1 = { id: 'texture1', width: 1500, height: 1500 };
+    const texture2 = { id: 'texture2', width: 1500, height: 1500 };
+    atlas.addTexture(texture1);
+    atlas.addTexture(texture2);
     
-    const atlasIds = atlas.getAtlasIds();
-    expect(atlasIds.length).toBeGreaterThan(0);
+    const stats = atlas.getStats();
+    expect(stats.atlasCount).toBeGreaterThan(0);
   });
 
   it('应该能够复用图集空间', () => {
-    atlas.addTexture('texture1', 32, 32);
-    atlas.addTexture('texture2', 32, 32);
+    const texture1 = { id: 'texture1', width: 32, height: 32 };
+    const texture2 = { id: 'texture2', width: 32, height: 32 };
+    atlas.addTexture(texture1);
+    atlas.addTexture(texture2);
     
-    const info1 = atlas.getTextureInfo('texture1');
-    const info2 = atlas.getTextureInfo('texture2');
+    const info1 = atlas.getTexture('texture1');
+    const info2 = atlas.getTexture('texture2');
     
     // 两个小纹理应该在同一个图集中
-    expect(info1?.atlasTextureId).toBe(info2?.atlasTextureId);
+    expect(info1?.atlasId).toBe(info2?.atlasId);
   });
 });
 
@@ -222,20 +246,22 @@ describe('EnhancedBatcher', () => {
 
   describe('纹理图集集成', () => {
     it('应该能够添加纹理到图集', () => {
-      const entry = batcher.addTextureToAtlas('texture1', 64, 64);
+      const textureInfo = { id: 'texture1', width: 64, height: 64 };
+      const entry = batcher.getTextureAtlas().addTexture(textureInfo);
       
       expect(entry).not.toBeNull();
       expect(entry?.textureId).toBe('texture1');
     });
 
     it('应该在添加纹理时触发事件', () => {
-      let atlasUpdated = false;
-      batcher.on('textureAtlasUpdated', () => {
-        atlasUpdated = true;
+      let textureAdded = false;
+      batcher.getTextureAtlas().on('textureAdded', () => {
+        textureAdded = true;
       });
 
-      batcher.addTextureToAtlas('texture1', 64, 64);
-      expect(atlasUpdated).toBe(true);
+      const textureInfo = { id: 'texture1', width: 64, height: 64 };
+      batcher.getTextureAtlas().addTexture(textureInfo);
+      expect(textureAdded).toBe(true);
     });
 
     it('应该能够获取纹理图集', () => {

@@ -4,7 +4,7 @@
 
 // 原有的性能监控组件
 export * from './PerformanceMonitor';
-export { WebGLAnalyzer } from './WebGLAnalyzer';
+export * from './WebGLAnalyzer';
 
 // 统一性能监控系统
 export { 

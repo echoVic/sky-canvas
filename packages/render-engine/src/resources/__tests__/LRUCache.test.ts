@@ -274,7 +274,7 @@ describe('LRUCache', () => {
       
       cache.on('evict', (key, item, reason) => {
         expect(typeof key).toBe('string');
-        expect(reason).toBeOneOf(['lru', 'memory', 'ttl']);
+        expect(['lru', 'memory', 'ttl']).toContain(reason);
         evictReceived = true;
       });
       

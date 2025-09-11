@@ -95,37 +95,37 @@ const shaderTemplates = {
     variants: [
       {
         name: 'simple',
-        defines: {},
+        defines: {} as Record<string, string | number | boolean>,
         features: []
       },
       {
         name: 'textured',
-        defines: { USE_TEXTURE: 1 },
+        defines: { USE_TEXTURE: 1 } as Record<string, string | number | boolean>,
         features: ['texture']
       },
       {
         name: 'colored',
-        defines: { USE_VERTEX_COLORS: 1 },
+        defines: { USE_VERTEX_COLORS: 1 } as Record<string, string | number | boolean>,
         features: ['vertex-colors']
       },
       {
         name: 'textured_colored',
-        defines: { USE_TEXTURE: 1, USE_VERTEX_COLORS: 1 },
+        defines: { USE_TEXTURE: 1, USE_VERTEX_COLORS: 1 } as Record<string, string | number | boolean>,
         features: ['texture', 'vertex-colors']
       },
       {
         name: 'instanced',
-        defines: { USE_INSTANCING: 1 },
+        defines: { USE_INSTANCING: 1 } as Record<string, string | number | boolean>,
         features: ['instancing']
       },
       {
         name: 'instanced_textured',
-        defines: { USE_INSTANCING: 1, USE_TEXTURE: 1 },
+        defines: { USE_INSTANCING: 1, USE_TEXTURE: 1 } as Record<string, string | number | boolean>,
         features: ['instancing', 'texture']
       },
       {
         name: 'lit_textured',
-        defines: { USE_TEXTURE: 1, USE_LIGHTING: 1 },
+        defines: { USE_TEXTURE: 1, USE_LIGHTING: 1 } as Record<string, string | number | boolean>,
         features: ['texture', 'lighting']
       }
     ],
@@ -232,27 +232,27 @@ const shaderTemplates = {
     variants: [
       {
         name: 'copy',
-        defines: {},
+        defines: {} as Record<string, string | number | boolean>,
         features: []
       },
       {
         name: 'blur',
-        defines: { BLUR: 1 },
+        defines: { BLUR: 1 } as Record<string, string | number | boolean>,
         features: ['blur']
       },
       {
         name: 'bloom',
-        defines: { BLOOM: 1 },
+        defines: { BLOOM: 1 } as Record<string, string | number | boolean>,
         features: ['bloom']
       },
       {
         name: 'color_grading',
-        defines: { COLOR_GRADING: 1 },
+        defines: { COLOR_GRADING: 1 } as Record<string, string | number | boolean>,
         features: ['color-grading']
       },
       {
         name: 'full_postprocess',
-        defines: { BLUR: 1, BLOOM: 1, COLOR_GRADING: 1 },
+        defines: { BLUR: 1, BLOOM: 1, COLOR_GRADING: 1 } as Record<string, string | number | boolean>,
         features: ['blur', 'bloom', 'color-grading']
       }
     ],

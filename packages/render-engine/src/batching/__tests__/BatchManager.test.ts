@@ -5,25 +5,42 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BatchManager, BatchStrategy, globalBatchManager } from '../BatchManager';
 import { IRenderable } from '../../core/IRenderEngine';
+import { IRect } from '../../graphics/IGraphicsContext';
 
 // 创建模拟的渲染对象
 class MockRenderable implements IRenderable {
-  id: string;
+  readonly id: string;
+  readonly bounds: IRect;
+  readonly visible: boolean = true;
+  readonly zIndex: number = 0;
+  
   textureId?: string;
   blendMode?: string;
   shaderId?: string;
-  zIndex?: number;
   
   constructor(id: string, options?: Partial<MockRenderable>) {
     this.id = id;
+    this.bounds = { x: 0, y: 0, width: 10, height: 10 };
+    this.zIndex = options?.zIndex ?? 0;
     Object.assign(this, options);
   }
   
-  getBounds() {
-    return { x: 0, y: 0, width: 10, height: 10 };
+  getBounds(): IRect {
+    return this.bounds;
   }
   
   render = vi.fn();
+  
+  hitTest(point: { x: number; y: number }): boolean {
+    return point.x >= this.bounds.x && 
+           point.x <= this.bounds.x + this.bounds.width &&
+           point.y >= this.bounds.y && 
+           point.y <= this.bounds.y + this.bounds.height;
+  }
+  
+  dispose(): void {
+    // Mock implementation
+  }
 }
 
 describe('BatchManager', () => {

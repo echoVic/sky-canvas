@@ -12,7 +12,7 @@ export class SplinePath extends BasePath {
   private points: Point2D[];
   private tension: number;
   private closed: boolean;
-  private controlPoints: Point2D[];
+  private controlPoints: Point2D[] = [];
 
   constructor(config: SplinePathConfig) {
     super();

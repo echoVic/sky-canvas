@@ -1,7 +1,7 @@
 /**
  * WebGL图形上下文实现
  */
-import { IGraphicsContext, IGraphicsContextFactory, IGraphicsCapabilities, IPoint, IImageData } from '../graphics/IGraphicsContext';
+import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint } from '../graphics/IGraphicsContext';
 import { Matrix3 } from '../math/Matrix3';
 import { WebGLRenderManager } from './WebGLRenderManager';
 
@@ -276,6 +276,23 @@ class WebGLContext implements IWebGLContext {
 
   setLineDash(segments: number[]): void {
     // WebGL中虚线需要通过着色器实现
+  }
+
+  setGlobalAlpha(alpha: number): void {
+    this.globalAlpha = Math.max(0, Math.min(1, alpha));
+  }
+
+  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+    // WebGL中文本对齐需要在文本渲染时处理
+  }
+
+  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+    // WebGL中文本基线需要在文本渲染时处理
+  }
+
+  setFont(font: string): void {
+    // WebGL中字体设置需要在文本渲染时处理
+    // 这里可以解析字体字符串并存储字体信息
   }
 
   drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {

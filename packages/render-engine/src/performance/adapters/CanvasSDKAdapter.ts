@@ -369,8 +369,8 @@ export class CanvasSDKPerformanceHelper {
         const endTime = performance.now();
         
         // 更新性能指标
-        if (this.performanceHelper instanceof CanvasSDKPerformanceHelper) {
-          this.performanceHelper.metrics[metricType] = endTime - startTime;
+        if ((this as any).performanceHelper instanceof CanvasSDKPerformanceHelper) {
+          (this as any).performanceHelper.metrics[metricType] = endTime - startTime;
         }
         
         return result;

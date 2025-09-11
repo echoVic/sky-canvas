@@ -4,8 +4,57 @@
  */
 
 import { ShapeEntity } from '../models/entities/Shape';
-import { ShapeAdapter } from '../models/entities/ShapeAdapter';
 import { ISelectionState, IViewportState } from '../viewmodels/interfaces/IViewModel';
+
+/**
+ * 获取形状边界的工具函数
+ */
+function getShapeBounds(shape: ShapeEntity): { x: number; y: number; width: number; height: number } {
+  const { position } = shape.transform;
+  
+  switch (shape.type) {
+    case 'rectangle':
+      return {
+        x: position.x,
+        y: position.y,
+        width: shape.size.width,
+        height: shape.size.height
+      };
+    case 'circle':
+      const diameter = shape.radius * 2;
+      return {
+        x: position.x - shape.radius,
+        y: position.y - shape.radius,
+        width: diameter,
+        height: diameter
+      };
+    case 'text':
+      // 文本边界的简化计算，实际应该基于字体大小和内容
+      const textWidth = shape.content.length * shape.fontSize * 0.6;
+      const textHeight = shape.fontSize;
+      return {
+        x: position.x,
+        y: position.y,
+        width: textWidth,
+        height: textHeight
+      };
+    case 'path':
+      // 路径边界的简化计算，实际应该解析 SVG path data
+      return {
+        x: position.x,
+        y: position.y,
+        width: 100, // 默认值
+        height: 100  // 默认值
+      };
+    default:
+      return {
+        x: position.x,
+        y: position.y,
+        width: 100,
+        height: 100
+      };
+  }
+}
 
 export interface ISelectionViewConfig {
   selectionColor?: string;
@@ -72,7 +121,7 @@ export class SelectionView {
    * 渲染单个形状选择
    */
   private renderSingleSelection(ctx: CanvasRenderingContext2D, shape: ShapeEntity, viewport: IViewportState): void {
-    const bounds = ShapeAdapter.getShapeBounds(shape);
+    const bounds = getShapeBounds(shape);
     
     // 绘制选择框
     this.drawSelectionBounds(ctx, bounds);
@@ -199,7 +248,7 @@ export class SelectionView {
       return null;
     }
 
-    const bounds = ShapeAdapter.getShapeBounds(selectedShapes[0]);
+    const bounds = getShapeBounds(selectedShapes[0]);
     const handles = this.getControlHandles(bounds);
     const handleSize = this.config.handleSize! / viewport.zoom;
     const halfSize = handleSize / 2;

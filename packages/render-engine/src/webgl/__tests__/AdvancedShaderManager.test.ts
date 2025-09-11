@@ -2,8 +2,23 @@
  * 高级着色器管理器测试
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdvancedShaderManager } from '../AdvancedShaderManager';
+
+// 导入所需的类型
+interface ShaderVariant {
+  name: string;
+  defines: Record<string, string | number | boolean>;
+  features: string[];
+}
+
+interface ShaderTemplate {
+  id: string;
+  vertexTemplate: string;
+  fragmentTemplate: string;
+  variants: ShaderVariant[];
+  defaultUniforms: Record<string, unknown>;
+}
 
 // Mock WebGL Context
 const createMockGL = () => {
@@ -43,7 +58,7 @@ const createMockGL = () => {
 };
 
 // 示例着色器模板
-const basicShaderTemplate = {
+const basicShaderTemplate: ShaderTemplate = {
   id: 'basic',
   vertexTemplate: `
     attribute vec4 a_position;
@@ -151,7 +166,7 @@ describe('AdvancedShaderManager', () => {
         await manager.getProgram('nonexistent');
         expect.fail('应该抛出错误');
       } catch (error) {
-        expect(error.message).toContain('Shader template not found');
+        expect((error as Error).message).toContain('Shader template not found');
       }
     });
 
@@ -162,7 +177,7 @@ describe('AdvancedShaderManager', () => {
         await manager.getProgram('basic', 'nonexistent');
         expect.fail('应该抛出错误');
       } catch (error) {
-        expect(error.message).toContain('Shader variant not found');
+        expect((error as Error).message).toContain('Shader variant not found');
       }
     });
   });
@@ -229,7 +244,7 @@ describe('AdvancedShaderManager', () => {
           void main() { gl_Position = vec4(0.0); }
         `,
         variants: [
-          { name: 'without', defines: {}, features: [] },
+          { name: 'without', defines: {} as Record<string, string | number | boolean>, features: [] },
           { name: 'with', defines: { USE_FEATURE: true }, features: ['feature'] }
         ]
       };

@@ -22,6 +22,9 @@ export { Timeline } from './timeline/Timeline';
 // 动画管理器
 export { AnimationManager } from './AnimationManager';
 
+// 导入 AnimationManager 用于工厂函数
+import { AnimationManager } from './AnimationManager';
+
 // 工厂函数和辅助方法
 export class AnimationUtils {
   /**
@@ -105,7 +108,7 @@ export class AnimationUtils {
     const manager = new AnimationManager();
     const timeline = manager.createTimeline();
     
-    return {
+    const chainableObject = {
       timeline,
       manager,
       to: (target: any, duration: number, properties: Record<string, number>) => {
@@ -117,14 +120,16 @@ export class AnimationUtils {
           )
         });
         timeline.then(animation);
-        return { timeline, manager };
+        return chainableObject;
       },
       play: () => {
         manager.start();
         timeline.play();
-        return { timeline, manager };
+        return chainableObject;
       }
     };
+    
+    return chainableObject;
   }
 
   /**

@@ -6,11 +6,22 @@
 // 字体类型定义
 export * from './types/FontTypes';
 
-// 富文本类型定义
-export * from './types/RichTextTypes';
+// 富文本类型定义  
+export type { 
+  TextStyle,
+  TextLine,
+  TextDecoration,
+  TextTransform,
+  TextAlign,
+  FontWeight,
+  FontStyle
+} from './types/RichTextTypes';
 
 // 国际化文本类型定义
-export * from './types/I18nTextTypes';
+export type {
+  TextDirection,
+  CharacterMetrics as I18nCharacterMetrics
+} from './types/I18nTextTypes';
 
 // 字体加载器
 export { FontLoader, createFontLoader, FontLoadingUtils } from './FontLoader';

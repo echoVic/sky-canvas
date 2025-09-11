@@ -37,8 +37,19 @@ global.cancelAnimationFrame = vi.fn((id: number) => {
 });
 
 // 模拟 setTimeout 和 clearTimeout
-global.setTimeout = vi.fn(global.setTimeout);
-global.clearTimeout = vi.fn(global.clearTimeout);
+Object.defineProperty(global, 'setTimeout', {
+  value: vi.fn((fn: Function, delay?: number) => {
+    const id = Math.random();
+    setTimeout(() => fn(), delay || 0);
+    return id;
+  }),
+  writable: true
+});
+
+Object.defineProperty(global, 'clearTimeout', {
+  value: vi.fn(),
+  writable: true
+});
 
 // 创建测试用的动画目标对象
 export function createTestTarget() {

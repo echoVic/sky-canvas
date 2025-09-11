@@ -28,7 +28,9 @@
       "Bash(echo $?)",
       "Bash(pnpm --filter @sky-canvas/canvas-sdk build --verbose)",
       "Bash(find:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "Bash(tree:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

@@ -23,7 +23,7 @@ export class CirclePath extends BasePath {
   private startAngle: number;
   private endAngle: number;
   private clockwise: boolean;
-  private angleSpan: number;
+  private angleSpan: number = 0;
 
   constructor(config: CirclePathConfig) {
     super();
@@ -215,7 +215,7 @@ export class EllipsePath extends BasePath {
   private startAngle: number;
   private endAngle: number;
   private clockwise: boolean;
-  private angleSpan: number;
+  private angleSpan: number = 0;
 
   constructor(config: EllipsePathConfig) {
     super();

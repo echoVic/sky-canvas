@@ -3,7 +3,8 @@
  * 统一管理和协调不同的批处理策略
  */
 
-import { EnhancedBatcher, BatchStats, RenderBatch, TextureAtlas } from './EnhancedBatcher';
+import { EnhancedBatcher, BatchStats, RenderBatch } from './EnhancedBatcher';
+import { TextureAtlas } from '../textures/TextureAtlas';
 import { AdvancedBatcher } from './AdvancedBatcher';
 import { IntelligentBatchGrouper, RenderGroup } from './IntelligentBatchGrouper';
 import { IRenderable } from '../core/IRenderEngine';
@@ -100,7 +101,7 @@ export class BatchManager extends EventEmitter<BatchManagerEvents> {
    * 设置批处理器事件监听
    */
   private setupBatcherEvents(): void {
-    this.enhancedBatcher.on('batchOptimized', (data) => {
+    this.enhancedBatcher.on('batchOptimized', (data: { before: unknown; after: unknown }) => {
       const beforeStats = data.before as BatchStats;
       const afterStats = data.after as BatchStats;
       this.emit('optimizationComplete', { before: beforeStats, after: afterStats });

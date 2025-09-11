@@ -269,7 +269,7 @@ export class FrontendUIAdapter implements IDataSourceAdapter {
         for (const entry of list.getEntries()) {
           if (entry.entryType === 'navigation') {
             const navEntry = entry as PerformanceNavigationTiming;
-            const loadTime = navEntry.loadEventEnd - navEntry.navigationStart;
+            const loadTime = navEntry.loadEventEnd - (navEntry as any).navigationStart;
             this.renderTimeCache.push(loadTime);
           }
         }
@@ -444,11 +444,11 @@ export class FrontendUIPerformanceHelper {
         const endTime = performance.now();
         
         // 更新性能指标
-        if (this.performanceHelper instanceof FrontendUIPerformanceHelper) {
+        if ((this as any).performanceHelper instanceof FrontendUIPerformanceHelper) {
           if (metricType === 'render') {
-            this.performanceHelper.reactMetrics.renderTime = endTime - startTime;
+            (this as any).performanceHelper.reactMetrics.renderTime = endTime - startTime;
           } else if (metricType === 'update') {
-            this.performanceHelper.reactMetrics.componentUpdateTime = endTime - startTime;
+            (this as any).performanceHelper.reactMetrics.componentUpdateTime = endTime - startTime;
           }
         }
         
@@ -474,7 +474,7 @@ export class FrontendUIPerformanceHelper {
     if ('performance' in window) {
       const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       if (navigationEntry) {
-        return navigationEntry.loadEventEnd - navigationEntry.navigationStart;
+        return navigationEntry.loadEventEnd - (navigationEntry as any).navigationStart;
       }
     }
     return 0;

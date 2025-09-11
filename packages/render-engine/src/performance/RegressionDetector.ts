@@ -138,7 +138,7 @@ export class RegressionDetector {
     const confidence = tTest ? (1 - tTest.pValue) : 0;
 
     // 判断是否有显著回归
-    const hasRegression = tTest?.significant && 
+    const hasRegression = (tTest?.significant ?? false) && 
                          trend === 'degrading' && 
                          magnitude > this.config.tolerance * 100;
 
@@ -151,7 +151,7 @@ export class RegressionDetector {
       statistics: {
         baseline: baselineStats,
         current: currentStats,
-        tTest
+        tTest: tTest ?? undefined
       }
     };
   }

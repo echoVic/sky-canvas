@@ -199,6 +199,26 @@ export class Canvas2DGraphicsContext implements IGraphicsContext {
     this.currentState.style.opacity = opacity;
   }
 
+  setFont(font: string): void {
+    this.ctx.font = font;
+  }
+
+  setGlobalAlpha(alpha: number): void {
+    this.ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+  }
+
+  setLineDash(segments: number[]): void {
+    this.ctx.setLineDash(segments);
+  }
+
+  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+    this.ctx.textAlign = align;
+  }
+
+  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+    this.ctx.textBaseline = baseline;
+  }
+
   // 基础绘制操作
   clear(): void {
     this.ctx.save();

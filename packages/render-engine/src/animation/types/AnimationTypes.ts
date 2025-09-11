@@ -63,6 +63,7 @@ export interface AnimationEvents {
   pause: (animation: IAnimation) => void;
   resume: (animation: IAnimation) => void;
   cancel: (animation: IAnimation) => void;
+  pathUpdate: (animation: IAnimation, motionInfo: any) => void;
 }
 
 export interface IAnimation {

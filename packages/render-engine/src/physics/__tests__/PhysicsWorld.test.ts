@@ -195,7 +195,8 @@ describe('PhysicsWorld', () => {
       const eventBus = {
         emit: vi.fn(),
         on: vi.fn(),
-        off: vi.fn()
+        off: vi.fn(),
+        dispose: vi.fn()
       };
       
       physicsWorld.setEventBus(eventBus);

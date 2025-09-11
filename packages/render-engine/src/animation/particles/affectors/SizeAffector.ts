@@ -4,7 +4,8 @@
 
 import { IParticle, SizeAffectorConfig } from '../../types/ParticleTypes';
 import { BaseAffector } from './BaseAffector';
-import { EasingFunction, EasingFunctions } from '../../easing/EasingFunctions';
+import { EasingFunction } from '../../types/AnimationTypes';
+import { EasingFunctions } from '../../easing/EasingFunctions';
 
 export class SizeAffector extends BaseAffector {
   readonly type = 'size';

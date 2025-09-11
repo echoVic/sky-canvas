@@ -43,7 +43,7 @@ global.AudioContext = class MockAudioContext {
     return { buffer };
   }
 } as any;
-global.webkitAudioContext = global.AudioContext;
+(global as any).webkitAudioContext = global.AudioContext;
 
 describe('AsyncResourceLoader', () => {
   let loader: AsyncResourceLoader;
@@ -419,7 +419,7 @@ describe('AsyncResourceLoader', () => {
       
       expect(task).toBeDefined();
       expect(task?.config.id).toBe('task-info-test');
-      expect(task?.state).toBeOneOf([LoadingState.PENDING, LoadingState.LOADING]);
+      expect([LoadingState.PENDING, LoadingState.LOADING]).toContain(task?.state);
 
       await loadPromise;
     });

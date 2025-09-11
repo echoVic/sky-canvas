@@ -3,19 +3,16 @@
  * 提供 WebGPU 上下文管理和配置的接口定义
  */
 
-import { 
-  IGraphicsContext, 
-  IGraphicsCapabilities, 
-  IPoint, 
-  ISize, 
-  IRect, 
-  IColor, 
-  ITransform, 
-  IGraphicsStyle, 
-  ITextStyle, 
-  IGraphicsState, 
-  IPath, 
-  IImageData 
+import {
+  IColor,
+  IGraphicsCapabilities,
+  IGraphicsContext,
+  IGraphicsState,
+  IGraphicsStyle,
+  IImageData,
+  IPoint,
+  ITextStyle,
+  ITransform
 } from '../graphics/IGraphicsContext';
 import { Rectangle } from '../math/Rectangle';
 
@@ -414,6 +411,47 @@ export class WebGPUContext implements IGraphicsContext {
 
    worldToScreen(point: IPoint): IPoint {
      return { ...point };
+   }
+
+   // 缺少的IGraphicsContext接口方法
+   setFillStyle(color: IColor | string): void {
+     this.setFillColor(color);
+   }
+
+   setStrokeStyle(color: IColor | string): void {
+     this.setStrokeColor(color);
+   }
+
+   setGlobalAlpha(alpha: number): void {
+     this.setOpacity(alpha);
+   }
+
+   setLineDash(segments: number[]): void {
+     console.warn('WebGPU setLineDash not implemented');
+   }
+
+   setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+     console.warn('WebGPU setTextAlign not implemented');
+   }
+
+   setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+     console.warn('WebGPU setTextBaseline not implemented');
+   }
+
+   setFont(font: string): void {
+     console.warn('WebGPU setFont not implemented');
+   }
+
+   drawLine(x1: number, y1: number, x2: number, y2: number): void {
+     console.warn('WebGPU drawLine not implemented');
+   }
+
+   drawRect(rect: IPoint & { width: number; height: number }, fill?: boolean, stroke?: boolean): void {
+     console.warn('WebGPU drawRect not implemented');
+   }
+
+   drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+     console.warn('WebGPU drawCircle not implemented');
    }
 
   /**

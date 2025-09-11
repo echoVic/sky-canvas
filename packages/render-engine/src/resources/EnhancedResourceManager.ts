@@ -144,9 +144,9 @@ class InternalResourceRef<T> implements ResourceRef<T> {
  * 增强型资源管理系统
  */
 export class EnhancedResourceManager<T = any> extends EventEmitter {
-  private loader: AsyncResourceLoader;
-  private cache: MemoryAwareLRUCache<T>;
-  private gpuCache: GPUResourceCache<T & { dispose(): void }>;
+  private loader!: AsyncResourceLoader;
+  private cache!: MemoryAwareLRUCache<T>;
+  private gpuCache!: GPUResourceCache<T & { dispose(): void }>;
   private references = new Map<string, InternalResourceRef<T>>();
   private preloadQueue: ResourceConfig[] = [];
   

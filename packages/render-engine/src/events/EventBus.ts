@@ -15,9 +15,19 @@ export interface IDisposable {
 export type EventListener<T = any> = (event: T) => void;
 
 /**
+ * 事件总线接口
+ */
+export interface IEventBus {
+  on<T = any>(eventType: string, listener: EventListener<T>): void;
+  off<T = any>(eventType: string, listener: EventListener<T>): void;
+  emit<T = any>(eventType: string, event: T): void;
+  dispose(): void;
+}
+
+/**
  * 事件总线类
  */
-export class EventBus implements IDisposable {
+export class EventBus implements IEventBus, IDisposable {
   private listeners: Map<string, Set<EventListener>> = new Map();
 
   /**

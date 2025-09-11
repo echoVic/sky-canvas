@@ -52,8 +52,7 @@ describe('FontLoader', () => {
 
     it('应该能够处理加载选项', async () => {
       const options: FontLoadingOptions = {
-        timeout: 5000,
-        retries: 2
+        timeout: 5000
       };
 
       await fontLoader.load(mockFontSource, options);
@@ -226,7 +225,7 @@ describe('FontLoader', () => {
       };
 
       const options: FontLoadingOptions = {
-        retries: 2
+        timeout: 5000
       };
 
       // 前两次失败，第三次成功

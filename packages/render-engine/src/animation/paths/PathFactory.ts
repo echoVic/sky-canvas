@@ -8,6 +8,8 @@ import {
   PathConfig,
   PathType,
   Point2D,
+  Vector2D,
+  PathPoint,
   LinearPathConfig,
   QuadraticBezierPathConfig,
   CubicBezierPathConfig,
@@ -478,27 +480,6 @@ class CompositePath implements IPath {
     return this.paths[this.paths.length - 1]?.getTangent(1) || { x: 1, y: 0 };
   }
 
-  getNormal(t: number): Point2D {
-    if (this.paths.length === 0) {
-      return { x: 0, y: 1 };
-    }
-
-    const totalLength = this.getLength();
-    const targetDistance = t * totalLength;
-    
-    let currentDistance = 0;
-    for (const path of this.paths) {
-      const pathLength = path.getLength();
-      if (currentDistance + pathLength >= targetDistance) {
-        const localT = (targetDistance - currentDistance) / pathLength;
-        return path.getNormal(Math.max(0, Math.min(1, localT)));
-      }
-      currentDistance += pathLength;
-    }
-    
-    return this.paths[this.paths.length - 1]?.getNormal(1) || { x: 0, y: 1 };
-  }
-
   getBounds(): { min: Point2D; max: Point2D } {
     if (this.paths.length === 0) {
       return { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } };
@@ -521,12 +502,13 @@ class CompositePath implements IPath {
     };
   }
 
-  getClosestPoint(point: Point2D): { point: Point2D; t: number; distance: number } {
+  getClosestPoint(point: Point2D): PathPoint {
     if (this.paths.length === 0) {
-      return { point: { x: 0, y: 0 }, t: 0, distance: 0 };
+      return { x: 0, y: 0, t: 0 };
     }
 
-    let closestResult = { point: { x: 0, y: 0 }, t: 0, distance: Infinity };
+    let closestResult: PathPoint = { x: 0, y: 0, t: 0 };
+    let minDistance = Infinity;
     let currentT = 0;
     const totalLength = this.getLength();
 
@@ -534,20 +516,87 @@ class CompositePath implements IPath {
       const pathLength = path.getLength();
       const pathResult = path.getClosestPoint(point);
       
-      if (pathResult.distance < closestResult.distance) {
+      const distance = Math.sqrt(
+        Math.pow(pathResult.x - point.x, 2) + 
+        Math.pow(pathResult.y - point.y, 2)
+      );
+
+      if (distance < minDistance) {
         // 转换局部t到全局t
-        const globalT = (currentT + pathResult.t * pathLength) / totalLength;
+        const globalT = totalLength > 0 ? (currentT + pathResult.t * pathLength) / totalLength : 0;
         closestResult = {
-          point: pathResult.point,
+          x: pathResult.x,
+          y: pathResult.y,
           t: globalT,
-          distance: pathResult.distance
+          tangent: pathResult.tangent,
+          normal: pathResult.normal,
+          curvature: pathResult.curvature
         };
+        minDistance = distance;
       }
       
       currentT += pathLength;
     }
 
     return closestResult;
+  }
+
+  getCurvature(t: number): number {
+    if (this.paths.length === 0) {
+      return 0;
+    }
+
+    const totalLength = this.getLength();
+    const targetDistance = t * totalLength;
+    
+    let currentDistance = 0;
+    for (const path of this.paths) {
+      const pathLength = path.getLength();
+      if (currentDistance + pathLength >= targetDistance) {
+        const localT = pathLength > 0 ? (targetDistance - currentDistance) / pathLength : 0;
+        return path.getCurvature(Math.max(0, Math.min(1, localT)));
+      }
+      currentDistance += pathLength;
+    }
+    
+    return this.paths[this.paths.length - 1]?.getCurvature(1) || 0;
+  }
+
+  sample(segments: number = 50): PathPoint[] {
+    const points: PathPoint[] = [];
+    
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const point = this.getPoint(t);
+      const tangent = this.getTangent(t);
+      const curvature = this.getCurvature(t);
+      
+      // 计算法线（切线逆时针旋转90度）
+      const normal = {
+        x: -tangent.y,
+        y: tangent.x
+      };
+
+      points.push({
+        x: point.x,
+        y: point.y,
+        t,
+        tangent,
+        normal,
+        curvature
+      });
+    }
+    
+    return points;
+  }
+
+  getNormal(t: number): Vector2D {
+    const tangent = this.getTangent(t);
+    // 法线是切线逆时针旋转90度
+    return {
+      x: -tangent.y,
+      y: tangent.x
+    };
   }
 
   split(t: number): [IPath, IPath] {

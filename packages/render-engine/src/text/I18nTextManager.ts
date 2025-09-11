@@ -317,7 +317,9 @@ export class I18nTextManager {
   private cacheAnalysis(key: string, analysis: TextAnalysisResult): void {
     if (this.analysisCache.size >= this.options.cacheSize) {
       const firstKey = this.analysisCache.keys().next().value;
-      this.analysisCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.analysisCache.delete(firstKey);
+      }
     }
     this.analysisCache.set(key, analysis);
   }
@@ -328,7 +330,9 @@ export class I18nTextManager {
   private cacheLayout(key: string, layout: ComplexTextLayout): void {
     if (this.layoutCache.size >= this.options.cacheSize) {
       const firstKey = this.layoutCache.keys().next().value;
-      this.layoutCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.layoutCache.delete(firstKey);
+      }
     }
     this.layoutCache.set(key, layout);
   }

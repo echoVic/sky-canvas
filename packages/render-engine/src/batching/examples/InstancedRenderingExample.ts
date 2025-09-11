@@ -8,13 +8,23 @@ import { IRenderable } from '../../core/IRenderEngine';
 
 // 示例：简单矩形可渲染对象
 class SimpleRectangle implements IRenderable {
+  public readonly id: string;
+  public readonly bounds: { x: number; y: number; width: number; height: number };
+  public readonly visible: boolean = true;
+  public readonly zIndex: number = 0;
+
   constructor(
     public x: number,
     public y: number,
     public width: number,
     public height: number,
-    public color: [number, number, number, number] = [1, 1, 1, 1]
-  ) {}
+    public color: [number, number, number, number] = [1, 1, 1, 1],
+    zIndex: number = 0
+  ) {
+    this.id = `rect-${Math.random().toString(36).substr(2, 9)}`;
+    this.bounds = { x, y, width, height };
+    this.zIndex = zIndex;
+  }
 
   render(context: any): void {
     // 基础矩形渲染实现
@@ -44,6 +54,17 @@ class SimpleRectangle implements IRenderable {
       width: this.width,
       height: this.height
     };
+  }
+
+  hitTest(point: { x: number; y: number }): boolean {
+    return point.x >= this.x && 
+           point.x <= this.x + this.width &&
+           point.y >= this.y && 
+           point.y <= this.y + this.height;
+  }
+
+  dispose(): void {
+    // 清理资源
   }
 
   // 实例化渲染所需的方法

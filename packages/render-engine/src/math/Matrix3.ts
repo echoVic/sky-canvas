@@ -316,6 +316,14 @@ export class Matrix3x3 {
     return Array.from(this.elements);
   }
 
+  /**
+   * 转换为WebGL所需的Float32Array格式
+   * WebGL使用列主序（column-major）存储矩阵
+   */
+  toWebGL(): Float32Array {
+    return this.elements;
+  }
+
   // 静态方法
   static fromArray(arr: number[]): Matrix3x3 {
     if (arr.length !== 9) throw new Error('Array must have 9 elements');

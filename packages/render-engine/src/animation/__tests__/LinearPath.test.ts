@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { LinearPath } from '../paths/LinearPath';
-import { PathType } from '../types/PathTypes';
+import { PathType, LinearPathConfig } from '../types/PathTypes';
 
 describe('LinearPath', () => {
   describe('构造函数', () => {
@@ -353,7 +353,7 @@ describe('LinearPath', () => {
 
   describe('配置获取', () => {
     it('应该返回路径配置', () => {
-      const config = {
+      const config: LinearPathConfig = {
         type: PathType.LINEAR,
         start: { x: 10, y: 20 },
         end: { x: 90, y: 80 }

@@ -200,7 +200,7 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
     const toRemove: string[] = [];
     
     for (const [url, entry] of this.cache) {
-      const isExpired = now - entry.lastAccessed > this.config.cache.ttl;
+      const isExpired = now - entry.lastAccessed > (this.config.cache?.ttl || 300000);
       const isLowPriority = entry.accessCount < 2;
       
       if (force || (isExpired && isLowPriority)) {
@@ -236,8 +236,8 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
       cache: {
         entries: this.cache.size,
         totalSize: this.cacheSize,
-        maxSize: this.config.cache.maxSize,
-        utilization: this.cacheSize / this.config.cache.maxSize
+        maxSize: this.config.cache?.maxSize || 100 * 1024 * 1024,
+        utilization: this.cacheSize / (this.config.cache?.maxSize || 100 * 1024 * 1024)
       },
       atlas: atlasStats,
       loader: loaderProgress
@@ -289,11 +289,12 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
     }
     
     // 检查是否需要清理缓存
-    if (this.cacheSize + size > this.config.cache.maxSize) {
+    const maxSize = this.config.cache?.maxSize || 100 * 1024 * 1024;
+    if (this.cacheSize + size > maxSize) {
       this.cleanup();
       
       // 如果还是超出限制，清理最少使用的纹理
-      if (this.cacheSize + size > this.config.cache.maxSize) {
+      if (this.cacheSize + size > maxSize) {
         this.cleanupLRU(size);
       }
     }

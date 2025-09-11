@@ -2,7 +2,7 @@
  * Canvas 2D图形上下文实现 (占位符)
  * TODO: 未来实现完整的Canvas 2D渲染功能
  */
-import { IGraphicsContext, IGraphicsContextFactory, IGraphicsCapabilities, IPoint, IImageData } from '../graphics/IGraphicsContext';
+import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint } from '../graphics/IGraphicsContext';
 
 export interface ICanvas2DContext extends IGraphicsContext {
   readonly ctx: CanvasRenderingContext2D;
@@ -128,6 +128,22 @@ class Canvas2DContext implements ICanvas2DContext {
 
   setLineDash(segments: number[]): void {
     this.ctx.setLineDash(segments);
+  }
+
+  setGlobalAlpha(alpha: number): void {
+    this.ctx.globalAlpha = alpha;
+  }
+
+  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+    this.ctx.textAlign = align;
+  }
+
+  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+    this.ctx.textBaseline = baseline;
+  }
+
+  setFont(font: string): void {
+    this.ctx.font = font;
   }
 
   drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {

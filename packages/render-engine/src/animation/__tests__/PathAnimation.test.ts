@@ -4,8 +4,7 @@
 
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { PathAnimation } from '../animations/PathAnimation';
-import { PathFactory } from '../paths/PathFactory';
-import { PathType } from '../types/PathTypes';
+import { PathType, SplinePathConfig } from '../types/PathTypes';
 
 describe('PathAnimation', () => {
   let mockTarget: any;
@@ -33,7 +32,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -50,7 +49,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -69,7 +68,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -90,7 +89,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -117,7 +116,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(target, {
         duration: 1000,
@@ -138,7 +137,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(target, {
         duration: 1000,
@@ -157,7 +156,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -175,7 +174,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 0 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -200,7 +199,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(target, {
         duration: 1000,
@@ -219,7 +218,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -246,7 +245,7 @@ describe('PathAnimation', () => {
         type: PathType.CIRCLE,
         center: { x: 50, y: 50 },
         radius: 30
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -272,7 +271,7 @@ describe('PathAnimation', () => {
         start: { x: 0, y: 0 },
         control: { x: 50, y: 100 },
         end: { x: 100, y: 0 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -298,7 +297,7 @@ describe('PathAnimation', () => {
 
   describe('样条曲线路径', () => {
     it('应该在样条曲线上正确移动', () => {
-      const pathConfig = {
+      const pathConfig: SplinePathConfig = {
         type: PathType.SPLINE,
         points: [
           { x: 0, y: 0 },
@@ -331,7 +330,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -343,8 +342,8 @@ describe('PathAnimation', () => {
 
       expect(motionInfo.position.x).toBeCloseTo(50, 5);
       expect(motionInfo.position.y).toBeCloseTo(50, 5);
-      expect(motionInfo.tangent.x).toBeCloseTo(Math.sqrt(0.5), 5);
-      expect(motionInfo.tangent.y).toBeCloseTo(Math.sqrt(0.5), 5);
+      expect(motionInfo.tangent?.x).toBeCloseTo(Math.sqrt(0.5), 5);
+      expect(motionInfo.tangent?.y).toBeCloseTo(Math.sqrt(0.5), 5);
       expect(motionInfo.rotation).toBeCloseTo(Math.PI / 4, 5);
       expect(motionInfo.progress).toBe(0.5);
       expect(motionInfo.distance).toBeGreaterThan(0);
@@ -357,7 +356,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -374,7 +373,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -391,7 +390,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 30, y: 40 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -407,7 +406,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -427,7 +426,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 50, y: 50 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -438,7 +437,7 @@ describe('PathAnimation', () => {
         type: PathType.CIRCLE,
         center: { x: 50, y: 50 },
         radius: 25
-      };
+      } as const;
 
       animation.setPath(newConfig);
 
@@ -453,7 +452,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -471,7 +470,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
@@ -499,7 +498,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(target, {
         duration: 1000,
@@ -517,24 +516,25 @@ describe('PathAnimation', () => {
   });
 
   describe('事件系统', () => {
-    it('应该触发路径更新事件', (done) => {
+    it('应该触发路径更新事件', () => {
       const pathConfig = {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,
         path: pathConfig
       });
 
-      animation.on('pathUpdate', (anim, motionInfo) => {
+      animation.on('pathUpdate', (anim: any, motionInfo: any) => {
         expect(anim).toBe(animation);
         expect(motionInfo.position).toBeDefined();
         expect(motionInfo.tangent).toBeDefined();
         expect(motionInfo.normal).toBeDefined();
-        done();
+        // 使用 vi 的 done 函数替代
+        expect.assertions(4);
       });
 
       animation.seek(500);
@@ -547,9 +547,9 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
-      const animation = new PathAnimation(null, {
+      const animation = new PathAnimation({}, {
         duration: 1000,
         path: pathConfig
       });
@@ -563,7 +563,7 @@ describe('PathAnimation', () => {
         type: PathType.LINEAR,
         start: { x: 0, y: 0 },
         end: { x: 100, y: 100 }
-      };
+      } as const;
 
       const animation = new PathAnimation(mockTarget, {
         duration: 1000,

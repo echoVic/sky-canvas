@@ -3,13 +3,22 @@
  * 为Sky Canvas画板SDK提供完整的AI交互能力
  */
 
-import { IShape, IShapeUpdate, type ShapeType } from '../scene/IShape';
 import { IPoint, IRect } from '@sky-canvas/render-engine';
 
 // ==================== 基础类型 ====================
 
-// 重新导出ShapeType
-export { type ShapeType } from '../scene/IShape';
+// 定义 ShapeType
+export type ShapeType = 'rectangle' | 'circle' | 'path' | 'text';
+
+// 定义 IShapeUpdate 接口
+export interface IShapeUpdate {
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  style?: Record<string, any>;
+  visible?: boolean;
+  zIndex?: number;
+  [key: string]: any;
+}
 
 /**
  * AI扩展协议版本

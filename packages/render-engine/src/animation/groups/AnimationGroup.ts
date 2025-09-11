@@ -21,7 +21,7 @@ export interface AnimationGroupConfig extends AnimationConfig {
 }
 
 export class AnimationGroup extends BaseAnimation implements IAnimationGroup {
-  private animations: IAnimation[] = [];
+  protected animations: IAnimation[] = [];
   private playMode: GroupPlayMode;
   private currentSequenceIndex: number = 0;
 
@@ -234,7 +234,7 @@ export class AnimationGroup extends BaseAnimation implements IAnimationGroup {
     }
   }
 
-  private onChildAnimationComplete(completedAnimation: IAnimation): void {
+  protected onChildAnimationComplete(completedAnimation: IAnimation): void {
     if (this.playMode === GroupPlayMode.SEQUENCE) {
       this.currentSequenceIndex++;
       

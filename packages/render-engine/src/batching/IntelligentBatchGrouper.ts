@@ -30,10 +30,12 @@ export interface GroupingWeights {
 // 分组统计信息
 export interface GroupingStats {
   totalObjects: number;
+  totalItems: number;
   totalGroups: number;
   spatialClusters: number;
   mergedGroups: number;
   averageGroupSize: number;
+  averageItemsPerGroup: number;
   stateChanges: number;
   textureBinds: number;
   shaderSwitches: number;
@@ -102,10 +104,12 @@ export class IntelligentBatchGrouper extends EventEmitter<GroupingEvents> {
     // 初始化统计信息
     this.stats = {
       totalObjects: 0,
+      totalItems: 0,
       totalGroups: 0,
       spatialClusters: 0,
       mergedGroups: 0,
       averageGroupSize: 0,
+      averageItemsPerGroup: 0,
       stateChanges: 0,
       textureBinds: 0,
       shaderSwitches: 0,
@@ -717,10 +721,12 @@ export class IntelligentBatchGrouper extends EventEmitter<GroupingEvents> {
 
     return {
       totalObjects: totalItems,
+      totalItems,
       totalGroups,
       spatialClusters: 0, // 需要从分组过程中计算
       mergedGroups: 0,    // 需要从分组过程中计算
       averageGroupSize: totalItems / totalGroups || 0,
+      averageItemsPerGroup: totalItems / totalGroups || 0,
       stateChanges,
       textureBinds: uniqueTextures.size,
       shaderSwitches: uniqueShaders.size,
@@ -775,6 +781,28 @@ export class IntelligentBatchGrouper extends EventEmitter<GroupingEvents> {
   }
 
   /**
+   * 重置统计信息
+   */
+  resetStats(): void {
+    this.stats = {
+      totalObjects: 0,
+      totalItems: 0,
+      totalGroups: 0,
+      spatialClusters: 0,
+      mergedGroups: 0,
+      averageGroupSize: 0,
+      averageItemsPerGroup: 0,
+      stateChanges: 0,
+      textureBinds: 0,
+      shaderSwitches: 0,
+      blendModeChanges: 0,
+      estimatedDrawCalls: 0,
+      optimizationRatio: 0,
+      processingTime: 0
+    };
+  }
+
+  /**
    * 重置分组器
    */
   reset(): void {
@@ -782,10 +810,12 @@ export class IntelligentBatchGrouper extends EventEmitter<GroupingEvents> {
     this.mergedGroupsCount = 0;
     this.stats = {
       totalObjects: 0,
+      totalItems: 0,
       totalGroups: 0,
       spatialClusters: 0,
       mergedGroups: 0,
       averageGroupSize: 0,
+      averageItemsPerGroup: 0,
       stateChanges: 0,
       textureBinds: 0,
       shaderSwitches: 0,

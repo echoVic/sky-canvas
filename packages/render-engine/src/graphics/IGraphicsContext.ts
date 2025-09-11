@@ -122,6 +122,11 @@ export interface IGraphicsContext {
   setStrokeStyle(color: IColor | string): void;
   setLineWidth(width: number): void;
   setOpacity(opacity: number): void;
+  setGlobalAlpha(alpha: number): void;
+  setLineDash(segments: number[]): void;
+  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void;
+  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void;
+  setFont(font: string): void;
 
   // 清除和渲染
   clear(): void;

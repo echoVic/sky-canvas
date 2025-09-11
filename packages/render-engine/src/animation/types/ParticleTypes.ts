@@ -2,8 +2,11 @@
  * 粒子系统类型定义
  */
 
+import { EasingFunction } from './AnimationTypes';
 import { Point2D, Vector2D } from './PathTypes';
-import { EasingFunction } from '../easing/EasingFunctions';
+
+// 重新导出类型，确保它们可以被外部使用
+export type { Point2D, Vector2D };
 
 /**
  * 粒子状态
@@ -57,6 +60,19 @@ export interface IParticle {
   
   update(deltaTime: number): void;
   reset(): void;
+  
+  // 生命周期方法
+  isAlive(): boolean;
+  isDead(): boolean;
+  getLifeProgress(): number;
+  setLife(life: number): void;
+  
+  // 空间方法
+  getDistanceTo(other: IParticle | Point2D): number;
+  getVectorTo(other: IParticle | Point2D): Vector2D;
+  
+  // 力学方法
+  applyForce(force: Vector2D): void;
 }
 
 /**
@@ -281,6 +297,7 @@ export interface ParticleSystemEvents {
   particleSpawn: (particle: IParticle, system: IParticleSystem) => void;
   particleDeath: (particle: IParticle, system: IParticleSystem) => void;
   complete: (system: IParticleSystem) => void;
+  [key: string]: (...args: any[]) => void;
 }
 
 /**

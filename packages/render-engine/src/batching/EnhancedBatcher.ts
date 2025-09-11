@@ -122,9 +122,9 @@ export class EnhancedBatcher extends EventEmitter<BatchEvents> {
     
     // 尝试使用纹理图集
     if (params.textureId) {
-      const atlasInfo = this.textureAtlas.getTextureInfo(params.textureId);
+      const atlasInfo = this.textureAtlas.getTexture(params.textureId);
       if (atlasInfo) {
-        params.textureId = atlasInfo.atlasTextureId;
+        params.textureId = atlasInfo.atlasId;
       }
     }
     
@@ -537,13 +537,14 @@ export class EnhancedBatcher extends EventEmitter<BatchEvents> {
   /**
    * 添加纹理到图集
    */
-  addTextureToAtlas(textureId: string, width: number, height: number): TextureAtlasEntry | null {
-    const entry = this.textureAtlas.addTexture(textureId, width, height);
+  addTextureToAtlas(textureId: string, width: number, height: number): AtlasEntry | null {
+    const textureInfo = { id: textureId, width, height };
+    const entry = this.textureAtlas.addTexture(textureInfo);
     
     if (entry) {
       this.emit('textureAtlasUpdated', {
         textureIds: [textureId],
-        atlasId: entry.atlasTextureId
+        atlasId: entry.atlasId
       });
     }
     

@@ -24,7 +24,7 @@ export interface TimelineConfig extends AnimationConfig {
 export class Timeline extends AnimationGroup implements ITimeline {
   private timelineItems: TimelineItem[] = [];
   private totalDuration: number;
-  private _isReversed: boolean = false;
+  private isReversed: boolean = false;
 
   constructor(config: TimelineConfig = { duration: 0 }) {
     super(config);
@@ -91,7 +91,7 @@ export class Timeline extends AnimationGroup implements ITimeline {
   }
 
   protected applyAnimation(progress: number): void {
-    const currentTime = this._isReversed 
+    const currentTime = this.isReversed 
       ? this.totalDuration * (1 - progress)
       : this.totalDuration * progress;
     
@@ -247,7 +247,7 @@ export class Timeline extends AnimationGroup implements ITimeline {
     this._duration = this.totalDuration;
   }
 
-  private onChildAnimationComplete(completedAnimation: IAnimation): void {
+  protected onChildAnimationComplete(completedAnimation: IAnimation): void {
     // 检查是否所有动画都已完成
     const allCompleted = this.timelineItems.every(item => 
       item.animation.state === AnimationState.COMPLETED ||

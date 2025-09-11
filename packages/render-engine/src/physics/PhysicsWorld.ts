@@ -47,8 +47,8 @@ export interface PhysicsEvents {
 }
 
 export class PhysicsWorld {
-  private engine: Matter.Engine;
-  private world: Matter.World;
+  private engine!: Matter.Engine;
+  private world!: Matter.World;
   private render?: Matter.Render;
   private bodies: Map<string, PhysicsBody> = new Map();
   private constraints: Map<string, Matter.Constraint> = new Map();

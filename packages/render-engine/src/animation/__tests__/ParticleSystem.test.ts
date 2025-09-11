@@ -2,9 +2,9 @@
  * 粒子系统测试
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ParticleSystem } from '../particles/ParticleSystem';
-import { ParticleSystemState, EmitterShape } from '../types/ParticleTypes';
+import { ParticleSystemState } from '../types/ParticleTypes';
 
 describe('ParticleSystem', () => {
   let system: ParticleSystem;
@@ -82,7 +82,7 @@ describe('ParticleSystem', () => {
 
     it('应该重启系统', () => {
       system.start();
-      system.emit(10); // 发射一些粒子
+      system.emitParticles(10); // 发射一些粒子
       
       system.restart();
       expect(system.state).toBe(ParticleSystemState.PLAYING);
@@ -161,7 +161,7 @@ describe('ParticleSystem', () => {
 
     it('应该清理死亡粒子', () => {
       // 让所有粒子立即死亡
-      system.particles.forEach(p => p.setLife(0));
+      system.particles.forEach(p => p.life = 0);
       
       system.update(16);
       
@@ -426,7 +426,7 @@ describe('ParticleSystem', () => {
       system.emitParticles(1);
 
       // 让粒子死亡
-      system.particles[0].setLife(0);
+      system.particles[0].life = 0;
       system.update(16);
 
       expect(deathCallback).toHaveBeenCalledTimes(1);

@@ -286,12 +286,12 @@ export interface FontCacheStats {
  * 字体事件类型
  */
 export interface FontEvents {
-  'loading': (font: IFont) => void;
-  'loaded': (font: IFont) => void;
-  'error': (font: IFont, error: Error) => void;
-  'fallback': (font: IFont, fallbackFont: IFont) => void;
-  'progress': (font: IFont, progress: FontLoadingProgress) => void;
-  'unload': (font: IFont) => void;
+  'loading': { font: IFont };
+  'loaded': { font: IFont };
+  'error': { font: IFont | null; error: Error };
+  'fallback': { font: IFont; fallbackFont: IFont };
+  'progress': { font: IFont; progress: FontLoadingProgress };
+  'unload': { font: IFont };
 }
 
 /**

@@ -35,7 +35,12 @@ const createMockRenderable = (id: string) => ({
   getBounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
   prepareRender: vi.fn(),
   getVertexCount: () => 6,
-  id
+  id,
+  bounds: { x: 0, y: 0, width: 100, height: 100 },
+  visible: true,
+  zIndex: 0,
+  hitTest: vi.fn(() => false),
+  dispose: vi.fn()
 });
 
 describe('InstancedRenderer', () => {

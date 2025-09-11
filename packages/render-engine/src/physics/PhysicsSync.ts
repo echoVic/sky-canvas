@@ -11,7 +11,7 @@ export interface RenderObject {
   position: { x: number; y: number };
   rotation: number;
   scale: { x: number; y: number };
-  type: 'rectangle' | 'circle' | 'polygon';
+  type: 'rectangle' | 'circle' | 'polygon' | 'compound';
   width?: number;
   height?: number;
   radius?: number;
@@ -59,7 +59,8 @@ export class PhysicsSync {
         this.handlePhysicsEvent(event, data);
       },
       on: () => {},
-      off: () => {}
+      off: () => {},
+      dispose: () => {}
     });
   }
 

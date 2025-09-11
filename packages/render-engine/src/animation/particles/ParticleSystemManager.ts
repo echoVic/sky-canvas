@@ -16,6 +16,7 @@ interface ParticleSystemManagerEvents {
   systemRemoved: (system: IParticleSystem) => void;
   systemCompleted: (system: IParticleSystem) => void;
   allSystemsCompleted: () => void;
+  [key: string]: (...args: any[]) => void;
 }
 
 export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEvents> {

@@ -79,9 +79,9 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
             return atlasEntry;
           }
         }
-        return existingTask.data;
+        return existingTask.data as HTMLImageElement;
       } else if (existingTask.state === TextureLoadState.LOADING) {
-        return this.waitForTask(existingTask);
+        return this.waitForTask(existingTask) as Promise<AtlasEntry | HTMLImageElement>;
       }
     }
 
@@ -99,7 +99,7 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
     this.tasks.set(id, task);
     this.addToQueue(task);
 
-    return this.waitForTask(task);
+    return this.waitForTask(task) as Promise<AtlasEntry | HTMLImageElement>;
   }
 
   /**
@@ -239,7 +239,7 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
 
       // 添加到纹理图集
       let entry: AtlasEntry | undefined;
-      if (data instanceof HTMLImageElement || data instanceof HTMLCanvasElement) {
+      if (data) {
         const textureInfo: TextureInfo = {
           id: task.id,
           width: data.width,
@@ -263,7 +263,7 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
       
       // 检查队列是否为空
       if (this.loadQueue.length === 0 && this.activeLoads.size === 0) {
-        this.emit('queueEmpty');
+        this.emit('queueEmpty', undefined);
       }
     }
   }
@@ -332,7 +332,7 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
   /**
    * 等待任务完成
    */
-  private waitForTask(task: TextureLoadTask): Promise<AtlasEntry | HTMLImageElement> {
+  private waitForTask(task: TextureLoadTask): Promise<AtlasEntry | HTMLImageElement | HTMLCanvasElement | ImageData> {
     return new Promise((resolve, reject) => {
       if (task.state === TextureLoadState.LOADED && task.data) {
         const atlasEntry = this.atlas.getTexture(task.id);

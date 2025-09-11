@@ -372,7 +372,7 @@ export class AsyncResourceLoader extends EventEmitter {
       task.endTime = Date.now();
       this.emit('taskComplete', task);
     } catch (error) {
-      task.error = error;
+      task.error = error instanceof Error ? error : new Error(String(error));
       task.state = LoadingState.ERROR;
       task.endTime = Date.now();
       this.emit('taskError', task, error);
@@ -525,7 +525,7 @@ export class AsyncResourceLoader extends EventEmitter {
     const buffer = await this.loadWithProgress(response, progress, config.id);
     
     // 需要 AudioContext 来解码
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     return audioContext.decodeAudioData(buffer);
   }
 

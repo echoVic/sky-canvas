@@ -315,6 +315,34 @@ export class WebGLGraphicsContext implements IGraphicsContext {
     console.warn('Text rendering not implemented in WebGL adapter');
   }
 
+  setFont(_font: string): void {
+    void _font;
+    // WebGL不直接支持字体设置，需要通过纹理实现
+    console.warn('Font setting not implemented in WebGL adapter');
+  }
+
+  setTextAlign(_align: CanvasTextAlign): void {
+    void _align;
+    // WebGL不直接支持文本对齐，需要通过纹理实现
+    console.warn('Text align not implemented in WebGL adapter');
+  }
+
+  setTextBaseline(_baseline: CanvasTextBaseline): void {
+    void _baseline;
+    // WebGL不直接支持文本基线，需要通过纹理实现
+    console.warn('Text baseline not implemented in WebGL adapter');
+  }
+
+  setLineDash(_segments: number[]): void {
+    void _segments;
+    // WebGL不直接支持虚线，需要通过着色器实现
+    console.warn('Line dash not implemented in WebGL adapter');
+  }
+
+  setGlobalAlpha(alpha: number): void {
+    this.currentStyle.opacity = Math.max(0, Math.min(1, alpha));
+  }
+
   // 路径操作
   beginPath(): void {
     // WebGL中路径操作需要收集顶点数据

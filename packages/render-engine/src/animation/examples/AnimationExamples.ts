@@ -257,7 +257,7 @@ export class AnimationExamples {
       from: -30,
       to: 30,
       duration: 800,
-      easing: EasingType.EASE_IN_OUT_SINE,
+      easing: EasingType.EASE_IN_OUT,
       loop: 3,
       yoyo: true
     });
@@ -343,7 +343,7 @@ export class AnimationExamples {
       .to(target, 400, { scale: 1.5, rotation: 180 })
       .play();
 
-    return { target, timeline: timeline.timeline };
+    return { target, timeline };
   }
 
   /**
