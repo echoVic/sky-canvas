@@ -6,7 +6,7 @@
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { CompositeCommand } from '../services/history/commands';
 import { ICommand, IHistoryService } from '../services/history/historyService';
-import { ILogService } from '../services/logging/logService';
+import type { ILogService } from '../services';
 
 /**
  * 事务管理器接口

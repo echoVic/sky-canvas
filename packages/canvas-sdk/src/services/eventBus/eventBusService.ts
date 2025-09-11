@@ -1,13 +1,12 @@
 /**
- * 事件总线服务
+ * 事件总线服务 - 基于 VSCode DI 架构
  */
-
-import { createServiceIdentifier, injectable } from '../../di/ServiceIdentifier';
 
 /**
  * 事件总线服务接口
  */
 export interface IEventBusService {
+  readonly _serviceBrand: undefined;
   emit<T>(event: string, data: T): void;
   on<T>(event: string, handler: (data: T) => void): void;
   off(event: string, handler?: Function): void;
@@ -16,15 +15,10 @@ export interface IEventBusService {
 }
 
 /**
- * 事件总线服务标识符
+ * 事件总线服务实现
  */
-export const IEventBusService = createServiceIdentifier<IEventBusService>('EventBusService');
-
-/**
- * 事件总线服务实现 - 集成VSCode风格的事件系统
- */
-@injectable
 export class EventBusService implements IEventBusService {
+  readonly _serviceBrand: undefined;
   private listeners = new Map<string, Function[]>();
 
   emit<T>(event: string, data: T): void {

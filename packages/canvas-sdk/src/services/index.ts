@@ -20,9 +20,11 @@ export {
 
 // 日志服务
 export {
+  LogService,
   ILogService,
-  LogService, type LogLevel, type ILogService as LogServiceInterface
+  type LogLevel
 } from './logging/logService';
+export type { ILogService as LogServiceInterface } from './logging/logService';
 
 // 历史服务
 export {

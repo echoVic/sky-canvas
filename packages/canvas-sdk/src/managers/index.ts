@@ -10,7 +10,7 @@ export { ToolManager } from './ToolManager';
 export type { IToolManager } from './ToolManager';
 
 export { SceneManager } from './SceneManager';
-export type { ISceneManager, ILayerInfo, ISceneState } from './SceneManager';
+export type { ISceneManager, ILayerInfo, ISceneManagerState } from './SceneManager';
 
 export { ImportExportManager } from './ImportExportManager';
 export type { IImportExportManager, IBatchOperationOptions } from './ImportExportManager';

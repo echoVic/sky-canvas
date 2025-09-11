@@ -5,7 +5,7 @@
 
 import { proxy } from 'valtio';
 import { inject, injectable } from '../../di/ServiceIdentifier';
-import type { ICanvasManager } from '../../managers/CanvasManager';
+import { ICanvasManager } from '../../managers/CanvasManager';
 import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { IViewModel } from '../interfaces/IViewModel';
 import { IPoint } from '@sky-canvas/render-engine';
@@ -50,8 +50,8 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
   private readonly _state: IRectangleToolState;
 
   constructor(
-    @inject('ICanvasManager') private canvasManager: ICanvasManager,
-    @inject('IEventBusService') private eventBus: IEventBusService
+    @inject(ICanvasManager) private canvasManager: ICanvasManager,
+    @inject(IEventBusService) private eventBus: IEventBusService
   ) {
     this._state = proxy<IRectangleToolState>({
       isDrawing: false,

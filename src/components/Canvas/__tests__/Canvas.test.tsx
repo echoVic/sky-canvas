@@ -108,12 +108,26 @@ const createMockShape = (overrides = {}) => {
   const shape = {
     id: 'shape-1',
     type: 'rectangle' as const,
-    position: { x: 10, y: 10 },
-    size: { width: 50, height: 30 },
+    transform: {
+      position: { x: 10, y: 10 },
+      rotation: 0,
+      scale: { x: 1, y: 1 }
+    },
+    style: {
+      fillColor: '#ffffff',
+      strokeColor: '#000000',
+      strokeWidth: 1,
+      opacity: 1
+    },
     visible: true,
     zIndex: 0,
-    selected: false,
     locked: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    // 兼容旧属性
+    position: { x: 10, y: 10 },
+    size: { width: 50, height: 30 },
+    selected: false,
     bounds: defaultBounds,
     render: vi.fn(),
     getBounds: vi.fn(() => defaultBounds),
@@ -123,12 +137,22 @@ const createMockShape = (overrides = {}) => {
     serialize: vi.fn(() => ({
       id: 'shape-1',
       type: 'rectangle' as const,
-      position: { x: 10, y: 10 },
-      size: { width: 50, height: 30 },
+      transform: {
+        position: { x: 10, y: 10 },
+        rotation: 0,
+        scale: { x: 1, y: 1 }
+      },
+      style: {
+        fillColor: '#ffffff',
+        strokeColor: '#000000',
+        strokeWidth: 1,
+        opacity: 1
+      },
       visible: true,
       zIndex: 0,
-      selected: false,
       locked: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
     })),
     deserialize: vi.fn(),
     dispose: vi.fn(),
@@ -140,12 +164,13 @@ const createMockShape = (overrides = {}) => {
     shape.serialize = vi.fn(() => ({
       id: shape.id,
       type: shape.type,
-      position: shape.position,
-      size: shape.size,
+      transform: shape.transform,
+      style: shape.style,
       visible: shape.visible,
       zIndex: shape.zIndex,
-      selected: shape.selected,
       locked: shape.locked,
+      createdAt: shape.createdAt,
+      updatedAt: shape.updatedAt
     }));
   }
   

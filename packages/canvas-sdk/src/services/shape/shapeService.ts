@@ -5,12 +5,11 @@
 import { IRenderable } from '@sky-canvas/render-engine';
 import { ShapeEntity } from '../../models/entities/Shape';
 import { RenderableShapeView } from '../../views/RenderableShapeView';
-import { injectable } from '../../di/ServiceIdentifier';
-
 /**
  * 形状服务接口
  */
 export interface IShapeService {
+  readonly _serviceBrand: undefined;
   // 基础 CRUD
   addShape(entity: ShapeEntity): RenderableShapeView;
   removeShape(id: string): void;
@@ -40,8 +39,8 @@ export interface IShapeService {
 /**
  * 形状服务实现
  */
-@injectable
 export class ShapeService implements IShapeService {
+  readonly _serviceBrand: undefined;
   private entities: Map<string, ShapeEntity> = new Map();
   private views: Map<string, RenderableShapeView> = new Map();
 

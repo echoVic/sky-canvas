@@ -16,6 +16,7 @@ export interface IImportResult {
     version?: string;
     timestamp?: string;
     originalFormat?: string;
+    fileName?: string;
   };
 }
 
@@ -240,9 +241,12 @@ export class ImportService implements IImportService {
         }
       );
       
-      // 添加图片数据（这里简化处理，实际需要更复杂的图片形状类型）
-      (shape as any).imageUrl = imageUrl;
-      (shape as any).fileName = file.name;
+      // 添加图片数据到 metadata 中
+      shape.metadata = {
+        ...shape.metadata,
+        imageUrl: imageUrl,
+        fileName: file.name
+      };
       
       return {
         success: true,

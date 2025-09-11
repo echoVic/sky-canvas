@@ -1,8 +1,7 @@
 /**
- * 历史服务
+ * 历史服务 - 基于 VSCode DI 架构
  */
 
-import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService } from '../logging/logService';
 
@@ -19,6 +18,7 @@ export interface ICommand {
  * 历史服务接口
  */
 export interface IHistoryService {
+  readonly _serviceBrand: undefined;
   execute(command: ICommand): void;
   undo(): void;
   redo(): void;
@@ -30,22 +30,17 @@ export interface IHistoryService {
 }
 
 /**
- * 历史服务标识符
- */
-export const IHistoryService = createServiceIdentifier<IHistoryService>('HistoryService');
-
-/**
  * 历史服务实现
  */
-@injectable
 export class HistoryService implements IHistoryService {
+  readonly _serviceBrand: undefined;
   private history: ICommand[] = [];
   private currentIndex = -1;
   private maxHistorySize = 100;
 
   constructor(
-    @inject(IEventBusService) private eventBus: IEventBusService,
-    @inject(ILogService) private logger: ILogService
+    private eventBus: IEventBusService,
+    private logger: ILogService
   ) {}
 
   execute(command: ICommand): void {

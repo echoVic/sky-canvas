@@ -3,7 +3,7 @@
  * 使用 CanvasManager 协调复杂的画布业务逻辑
  */
 
-import { proxy } from 'valtio';
+import { proxy, snapshot } from 'valtio';
 import { inject, injectable } from '../di/ServiceIdentifier';
 import { ICanvasManager } from '../managers/CanvasManager';
 import { IEventBusService } from '../services/eventBus/eventBusService';
@@ -78,7 +78,7 @@ export class CanvasViewModel implements ICanvasViewModel {
   private readonly _state: ICanvasState;
 
   constructor(
-    @inject('ICanvasManager') private canvasManager: ICanvasManager,
+    @inject(ICanvasManager) private canvasManager: ICanvasManager,
     @inject(IEventBusService) private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
@@ -106,6 +106,10 @@ export class CanvasViewModel implements ICanvasViewModel {
   async initialize(): Promise<void> {
     this.updateState();
     this.eventBus.emit('canvas-viewmodel:initialized', {});
+  }
+
+  getSnapshot() {
+    return snapshot(this._state);
   }
 
   dispose(): void {

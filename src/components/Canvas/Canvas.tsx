@@ -1,4 +1,3 @@
-import { CircleTool, DiamondTool, RectangleTool, TextTool } from '@sky-canvas/canvas-sdk'
 import React, { useEffect, useRef } from 'react'
 import { useCanvas } from '../../contexts'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
@@ -58,62 +57,7 @@ const Canvas: React.FC = () => {
         
         // 注册SDK工具
         // 创建工具实例并设置回调函数
-        const interactionManager = sdkActions.getInteractionManager()
-        if (interactionManager) {
-          const rectangleTool = new RectangleTool()
-          rectangleTool.setCallbacks({
-            onSetCursor: (cursor: string) => {
-              if (interactionManager) {
-                interactionManager.setCursor(cursor)
-              }
-            },
-            onAddShape: (shape: any) => {
-              sdkActions.addShape(shape)
-            }
-          })
-          
-          const circleTool = new CircleTool()
-          circleTool.setCallbacks({
-            onSetCursor: (cursor: string) => {
-              if (interactionManager) {
-                interactionManager.setCursor(cursor)
-              }
-            },
-            onAddShape: (shape: any) => {
-              sdkActions.addShape(shape)
-            }
-          })
-          
-          const diamondTool = new DiamondTool(
-            interactionManager,
-            (cursor: string) => {
-              if (interactionManager) {
-                interactionManager.setCursor(cursor)
-              }
-            },
-            (shape: any) => {
-              sdkActions.addShape(shape)
-            }
-          )
-          
-          const textTool = new TextTool(
-            interactionManager,
-            (cursor: string) => {
-              if (interactionManager) {
-                interactionManager.setCursor(cursor)
-              }
-            },
-            (shape: any) => {
-              sdkActions.addShape(shape)
-            }
-          )
-          
-          // 通过SDK注册工具
-          sdkActions.registerInteractionTool(rectangleTool)
-          sdkActions.registerInteractionTool(circleTool)
-          sdkActions.registerInteractionTool(diamondTool)
-          sdkActions.registerInteractionTool(textTool)
-        }
+        // 工具注册逻辑已在功能迭代中移除
         
         // 设置默认工具
         sdkActions.setTool('select')

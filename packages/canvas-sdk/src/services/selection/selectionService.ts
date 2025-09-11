@@ -2,7 +2,6 @@
  * 选择服务
  */
 
-import { createServiceIdentifier, injectable } from '../../di/ServiceIdentifier';
 import { IShapeEntity } from '../../models/entities/Shape';
 
 /**
@@ -17,6 +16,7 @@ export enum SelectionMode {
  * 选择服务接口
  */
 export interface ISelectionService {
+  readonly _serviceBrand: undefined;
   select(shapes: IShapeEntity | IShapeEntity[], mode?: SelectionMode): void;
   deselect(shapes: IShapeEntity | IShapeEntity[]): void;
   clearSelection(): void;
@@ -27,15 +27,10 @@ export interface ISelectionService {
 }
 
 /**
- * 选择服务标识符
- */
-export const ISelectionService = createServiceIdentifier<ISelectionService>('SelectionService');
-
-/**
  * 选择服务实现
  */
-@injectable
 export class SelectionService implements ISelectionService {
+  readonly _serviceBrand: undefined;
   private selectedShapes = new Set<IShapeEntity>();
   private mode: SelectionMode = SelectionMode.SINGLE;
 

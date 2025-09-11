@@ -7,7 +7,7 @@ import { proxy, snapshot } from 'valtio';
 import { ShapeEntity } from '../models/entities/Shape';
 import { ISceneViewModel, ISceneState } from './interfaces/IViewModel';
 import { IShapeRepository } from '../models/repositories/IShapeRepository';
-import { IEventBusService } from '../di/ServiceIdentifiers';
+import { IEventBusService } from '../services/eventBus/eventBusService';
 
 export class SceneViewModel implements ISceneViewModel {
   private readonly _state: ISceneState;

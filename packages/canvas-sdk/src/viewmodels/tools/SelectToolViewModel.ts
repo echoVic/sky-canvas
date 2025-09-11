@@ -52,8 +52,8 @@ export class SelectToolViewModel implements ISelectToolViewModel {
   private readonly _state: ISelectToolState;
 
   constructor(
-    @inject('ISelectionService') private selectionService: ISelectionService,
-    @inject('IEventBusService') private eventBus: IEventBusService
+    @inject(ISelectionService) private selectionService: ISelectionService,
+    @inject(IEventBusService) private eventBus: IEventBusService
   ) {
     this._state = proxy<ISelectToolState>({
       isSelecting: false,

@@ -5,7 +5,8 @@
 
 import { ShapeEntity } from '../models/entities/Shape';
 import { IImportService, IExportService, IImportResult, IExportOptions } from '../services';
-import { IEventBusService, ILogService } from '../services';
+import { IEventBusService } from '../services';
+import type { ILogService } from '../services';
 
 /**
  * 批量操作选项

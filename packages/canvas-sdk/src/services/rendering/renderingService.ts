@@ -4,7 +4,7 @@
 
 import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
 import { IEventBusService } from '../eventBus/eventBusService';
-import { ILogService } from '../logging/logService';
+import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 
 /**
  * 渲染服务接口
@@ -38,7 +38,7 @@ export class CanvasRenderingService implements ICanvasRenderingService {
 
   constructor(
     @inject(IEventBusService) private eventBus: IEventBusService,
-    @inject(ILogService) private logger: ILogService
+    @inject(ILogService) private logger: ILogServiceInterface
   ) {}
 
   async initialize(canvas: HTMLCanvasElement, config: any): Promise<void> {

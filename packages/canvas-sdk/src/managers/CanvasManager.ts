@@ -1,18 +1,18 @@
 /**
- * Canvas 管理器 - 纯业务协调单元
- * 协调形状管理、选择管理、历史管理等复杂业务逻辑
- * 不再直接依赖 DI 容器，而是通过构造函数注入所需服务
+ * Canvas 管理器 - 基于 VSCode DI 架构
+ * 通过构造函数注入使用依赖服务
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
 import { ShapeEntity } from '../models/entities/Shape';
-import { IClipboardService, IEventBusService, IHistoryService, ILogService, ISelectionService } from '../services';
-import { IShapeService } from '../services/shape/shapeService';
+import { Container } from '../container/Container';
 
 /**
  * Canvas 管理器接口
  */
 export interface ICanvasManager {
+  readonly _serviceBrand: undefined;
+  
   // 形状管理
   addShape(entity: ShapeEntity): void;
   removeShape(id: string): void;
@@ -44,16 +44,18 @@ export interface ICanvasManager {
 
 /**
  * Canvas 管理器实现
- * 纯业务逻辑，不包含 DI 管理
+ * 使用 VSCode DI 模式的构造函数注入
  */
 export class CanvasManager implements ICanvasManager {
+  readonly _serviceBrand: undefined;
+
   constructor(
-    private shapeService: IShapeService,
-    private selectionService: ISelectionService,
-    private eventBus: IEventBusService,
-    private historyService: IHistoryService,
-    private logService: ILogService,
-    private clipboardService: IClipboardService
+    @Container.IEventBusService private eventBus: any,
+    @Container.ILogService private logService: any,
+    @Container.IShapeService private shapeService: any,
+    @Container.ISelectionService private selectionService: any,
+    @Container.IClipboardService private clipboardService: any,
+    @Container.IHistoryService private historyService: any
   ) {
     this.setupIntegration();
   }
@@ -255,20 +257,20 @@ export class CanvasManager implements ICanvasManager {
     if (!pastedShapes || pastedShapes.length === 0) return [];
     
     // 添加粘贴的形状
-    pastedShapes.forEach(shape => {
-      this.addShape(shape);
+    pastedShapes.forEach((shape: any) => {
+      this.addShape(shape as ShapeEntity);
     });
     
     // 选中粘贴的形状
     this.clearSelection();
-    pastedShapes.forEach(shape => {
+    pastedShapes.forEach((shape: any) => {
       this.selectShape(shape.id);
     });
     
     this.eventBus.emit('canvas:shapesPasted', { count: pastedShapes.length });
     this.logService.debug(`Pasted ${pastedShapes.length} shapes`);
     
-    return pastedShapes;
+    return pastedShapes as ShapeEntity[];
   }
 
   // === 历史操作 ===

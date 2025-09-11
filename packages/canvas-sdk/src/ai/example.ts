@@ -366,7 +366,7 @@ export class ShapeGeneratorAIExtension extends BaseAIExtension {
     if (lowerDesc.includes('circle') || lowerDesc.includes('round')) {
       shapeType = 'circle';
     } else if (lowerDesc.includes('line')) {
-      shapeType = 'line';
+      shapeType = 'path';
     } else if (lowerDesc.includes('text')) {
       shapeType = 'text';
     }

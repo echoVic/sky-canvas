@@ -31,7 +31,8 @@
       "Bash(pnpm add:*)",
       "Bash(tree:*)",
       "Bash(npx tsc:*)",
-      "Bash(pnpm list:*)"
+      "Bash(pnpm list:*)",
+      "mcp__github__get_file_contents"
     ],
     "deny": [],
     "ask": []

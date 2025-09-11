@@ -3,7 +3,6 @@
  * 功能单一：只负责形状的复制、剪切、粘贴
  */
 
-import { createServiceIdentifier, injectable } from '../../di/ServiceIdentifier';
 import { IShapeEntity } from '../../models/entities/Shape';
 
 /**
@@ -27,6 +26,7 @@ export interface IClipboardData {
  * 剪贴板服务接口
  */
 export interface IClipboardService {
+  readonly _serviceBrand: undefined;
   copy(shapes: IShapeEntity[]): void;
   cut(shapes: IShapeEntity[]): void;
   paste(): IShapeEntity[] | null;
@@ -36,15 +36,10 @@ export interface IClipboardService {
 }
 
 /**
- * 剪贴板服务标识符
- */
-export const IClipboardService = createServiceIdentifier<IClipboardService>('ClipboardService');
-
-/**
  * 剪贴板服务实现
  */
-@injectable
 export class ClipboardService implements IClipboardService {
+  readonly _serviceBrand: undefined;
   private clipboardData: IClipboardData | null = null;
 
   copy(shapes: IShapeEntity[]): void {
@@ -112,6 +107,6 @@ export class ClipboardService implements IClipboardService {
    * 生成唯一 ID
    */
   private generateId(): string {
-    return `shape_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `shape_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 }

@@ -3,8 +3,8 @@
  * 为Sky Canvas画板SDK提供标准化的AI交互协议
  */
 
-import { CanvasSDK } from '../CanvasSDK';
 import { EventEmitter } from 'eventemitter3';
+import { CanvasSDK } from '../CanvasSDK';
 import { IShapeEntity } from '../models/entities/Shape';
 import {
   AI_PROTOCOL_VERSION,
@@ -13,7 +13,6 @@ import {
   IAIError,
   IAIEvent,
   IAIExtensionConfig,
-  IAIExtensionEvents,
   IAIMessage,
   IAIRequest,
   IAIRequestOptions,
@@ -22,7 +21,8 @@ import {
   ICanvasContext,
   IShapeData,
   MessagePriority,
-  OperationStatus
+  OperationStatus,
+  ShapeType
 } from './types';
 
 /**
@@ -421,7 +421,7 @@ export class AIProtocolManager extends EventEmitter {
   private convertShapeToData(shape: IShapeEntity): IShapeData {
     return {
       id: shape.id,
-      type: shape.type,
+      type: shape.type as ShapeType,
       position: shape.transform.position,
       size: (shape as any).size || { width: 0, height: 0 }, // 临时处理
       style: {}, // TODO: 从实际形状获取样式信息

@@ -8,18 +8,21 @@ import 'reflect-metadata';
 
 // 核心服务标识符和装饰器
 export {
-  createServiceIdentifier, getInjectTokens,
-  getOptionalInjectTokens, inject, INJECT_METADATA_KEY, injectable, INJECTABLE_METADATA_KEY, isInjectable, optional, OPTIONAL_INJECT_METADATA_KEY, ServicesAccessor,
-  ServiceScope
-} from './ServiceIdentifier';
+  _util, createDecorator,
+  refineServiceDecorator
+} from './instantiation';
 
 export type {
-  ServiceDescriptor, ServiceIdentifier, ServiceLifecycle
-} from './ServiceIdentifier';
+  BrandedService, ServiceIdentifier, ServicesAccessor
+} from './instantiation';
 
 // 依赖描述符
 export {
-  AsyncDescriptor, SyncDescriptor, type ServiceDescriptor as ServiceDescriptorType, type SyncDescriptor0
+  SyncDescriptor
+} from './descriptors';
+
+export type {
+  SyncDescriptor0
 } from './descriptors';
 
 // 依赖关系图
@@ -28,33 +31,28 @@ export {
   type Node
 } from './graph';
 
-// 插件系统和装饰器
+// 服务扩展
 export {
-  extension,
-  extensionPoint, ExtensionPointRegistry, getSingleton,
-  registerSingleton, service, SingletonServiceRegistry, type IExtensionDescriptor, type IExtensionPointDescriptor
+  registerSingleton,
+  getSingletonServiceDescriptors,
+  InstantiationType
 } from './extensions';
 
-// 依赖注入高级特性
+// 依赖注入核心接口
 export {
-  DI_DEPENDENCIES, DI_TARGET, getDependencies, isAsyncDescriptor, isSyncDescriptor, ServiceLifetime
+  IInstantiationService
 } from './instantiation';
 
 export type {
-  BrandedService, IInstantiationService,
-  IInstantiationServiceOptions, IServiceCollection, Optional,
-  ServiceRegistration
+  GetLeadingNonServiceArgs, IConstructorSignature, IInstantiationService as IInstantiationServiceType
 } from './instantiation';
 
 // 服务集合
 export {
-  ServiceCollection,
-  type Newable,
-  type ServiceFactory,
-  type ServiceInstance
+  ServiceCollection
 } from './ServiceCollection';
 
 // 实例化服务
 export {
-  CircularDependencyError, DependencyResolutionError, InstantiationService, ServiceNotRegisteredError
+  InstantiationService
 } from './InstantiationService';

@@ -3,7 +3,7 @@
  * 使用 ToolManager 协调工具、快捷键、历史等复杂交互逻辑
  */
 
-import { proxy } from 'valtio';
+import { proxy, snapshot } from 'valtio';
 import { inject, injectable } from '../di/ServiceIdentifier';
 import { IToolManager } from '../managers/ToolManager';
 import { IEventBusService } from '../services/eventBus/eventBusService';
@@ -62,7 +62,7 @@ export class ToolViewModel implements IToolViewModel {
   private readonly _state: IToolState;
 
   constructor(
-    @inject('IToolManager') private toolManager: IToolManager,
+    @inject(IToolManager) private toolManager: IToolManager,
     @inject(IEventBusService) private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
@@ -88,6 +88,10 @@ export class ToolViewModel implements IToolViewModel {
   async initialize(): Promise<void> {
     this.updateState();
     this.eventBus.emit('tool-viewmodel:initialized', {});
+  }
+
+  getSnapshot() {
+    return snapshot(this._state);
   }
 
   dispose(): void {
@@ -243,7 +247,7 @@ export class ToolViewModel implements IToolViewModel {
   private updateToolState(): void {
     this._state.currentTool = this.toolManager.getCurrentToolName() || 'select';
     this._state.availableTools = this.toolManager.getAvailableTools();
-    this._state.toolMode = this.toolManager.getCurrentMode()?.toString() || 'select';
+    this._state.toolMode = this.toolManager.getCurrentToolName() || 'select';
     this._state.cursor = this.toolManager.getCurrentCursor();
   }
 
@@ -252,7 +256,7 @@ export class ToolViewModel implements IToolViewModel {
    */
   private updateInteractionState(): void {
     // 根据当前工具和交互状态更新
-    const currentTool = this.toolManager.getCurrentTool();
+    const currentTool = this.toolManager.getCurrentToolName();
     if (currentTool) {
       // 这里可以根据具体工具的状态来更新 ViewModel 状态
       // 例如：检查工具是否正在绘制、拖拽等

@@ -4,7 +4,7 @@
 
 import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
 import { IEventBusService } from '../eventBus/eventBusService';
-import { ILogService } from '../logging/logService';
+import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 
 /**
  * 工具接口
@@ -52,7 +52,7 @@ export class InteractionService implements IInteractionService {
 
   constructor(
     @inject(IEventBusService) private eventBus: IEventBusService,
-    @inject(ILogService) private logger: ILogService
+    @inject(ILogService) private logger: ILogServiceInterface
   ) {}
 
   initialize(canvas: HTMLCanvasElement): void {

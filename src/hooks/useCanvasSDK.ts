@@ -171,7 +171,10 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       throw new Error('SDK already initialized');
     }
 
-    const sdk = await createCanvasSDK(canvas, {
+    const sdk = await createCanvasSDK();
+    
+    // 初始化SDK
+    await sdk.initialize(canvas, {
       renderEngine: 'webgl', // 默认使用WebGL
       enableInteraction: true,
       ...config

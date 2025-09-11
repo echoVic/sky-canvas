@@ -5,9 +5,8 @@
 
 import { proxy, snapshot } from 'valtio';
 import { ShapeEntity } from '../models/entities/Shape';
-import { ShapeAdapter } from '../models/entities/ShapeAdapter';
 import { ISelectionViewModel, ISelectionState } from './interfaces/IViewModel';
-import { IEventBusService } from '../di/ServiceIdentifiers';
+import { IEventBusService } from '../services/eventBus/eventBusService';
 
 export class SelectionViewModel implements ISelectionViewModel {
   private readonly _state: ISelectionState;
@@ -193,7 +192,27 @@ export class SelectionViewModel implements ISelectionViewModel {
     let maxY = -Infinity;
 
     for (const shape of selectedShapes) {
-      const bounds = ShapeAdapter.getShapeBounds(shape);
+      let bounds = {
+        x: shape.transform.position.x,
+        y: shape.transform.position.y,
+        width: 0,
+        height: 0
+      };
+      
+      // 根据形状类型获取尺寸
+      if (shape.type === 'rectangle') {
+        const rect = shape as any;
+        bounds.width = rect.size?.width || 0;
+        bounds.height = rect.size?.height || 0;
+      } else if (shape.type === 'circle') {
+        const circle = shape as any;
+        const radius = circle.radius || 0;
+        bounds.width = radius * 2;
+        bounds.height = radius * 2;
+        bounds.x -= radius;
+        bounds.y -= radius;
+      }
+      
       minX = Math.min(minX, bounds.x);
       minY = Math.min(minY, bounds.y);
       maxX = Math.max(maxX, bounds.x + bounds.width);

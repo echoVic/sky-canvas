@@ -1,191 +1,154 @@
 /**
- * 依赖注入类型和装饰器 - 参考 VSCode DI 架构
- * 定义了依赖注入系统的核心类型、接口和装饰器
+ * 依赖注入核心类型定义 - 基于 VSCode DI 架构
  */
 
-import 'reflect-metadata';
-import { ServiceIdentifier, ServicesAccessor } from './ServiceIdentifier';
-import { SyncDescriptor, AsyncDescriptor } from './descriptors';
+import { DisposableStore } from '../../../base/common/lifecycle';
+import * as descriptors from './descriptors';
+import { ServiceCollection } from './ServiceCollection';
+
+// ------ internal util
+
+export namespace _util {
+  export const serviceIds = new Map<string, ServiceIdentifier<any>>();
+  export const DI_TARGET = '$di$target';
+  export const DI_DEPENDENCIES = '$di$dependencies';
+
+  export function getServiceDependencies(ctor: any): { id: ServiceIdentifier<any>; index: number }[] {
+    return ctor[DI_DEPENDENCIES] || [];
+  }
+}
+
+// --- interfaces ------
 
 /**
- * 实例化选项
+ * 品牌服务接口 - 用于类型标记
  */
-export interface IInstantiationServiceOptions {
-  strict?: boolean; // 严格模式，不允许未注册的依赖
-  enableLogging?: boolean; // 启用日志记录
+export type BrandedService = { _serviceBrand: undefined };
+
+/**
+ * 服务标识符接口
+ */
+export interface ServiceIdentifier<T> {
+  (...args: any[]): void;
+  type: T;
 }
 
 /**
- * 服务实例化接口
+ * 服务访问器接口
  */
-export interface IInstantiationService extends ServicesAccessor {
-  readonly options: IInstantiationServiceOptions;
-  
-  /**
-   * 创建实例，不缓存
-   */
-  createInstance<T>(descriptor: SyncDescriptor<T>): T;
-  createInstance<T>(ctor: new (...args: any[]) => T, ...args: any[]): T;
-
-  /**
-   * 异步创建实例
-   */
-  createInstanceAsync<T>(descriptor: AsyncDescriptor<T>): Promise<T>;
-
-  /**
-   * 调用函数并注入依赖
-   */
-  invokeFunction<R>(fn: (accessor: ServicesAccessor, ...args: any[]) => R, ...args: any[]): R;
-
-  /**
-   * 创建子作用域
-   */
-  createChild(services: IServiceCollection): IInstantiationService;
+export interface ServicesAccessor {
+  get<T>(id: ServiceIdentifier<T>): T;
+  getIfExists<T>(id: ServiceIdentifier<T>): T | undefined;
 }
 
 /**
- * 可选依赖标记接口
+ * 构造函数签名接口
  */
-export interface BrandedService<T> {
+export interface IConstructorSignature<T, Args extends any[] = []> {
+  new <Services extends BrandedService[]>(...args: [...Args, ...Services]): T;
+}
+
+/**
+ * 获取前导非服务参数类型
+ */
+export type GetLeadingNonServiceArgs<TArgs extends any[]> =
+  TArgs extends [] ? []
+  : TArgs extends [...infer TFirst, BrandedService] ? GetLeadingNonServiceArgs<TFirst>
+  : TArgs;
+
+/**
+ * 实例化服务标识符
+ */
+export const IInstantiationService = createDecorator<IInstantiationService>('instantiationService');
+
+/**
+ * 实例化服务接口
+ */
+export interface IInstantiationService {
   readonly _serviceBrand: undefined;
+
+  /**
+   * 同步创建实例
+   */
+  createInstance<T>(descriptor: descriptors.SyncDescriptor0<T>): T;
+  createInstance<Ctor extends new (...args: any[]) => unknown, R extends InstanceType<Ctor>>(
+    ctor: Ctor, 
+    ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>
+  ): R;
+
+  /**
+   * 调用函数并注入服务
+   */
+  invokeFunction<R, TS extends any[] = []>(
+    fn: (accessor: ServicesAccessor, ...args: TS) => R, 
+    ...args: TS
+  ): R;
+
+  /**
+   * 创建子服务实例
+   */
+  createChild(services: ServiceCollection, store?: DisposableStore): IInstantiationService;
+
+  /**
+   * 销毁实例化服务
+   */
+  dispose(): void;
+}
+
+function storeServiceDependency(id: Function, target: Function, index: number): void {
+  if ((target as any)[_util.DI_TARGET] === target) {
+    (target as any)[_util.DI_DEPENDENCIES].push({ id, index });
+  } else {
+    (target as any)[_util.DI_DEPENDENCIES] = [{ id, index }];
+    (target as any)[_util.DI_TARGET] = target;
+  }
 }
 
 /**
- * 标记为可选依赖
+ * 创建服务标识符 - 唯一有效的创建方式
  */
-export interface Optional<T> {
-  readonly _optionalBrand: undefined;
-}
+export function createDecorator<T>(serviceId: string): ServiceIdentifier<T> {
+  if (_util.serviceIds.has(serviceId)) {
+    return _util.serviceIds.get(serviceId)!;
+  }
 
-/**
- * 依赖注入元数据键
- */
-export const DI_TARGET = Symbol('DI_TARGET');
-export const DI_DEPENDENCIES = Symbol('DI_DEPENDENCIES');
-
-/**
- * 注入装饰器 - 标记构造函数参数需要注入
- */
-export function inject<T>(serviceIdentifier: ServiceIdentifier<T>) {
-  return function (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) {
-    const existingTokens = Reflect.getMetadata(DI_DEPENDENCIES, target) || [];
-    existingTokens[parameterIndex] = serviceIdentifier;
-    Reflect.defineMetadata(DI_DEPENDENCIES, existingTokens, target);
+  const id = <any>function (target: Function, _key: string, index: number) {
+    if (arguments.length !== 3) {
+      throw new Error('@IServiceName-decorator can only be used to decorate a parameter');
+    }
+    storeServiceDependency(id, target, index);
   };
+
+  id.toString = () => serviceId;
+  _util.serviceIds.set(serviceId, id);
+  return id;
 }
 
 /**
- * 可选注入装饰器 - 标记构造函数参数为可选依赖
+ * 精炼服务装饰器
  */
-export function optional<T>(serviceIdentifier: ServiceIdentifier<T>) {
-  return function (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) {
-    const existingTokens = Reflect.getMetadata(DI_DEPENDENCIES, target) || [];
-    existingTokens[parameterIndex] = { serviceIdentifier, optional: true };
-    Reflect.defineMetadata(DI_DEPENDENCIES, existingTokens, target);
-  };
+export function refineServiceDecorator<T1, T extends T1>(serviceIdentifier: ServiceIdentifier<T1>): ServiceIdentifier<T> {
+  return <ServiceIdentifier<T>>serviceIdentifier;
+}
+
+// ------ register singleton services ------
+
+const _registry: [ServiceIdentifier<any>, descriptors.SyncDescriptor<any>][] = [];
+
+/**
+ * 注册单例服务 - VSCode 标准方式
+ */
+export function registerSingleton<T, Services extends BrandedService[]>(
+  id: ServiceIdentifier<T>,
+  ctor: IConstructorSignature<T, Services>,
+  supportsDelayedInstantiation?: boolean
+): void {
+  _registry.push([id, new descriptors.SyncDescriptor<T>(ctor as any, [], supportsDelayedInstantiation)]);
 }
 
 /**
- * 可注入装饰器 - 标记类为可注入
+ * 获取已注册的服务
  */
-export function injectable<T extends new (...args: any[]) => any>(target: T): T {
-  Reflect.defineMetadata(DI_TARGET, true, target);
-  return target;
-}
-
-/**
- * 多重注入装饰器 - 注入多个实现同一接口的服务
- */
-export function multiInject<T>(serviceIdentifier: ServiceIdentifier<T>) {
-  return function (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) {
-    const existingTokens = Reflect.getMetadata(DI_DEPENDENCIES, target) || [];
-    existingTokens[parameterIndex] = { serviceIdentifier, multiple: true };
-    Reflect.defineMetadata(DI_DEPENDENCIES, existingTokens, target);
-  };
-}
-
-/**
- * 获取类的依赖信息
- */
-export function getDependencies(target: any): (ServiceIdentifier<any> | { serviceIdentifier: ServiceIdentifier<any>; optional?: boolean; multiple?: boolean })[] {
-  return Reflect.getMetadata(DI_DEPENDENCIES, target) || [];
-}
-
-/**
- * 检查类是否可注入
- */
-export function isInjectable(target: any): boolean {
-  return Reflect.getMetadata(DI_TARGET, target) === true;
-}
-
-/**
- * 服务生命周期
- */
-export enum ServiceLifetime {
-  Singleton = 'singleton',
-  Transient = 'transient',
-  Scoped = 'scoped'
-}
-
-/**
- * 服务注册信息
- */
-export interface ServiceRegistration<T = any> {
-  serviceIdentifier: ServiceIdentifier<T>;
-  lifetime: ServiceLifetime;
-  implementation?: new (...args: any[]) => T;
-  factory?: (accessor: ServicesAccessor) => T;
-  instance?: T;
-}
-
-/**
- * 服务集合接口
- */
-export interface IServiceCollection {
-  /**
-   * 注册服务
-   */
-  register<T>(registration: ServiceRegistration<T>): void;
-
-  /**
-   * 注册单例
-   */
-  addSingleton<T>(serviceIdentifier: ServiceIdentifier<T>, implementation: new (...args: any[]) => T): void;
-  addSingleton<T>(serviceIdentifier: ServiceIdentifier<T>, factory: (accessor: ServicesAccessor) => T): void;
-  addSingleton<T>(serviceIdentifier: ServiceIdentifier<T>, instance: T): void;
-
-  /**
-   * 注册瞬态
-   */
-  addTransient<T>(serviceIdentifier: ServiceIdentifier<T>, implementation: new (...args: any[]) => T): void;
-  addTransient<T>(serviceIdentifier: ServiceIdentifier<T>, factory: (accessor: ServicesAccessor) => T): void;
-
-  /**
-   * 注册作用域
-   */
-  addScoped<T>(serviceIdentifier: ServiceIdentifier<T>, implementation: new (...args: any[]) => T): void;
-  addScoped<T>(serviceIdentifier: ServiceIdentifier<T>, factory: (accessor: ServicesAccessor) => T): void;
-
-  /**
-   * 获取注册信息
-   */
-  getRegistration<T>(serviceIdentifier: ServiceIdentifier<T>): ServiceRegistration<T> | undefined;
-
-  /**
-   * 检查是否已注册
-   */
-  has<T>(serviceIdentifier: ServiceIdentifier<T>): boolean;
-}
-
-// 删除工厂函数，直接使用 createServiceIdentifier() 创建服务标识符
-
-/**
- * 类型保护函数
- */
-export function isSyncDescriptor<T>(obj: any): obj is SyncDescriptor<T> {
-  return obj instanceof SyncDescriptor;
-}
-
-export function isAsyncDescriptor<T>(obj: any): obj is AsyncDescriptor<T> {
-  return obj instanceof AsyncDescriptor;
+export function getSingletonServiceDescriptors(): [ServiceIdentifier<any>, descriptors.SyncDescriptor<any>][] {
+  return _registry;
 }

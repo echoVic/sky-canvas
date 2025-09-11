@@ -9,6 +9,7 @@ import { IZoomService } from '../services/zoom/zoomService';
 import { IConfigurationService } from '../services/configuration/configurationService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewportViewModel, IViewportState } from './interfaces/IViewModel';
+import { ShapeEntity } from '../models/entities/Shape';
 
 @injectable
 export class ViewportViewModel implements IViewportViewModel {
@@ -21,10 +22,10 @@ export class ViewportViewModel implements IViewportViewModel {
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IViewportState>({
-      x: this.configService.get('viewport.x', 0),
-      y: this.configService.get('viewport.y', 0),
-      width: this.configService.get('viewport.width', 800),
-      height: this.configService.get('viewport.height', 600),
+      x: this.configService.get<number>('viewport.x') || 0,
+      y: this.configService.get<number>('viewport.y') || 0,
+      width: this.configService.get<number>('viewport.width') || 800,
+      height: this.configService.get<number>('viewport.height') || 600,
       zoom: this.zoomService.getCurrentZoom()
     });
 
@@ -169,7 +170,7 @@ export class ViewportViewModel implements IViewportViewModel {
     let maxY = -Infinity;
 
     for (const shape of shapes) {
-      const bounds = ShapeAdapter.getShapeBounds(shape);
+      const bounds = this.getShapeBounds(shape);
       minX = Math.min(minX, bounds.x);
       minY = Math.min(minY, bounds.y);
       maxX = Math.max(maxX, bounds.x + bounds.width);
@@ -228,5 +229,45 @@ export class ViewportViewModel implements IViewportViewModel {
     };
   }
 
-  // 移除这个方法，直接使用 ShapeAdapter
+  /**
+   * 获取形状边界
+   */
+  private getShapeBounds(shape: ShapeEntity): { x: number; y: number; width: number; height: number } {
+    const { position } = shape.transform;
+    
+    switch (shape.type) {
+      case 'rectangle':
+        return {
+          x: position.x,
+          y: position.y,
+          width: (shape as any).size.width,
+          height: (shape as any).size.height
+        };
+      case 'circle':
+        const radius = (shape as any).radius;
+        return {
+          x: position.x - radius,
+          y: position.y - radius,
+          width: radius * 2,
+          height: radius * 2
+        };
+      case 'text':
+        // 简单估算文本边界
+        const fontSize = (shape as any).fontSize || 16;
+        const content = (shape as any).content || '';
+        return {
+          x: position.x,
+          y: position.y,
+          width: content.length * fontSize * 0.6,
+          height: fontSize
+        };
+      default:
+        return {
+          x: position.x,
+          y: position.y,
+          width: 100,
+          height: 100
+        };
+    }
+  }
 }

@@ -143,7 +143,7 @@ export class ThemeService implements IThemeService {
     @inject(IConfigurationService) private configService: IConfigurationService
   ) {
     // 从配置中读取保存的主题，默认为浅色主题
-    this.currentTheme = this.configService.get<ThemeType>('theme.current', ThemeType.LIGHT);
+    this.currentTheme = this.configService.get<ThemeType>('theme.current') || ThemeType.LIGHT;
     this.initializeAutoTheme();
   }
 

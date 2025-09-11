@@ -61,6 +61,10 @@ export class ThemeViewModel implements IThemeViewModel {
     this.eventBus.emit('theme-viewmodel:initialized', {});
   }
 
+  getSnapshot() {
+    return snapshot(this._state);
+  }
+
   dispose(): void {
     // ViewModels 通常不需要显式清理，因为它们是通过 DI 管理的
     this.eventBus.emit('theme-viewmodel:disposed', {});

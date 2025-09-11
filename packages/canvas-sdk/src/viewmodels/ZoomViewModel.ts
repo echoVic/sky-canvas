@@ -3,7 +3,7 @@
  * 直接使用 ZoomService，不需要 Manager
  */
 
-import { proxy } from 'valtio';
+import { proxy, snapshot } from 'valtio';
 import { inject, injectable } from '../di/ServiceIdentifier';
 import { IZoomService, IZoomConfig } from '../services/zoom/zoomService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
@@ -67,6 +67,10 @@ export class ZoomViewModel implements IZoomViewModel {
 
   dispose(): void {
     this.eventBus.emit('zoom-viewmodel:disposed', {});
+  }
+
+  getSnapshot() {
+    return snapshot(this._state);
   }
 
   /**

@@ -1,325 +1,286 @@
-import 'reflect-metadata';
-
 /**
- * 依赖注入系统 - 实例化服务
- * 负责创建和管理服务实例
+ * 实例化服务 - 基于 VSCode DI 架构
  */
 
-import { 
-  ServiceIdentifier, 
-  ServicesAccessor, 
-  ServiceScope, 
-  ServiceDescriptor,
-  INJECT_METADATA_KEY,
-  OPTIONAL_INJECT_METADATA_KEY
-} from './ServiceIdentifier';
+import { illegalState } from '../../../base/common/errors';
+import { DisposableStore, dispose, isDisposable } from '../../../base/common/lifecycle';
+import { SyncDescriptor, SyncDescriptor0 } from './descriptors';
+import { Graph } from './graph';
+import { GetLeadingNonServiceArgs, IInstantiationService, ServiceIdentifier, ServicesAccessor, _util } from './instantiation';
 import { ServiceCollection } from './ServiceCollection';
 
-/**
- * 循环依赖错误
- */
-export class CircularDependencyError extends Error {
-  constructor(path: string[]) {
-    super(`Circular dependency detected: ${path.join(' -> ')}`);
-    this.name = 'CircularDependencyError';
+class CyclicDependencyError extends Error {
+  constructor(graph: Graph<any>) {
+    super('cyclic dependency between services');
+    this.message = graph.findCycleSlow() ?? `UNABLE to detect cycle, dumping graph: \n${graph.toString()}`;
   }
 }
 
-/**
- * 服务未注册错误
- */
-export class ServiceNotRegisteredError extends Error {
-  constructor(serviceId: string) {
-    super(`Service not registered: ${serviceId}`);
-    this.name = 'ServiceNotRegisteredError';
-  }
-}
+export class InstantiationService implements IInstantiationService {
 
-/**
- * 依赖解析错误
- */
-export class DependencyResolutionError extends Error {
-  constructor(serviceId: string, parameterIndex: number, innerError?: Error) {
-    super(`Cannot resolve dependency at index ${parameterIndex} for service ${serviceId}: ${innerError?.message || 'Unknown error'}`);
-    this.name = 'DependencyResolutionError';
-  }
-}
+  declare readonly _serviceBrand: undefined;
 
-/**
- * 实例化服务
- */
-export class InstantiationService implements ServicesAccessor {
-  private readonly services = new Map<ServiceIdentifier, any>();
-  private readonly creating = new Set<ServiceIdentifier>();
-  private readonly creationPath: string[] = [];
-  
-  constructor(private readonly serviceCollection: ServiceCollection) {}
-  
-  /**
-   * 获取服务实例
-   */
-  get<T>(identifier: ServiceIdentifier<T>): T {
-    // 检查循环依赖
-    if (this.creating.has(identifier)) {
-      this.creationPath.push(identifier.id);
-      throw new CircularDependencyError([...this.creationPath]);
-    }
-    
-    const descriptor = this.serviceCollection.get(identifier);
-    if (!descriptor) {
-      throw new ServiceNotRegisteredError(identifier.id);
-    }
-    
-    // 单例模式检查
-    if (descriptor.scope === ServiceScope.Singleton && this.services.has(identifier)) {
-      return this.services.get(identifier);
-    }
-    
-    this.creating.add(identifier);
-    this.creationPath.push(identifier.id);
-    
-    try {
-      const instance = this.createInstance(descriptor);
-      
-      // 缓存单例和作用域服务
-      if (descriptor.scope === ServiceScope.Singleton || descriptor.scope === ServiceScope.Scoped) {
-        this.services.set(identifier, instance);
-      }
-      
-      return instance as T;
-    } catch (error) {
-      throw error;
-    } finally {
-      this.creating.delete(identifier);
-      this.creationPath.pop();
-    }
+  readonly _globalGraph?: Graph<string>;
+  private _globalGraphImplicitDependency?: string;
+
+  private _isDisposed = false;
+  private readonly _servicesToMaybeDispose = new Set<any>();
+  private readonly _children = new Set<InstantiationService>();
+
+  constructor(
+    private readonly _services: ServiceCollection = new ServiceCollection(),
+    private readonly _strict: boolean = false,
+    private readonly _parent?: InstantiationService
+  ) {
+    this._services.set(IInstantiationService, this);
   }
-  
-  /**
-   * 检查是否已注册服务
-   */
-  has(identifier: ServiceIdentifier): boolean {
-    return this.serviceCollection.has(identifier);
-  }
-  
-  /**
-   * 尝试获取服务，不存在时返回 undefined
-   */
-  tryGet<T>(identifier: ServiceIdentifier<T>): T | undefined {
-    try {
-      return this.get(identifier);
-    } catch (error) {
-      if (error instanceof ServiceNotRegisteredError) {
-        return undefined;
-      }
-      throw error;
-    }
-  }
-  
-  /**
-   * 创建作用域实例化服务
-   */
-  createScope(): InstantiationService {
-    const scopedService = new InstantiationService(this.serviceCollection);
-    
-    // 复制单例服务到作用域
-    for (const [identifier, instance] of this.services) {
-      const descriptor = this.serviceCollection.get(identifier);
-      if (descriptor?.scope === ServiceScope.Singleton) {
-        scopedService.services.set(identifier, instance);
-      }
-    }
-    
-    return scopedService;
-  }
-  
-  /**
-   * 预加载所有单例服务
-   */
-  preloadSingletons(): void {
-    const singletonDescriptors = this.serviceCollection.filterByScope(ServiceScope.Singleton);
-    
-    for (const descriptor of singletonDescriptors) {
-      if (!this.services.has(descriptor.identifier)) {
-        try {
-          this.get(descriptor.identifier);
-        } catch (error) {
-          console.warn(`Failed to preload singleton service ${descriptor.identifier.id}:`, error);
-        }
-      }
-    }
-  }
-  
-  /**
-   * 获取所有已创建的服务实例
-   */
-  getCreatedServices(): Map<ServiceIdentifier, any> {
-    return new Map(this.services);
-  }
-  
-  /**
-   * 清除特定作用域的服务
-   */
-  clearScope(scope: ServiceScope): void {
-    const toRemove: ServiceIdentifier[] = [];
-    
-    for (const [identifier] of this.services) {
-      const descriptor = this.serviceCollection.get(identifier);
-      if (descriptor?.scope === scope) {
-        toRemove.push(identifier);
-      }
-    }
-    
-    for (const identifier of toRemove) {
-      const instance = this.services.get(identifier);
-      if (instance && typeof instance.dispose === 'function') {
-        try {
-          instance.dispose();
-        } catch (error) {
-          console.warn(`Error disposing service ${identifier.id}:`, error);
-        }
-      }
-      this.services.delete(identifier);
-    }
-  }
-  
-  /**
-   * 创建服务实例
-   */
-  private createInstance<T>(descriptor: ServiceDescriptor): T {
-    if (descriptor.factory) {
-      try {
-        return descriptor.factory(this);
-      } catch (error) {
-        throw new DependencyResolutionError(descriptor.identifier.id, -1, error as Error);
-      }
-    }
-    
-    if (descriptor.implementationClass) {
-      return this.createClassInstance(descriptor.implementationClass, descriptor.identifier.id);
-    }
-    
-    throw new Error(`No factory or implementation class provided for service: ${descriptor.identifier.id}`);
-  }
-  
-  /**
-   * 通过类创建实例
-   */
-  private createClassInstance<T>(implementationClass: new (...args: any[]) => T, serviceId: string): T {
-    try {
-      const dependencies = this.resolveDependencies(implementationClass, serviceId);
-      return new implementationClass(...dependencies);
-    } catch (error) {
-      if (error instanceof DependencyResolutionError) {
-        throw error;
-      }
-      throw new DependencyResolutionError(serviceId, -1, error as Error);
-    }
-  }
-  
-  /**
-   * 解析构造函数依赖
-   */
-  private resolveDependencies(target: any, serviceId: string): any[] {
-    // 获取参数类型
-    const paramTypes = Reflect.getMetadata('design:paramtypes', target) || [];
-    
-    // 获取注入的服务标识符
-    const injectTokens = Reflect.getMetadata(INJECT_METADATA_KEY, target) || [];
-    const optionalTokens = Reflect.getMetadata(OPTIONAL_INJECT_METADATA_KEY, target) || [];
-    
-    return paramTypes.map((paramType: any, index: number) => {
-      try {
-        const injectToken = injectTokens[index];
-        const optionalToken = optionalTokens[index];
-        const token = injectToken || optionalToken;
-        
-        if (token) {
-          if (optionalToken) {
-            // 可选依赖
-            return this.has(token) ? this.get(token) : null;
-          } else {
-            // 必需依赖
-            return this.get(token);
-          }
-        }
-        
-        // 如果没有明确的注入标识符，尝试从参数类型推断
-        if (paramType && paramType.serviceIdentifier) {
-          return this.get(paramType.serviceIdentifier);
-        }
-        
-        // 尝试通过参数类型名称查找服务
-        const potentialIdentifier = this.findServiceByTypeName(paramType?.name);
-        if (potentialIdentifier) {
-          return this.get(potentialIdentifier);
-        }
-        
-        throw new Error(`No service identifier found for parameter at index ${index}`);
-      } catch (error) {
-        throw new DependencyResolutionError(serviceId, index, error as Error);
-      }
-    });
-  }
-  
-  /**
-   * 通过类型名称查找服务标识符
-   */
-  private findServiceByTypeName(typeName: string): ServiceIdentifier | undefined {
-    if (!typeName) return undefined;
-    
-    for (const descriptor of this.serviceCollection.getAll()) {
-      if (descriptor.implementationClass?.name === typeName) {
-        return descriptor.identifier;
-      }
-    }
-    
-    return undefined;
-  }
-  
-  /**
-   * 销毁所有服务实例
-   */
+
   dispose(): void {
-    // 按创建顺序的逆序销毁服务
-    const servicesToDispose = Array.from(this.services.entries()).reverse();
-    
-    for (const [identifier, instance] of servicesToDispose) {
-      if (instance && typeof instance.dispose === 'function') {
-        try {
-          instance.dispose();
-        } catch (error) {
-          console.warn(`Error disposing service ${identifier.id}:`, error);
+    if (!this._isDisposed) {
+      this._isDisposed = true;
+      // dispose all child services
+      dispose(this._children);
+      this._children.clear();
+
+      // dispose all services created by this service
+      for (const candidate of this._servicesToMaybeDispose) {
+        if (isDisposable(candidate)) {
+          candidate.dispose();
+        }
+      }
+      this._servicesToMaybeDispose.clear();
+    }
+  }
+
+  private _throwIfDisposed(): void {
+    if (this._isDisposed) {
+      throw new Error('InstantiationService has been disposed');
+    }
+  }
+
+  createChild(services: ServiceCollection, store?: DisposableStore): IInstantiationService {
+    this._throwIfDisposed();
+
+    const that = this;
+    const result = new class extends InstantiationService {
+      override dispose(): void {
+        that._children.delete(result);
+        super.dispose();
+      }
+    }(services, this._strict, this);
+    this._children.add(result);
+
+    store?.add(result);
+    return result;
+  }
+
+  invokeFunction<R, TS extends any[] = []>(fn: (accessor: ServicesAccessor, ...args: TS) => R, ...args: TS): R {
+    this._throwIfDisposed();
+
+    let _done = false;
+    try {
+      const accessor: ServicesAccessor = {
+        get: <T>(id: ServiceIdentifier<T>) => {
+          if (_done) {
+            throw illegalState('service accessor is only valid during the invocation of its target method');
+          }
+
+          const result = this._getOrCreateServiceInstance(id);
+          if (!result) {
+            throw new Error(`[invokeFunction] unknown service '${id}'`);
+          }
+          return result;
+        },
+        getIfExists: <T>(id: ServiceIdentifier<T>) => {
+          if (_done) {
+            throw illegalState('service accessor is only valid during the invocation of its target method');
+          }
+          const result = this._getOrCreateServiceInstance(id);
+          return result;
+        }
+      };
+      return fn(accessor, ...args);
+    } finally {
+      _done = true;
+    }
+  }
+
+  createInstance<T>(descriptor: SyncDescriptor0<T>): T;
+  createInstance<Ctor extends new (...args: any[]) => unknown, R extends InstanceType<Ctor>>(ctor: Ctor, ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>): R;
+  createInstance(ctorOrDescriptor: any | SyncDescriptor<any>, ...rest: any[]): unknown {
+    this._throwIfDisposed();
+
+    let result: unknown;
+    if (ctorOrDescriptor instanceof SyncDescriptor) {
+      result = this._createInstance(ctorOrDescriptor.ctor, ctorOrDescriptor.staticArguments.concat(rest));
+    } else {
+      result = this._createInstance(ctorOrDescriptor, rest);
+    }
+    return result;
+  }
+
+  private _createInstance<T>(ctor: any, args: any[] = []): T {
+    // arguments defined by service decorators
+    const serviceDependencies = _util.getServiceDependencies(ctor).sort((a, b) => a.index - b.index);
+    const serviceArgs: any[] = [];
+    for (const dependency of serviceDependencies) {
+      const service = this._getOrCreateServiceInstance(dependency.id);
+      if (!service) {
+        this._throwIfStrict(`[createInstance] ${ctor.name} depends on UNKNOWN service ${dependency.id}.`, false);
+      }
+      serviceArgs.push(service);
+    }
+
+    const firstServiceArgPos = serviceDependencies.length > 0 ? serviceDependencies[0].index : args.length;
+
+    // check for argument mismatches, adjust static args if needed
+    if (args.length !== firstServiceArgPos) {
+      console.trace(`[createInstance] First service dependency of ${ctor.name} at position ${firstServiceArgPos + 1} conflicts with ${args.length} static arguments`);
+
+      const delta = firstServiceArgPos - args.length;
+      if (delta > 0) {
+        args = args.concat(new Array(delta));
+      } else {
+        args = args.slice(0, firstServiceArgPos);
+      }
+    }
+
+    // now create the instance
+    return Reflect.construct<any, T>(ctor, args.concat(serviceArgs));
+  }
+
+  private _setCreatedServiceInstance<T>(id: ServiceIdentifier<T>, instance: T): void {
+    if (this._services.get(id) instanceof SyncDescriptor) {
+      this._services.set(id, instance);
+    } else if (this._parent) {
+      this._parent._setCreatedServiceInstance(id, instance);
+    } else {
+      throw new Error('illegalState - setting UNKNOWN service instance');
+    }
+  }
+
+  private _getServiceInstanceOrDescriptor<T>(id: ServiceIdentifier<T>): T | SyncDescriptor<T> {
+    const instanceOrDesc = this._services.get(id);
+    if (!instanceOrDesc && this._parent) {
+      return this._parent._getServiceInstanceOrDescriptor(id);
+    } else {
+      return instanceOrDesc;
+    }
+  }
+
+  protected _getOrCreateServiceInstance<T>(id: ServiceIdentifier<T>): T {
+    const thing = this._getServiceInstanceOrDescriptor(id);
+    if (thing instanceof SyncDescriptor) {
+      return this._safeCreateAndCacheServiceInstance(id, thing);
+    } else {
+      return thing;
+    }
+  }
+
+  private readonly _activeInstantiations = new Set<ServiceIdentifier<any>>();
+
+  private _safeCreateAndCacheServiceInstance<T>(id: ServiceIdentifier<T>, desc: SyncDescriptor<T>): T {
+    if (this._activeInstantiations.has(id)) {
+      throw new Error(`illegal state - RECURSIVELY instantiating service '${id}'`);
+    }
+    this._activeInstantiations.add(id);
+    try {
+      return this._createAndCacheServiceInstance(id, desc);
+    } finally {
+      this._activeInstantiations.delete(id);
+    }
+  }
+
+  private _createAndCacheServiceInstance<T>(id: ServiceIdentifier<T>, desc: SyncDescriptor<T>): T {
+
+    type Triple = { id: ServiceIdentifier<any>; desc: SyncDescriptor<any> };
+    const graph = new Graph<Triple>(data => data.id.toString());
+
+    let cycleCount = 0;
+    const stack = [{ id, desc }];
+    const seen = new Set<string>();
+    while (stack.length) {
+      const item = stack.pop()!;
+
+      if (seen.has(String(item.id))) {
+        continue;
+      }
+      seen.add(String(item.id));
+
+      graph.lookupOrInsertNode(item);
+
+      // a weak but working heuristic for cycle checks
+      if (cycleCount++ > 1000) {
+        throw new CyclicDependencyError(graph);
+      }
+
+      // check all dependencies for existence and if they need to be created first
+      for (const dependency of _util.getServiceDependencies(item.desc.ctor)) {
+
+        const instanceOrDesc = this._getServiceInstanceOrDescriptor(dependency.id);
+        if (!instanceOrDesc) {
+          this._throwIfStrict(`[createInstance] ${id} depends on ${dependency.id} which is NOT registered.`, true);
+        }
+
+        if (instanceOrDesc instanceof SyncDescriptor) {
+          const d = { id: dependency.id, desc: instanceOrDesc };
+          graph.insertEdge(item, d);
+          stack.push(d);
         }
       }
     }
-    
-    this.services.clear();
-    this.creating.clear();
-    this.creationPath.length = 0;
+
+    while (true) {
+      const roots = graph.roots();
+
+      // if there is no more roots but still
+      // nodes in the graph we have a cycle
+      if (roots.length === 0) {
+        if (!graph.isEmpty()) {
+          throw new CyclicDependencyError(graph);
+        }
+        break;
+      }
+
+      for (const { data } of roots) {
+        // Repeat the check for this still being a service sync descriptor. That's because
+        // instantiating a dependency might have side-effect and recursively trigger instantiation
+        // so that some dependencies are now fullfilled already.
+        const instanceOrDesc = this._getServiceInstanceOrDescriptor(data.id);
+        if (instanceOrDesc instanceof SyncDescriptor) {
+          // create instance and overwrite the service collections
+          const instance = this._createServiceInstanceWithOwner(data.id, data.desc.ctor, data.desc.staticArguments, data.desc.supportsDelayedInstantiation);
+          this._setCreatedServiceInstance(data.id, instance);
+        }
+        graph.removeNode(data);
+      }
+    }
+    return <T>this._getServiceInstanceOrDescriptor(id);
   }
-  
-  /**
-   * 获取服务统计信息
-   */
-  getStats(): {
-    totalRegistered: number;
-    totalCreated: number;
-    singletonCount: number;
-    transientCount: number;
-    scopedCount: number;
-    createdServices: string[];
-  } {
-    const allDescriptors = this.serviceCollection.getAll();
-    const createdServices = Array.from(this.services.keys()).map(id => id.id);
-    
-    return {
-      totalRegistered: allDescriptors.length,
-      totalCreated: this.services.size,
-      singletonCount: allDescriptors.filter(d => d.scope === ServiceScope.Singleton).length,
-      transientCount: allDescriptors.filter(d => d.scope === ServiceScope.Transient).length,
-      scopedCount: allDescriptors.filter(d => d.scope === ServiceScope.Scoped).length,
-      createdServices
-    };
+
+  private _createServiceInstanceWithOwner<T>(id: ServiceIdentifier<T>, ctor: any, args: any[] = [], supportsDelayedInstantiation: boolean): T {
+    if (this._services.get(id) instanceof SyncDescriptor) {
+      return this._createServiceInstance(id, ctor, args, supportsDelayedInstantiation, this._servicesToMaybeDispose);
+    } else if (this._parent) {
+      return this._parent._createServiceInstanceWithOwner(id, ctor, args, supportsDelayedInstantiation);
+    } else {
+      throw new Error(`illegalState - creating UNKNOWN service instance ${ctor.name}`);
+    }
+  }
+
+  private _createServiceInstance<T>(id: ServiceIdentifier<T>, ctor: any, args: any[] = [], supportsDelayedInstantiation: boolean, disposeBucket: Set<any>): T {
+    // eager instantiation
+    const result = this._createInstance<T>(ctor, args);
+    disposeBucket.add(result);
+    return result;
+  }
+
+  private _throwIfStrict(msg: string, printWarning: boolean): void {
+    if (printWarning) {
+      console.warn(msg);
+    }
+    if (this._strict) {
+      throw new Error(msg);
+    }
   }
 }

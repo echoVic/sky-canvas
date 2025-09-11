@@ -52,13 +52,27 @@ export const createMockCanvas = (width = 800, height = 600): HTMLCanvasElement =
 export const createMockShape = (id?: string) => ({
   id: id || `shape-${Math.random().toString(36).substr(2, 9)}`,
   type: 'rectangle' as const,
+  transform: {
+    position: { x: 10, y: 10 },
+    rotation: 0,
+    scale: { x: 1, y: 1 }
+  },
+  style: {
+    fillColor: '#ffffff',
+    strokeColor: '#000000',
+    strokeWidth: 1,
+    opacity: 1
+  },
+  visible: true,
+  zIndex: 0,
+  locked: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  // 兼容旧属性
   position: { x: 10, y: 10 },
   size: { width: 100, height: 50 },
   bounds: { x: 10, y: 10, width: 100, height: 50 },
   selected: false,
-  locked: false,
-  visible: true,
-  zIndex: 0,
   render: vi.fn(),
   clone: vi.fn().mockReturnValue({}),
   dispose: vi.fn(),

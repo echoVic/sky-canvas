@@ -4,7 +4,8 @@
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
-import { ICanvasRenderingService, IEventBusService, ILogService, IConfigurationService } from '../services';
+import { ICanvasRenderingService, IEventBusService, IConfigurationService } from '../services';
+import type { ILogService } from '../services';
 import { ShapeEntity } from '../models/entities/Shape';
 import { ICanvasManager } from './CanvasManager';
 
@@ -22,9 +23,9 @@ export interface ILayerInfo {
 }
 
 /**
- * 场景状态
+ * 场景管理器状态
  */
-export interface ISceneState {
+export interface ISceneManagerState {
   layers: ILayerInfo[];
   activeLayerId: string | null;
   backgroundColor: string;
@@ -62,7 +63,7 @@ export interface ISceneManager {
   refreshScene(): void;
   
   // 状态查询
-  getSceneState(): ISceneState;
+  getSceneState(): ISceneManagerState;
   clear(): void;
   dispose(): void;
 }
@@ -71,7 +72,7 @@ export interface ISceneManager {
  * 场景管理器实现
  */
 export class SceneManager implements ISceneManager {
-  private state: ISceneState;
+  private state: ISceneManagerState;
   private nextLayerId = 1;
 
   constructor(
@@ -341,7 +342,7 @@ export class SceneManager implements ISceneManager {
 
   // === 状态查询 ===
 
-  getSceneState(): ISceneState {
+  getSceneState(): ISceneManagerState {
     return { ...this.state };
   }
 

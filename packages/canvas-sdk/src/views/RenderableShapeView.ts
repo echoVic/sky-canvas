@@ -120,7 +120,7 @@ export class RenderableShapeView implements IRenderable {
         this.renderPath(context, this.entity as IPathEntity);
         break;
       default:
-        console.warn(`Unknown shape type: ${this.entity.type}`);
+        console.warn(`Unknown shape type: ${(this.entity as any).type}`);
     }
   }
 
@@ -146,13 +146,13 @@ export class RenderableShapeView implements IRenderable {
     context.beginPath();
     context.moveTo(x + radius, y);
     context.lineTo(x + width - radius, y);
-    context.arcTo(x + width, y, x + width, y + radius, radius);
+    context.arc(x + width - radius, y + radius, radius, -Math.PI / 2, 0);
     context.lineTo(x + width, y + height - radius);
-    context.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+    context.arc(x + width - radius, y + height - radius, radius, 0, Math.PI / 2);
     context.lineTo(x + radius, y + height);
-    context.arcTo(x, y + height, x, y + height - radius, radius);
+    context.arc(x + radius, y + height - radius, radius, Math.PI / 2, Math.PI);
     context.lineTo(x, y + radius);
-    context.arcTo(x, y, x + radius, y, radius);
+    context.arc(x + radius, y + radius, radius, Math.PI, -Math.PI / 2);
     context.closePath();
   }
 
