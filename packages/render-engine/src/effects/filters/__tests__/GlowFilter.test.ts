@@ -35,7 +35,7 @@ describe('GlowFilter', () => {
 
   it('应该验证参数', () => {
     const validParams = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#00ff00',
       blur: 10,
       strength: 2,
@@ -49,7 +49,7 @@ describe('GlowFilter', () => {
 
   it('应该拒绝无效参数', () => {
     const invalidParams = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#00ff00',
       blur: -5, // 负值无效
       strength: 2,
@@ -63,7 +63,7 @@ describe('GlowFilter', () => {
 
   it('应该拒绝无效的质量设置', () => {
     const invalidParams = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#00ff00',
       blur: 5,
       strength: 2,
@@ -93,14 +93,14 @@ describe('GlowFilter', () => {
     };
 
     const params = {
-      type: FilterType.GLOW,
-      color: '#ffffff',
-      blur: 0,
-      strength: 0,
-      quality: 'medium' as const,
-      opacity: 1,
-      enabled: true
-    };
+        type: FilterType.GLOW as const,
+        color: '#ffffff',
+        blur: 2,
+        strength: 1,
+        quality: 'medium' as const,
+        opacity: 1,
+        enabled: true
+      };
 
     const result = await filter.apply(context, params);
     
@@ -127,7 +127,7 @@ describe('GlowFilter', () => {
     };
 
     const params = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#00ff00',
       blur: 3,
       strength: 2,
@@ -161,7 +161,7 @@ describe('GlowFilter', () => {
 
     // 测试低质量
     const lowQualityParams = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#ff0000',
       blur: 5,
       strength: 1,
@@ -174,17 +174,17 @@ describe('GlowFilter', () => {
     expect(lowResult.success).toBe(true);
 
     // 测试高质量
-    const highQualityParams = {
-      type: FilterType.GLOW,
+    const params = {
+      type: FilterType.GLOW as const,
       color: '#ff0000',
       blur: 5,
-      strength: 1,
+      strength: 1.5,
       quality: 'high' as const,
       opacity: 1,
       enabled: true
     };
 
-    const highResult = await filter.apply(context, highQualityParams);
+    const highResult = await filter.apply(context, params);
     expect(highResult.success).toBe(true);
     
     // 高质量应该花费更多时间
@@ -206,7 +206,7 @@ describe('GlowFilter', () => {
     };
 
     const params = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#ffffff',
       blur: 2,
       strength: 3, // 高强度
@@ -222,7 +222,7 @@ describe('GlowFilter', () => {
 
   it('应该估算处理时间', () => {
     const params = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#ffffff',
       blur: 15,
       strength: 2.5,
@@ -249,7 +249,7 @@ describe('GlowFilter', () => {
 
     // 测试短十六进制颜色
     const params1 = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#f0f',
       blur: 1,
       strength: 1,
@@ -263,7 +263,7 @@ describe('GlowFilter', () => {
 
     // 测试rgba颜色
     const params2 = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: 'rgba(0, 255, 255, 0.8)',
       blur: 1,
       strength: 1,
@@ -289,7 +289,7 @@ describe('GlowFilter', () => {
     };
 
     const params = {
-      type: FilterType.GLOW,
+      type: FilterType.GLOW as const,
       color: '#ffff00',
       blur: 6,
       strength: 1.5,

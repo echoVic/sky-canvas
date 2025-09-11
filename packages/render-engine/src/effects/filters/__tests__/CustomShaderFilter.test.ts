@@ -106,7 +106,7 @@ describe('CustomShaderFilter', () => {
 
   it('应该验证有效的着色器参数', () => {
     const validParams = {
-      type: FilterType.CUSTOM_SHADER,
+      type: FilterType.CUSTOM_SHADER as const,
       vertexShader: `
         attribute vec2 a_position;
         void main() {
@@ -129,7 +129,7 @@ describe('CustomShaderFilter', () => {
 
   it('应该拒绝空的着色器代码', () => {
     const invalidParams = {
-      type: FilterType.CUSTOM_SHADER,
+      type: FilterType.CUSTOM_SHADER as const,
       vertexShader: '', // 空字符串
       fragmentShader: `
         precision mediump float;
@@ -147,7 +147,7 @@ describe('CustomShaderFilter', () => {
 
   it('应该拒绝无效的着色器类型', () => {
     const invalidParams = {
-      type: FilterType.CUSTOM_SHADER,
+      type: FilterType.CUSTOM_SHADER as const,
       vertexShader: 123, // 错误的类型
       fragmentShader: `
         precision mediump float;
@@ -165,7 +165,7 @@ describe('CustomShaderFilter', () => {
 
   it('应该估算处理时间', () => {
     const params = {
-      type: FilterType.CUSTOM_SHADER,
+      type: FilterType.CUSTOM_SHADER as const,
       vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
       fragmentShader: `
         precision mediump float;
@@ -186,7 +186,7 @@ describe('CustomShaderFilter', () => {
 
   it('应该正确处理uniforms对象', () => {
     const params = {
-      type: FilterType.CUSTOM_SHADER,
+      type: FilterType.CUSTOM_SHADER as const,
       vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
       fragmentShader: `
         precision mediump float;
@@ -212,7 +212,7 @@ describe('CustomShaderFilter', () => {
 
   it('应该处理着色器验证错误', () => {
     const invalidShaderParams = {
-      type: FilterType.CUSTOM_SHADER,
+      type: FilterType.CUSTOM_SHADER as const,
       vertexShader: `
         attribute vec2 a_position;
         void main() {

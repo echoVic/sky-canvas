@@ -8,7 +8,23 @@ import {
   AnyMaskConfig,
   MaskEvents
 } from '../types/MaskTypes';
-import { IShape } from '../../canvas-sdk/src/types/Shape';
+// Shape interface definition for render-engine
+interface IShape {
+  id: string;
+  visible: boolean;
+  zIndex: number;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    center: { x: number; y: number };
+  };
+}
 import { EventEmitter } from '../../animation/core/EventEmitter';
 import { MaskFactory } from './MaskFactory';
 

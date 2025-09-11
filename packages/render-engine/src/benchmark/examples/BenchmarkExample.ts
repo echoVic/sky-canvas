@@ -3,7 +3,7 @@
  * 展示如何使用基准测试框架测试渲染引擎性能
  */
 
-import { createBenchmark } from '../PerformanceBenchmark';
+import { createBenchmark, PerformanceBenchmark } from '../PerformanceBenchmark';
 import { createRenderingBenchmark } from '../RenderingBenchmark';
 
 /**
@@ -52,12 +52,12 @@ async function basicBenchmarkExample() {
     console.log(`Starting test: ${name}`);
   });
 
-  benchmark.on('testComplete', (name, result) => {
-    console.log(`Completed test: ${name}`);
-    console.log(`  Average time: ${result.averageTime.toFixed(3)}ms`);
-    console.log(`  Throughput: ${result.throughput.toFixed(0)} ops/sec`);
-    if (result.memoryUsage) {
-      const memoryDiff = result.memoryUsage.after - result.memoryUsage.before;
+  benchmark.on('testComplete', (event) => {
+    console.log(`Completed test: ${event.name}`);
+    console.log(`  Average time: ${event.result.averageTime.toFixed(3)}ms`);
+    console.log(`  Throughput: ${event.result.throughput.toFixed(0)} ops/sec`);
+    if (event.result.memoryUsage) {
+      const memoryDiff = event.result.memoryUsage.after - event.result.memoryUsage.before;
       console.log(`  Memory change: ${(memoryDiff / 1024).toFixed(2)}KB`);
     }
   });
@@ -67,7 +67,7 @@ async function basicBenchmarkExample() {
 
   // 比较结果
   if (results.length >= 2) {
-    const comparison = benchmark.constructor.compare(results[0], results[1]);
+    const comparison = PerformanceBenchmark.compare(results[0], results[1]);
     console.log('\n=== Performance Comparison ===');
     console.log(`${results[0].name} vs ${results[1].name}`);
     console.log(`Time change: ${comparison.timeChange.toFixed(2)}%`);
@@ -176,7 +176,7 @@ async function regressionTestExample() {
   const baseline = baselineResults['Math Operations'][0];
   const current = currentResults[0];
   
-  const comparison = benchmark.constructor.compare(baseline, current);
+  const comparison = PerformanceBenchmark.compare(baseline, current);
   
   console.log(`Test: ${comparison.name}`);
   console.log(`Time change: ${comparison.timeChange.toFixed(2)}%`);

@@ -33,7 +33,7 @@ describe('BrightnessFilter', () => {
 
   it('应该验证参数', () => {
     const validParams = {
-      type: FilterType.BRIGHTNESS,
+      type: FilterType.BRIGHTNESS as const,
       brightness: 50,
       opacity: 0.8,
       enabled: true
@@ -44,7 +44,7 @@ describe('BrightnessFilter', () => {
 
   it('应该拒绝超出范围的亮度值', () => {
     const invalidParams = {
-      type: FilterType.BRIGHTNESS,
+      type: FilterType.BRIGHTNESS as const,
       brightness: 150, // 超出-100到100范围
       opacity: 1,
       enabled: true
@@ -71,8 +71,8 @@ describe('BrightnessFilter', () => {
     };
 
     const params = {
-      type: FilterType.BRIGHTNESS,
-      brightness: 0,
+      type: FilterType.BRIGHTNESS as const,
+      brightness: 30,
       opacity: 1,
       enabled: true
     };
@@ -100,8 +100,8 @@ describe('BrightnessFilter', () => {
     };
 
     const params = {
-      type: FilterType.BRIGHTNESS,
-      brightness: 50, // 增加50%亮度
+      type: FilterType.BRIGHTNESS as const,
+      brightness: 75,
       opacity: 1,
       enabled: true
     };
@@ -129,8 +129,8 @@ describe('BrightnessFilter', () => {
     };
 
     const params = {
-      type: FilterType.BRIGHTNESS,
-      brightness: -30, // 降低30%亮度
+      type: FilterType.BRIGHTNESS as const,
+      brightness: -20,
       opacity: 1,
       enabled: true
     };
@@ -158,8 +158,8 @@ describe('BrightnessFilter', () => {
     };
 
     const params = {
-      type: FilterType.BRIGHTNESS,
-      brightness: 100, // 最大亮度增加
+      type: FilterType.BRIGHTNESS as const,
+      brightness: 0,
       opacity: 1,
       enabled: true
     };

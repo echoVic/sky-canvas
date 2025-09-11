@@ -2,16 +2,16 @@
  * 滤镜管理器测试
  */
 
-import './setup';
 import { FilterManager } from '../FilterManager';
-import { 
-  FilterType, 
-  BrightnessParameters, 
+import {
+  BrightnessParameters,
   ContrastParameters,
-  SaturationParameters,
+  FilterParameters,
+  FilterType,
   GaussianBlurParameters,
-  FilterParameters 
+  SaturationParameters
 } from '../types/FilterTypes';
+import './setup';
 
 describe('FilterManager', () => {
   let filterManager: FilterManager;

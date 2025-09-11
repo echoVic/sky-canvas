@@ -4,7 +4,6 @@
  */
 
 import { EventBus, IDisposable } from '../events/EventBus';
-import { ExtensionRegistry } from './systems/ExtensionSystem';
 import { LazyLoadingService } from './LazyLoadingService';
 import { InstantiationService, ServiceCollection, ServiceIdentifier } from './ServiceCollection';
 import {
@@ -16,6 +15,7 @@ import {
   IRenderEngineService,
   ServiceRegistry
 } from './ServiceRegistry';
+import { ExtensionRegistry } from './systems/ExtensionSystem';
 import { VirtualizationManager } from './VirtualizationManager';
 
 export interface IApplicationServices {

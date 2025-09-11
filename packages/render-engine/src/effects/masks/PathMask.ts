@@ -3,7 +3,23 @@
  */
 
 import { Point2D } from '../../animation/types/PathTypes';
-import { IShape } from '../../canvas-sdk/src/types/Shape';
+// Shape interface definition for render-engine
+interface IShape {
+  id: string;
+  visible: boolean;
+  zIndex: number;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    center: { x: number; y: number };
+  };
+}
 import {
     IMask,
     MaskType,
@@ -63,11 +79,7 @@ export class PathMask extends BaseMask {
       ctx.beginPath();
       // Use Path2D API if available, otherwise fallback to manual path creation
       if (this.pathObject instanceof Path2D) {
-        if (this.pathObject instanceof Path2D) {
-        ctx.addPath(this.pathObject);
-      } else {
-        this.recreatePath(ctx);
-      }
+        ctx.clip(this.pathObject);
       } else {
         // Fallback: manually recreate the path
         this.recreatePath(ctx);
@@ -83,7 +95,8 @@ export class PathMask extends BaseMask {
       ctx.beginPath();
       ctx.rect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
       if (this.pathObject instanceof Path2D) {
-        ctx.addPath(this.pathObject);
+        // For inverted mask, we need to create a path that excludes the mask area
+        this.recreatePath(ctx);
       } else {
         this.recreatePath(ctx);
       }
@@ -141,7 +154,10 @@ export class PathMask extends BaseMask {
     
     ctx.beginPath();
     ctx.rect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
-    ctx.addPath(this.pathObject);
+    if (this.pathObject instanceof Path2D) {
+      // For inverted mask, recreate path manually
+      this.recreatePath(ctx);
+    }
     ctx.clip('evenodd');
   }
 

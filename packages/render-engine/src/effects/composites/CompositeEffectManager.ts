@@ -38,7 +38,13 @@ export class CompositeEffectManager {
     canvas: HTMLCanvasElement,
     config: CompositeConfig
   ): Promise<HTMLCanvasElement> {
-    return this.compositeManager.composite(canvas, config);
+    return this.compositeManager.composite([{
+      id: 'main',
+      canvas,
+      operation: config.operation,
+      globalAlpha: config.globalAlpha,
+      visible: config.enabled
+    }]);
   }
 
   /**
@@ -51,10 +57,7 @@ export class CompositeEffectManager {
     const results: HTMLCanvasElement[] = [];
     
     for (let i = 0; i < canvases.length; i++) {
-      const canvas = canvases[i];
-      const config = configs[i] || configs[0]; // 使用第一个配置作为默认
-      
-      const result = await this.applyCompositeEffect(canvas, config);
+      const result = await this.applyCompositeEffect(canvases[i], configs[i]);
       results.push(result);
     }
     
@@ -62,31 +65,29 @@ export class CompositeEffectManager {
   }
 
   /**
-   * 创建复合效果配置
+   * 创建复合配置
    */
   createCompositeConfig(
     operation: CompositeOperation,
-    opacity: number = 1.0,
+    globalAlpha: number = 1.0,
     enabled: boolean = true
   ): CompositeConfig {
     return {
       operation,
-      opacity,
-      enabled,
-      blendMode: 'source-over',
-      preserveAlpha: true
+      globalAlpha,
+      enabled
     };
   }
 
   /**
-   * 验证复合效果配置
+   * 验证复合配置
    */
   validateCompositeConfig(config: CompositeConfig): boolean {
     if (!config.enabled) {
       return true;
     }
 
-    if (config.opacity < 0 || config.opacity > 1) {
+    if (config.globalAlpha < 0 || config.globalAlpha > 1) {
       return false;
     }
 
@@ -98,10 +99,9 @@ export class CompositeEffectManager {
    */
   getSupportedOperations(): CompositeOperation[] {
     return [
-      CompositeOperation.ADD,
-      CompositeOperation.SUBTRACT,
+      CompositeOperation.SOURCE_OVER,
       CompositeOperation.MULTIPLY,
-      CompositeOperation.DIVIDE,
+      CompositeOperation.SCREEN,
       CompositeOperation.OVERLAY,
       CompositeOperation.SOFT_LIGHT,
       CompositeOperation.HARD_LIGHT,

@@ -113,7 +113,13 @@ export * from './events/index';
 export * from './resources/index';
 
 // 性能监控
-export * from './performance/index';
+export { UnifiedPerformanceMonitor } from './performance/index';
+
+// 基准测试
+export { PerformanceBenchmark as BenchmarkRunner } from './benchmark/index';
+
+// 调试工具
+export { DebugRenderer } from './debug/index';
 
 // 文本渲染
 export * from './text/index';
@@ -125,9 +131,6 @@ export * from './text/index';
 // 滤镜系统  
 // TODO: 解决类型兼容性问题后启用
 // export * from './effects/index';
-
-// 性能基准测试
-export * from './benchmark/index';
 
 // 物理引擎
 export * from './physics/index';
@@ -141,11 +144,9 @@ export * from './paths/index';
 // 插件系统
 export * from './plugins/index';
 
-// 调试工具
-export * from './debug/index';
-
 // 场景编辑器
 export * from './editor/index';
 
-// 组件库
-export * from './components/index';
+// 组件库 - 避免与数学库的Rectangle冲突
+export { Circle, Text, Line } from './components/index';
+export { Rectangle as GraphicsRectangle } from './components/index';

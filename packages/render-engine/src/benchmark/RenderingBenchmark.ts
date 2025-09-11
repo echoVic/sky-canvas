@@ -4,7 +4,7 @@
  */
 
 import { PerformanceBenchmark, BenchmarkResult } from './PerformanceBenchmark';
-import { EnhancedBatcher } from '../batching/EnhancedBatcher';
+import { AdvancedBatcher } from '../batching/AdvancedBatcher';
 import { TextureAtlas } from '../textures/TextureAtlas';
 import { InstancedRenderer } from '../batching/InstancedRenderer';
 
@@ -42,7 +42,7 @@ export class RenderingBenchmark {
   private benchmark: PerformanceBenchmark;
   private canvas: HTMLCanvasElement;
   private gl: WebGLRenderingContext;
-  private batcher?: EnhancedBatcher;
+  private batcher?: AdvancedBatcher;
   private textureAtlas?: TextureAtlas;
   private instancedRenderer?: InstancedRenderer;
 
@@ -99,8 +99,8 @@ export class RenderingBenchmark {
       warmupIterations: 10,
       measureMemory: true,
       setup: async () => {
-        this.batcher = new EnhancedBatcher(this.gl);
-        await this.batcher.initialize();
+        this.batcher = new AdvancedBatcher();
+        this.batcher.initialize();
       },
       teardown: async () => {
         this.batcher?.dispose();
@@ -112,11 +112,9 @@ export class RenderingBenchmark {
       if (!this.batcher) return;
       
       for (let i = 0; i < this.config.objectCount; i++) {
-        this.batcher.addRectangle({
-          x: Math.random() * this.config.canvasWidth,
-          y: Math.random() * this.config.canvasHeight,
-          width: 50,
-          height: 50,
+        const x = Math.random() * this.config.canvasWidth;
+        const y = Math.random() * this.config.canvasHeight;
+        this.batcher.addRectangle(x, y, 50, 50, {
           color: [Math.random(), Math.random(), Math.random(), 1]
         });
       }
@@ -128,11 +126,9 @@ export class RenderingBenchmark {
       
       // 添加对象
       for (let i = 0; i < this.config.objectCount; i++) {
-        this.batcher.addRectangle({
-          x: Math.random() * this.config.canvasWidth,
-          y: Math.random() * this.config.canvasHeight,
-          width: 50,
-          height: 50,
+        const x = Math.random() * this.config.canvasWidth;
+        const y = Math.random() * this.config.canvasHeight;
+        this.batcher.addRectangle(x, y, 50, 50, {
           color: [Math.random(), Math.random(), Math.random(), 1]
         });
       }
@@ -148,11 +144,9 @@ export class RenderingBenchmark {
       
       const objectCount = this.config.objectCount * 5;
       for (let i = 0; i < objectCount; i++) {
-        this.batcher.addRectangle({
-          x: Math.random() * this.config.canvasWidth,
-          y: Math.random() * this.config.canvasHeight,
-          width: 10,
-          height: 10,
+        const x = Math.random() * this.config.canvasWidth;
+        const y = Math.random() * this.config.canvasHeight;
+        this.batcher.addRectangle(x, y, 10, 10, {
           color: [Math.random(), Math.random(), Math.random(), 1]
         });
       }
@@ -172,8 +166,8 @@ export class RenderingBenchmark {
       measureMemory: true,
       setup: async () => {
         this.textureAtlas = new TextureAtlas({
-          width: 2048,
-          height: 2048,
+          maxWidth: 2048,
+          maxHeight: 2048,
           padding: 2
         });
       },
@@ -197,11 +191,11 @@ export class RenderingBenchmark {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         this.textureAtlas.addTexture({
-          id: `texture_${i}`,
-          image: canvas,
-          width: canvas.width,
-          height: canvas.height
-        });
+            id: `texture_${i}`,
+            data: canvas,
+            width: canvas.width,
+            height: canvas.height
+          });
       }
     });
 
@@ -216,7 +210,7 @@ export class RenderingBenchmark {
         canvas.height = 64;
         this.textureAtlas.addTexture({
           id: `lookup_texture_${i}`,
-          image: canvas,
+          data: canvas,
           width: canvas.width,
           height: canvas.height
         });
@@ -250,21 +244,35 @@ export class RenderingBenchmark {
     suite.test('Instanced Rectangles', async () => {
       if (!this.instancedRenderer) return;
       
+      const template = {
+         id: 'rectangle-template',
+         bounds: { x: 0, y: 0, width: 25, height: 25 },
+         visible: true,
+         zIndex: 0,
+         render: () => {},
+         hitTest: () => false,
+         dispose: () => {},
+         prepareRender: () => {},
+         getVertexCount: () => 6,
+         getBounds: () => ({ x: 0, y: 0, width: 25, height: 25 })
+       };
+      
       const instances = [];
       for (let i = 0; i < this.config.objectCount; i++) {
         instances.push({
-          transform: [
-            Math.random() * this.config.canvasWidth,
-            Math.random() * this.config.canvasHeight,
-            50, 50 // width, height
-          ],
-          color: [Math.random(), Math.random(), Math.random(), 1]
+          transform: new Float32Array([
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            Math.random() * this.config.canvasWidth, Math.random() * this.config.canvasHeight, 0, 1
+          ]),
+          tint: new Float32Array([Math.random(), Math.random(), Math.random(), 1]),
+          textureOffset: new Float32Array([0, 0, 1, 1])
         });
       }
       
       const batchId = 'rect_batch';
-      this.instancedRenderer.createBatch(batchId, 'rectangle', instances.length);
-      this.instancedRenderer.updateInstances(batchId, instances);
+      this.instancedRenderer.updateBatch(batchId, template, instances);
       
       // 模拟着色器程序（实际测试中需要真实的着色器）
       const mockProgram = {} as WebGLProgram;
@@ -275,31 +283,44 @@ export class RenderingBenchmark {
     suite.test('Instance Buffer Update', async () => {
       if (!this.instancedRenderer) return;
       
+      const template = {
+         id: 'rectangle-template',
+         bounds: { x: 0, y: 0, width: 25, height: 25 },
+         visible: true,
+         zIndex: 0,
+         render: () => {},
+         hitTest: () => false,
+         dispose: () => {},
+         prepareRender: () => {},
+         getVertexCount: () => 6,
+         getBounds: () => ({ x: 0, y: 0, width: 25, height: 25 })
+       };
+      
       const instances = [];
       for (let i = 0; i < this.config.objectCount * 2; i++) {
         instances.push({
-          transform: [
-            Math.random() * this.config.canvasWidth,
-            Math.random() * this.config.canvasHeight,
-            25, 25
-          ],
-          color: [Math.random(), Math.random(), Math.random(), 1]
+          transform: new Float32Array([
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            Math.random() * this.config.canvasWidth, Math.random() * this.config.canvasHeight, 0, 1
+          ]),
+          tint: new Float32Array([Math.random(), Math.random(), Math.random(), 1]),
+          textureOffset: new Float32Array([0, 0, 1, 1])
         });
       }
       
       const batchId = 'update_batch';
-      this.instancedRenderer.createBatch(batchId, 'rectangle', instances.length);
-      
       // 多次更新测试
       for (let i = 0; i < 5; i++) {
         // 随机修改一些实例
         for (let j = 0; j < instances.length / 4; j++) {
           const idx = Math.floor(Math.random() * instances.length);
-          instances[idx].transform[0] = Math.random() * this.config.canvasWidth;
-          instances[idx].transform[1] = Math.random() * this.config.canvasHeight;
+          instances[idx].transform[12] = Math.random() * this.config.canvasWidth;
+          instances[idx].transform[13] = Math.random() * this.config.canvasHeight;
         }
         
-        this.instancedRenderer.updateInstances(batchId, instances);
+        this.instancedRenderer.updateBatch(batchId, template, instances);
       }
     });
   }

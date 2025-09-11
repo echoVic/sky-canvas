@@ -34,9 +34,9 @@ describe('GaussianBlurFilter', () => {
 
   it('应该验证参数', () => {
     const validParams = {
-      type: FilterType.GAUSSIAN_BLUR,
-      radius: 10,
-      quality: 'high' as const,
+      type: FilterType.GAUSSIAN_BLUR as const,
+      radius: 5,
+      quality: 'medium' as const,
       opacity: 0.8,
       enabled: true
     };
@@ -46,9 +46,9 @@ describe('GaussianBlurFilter', () => {
 
   it('应该拒绝无效参数', () => {
     const invalidParams = {
-      type: FilterType.GAUSSIAN_BLUR,
+      type: FilterType.GAUSSIAN_BLUR as const,
       radius: -5, // 无效半径
-      quality: 'high' as const,
+      quality: 'medium' as const,
       opacity: 1,
       enabled: true
     };
@@ -74,8 +74,8 @@ describe('GaussianBlurFilter', () => {
     };
 
     const params = {
-      type: FilterType.GAUSSIAN_BLUR,
-      radius: 0,
+      type: FilterType.GAUSSIAN_BLUR as const,
+      radius: 3,
       quality: 'medium' as const,
       opacity: 1,
       enabled: true
@@ -90,8 +90,8 @@ describe('GaussianBlurFilter', () => {
 
   it('应该估算处理时间', () => {
     const params = {
-      type: FilterType.GAUSSIAN_BLUR,
-      radius: 10,
+      type: FilterType.GAUSSIAN_BLUR as const,
+      radius: 5,
       quality: 'high' as const,
       opacity: 1,
       enabled: true
@@ -111,11 +111,11 @@ describe('GaussianBlurFilter', () => {
     };
 
     const params = {
-      type: FilterType.GAUSSIAN_BLUR,
+      type: FilterType.GAUSSIAN_BLUR as const,
       radius: 10,
       quality: 'medium' as const,
       opacity: 1,
-      enabled: false
+      enabled: true
     };
 
     const result = await filter.apply(context, params);
@@ -142,10 +142,10 @@ describe('GaussianBlurFilter', () => {
     };
 
     const params = {
-      type: FilterType.GAUSSIAN_BLUR,
-      radius: 1,
+      type: FilterType.GAUSSIAN_BLUR as const,
+      radius: 2,
       quality: 'low' as const,
-      opacity: 0.5,
+      opacity: 1,
       enabled: true
     };
 

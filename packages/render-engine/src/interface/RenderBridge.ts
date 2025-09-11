@@ -102,7 +102,10 @@ export class CacheKeyGenerator {
    * 为变换矩阵生成缓存键
    */
   static generateTransformKey(transform: Transform): string {
-    return `transform_${transform.m11}_${transform.m12}_${transform.m21}_${transform.m22}_${transform.dx}_${transform.dy}`;
+    const matrix = transform.matrix;
+    const elements = matrix.elements;
+    // Matrix3x3 uses column-major format: [m00 m01 m02 m10 m11 m12 m20 m21 m22]
+    return `transform_${elements[0]}_${elements[3]}_${elements[1]}_${elements[4]}_${elements[6]}_${elements[7]}`;
   }
   
   /**
@@ -414,7 +417,9 @@ export class RenderBridge {
       if (cacheKey && this.config.enableCaching) {
         if (this.commandCache.size >= this.config.maxCacheSize) {
           const firstKey = this.commandCache.keys().next().value;
-          this.commandCache.delete(firstKey);
+          if (firstKey !== undefined) {
+            this.commandCache.delete(firstKey);
+          }
         }
         this.commandCache.set(cacheKey, { result, timestamp: Date.now() });
       }
@@ -542,11 +547,17 @@ export class RenderBridge {
       return;
     }
     
-    this.context.setTransform(
-      transform.m11, transform.m12,
-      transform.m21, transform.m22,
-      transform.dx, transform.dy
-    );
+    const matrix = transform.matrix;
+    const elements = matrix.elements;
+    // Matrix3x3 uses column-major: [m00 m01 m02 m10 m11 m12 m20 m21 m22]
+    this.context.setTransform({
+      a: elements[0], // m00 (scaleX)
+      b: elements[1], // m01 (skewY)  
+      c: elements[3], // m10 (skewX)
+      d: elements[4], // m11 (scaleY)
+      e: elements[6], // m20 (translateX)
+      f: elements[7]  // m21 (translateY)
+    });
     
     this.transformCache.set(cacheKey, transform);
   }
@@ -581,8 +592,8 @@ export class RenderBridge {
     // 渲染命令对象池
     this.objectPoolManager.createPool(
       'renderCommand',
-      () => ({ type: RenderCommandType.DRAW_RECTANGLE, data: {} }),
-      (obj) => { obj.data = {}; obj.timestamp = undefined; },
+      () => ({ type: RenderCommandType.DRAW_RECTANGLE, data: {}, timestamp: Date.now() }),
+      (obj) => { obj.data = {}; obj.timestamp = Date.now(); },
       100
     );
     

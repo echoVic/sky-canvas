@@ -3,7 +3,23 @@
  */
 
 import { Point2D } from '../../animation/types/PathTypes';
-import { IShape } from '../../canvas-sdk/src/types/Shape';
+// Shape interface definition for render-engine
+interface IShape {
+  id: string;
+  visible: boolean;
+  zIndex: number;
+  bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    center: { x: number; y: number };
+  };
+}
 
 /**
  * 遮罩类型
@@ -215,6 +231,7 @@ export interface MaskEvents {
   maskRemoved: (maskId: string) => void;
   maskUpdated: (mask: IMask) => void;
   maskEnabled: (maskId: string, enabled: boolean) => void;
+  [key: string]: (...args: any[]) => void;
 }
 
 /**

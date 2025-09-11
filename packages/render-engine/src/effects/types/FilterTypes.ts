@@ -329,6 +329,7 @@ export interface FilterEvents {
   'filter-error': (filterType: FilterType, error: Error) => void;
   'chain-start': (filters: FilterParameters[]) => void;
   'chain-complete': (results: FilterResult[]) => void;
+  [key: string]: (...args: any[]) => void;
 }
 
 // 滤镜接口

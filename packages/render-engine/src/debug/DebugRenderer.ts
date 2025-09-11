@@ -130,7 +130,7 @@ export class DebugRenderer {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
-    this.gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl') || undefined;
+    this.gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | undefined;
     
     this.options = this.createDefaultOptions();
     

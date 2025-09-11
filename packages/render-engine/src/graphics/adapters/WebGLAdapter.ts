@@ -1,4 +1,4 @@
-import { IGraphicsContext, IGraphicsStyle, ITextStyle, IImageData, IGraphicsContextFactory, IGraphicsCapabilities, ITransform, IGraphicsState, IPoint, IColor, IRect } from '../IGraphicsContext';
+import { IColor, IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IGraphicsState, IGraphicsStyle, IImageData, IPoint, IRect, ITextStyle, ITransform } from '../IGraphicsContext';
 import { IRenderCommand } from '../RenderCommand';
 
 /**

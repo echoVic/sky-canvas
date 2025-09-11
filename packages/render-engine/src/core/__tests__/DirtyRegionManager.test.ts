@@ -1,4 +1,5 @@
 import { DirtyRegionManager } from '../DirtyRegionManager';
+import { Rectangle } from '../../math/Rectangle';
 
 describe('DirtyRegionManager', () => {
   let dirtyRegionManager: DirtyRegionManager;
@@ -8,22 +9,29 @@ describe('DirtyRegionManager', () => {
   });
 
   test('should mark region as dirty', () => {
-    const region = { x: 0, y: 0, width: 100, height: 100 };
+    const region = new Rectangle(0, 0, 100, 100);
     dirtyRegionManager.markRegionDirty(region);
     
     const dirtyRegions = dirtyRegionManager.getDirtyRegions();
     expect(dirtyRegions).toHaveLength(1);
-    expect(dirtyRegions[0]).toEqual(region);
+    expect(dirtyRegions[0].x).toBe(region.x);
+    expect(dirtyRegions[0].y).toBe(region.y);
+    expect(dirtyRegions[0].width).toBe(region.width);
+    expect(dirtyRegions[0].height).toBe(region.height);
   });
 
   test('should optimize dirty regions by merging adjacent ones', () => {
     // Add adjacent regions
-    dirtyRegionManager.markRegionDirty({ x: 0, y: 0, width: 50, height: 50 });
-    dirtyRegionManager.markRegionDirty({ x: 50, y: 0, width: 50, height: 50 });
+    dirtyRegionManager.markRegionDirty(new Rectangle(0, 0, 50, 50));
+    dirtyRegionManager.markRegionDirty(new Rectangle(50, 0, 50, 50));
     
     const optimized = dirtyRegionManager.optimizeDirtyRegions();
     expect(optimized).toHaveLength(1);
-    expect(optimized[0]).toEqual({ x: 0, y: 0, width: 100, height: 50 });
+    const expected = new Rectangle(0, 0, 100, 50);
+    expect(optimized[0].x).toBe(expected.x);
+    expect(optimized[0].y).toBe(expected.y);
+    expect(optimized[0].width).toBe(expected.width);
+    expect(optimized[0].height).toBe(expected.height);
   });
 
   test('should detect shape changes', () => {
@@ -46,12 +54,12 @@ describe('DirtyRegionManager', () => {
     expect(dirtyRegionManager.shouldRedrawShape(mockShape)).toBe(false);
     
     // Modify shape properties and check again
-    mockShape.getBounds = () => ({ x: 10, y: 10, width: 100, height: 100 });
+    mockShape.getBounds = () => new Rectangle(10, 10, 100, 100);
     expect(dirtyRegionManager.shouldRedrawShape(mockShape)).toBe(true);
   });
 
   test('should prepare next frame', () => {
-    const region = { x: 0, y: 0, width: 100, height: 100 };
+    const region = new Rectangle(0, 0, 100, 100);
     dirtyRegionManager.markRegionDirty(region);
     
     expect(dirtyRegionManager.getDirtyRegions()).toHaveLength(1);
@@ -61,7 +69,7 @@ describe('DirtyRegionManager', () => {
   });
 
   test('should clear dirty regions', () => {
-    dirtyRegionManager.markRegionDirty({ x: 0, y: 0, width: 100, height: 100 });
+    dirtyRegionManager.markRegionDirty(new Rectangle(0, 0, 100, 100));
     expect(dirtyRegionManager.getDirtyRegions()).toHaveLength(1);
     
     dirtyRegionManager.clearDirtyRegions();

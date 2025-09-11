@@ -128,6 +128,26 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     this.currentState.style.opacity = opacity;
   }
 
+  setGlobalAlpha(alpha: number): void {
+    this.currentState.style.opacity = alpha;
+  }
+
+  setLineDash(segments: number[]): void {
+    // 占位符实现
+  }
+
+  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+    // 占位符实现
+  }
+
+  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+    // 占位符实现
+  }
+
+  setFont(font: string): void {
+    // 占位符实现
+  }
+
   setFillStyle(color: IColor | string): void {
     // 占位符实现
   }

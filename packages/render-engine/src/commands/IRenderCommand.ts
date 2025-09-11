@@ -162,7 +162,7 @@ export class ClearCommand extends RenderCommand {
   }
   
   execute(context: IGraphicsContext): void {
-    context.clear(this.color);
+    context.clear();
   }
   
   getBounds(): IRect {

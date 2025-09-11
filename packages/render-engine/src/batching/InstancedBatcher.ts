@@ -232,7 +232,7 @@ export class InstancedBatcher implements IBatcher {
   }
   
   flush(): IBatchData[] {
-    const batchData: InstancedBatchData[] = [];
+    const batchData: IBatchData[] = [];
     
     for (const [geometryHash, geometry] of this.geometryGroups) {
       // 只对达到最小阈值的几何体使用实例化渲染
@@ -309,7 +309,7 @@ export class InstancedBatcher implements IBatcher {
       case RenderCommandType.CIRCLE:
         customData[0] = 1; // 标记为圆形
         break;
-      case RenderCommandType.RECTANGLE:
+      case RenderCommandType.RECT:
         customData[0] = 2; // 标记为矩形
         break;
       // 可以添加更多类型

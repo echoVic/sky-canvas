@@ -1,7 +1,7 @@
-import { RenderEngine } from '../core/RenderEngine';
-import { DirtyRegionManager } from '../core/DirtyRegionManager';
-import { LayerCache } from '../core/LayerCache';
-import { AdvancedBatcher } from '../batching/AdvancedBatcher';
+import { RenderEngine } from '../RenderEngine';
+import { DirtyRegionManager } from '../DirtyRegionManager';
+import { LayerCache } from '../LayerCache';
+import { AdvancedBatcher } from '../../batching/AdvancedBatcher';
 
 // Mock interfaces for testing
 interface MockRenderable {
@@ -86,7 +86,15 @@ describe('RenderEngine Performance Features', () => {
     // Mock factory and canvas
     const mockFactory = {
       isSupported: jest.fn().mockReturnValue(true),
-      createContext: jest.fn().mockResolvedValue(mockContext)
+      createContext: jest.fn().mockResolvedValue(mockContext),
+      getCapabilities: jest.fn().mockReturnValue({
+        supportsHardwareAcceleration: true,
+        supportsTransforms: true,
+        supportsFilters: true,
+        supportsBlending: true,
+        maxTextureSize: 4096,
+        supportedFormats: ['rgba8', 'rgb8']
+      })
     };
     
     const mockCanvas = {};

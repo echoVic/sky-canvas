@@ -26,6 +26,81 @@ export class AdvancedBatcher {
   private instancedRenderables: Map<string, InstancedRenderable[]> = new Map();
   private mergedGeometries: Map<string, MergedGeometry> = new Map();
   private context: any = null; // 渲染上下文
+  private _initialized: boolean = false;
+  
+  /**
+   * 初始化批处理器
+   */
+  initialize(): void {
+    this._initialized = true;
+  }
+
+  /**
+   * 添加矩形到批处理
+   */
+  addRectangle(x: number, y: number, width: number, height: number, options?: any): void {
+    const mockRenderable: IRenderable = {
+      id: `rect_${Date.now()}_${Math.random()}`,
+      visible: true,
+      zIndex: 0,
+      bounds: {
+        x, y, width, height,
+        left: x,
+        right: x + width,
+        top: y,
+        bottom: y + height,
+        center: { x: x + width/2, y: y + height/2 }
+      } as any,
+      getBounds: () => ({
+        x, y, width, height,
+        left: x,
+        right: x + width,
+        top: y,
+        bottom: y + height,
+        center: { x: x + width/2, y: y + height/2 }
+      } as any),
+      render: (ctx: any) => {
+        if (ctx.fillRect) {
+          ctx.fillRect(x, y, width, height);
+        }
+      },
+      hitTest: (point: any) => {
+        return point.x >= x && point.x <= x + width && 
+               point.y >= y && point.y <= y + height;
+      },
+      dispose: () => {
+        // No cleanup needed for mock rectangle
+      }
+    };
+    this.addInstancedRenderable(mockRenderable);
+  }
+
+  /**
+   * 渲染所有批处理内容
+   */
+  render(): void {
+    if (!this._initialized) return;
+    
+    for (const [type, instances] of this.instancedRenderables) {
+      this.renderInstancedBatch(type);
+    }
+  }
+
+  /**
+   * 清理批处理内容
+   */
+  clear(): void {
+    this.instancedRenderables.clear();
+    this.mergedGeometries.clear();
+  }
+
+  /**
+   * 清理资源
+   */
+  dispose(): void {
+    this.clear();
+    this._initialized = false;
+  }
   
   /**
    * 设置渲染上下文

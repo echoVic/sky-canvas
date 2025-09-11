@@ -390,12 +390,12 @@ export class ParticleManager {
       config: {
         ...config,
         position,
-        startSize: config.startSize * scale,
-        endSize: config.endSize * scale,
+        startSize: (config.startSize || 1) * scale,
+        endSize: (config.endSize || 1) * scale,
         velocity: {
-          x: config.velocity.x * scale,
-          y: config.velocity.y * scale,
-          z: config.velocity.z * scale
+          x: (config.velocity?.x || 0) * scale,
+          y: (config.velocity?.y || 0) * scale,
+          z: (config.velocity?.z || 0) * scale
         }
       }
     }));

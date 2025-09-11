@@ -176,7 +176,7 @@ export class WebGLShaderManager {
     const numAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
     
     for (let i = 0; i < numAttributes; i++) {
-      const attributeInfo = gl.getActiveAttribute(program, i);
+      const attributeInfo = gl.getActiveAttrib(program, i);
       if (attributeInfo) {
         const location = gl.getAttribLocation(program, attributeInfo.name);
         attributes[attributeInfo.name] = location;

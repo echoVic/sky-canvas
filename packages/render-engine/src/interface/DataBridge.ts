@@ -92,7 +92,9 @@ class DataVersionManager {
     // 限制快照数量
     if (this.snapshots.size >= this.maxSnapshots) {
       const firstKey = this.snapshots.keys().next().value;
-      this.snapshots.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.snapshots.delete(firstKey);
+      }
     }
     
     this.snapshots.set(key, this.deepClone(data));

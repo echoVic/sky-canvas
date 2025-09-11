@@ -320,7 +320,9 @@ export class DataTransferOptimizer {
     if (opts.cache && opts.cacheKey) {
       if (this.cache.size >= this.cacheMaxSize) {
         const firstKey = this.cache.keys().next().value;
-        this.cache.delete(firstKey);
+        if (firstKey !== undefined) {
+          this.cache.delete(firstKey);
+        }
       }
       this.cache.set(opts.cacheKey, processedData);
     }
@@ -552,6 +554,8 @@ interface InterceptorContext {
   result?: any;
   error?: any;
   timestamp: number;
+  startTime?: number;
+  pooledObj?: any;
 }
 
 interface CallMetrics {

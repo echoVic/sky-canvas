@@ -36,12 +36,12 @@ describe('DropShadowFilter', () => {
 
   it('应该验证参数', () => {
     const validParams = {
-      type: FilterType.DROP_SHADOW,
-      offsetX: 2,
-      offsetY: 3,
-      blur: 5,
-      color: '#ff0000',
-      opacity: 0.7,
+      type: FilterType.DROP_SHADOW as const,
+      offsetX: 5,
+      offsetY: 5,
+      blur: 3,
+      color: '#000000',
+      opacity: 0.8,
       enabled: true
     };
     
@@ -50,12 +50,12 @@ describe('DropShadowFilter', () => {
 
   it('应该拒绝无效参数', () => {
     const invalidParams = {
-      type: FilterType.DROP_SHADOW,
+      type: FilterType.DROP_SHADOW as const,
       offsetX: 'invalid', // 应该是数字
       offsetY: 2,
-      blur: 5,
-      color: '#ff0000',
-      opacity: 0.7,
+      blur: 3,
+      color: '#000000',
+      opacity: 1,
       enabled: true
     };
     
@@ -64,7 +64,7 @@ describe('DropShadowFilter', () => {
 
   it('应该拒绝负的模糊值', () => {
     const invalidParams = {
-      type: FilterType.DROP_SHADOW,
+      type: FilterType.INNER_SHADOW as const,
       offsetX: 2,
       offsetY: 2,
       blur: -5, // 负值无效
@@ -94,12 +94,12 @@ describe('DropShadowFilter', () => {
     };
 
     const params = {
-      type: FilterType.DROP_SHADOW,
-      offsetX: 0,
-      offsetY: 0,
-      blur: 0,
+      type: FilterType.DROP_SHADOW as const,
+      offsetX: 3,
+      offsetY: 3,
+      blur: 2,
       color: '#000000',
-      opacity: 0.5,
+      opacity: 0.8,
       enabled: true
     };
 
@@ -128,12 +128,12 @@ describe('DropShadowFilter', () => {
     };
 
     const params = {
-      type: FilterType.DROP_SHADOW,
-      offsetX: 1,
-      offsetY: 1,
-      blur: 1,
+      type: FilterType.DROP_SHADOW as const,
+      offsetX: 5,
+      offsetY: 5,
+      blur: 3,
       color: '#000000',
-      opacity: 0.5,
+      opacity: 1,
       enabled: true
     };
 
@@ -157,26 +157,26 @@ describe('DropShadowFilter', () => {
     };
 
     // 测试十六进制颜色
-    const params1 = {
-      type: FilterType.DROP_SHADOW,
-      offsetX: 1,
-      offsetY: 1,
-      blur: 0,
+    const params = {
+      type: FilterType.DROP_SHADOW as const,
+      offsetX: 2,
+      offsetY: 2,
+      blur: 1,
       color: '#ff0000',
-      opacity: 1,
+      opacity: 0.5,
       enabled: true
     };
 
-    const result1 = await filter.apply(context, params1);
+    const result1 = await filter.apply(context, params);
     expect(result1.success).toBe(true);
 
     // 测试rgba颜色
     const params2 = {
-      type: FilterType.DROP_SHADOW,
-      offsetX: 1,
-      offsetY: 1,
-      blur: 0,
-      color: 'rgba(255, 0, 0, 0.5)',
+      type: FilterType.DROP_SHADOW as const,
+      offsetX: 2,
+      offsetY: 2,
+      blur: 1,
+      color: 'rgba(255, 0, 0, 0.8)',
       opacity: 1,
       enabled: true
     };
@@ -187,12 +187,12 @@ describe('DropShadowFilter', () => {
 
   it('应该估算处理时间', () => {
     const params = {
-      type: FilterType.DROP_SHADOW,
-      offsetX: 5,
-      offsetY: 5,
-      blur: 10,
+      type: FilterType.DROP_SHADOW as const,
+      offsetX: 10,
+      offsetY: 10,
+      blur: 5,
       color: '#000000',
-      opacity: 0.5,
+      opacity: 1,
       enabled: true
     };
 
@@ -213,12 +213,12 @@ describe('DropShadowFilter', () => {
     };
 
     const params = {
-      type: FilterType.DROP_SHADOW,
+      type: FilterType.DROP_SHADOW as const,
       offsetX: 1,
       offsetY: 1,
       blur: 0,
       color: '#000000',
-      opacity: 0.3,
+      opacity: 1,
       enabled: true
     };
 

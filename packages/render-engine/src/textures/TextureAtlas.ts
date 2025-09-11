@@ -197,6 +197,13 @@ export class TextureAtlas extends EventEmitter<AtlasEvents> {
   }
 
   /**
+   * 获取纹理条目（getTexture的别名）
+   */
+  getEntry(textureId: string): AtlasEntry | null {
+    return this.getTexture(textureId);
+  }
+
+  /**
    * 获取图集纹理
    */
   getAtlasTexture(atlasId: string): HTMLCanvasElement | null {

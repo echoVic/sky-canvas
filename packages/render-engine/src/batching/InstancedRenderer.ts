@@ -422,7 +422,9 @@ export class InstancedRenderer extends EventEmitter<InstancedRendererEvents> {
     
     // 渲染模板对象
     if (template.render) {
-      template.render(this.gl);
+      // 需要一个适配器将WebGL上下文转换为IGraphicsContext
+      // 这里暂时使用类型断言，实际应该使用适配器
+      template.render(this.gl as any);
     }
   }
 

@@ -2,12 +2,12 @@
  * 统一性能监控系统测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  UnifiedPerformanceMonitor,
-  UnifiedMetricType,
   DataSourceType,
-  IDataSourceAdapter
+  IDataSourceAdapter,
+  UnifiedMetricType,
+  UnifiedPerformanceMonitor
 } from '../UnifiedPerformanceMonitor';
 
 // Mock 适配器
@@ -372,7 +372,7 @@ describe('UnifiedPerformanceMonitor', () => {
       
       // 检查摘要信息
       expect(report.summary.totalMetrics).toBeGreaterThan(0);
-      expect(report.summary.overallHealth).toBeOneOf(['good', 'warning', 'critical']);
+      expect(['good', 'warning', 'critical']).toContain(report.summary.overallHealth);
       
       // 检查指标数据
       expect(report.metrics[UnifiedMetricType.FPS]).toBeDefined();
@@ -451,18 +451,21 @@ describe('UnifiedPerformanceMonitor', () => {
   });
   
   describe('事件系统', () => {
-    it('应该触发指标更新事件', (done) => {
-      monitor.on('metric-updated', (data) => {
-        expect(data.type).toBe(UnifiedMetricType.FPS);
-        expect(data.value).toBe(60);
-        expect(data.source).toBe(DataSourceType.RENDER_ENGINE);
-        done();
+    it('应该触发指标更新事件', async () => {
+      const eventPromise = new Promise((resolve) => {
+        monitor.on('metric-updated', (data) => {
+          expect(data.type).toBe(UnifiedMetricType.FPS);
+          expect(data.value).toBe(60);
+          expect(data.source).toBe(DataSourceType.RENDER_ENGINE);
+          resolve(data);
+        });
       });
       
       monitor.recordMetric(UnifiedMetricType.FPS, 60, DataSourceType.RENDER_ENGINE);
+      await eventPromise;
     });
     
-    it('应该触发警告事件', (done) => {
+    it('应该触发警告事件', async () => {
       monitor = new UnifiedPerformanceMonitor({
         enableWarnings: true,
         thresholds: {
@@ -470,13 +473,16 @@ describe('UnifiedPerformanceMonitor', () => {
         }
       });
       
-      monitor.on('warning-triggered', (warning) => {
-        expect(warning.type).toBe(UnifiedMetricType.FPS);
-        expect(warning.severity).toBe('high');
-        done();
+      const warningPromise = new Promise((resolve) => {
+        monitor.on('warning-triggered', (warning) => {
+          expect(warning.type).toBe(UnifiedMetricType.FPS);
+          expect(warning.severity).toBe('high');
+          resolve(warning);
+        });
       });
       
       monitor.recordMetric(UnifiedMetricType.FPS, 15, DataSourceType.RENDER_ENGINE);
+      await warningPromise;
     });
   });
   

@@ -202,8 +202,14 @@ describe('后处理效果系统', () => {
 
   describe('颜色调整效果', () => {
     it('亮度效果应该调整像素亮度', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.BRIGHTNESS);
-      config.parameters.amount = 50;
+      const config = {
+        type: PostProcessType.BRIGHTNESS as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          amount: 50
+        }
+      };
       
       const effect = new BrightnessEffect(config);
       const imageData = new (global as any).ImageData(2, 2);
@@ -220,8 +226,14 @@ describe('后处理效果系统', () => {
     });
 
     it('对比度效果应该调整像素对比度', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.CONTRAST);
-      config.parameters.amount = 50;
+      const config = {
+        type: PostProcessType.CONTRAST as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          amount: 50
+        }
+      };
       
       const effect = new ContrastEffect(config);
       const imageData = new (global as any).ImageData(2, 2);
@@ -236,8 +248,14 @@ describe('后处理效果系统', () => {
     });
 
     it('饱和度效果应该调整颜色饱和度', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.SATURATION);
-      config.parameters.amount = 1.5;
+      const config = {
+        type: PostProcessType.SATURATION as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          amount: 1.5
+        }
+      };
       
       const effect = new SaturationEffect(config);
       const imageData = new (global as any).ImageData(1, 1);
@@ -251,9 +269,15 @@ describe('后处理效果系统', () => {
 
   describe('图像增强效果', () => {
     it('锐化效果应该增强边缘', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.SHARPEN);
-      config.parameters.strength = 1.0;
-      config.parameters.radius = 1;
+      const config = {
+        type: PostProcessType.SHARPEN as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          strength: 1.0,
+          radius: 1
+        }
+      };
       
       const effect = new SharpenEffect(config);
       const imageData = new (global as any).ImageData(3, 3);
@@ -263,10 +287,16 @@ describe('后处理效果系统', () => {
     });
 
     it('噪点效果应该添加随机噪点', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.NOISE);
-      config.parameters.amount = 0.5;
-      config.parameters.seed = 42;
-      config.parameters.monochrome = 0;
+      const config = {
+        type: PostProcessType.NOISE as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          amount: 0.5,
+          seed: 42,
+          monochrome: 0
+        }
+      };
       
       const effect = new NoiseEffect(config);
       const imageData = new (global as any).ImageData(2, 2);
@@ -280,11 +310,17 @@ describe('后处理效果系统', () => {
 
   describe('特殊效果', () => {
     it('Bloom效果应该创建高光溢出', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.BLOOM);
-      config.parameters.threshold = 0.8;
-      config.parameters.intensity = 1.0;
-      config.parameters.radius = 3;
-      config.parameters.passes = 2;
+      const config = {
+        type: PostProcessType.BLOOM as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          threshold: 0.8,
+          intensity: 1.0,
+          radius: 3,
+          passes: 2
+        }
+      };
       
       const effect = new BloomEffect(config);
       const imageData = new (global as any).ImageData(5, 5);
@@ -304,6 +340,7 @@ describe('后处理效果系统', () => {
   describe('艺术效果', () => {
     it('复古效果应该应用复古色调', () => {
       const config = createDefaultPostProcessConfig(PostProcessType.SEPIA);
+      config.type = PostProcessType.SEPIA as const;
       const effect = new SepiaEffect(config);
       const imageData = new (global as any).ImageData(1, 1);
       
@@ -314,8 +351,14 @@ describe('后处理效果系统', () => {
     });
 
     it('像素化效果应该降低分辨率', () => {
-      const config = createDefaultPostProcessConfig(PostProcessType.PIXELATE);
-      config.parameters.pixelSize = 2;
+      const config = {
+        type: PostProcessType.PIXELATE as const,
+        enabled: true,
+        intensity: 1.0,
+        parameters: {
+          pixelSize: 2
+        }
+      };
       
       const effect = new PixelateEffect(config);
       const imageData = new (global as any).ImageData(4, 4);

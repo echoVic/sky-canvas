@@ -55,7 +55,8 @@ export class LayerCache {
     
     renderables.forEach(renderable => {
       if (renderable.visible) {
-        renderable.render(context as IGraphicsContext);
+        // CanvasRenderingContext2D与IGraphicsContext兼容，使用类型断言
+        renderable.render(context as unknown as IGraphicsContext);
       }
     });
     

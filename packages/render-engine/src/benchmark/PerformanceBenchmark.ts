@@ -378,7 +378,7 @@ export class PerformanceBenchmark extends EventEmitter<BenchmarkEvents> {
    * 获取GC信息
    */
   private getGCInfo(): { collections: number; time: number } {
-    if (typeof process !== 'undefined' && process.memoryUsage) {
+    if (typeof process !== 'undefined' && typeof process.memoryUsage === 'function') {
       // Node.js环境，尝试获取V8统计信息
       try {
         const v8 = require('v8');

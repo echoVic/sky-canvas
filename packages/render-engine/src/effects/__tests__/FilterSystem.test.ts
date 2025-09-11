@@ -136,14 +136,14 @@ describe('滤镜系统', () => {
 
     it('应该验证滤镜参数', () => {
       const validParams = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 50,
         enabled: true,
         opacity: 1
       };
 
       const invalidParams = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 150, // 超出范围
         enabled: true,
         opacity: 1
@@ -154,7 +154,7 @@ describe('滤镜系统', () => {
     });
 
     it('应该获取滤镜默认参数', () => {
-      const defaults = filterManager.getFilterDefaults(FilterType.GAUSSIAN_BLUR);
+      const defaults = filterManager.getFilterDefaults(FilterType.GAUSSIAN_BLUR as const);
       
       expect(defaults).toBeDefined();
       expect(defaults?.type).toBe(FilterType.GAUSSIAN_BLUR);
@@ -201,7 +201,7 @@ describe('滤镜系统', () => {
 
     it('应该验证参数', () => {
       const validParams: GaussianBlurParameters = {
-        type: FilterType.GAUSSIAN_BLUR,
+        type: FilterType.GAUSSIAN_BLUR as const,
         radius: 5,
         quality: 'medium' as const,
         enabled: true,
@@ -209,7 +209,7 @@ describe('滤镜系统', () => {
       };
 
       const invalidParams: GaussianBlurParameters = {
-        type: FilterType.GAUSSIAN_BLUR,
+        type: FilterType.GAUSSIAN_BLUR as const,
         radius: -1, // 无效半径
         quality: 'medium' as const,
         enabled: true,
@@ -222,7 +222,7 @@ describe('滤镜系统', () => {
 
     it('应该应用高斯模糊', async () => {
       const parameters: GaussianBlurParameters = {
-        type: FilterType.GAUSSIAN_BLUR,
+        type: FilterType.GAUSSIAN_BLUR as const,
         radius: 3,
         quality: 'medium' as const,
         enabled: true,
@@ -239,7 +239,7 @@ describe('滤镜系统', () => {
 
     it('半径为0时应该返回原图', async () => {
       const parameters = {
-        type: FilterType.GAUSSIAN_BLUR,
+        type: FilterType.GAUSSIAN_BLUR as const,
         radius: 0,
         quality: 'medium' as const,
         enabled: true,
@@ -268,7 +268,7 @@ describe('滤镜系统', () => {
 
     it('应该应用亮度调整', async () => {
       const parameters = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 50,
         enabled: true,
         opacity: 1
@@ -286,7 +286,7 @@ describe('滤镜系统', () => {
 
     it('亮度为0时应该返回原图', async () => {
       const parameters = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 0,
         enabled: true,
         opacity: 1
@@ -353,7 +353,7 @@ describe('滤镜系统', () => {
       filterManager.on('filter-start', startCallback);
 
       const parameters = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 20,
         enabled: true,
         opacity: 1
@@ -369,7 +369,7 @@ describe('滤镜系统', () => {
       filterManager.on('filter-complete', completeCallback);
 
       const parameters = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 20,
         enabled: true,
         opacity: 1
@@ -393,7 +393,7 @@ describe('滤镜系统', () => {
       const chainConfig = {
         filters: [
           {
-            type: FilterType.BRIGHTNESS,
+            type: FilterType.BRIGHTNESS as const,
             brightness: 20,
             enabled: true,
             opacity: 1
@@ -411,7 +411,7 @@ describe('滤镜系统', () => {
   describe('性能统计', () => {
     it('应该收集性能统计', async () => {
       const parameters = {
-        type: FilterType.BRIGHTNESS,
+        type: FilterType.BRIGHTNESS as const,
         brightness: 20,
         enabled: true,
         opacity: 1
