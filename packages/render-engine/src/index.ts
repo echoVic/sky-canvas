@@ -47,14 +47,19 @@ export type {
   BufferUsage, IBuffer, IBufferManager, IVertexArray, IVertexAttribute, IVertexLayout as WebGLVertexLayout
 } from './webgl/BufferManager';
 
-// 批处理类型
+// 统一批处理系统类型
 export type {
-  IVertexLayout as BatchingVertexLayout, IBatchData, IBatcher
-} from './batching/Batcher';
-
-export type {
-  IBatchRenderer
-} from './batching/BatchRenderer';
+  IBatchRenderer,
+  IRenderable as IBatchRenderable, // 重命名避免冲突
+  BatchStats,
+  IBatchStrategy,
+  BatchContext,
+  BatchData,
+  Vertex,
+  BatchKey,
+  RenderBatch,
+  BatchManagerConfig
+} from './batch';
 
 // 空间分割和剔除
 export type {
@@ -87,9 +92,22 @@ export { BufferManager } from './webgl/BufferManager';
 export { SHADER_LIBRARY } from './webgl/ShaderLibrary';
 export { ShaderManager } from './webgl/ShaderManager';
 
-// 批处理实现 - 具体导出避免冲突
-export { BatcherFactory, MultiTextureBatcher, UniversalBatcher } from './batching/Batcher';
-export { WebGLBatchRenderer } from './batching/BatchRenderer';
+// 统一批处理系统实现
+export {
+  BatchManager,
+  createBatchManager,
+  BatchBuffer,
+  BatchDataUtils,
+  BasicStrategy,
+  EnhancedStrategy,
+  InstancedStrategy,
+  BatchOptimizer,
+  OptimizationType,
+  createBatchManagerWithDefaultStrategies,
+  createBasicBatchManager,
+  createEnhancedBatchManager,
+  createInstancedBatchManager
+} from './batch';
 
 // 空间分割和剔除实现
 export * from './culling/index';

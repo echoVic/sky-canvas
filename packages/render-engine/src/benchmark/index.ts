@@ -16,9 +16,7 @@ export {
 // 渲染性能测试
 export {
   RenderingBenchmark,
-  createRenderingBenchmark,
-  type RenderingBenchmarkConfig,
-  type RenderingMetrics
+  type RenderingBenchmarkConfig
 } from './RenderingBenchmark';
 
 // 示例和工具

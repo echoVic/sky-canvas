@@ -1,23 +1,21 @@
 /**
  * WebGL渲染管理器
- * 集成着色器管理、缓冲区管理和几何体渲染
+ * 使用统一批处理系统的高性能渲染管理器
  */
 
 import { Matrix3 } from '../math/Matrix3';
-import { GeometryGenerator, GeometryData } from './GeometryGenerator';
+import { Vector2 } from '../math';
+import { GeometryGenerator } from './GeometryGenerator';
 import { ShaderManager, IShaderProgram } from '../webgl/ShaderManager';
 import { BufferManager, IBuffer, BufferType, BufferUsage } from '../webgl/BufferManager';
 import { SHADER_LIBRARY } from '../webgl/ShaderLibrary';
-
-/**
- * 渲染命令接口
- */
-interface IRenderCommand {
-  type: 'rectangle' | 'circle' | 'line' | 'polygon' | 'text' | 'texture';
-  geometry: GeometryData;
-  shader: string;
-  uniforms?: Record<string, any>;
-}
+import { 
+  BatchManager, 
+  createBatchManagerWithDefaultStrategies, 
+  IRenderable,
+  BatchStats,
+  type BatchManagerConfig 
+} from '../batch';
 
 /**
  * WebGL渲染管理器
@@ -28,16 +26,19 @@ export class WebGLRenderManager {
   private bufferManager: BufferManager;
   
   private currentShader: IShaderProgram | null = null;
-  private renderQueue: IRenderCommand[] = [];
+  private batchManager: BatchManager;
   
-  // 常用缓冲区
+  // 常用缓冲区（保留用于非批处理操作）
   private vertexBuffer: IBuffer | null = null;
   private indexBuffer: IBuffer | null = null;
 
-  constructor(gl: WebGLRenderingContext) {
+  constructor(gl: WebGLRenderingContext, config?: Partial<BatchManagerConfig>) {
     this.gl = gl;
     this.shaderManager = new ShaderManager(gl);
     this.bufferManager = new BufferManager(gl);
+    
+    // 创建统一批处理管理器
+    this.batchManager = createBatchManagerWithDefaultStrategies(gl, config);
     
     this.initialize();
   }
@@ -68,6 +69,20 @@ export class WebGLRenderManager {
   }
 
   /**
+   * 设置批处理策略
+   */
+  setBatchStrategy(strategy: 'basic' | 'enhanced' | 'instanced'): void {
+    this.batchManager.setStrategy(strategy);
+  }
+
+  /**
+   * 获取当前批处理策略
+   */
+  getCurrentBatchStrategy(): string {
+    return this.batchManager.getCurrentStrategy();
+  }
+
+  /**
    * 绘制矩形
    */
   drawRectangle(
@@ -79,21 +94,14 @@ export class WebGLRenderManager {
     strokeColor?: string,
     strokeWidth?: number
   ): void {
-    const color = fillColor ? 
-      GeometryGenerator.parseColor(fillColor) : 
-      [1, 1, 1, 1] as [number, number, number, number];
-    
-    const geometry = GeometryGenerator.createRectangle(x, y, width, height, color);
-    
+    // 绘制填充矩形
     if (fillColor) {
-      this.renderQueue.push({
-        type: 'rectangle',
-        geometry,
-        shader: 'basic_shape'
-      });
+      const color = GeometryGenerator.parseColor(fillColor);
+      const renderable = this.createRectangleRenderable(x, y, width, height, color);
+      this.batchManager.addRenderable(renderable);
     }
 
-    // 如果有描边，添加描边绘制
+    // 绘制描边
     if (strokeColor && strokeWidth && strokeWidth > 0) {
       this.drawRectangleStroke(x, y, width, height, strokeColor, strokeWidth);
     }
@@ -112,26 +120,23 @@ export class WebGLRenderManager {
   ): void {
     const color = GeometryGenerator.parseColor(strokeColor);
     
-    // 绘制四条边
+    // 绘制四条边线
     const lines = [
       // 上边
-      GeometryGenerator.createLine(x, y, x + width, y, strokeWidth, color),
+      { x1: x, y1: y, x2: x + width, y2: y },
       // 右边
-      GeometryGenerator.createLine(x + width, y, x + width, y + height, strokeWidth, color),
+      { x1: x + width, y1: y, x2: x + width, y2: y + height },
       // 下边
-      GeometryGenerator.createLine(x + width, y + height, x, y + height, strokeWidth, color),
+      { x1: x + width, y1: y + height, x2: x, y2: y + height },
       // 左边
-      GeometryGenerator.createLine(x, y + height, x, y, strokeWidth, color)
+      { x1: x, y1: y + height, x2: x, y2: y }
     ];
 
-    lines.forEach(geometry => {
-      if (geometry.vertexCount > 0) {
-        this.renderQueue.push({
-          type: 'line',
-          geometry,
-          shader: 'basic_shape'
-        });
-      }
+    lines.forEach(line => {
+      const renderable = this.createLineRenderable(
+        line.x1, line.y1, line.x2, line.y2, strokeWidth, color
+      );
+      this.batchManager.addRenderable(renderable);
     });
   }
 
@@ -146,36 +151,19 @@ export class WebGLRenderManager {
     strokeColor?: string,
     strokeWidth?: number
   ): void {
-    const color = fillColor ? 
-      GeometryGenerator.parseColor(fillColor) : 
-      [1, 1, 1, 1] as [number, number, number, number];
-    
-    const geometry = GeometryGenerator.createCircle(centerX, centerY, radius, 32, color);
-    
+    // 绘制填充圆形
     if (fillColor) {
-      this.renderQueue.push({
-        type: 'circle',
-        geometry,
-        shader: 'basic_shape'
-      });
+      const color = GeometryGenerator.parseColor(fillColor);
+      const renderable = this.createCircleRenderable(centerX, centerY, radius, 32, color);
+      this.batchManager.addRenderable(renderable);
     }
 
-    // 圆形描边通过创建空心圆实现
+    // 绘制圆形描边
     if (strokeColor && strokeWidth && strokeWidth > 0) {
       const strokeColorParsed = GeometryGenerator.parseColor(strokeColor);
-      const innerRadius = Math.max(0, radius - strokeWidth);
-      
-      // 创建外圆和内圆，通过模板缓冲或多次绘制实现空心效果
-      // 这里简化为绘制一个稍大的圆作为描边
-      const outerGeometry = GeometryGenerator.createCircle(
-        centerX, centerY, radius + strokeWidth / 2, 32, strokeColorParsed
-      );
-      
-      this.renderQueue.push({
-        type: 'circle',
-        geometry: outerGeometry,
-        shader: 'basic_shape'
-      });
+      const outerRadius = radius + strokeWidth / 2;
+      const outerRenderable = this.createCircleRenderable(centerX, centerY, outerRadius, 32, strokeColorParsed);
+      this.batchManager.addRenderable(outerRenderable);
     }
   }
 
@@ -195,147 +183,8 @@ export class WebGLRenderManager {
       [1, 1, 1, 1] as [number, number, number, number];
     const lineWidth = width || 1;
     
-    const geometry = GeometryGenerator.createLine(x1, y1, x2, y2, lineWidth, lineColor);
-    
-    if (geometry.vertexCount > 0) {
-      this.renderQueue.push({
-        type: 'line',
-        geometry,
-        shader: 'basic_shape'
-      });
-    }
-  }
-
-  /**
-   * 执行渲染队列
-   */
-  flush(projectionMatrix: Matrix3, transformMatrix: Matrix3): void {
-    if (this.renderQueue.length === 0) return;
-
-    // 清除深度缓冲区（虽然2D不需要，但保持良好习惯）
-    this.gl.clear(this.gl.DEPTH_BUFFER_BIT);
-
-    // 处理渲染队列
-    for (const command of this.renderQueue) {
-      this.executeRenderCommand(command, projectionMatrix, transformMatrix);
-    }
-
-    // 清空队列
-    this.renderQueue = [];
-  }
-
-  /**
-   * 执行单个渲染命令
-   */
-  private executeRenderCommand(
-    command: IRenderCommand, 
-    projectionMatrix: Matrix3, 
-    transformMatrix: Matrix3
-  ): void {
-    // 获取着色器
-    const shader = this.getShaderByName(command.shader);
-    if (!shader) {
-      console.warn(`Shader not found: ${command.shader}`);
-      return;
-    }
-
-    // 使用着色器
-    shader.use(this.gl);
-    this.currentShader = shader;
-
-    // 设置uniform
-    shader.setUniform('u_projection', projectionMatrix.toWebGL());
-    shader.setUniform('u_transform', transformMatrix.toWebGL());
-
-    // 设置自定义uniform
-    if (command.uniforms) {
-      for (const [name, value] of Object.entries(command.uniforms)) {
-        shader.setUniform(name, value);
-      }
-    }
-
-    // 上传几何数据
-    this.uploadGeometry(command.geometry);
-
-    // 绘制
-    this.gl.drawElements(
-      this.gl.TRIANGLES, 
-      command.geometry.indexCount, 
-      this.gl.UNSIGNED_SHORT, 
-      0
-    );
-  }
-
-  /**
-   * 上传几何体数据到缓冲区
-   */
-  private uploadGeometry(geometry: GeometryData): void {
-    if (!this.vertexBuffer || !this.indexBuffer) return;
-
-    // 上传顶点数据
-    this.vertexBuffer.uploadData(this.gl, geometry.vertices);
-    this.indexBuffer.uploadData(this.gl, geometry.indices);
-
-    // 设置顶点属性
-    this.setupVertexAttributes();
-  }
-
-  /**
-   * 设置顶点属性
-   */
-  private setupVertexAttributes(): void {
-    if (!this.currentShader || !this.vertexBuffer || !this.indexBuffer) return;
-
-    this.vertexBuffer.bind(this.gl);
-    this.indexBuffer.bind(this.gl);
-
-    const stride = 8 * 4; // 8 floats * 4 bytes per float
-
-    // 位置属性 (a_position)
-    const posLocation = this.currentShader.getAttributeLocation('a_position');
-    if (posLocation >= 0) {
-      this.gl.enableVertexAttribArray(posLocation);
-      this.gl.vertexAttribPointer(posLocation, 2, this.gl.FLOAT, false, stride, 0);
-    }
-
-    // 颜色属性 (a_color)
-    const colorLocation = this.currentShader.getAttributeLocation('a_color');
-    if (colorLocation >= 0) {
-      this.gl.enableVertexAttribArray(colorLocation);
-      this.gl.vertexAttribPointer(colorLocation, 4, this.gl.FLOAT, false, stride, 2 * 4);
-    }
-
-    // 纹理坐标属性 (a_texCoord)
-    const texCoordLocation = this.currentShader.getAttributeLocation('a_texCoord');
-    if (texCoordLocation >= 0) {
-      this.gl.enableVertexAttribArray(texCoordLocation);
-      this.gl.vertexAttribPointer(texCoordLocation, 2, this.gl.FLOAT, false, stride, 6 * 4);
-    }
-  }
-
-  /**
-   * 根据名称获取着色器
-   */
-  private getShaderByName(name: string): IShaderProgram | null {
-    return this.shaderManager.getShaderByName(name);
-  }
-
-  /**
-   * 清空渲染队列
-   */
-  clear(): void {
-    this.renderQueue = [];
-  }
-
-  /**
-   * 获取渲染统计
-   */
-  getStats() {
-    return {
-      queuedCommands: this.renderQueue.length,
-      shaderStats: this.shaderManager.getStats(),
-      bufferStats: this.bufferManager.getStats()
-    };
+    const renderable = this.createLineRenderable(x1, y1, x2, y2, lineWidth, lineColor);
+    this.batchManager.addRenderable(renderable);
   }
 
   /**
@@ -352,11 +201,8 @@ export class WebGLRenderManager {
     const geometry = GeometryGenerator.createPolygon(points, color);
     
     if (geometry.vertexCount > 0) {
-      this.renderQueue.push({
-        type: 'polygon',
-        geometry,
-        shader: 'basic_shape'
-      });
+      const renderable = this.geometryDataToRenderable(geometry, 'basic');
+      this.batchManager.addRenderable(renderable);
     }
   }
 
@@ -377,7 +223,7 @@ export class WebGLRenderManager {
   }
 
   /**
-   * 绘制纹理（占位符实现）
+   * 绘制纹理
    */
   drawTexture(
     texture: WebGLTexture | null, 
@@ -388,17 +234,62 @@ export class WebGLRenderManager {
   ): void {
     if (!texture) return;
     
-    // 创建纹理矩形几何体
-    const geometry = GeometryGenerator.createTextureRect(x, y, width, height);
+    const renderable = this.createTextureRenderable(x, y, width, height, texture);
+    this.batchManager.addRenderable(renderable);
+  }
+
+  /**
+   * 执行渲染
+   */
+  flush(projectionMatrix: Matrix3, transformMatrix?: Matrix3): void {
+    // 清除深度缓冲区（虽然2D不需要，但保持良好习惯）
+    this.gl.clear(this.gl.DEPTH_BUFFER_BIT);
+
+    // 组合投影和变换矩阵
+    const combinedMatrix = transformMatrix ? 
+      projectionMatrix.multiply(transformMatrix) : 
+      projectionMatrix;
     
-    this.renderQueue.push({
-      type: 'texture',
-      geometry,
-      shader: 'texture',
-      uniforms: {
-        u_texture: texture
-      }
-    });
+    // 使用统一批处理系统渲染
+    this.batchManager.flush(combinedMatrix);
+  }
+
+  /**
+   * 清空批处理缓存
+   */
+  clear(): void {
+    this.batchManager.clear();
+  }
+
+  /**
+   * 获取渲染统计
+   */
+  getStats(): {
+    batchStats: BatchStats;
+    shaderStats: any;
+    bufferStats: any;
+    currentStrategy: string;
+  } {
+    return {
+      batchStats: this.batchManager.getStats(),
+      shaderStats: this.shaderManager.getStats(),
+      bufferStats: this.bufferManager.getStats(),
+      currentStrategy: this.batchManager.getCurrentStrategy()
+    };
+  }
+
+  /**
+   * 获取详细的批处理性能信息
+   */
+  getDetailedBatchStats() {
+    return this.batchManager.getDetailedStats();
+  }
+
+  /**
+   * 自动优化批处理策略
+   */
+  autoOptimize(): void {
+    this.batchManager.autoOptimize();
   }
 
   /**
@@ -406,10 +297,183 @@ export class WebGLRenderManager {
    */
   dispose(): void {
     this.clear();
+    this.batchManager.dispose();
     this.shaderManager.dispose();
     this.bufferManager.dispose();
     this.currentShader = null;
     this.vertexBuffer = null;
     this.indexBuffer = null;
+  }
+
+  /**
+   * 创建矩形可渲染对象
+   */
+  private createRectangleRenderable(
+    x: number, y: number, width: number, height: number,
+    color: [number, number, number, number]
+  ): IRenderable {
+    const vertices = new Float32Array([
+      // position + color + uv
+      x, y, color[0], color[1], color[2], color[3], 0, 0,
+      x + width, y, color[0], color[1], color[2], color[3], 1, 0,
+      x + width, y + height, color[0], color[1], color[2], color[3], 1, 1,
+      x, y + height, color[0], color[1], color[2], color[3], 0, 1
+    ]);
+
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => indices,
+      getShader: () => 'basic_shape',
+      getBlendMode: () => 0, // NORMAL
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 创建圆形可渲染对象
+   */
+  private createCircleRenderable(
+    centerX: number, centerY: number, radius: number, segments: number,
+    color: [number, number, number, number]
+  ): IRenderable {
+    const vertexCount = segments + 1; // 中心点 + 圆周点
+    const vertices = new Float32Array(vertexCount * 8); // position(2) + color(4) + uv(2)
+    const indices: number[] = [];
+
+    // 中心点
+    let offset = 0;
+    vertices[offset++] = centerX; // x
+    vertices[offset++] = centerY; // y
+    vertices[offset++] = color[0]; // r
+    vertices[offset++] = color[1]; // g
+    vertices[offset++] = color[2]; // b
+    vertices[offset++] = color[3]; // a
+    vertices[offset++] = 0.5; // u
+    vertices[offset++] = 0.5; // v
+
+    // 圆周点
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+      
+      vertices[offset++] = x;
+      vertices[offset++] = y;
+      vertices[offset++] = color[0];
+      vertices[offset++] = color[1];
+      vertices[offset++] = color[2];
+      vertices[offset++] = color[3];
+      vertices[offset++] = (Math.cos(angle) + 1) * 0.5;
+      vertices[offset++] = (Math.sin(angle) + 1) * 0.5;
+    }
+
+    // 生成扇形索引
+    for (let i = 0; i < segments; i++) {
+      const next = (i + 1) % segments;
+      indices.push(0, i + 1, next + 1);
+    }
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => new Uint16Array(indices),
+      getShader: () => 'basic_shape',
+      getBlendMode: () => 0,
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 创建线条可渲染对象
+   */
+  private createLineRenderable(
+    x1: number, y1: number, x2: number, y2: number, width: number,
+    color: [number, number, number, number]
+  ): IRenderable {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    if (length < 0.001) {
+      return {
+        getVertices: () => new Float32Array(0),
+        getIndices: () => new Uint16Array(0),
+        getShader: () => 'basic_shape',
+        getBlendMode: () => 0,
+        getZIndex: () => 0
+      };
+    }
+
+    const dirX = dx / length;
+    const dirY = dy / length;
+    const normalX = -dirY;
+    const normalY = dirX;
+    const halfWidth = width * 0.5;
+
+    const vertices = new Float32Array([
+      // 起点左侧
+      x1 + normalX * halfWidth, y1 + normalY * halfWidth, 
+      color[0], color[1], color[2], color[3], 0, 0,
+      // 起点右侧
+      x1 - normalX * halfWidth, y1 - normalY * halfWidth, 
+      color[0], color[1], color[2], color[3], 0, 1,
+      // 终点右侧
+      x2 - normalX * halfWidth, y2 - normalY * halfWidth, 
+      color[0], color[1], color[2], color[3], 1, 1,
+      // 终点左侧
+      x2 + normalX * halfWidth, y2 + normalY * halfWidth, 
+      color[0], color[1], color[2], color[3], 1, 0
+    ]);
+
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => indices,
+      getShader: () => 'basic_shape',
+      getBlendMode: () => 0,
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 创建纹理可渲染对象
+   */
+  private createTextureRenderable(
+    x: number, y: number, width: number, height: number,
+    texture: WebGLTexture
+  ): IRenderable {
+    const vertices = new Float32Array([
+      // position + color + uv
+      x, y, 1, 1, 1, 1, 0, 0,
+      x + width, y, 1, 1, 1, 1, 1, 0,
+      x + width, y + height, 1, 1, 1, 1, 1, 1,
+      x, y + height, 1, 1, 1, 1, 0, 1
+    ]);
+
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => indices,
+      getTexture: () => texture,
+      getShader: () => 'texture',
+      getBlendMode: () => 0,
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 将GeometryData转换为IRenderable
+   */
+  private geometryDataToRenderable(geometry: any, shaderName: string): IRenderable {
+    return {
+      getVertices: () => new Float32Array(geometry.vertices),
+      getIndices: () => new Uint16Array(geometry.indices),
+      getShader: () => shaderName,
+      getBlendMode: () => 0,
+      getZIndex: () => 0
+    };
   }
 }

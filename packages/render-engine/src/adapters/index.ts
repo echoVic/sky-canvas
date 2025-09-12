@@ -7,7 +7,6 @@
 // WebGL适配器
 export { WebGLContextFactory } from './WebGLContext';
 export type { IWebGLContext } from './WebGLContext';
-export { WebGLRenderer } from './WebGLRenderer';
 
 // Canvas 2D适配器 (占位符)
 export { Canvas2DContextFactory } from './Canvas2DContext';

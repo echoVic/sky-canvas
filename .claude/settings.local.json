@@ -32,7 +32,9 @@
       "Bash(tree:*)",
       "Bash(npx tsc:*)",
       "Bash(pnpm list:*)",
-      "mcp__github__get_file_contents"
+      "mcp__github__get_file_contents",
+      "mcp__ide__getDiagnostics",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

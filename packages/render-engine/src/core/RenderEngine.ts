@@ -12,7 +12,7 @@ import {
 import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
 import { DirtyRegionManager } from './DirtyRegionManager';
 import { LayerCache } from './LayerCache';
-import { AdvancedBatcher } from '../batching/AdvancedBatcher';
+import { BatchManager, createBatchManagerWithDefaultStrategies } from '../batch';
 
 /**
  * 渲染层实现
@@ -70,7 +70,7 @@ export class RenderEngine implements IRenderEngine {
   // 新增的性能优化组件
   private dirtyRegionManager: DirtyRegionManager = new DirtyRegionManager();
   private layerCache: LayerCache = new LayerCache();
-  private advancedBatcher: AdvancedBatcher = new AdvancedBatcher();
+  private batchManager: BatchManager | null = null;
 
   private isRunningFlag = false;
   private animationId: number | null = null;
@@ -101,8 +101,12 @@ export class RenderEngine implements IRenderEngine {
 
     this.context = await factory.createContext(canvas);
     
-    // 设置批处理器的上下文
-    this.advancedBatcher.setContext(this.context);
+    // 初始化批处理管理器 
+    // 简化处理，假设我们有 WebGL 上下文
+    const gl = (this.context as any).gl;
+    if (gl) {
+      this.batchManager = createBatchManagerWithDefaultStrategies(gl);
+    }
     
     // 设置默认视口
     this.viewport.width = this.context.width;
@@ -393,16 +397,26 @@ export class RenderEngine implements IRenderEngine {
     
     // 对每组同类型渲染对象进行批处理渲染
     for (const [renderableType, groupRenderables] of renderableGroups.entries()) {
-      if (groupRenderables.length > 10) {
-        // 使用实例化渲染
+      if (groupRenderables.length > 10 && this.batchManager) {
+        // 使用实例化渲染策略
+        this.batchManager.setStrategy('instanced');
         groupRenderables.forEach(renderable => {
-          this.advancedBatcher.addInstancedRenderable(renderable);
+          // 创建适配器将 IRenderEngine.IRenderable 转换为批处理系统的 IRenderable
+          const batchRenderable = this.adaptRenderable(renderable);
+          this.batchManager!.addRenderable(batchRenderable);
         });
-        this.advancedBatcher.renderInstancedBatch(renderableType);
+        // 批处理管理器会在 flush 时处理渲染
       } else {
         // 正常渲染
         this.renderLayerRenderables(groupRenderables);
       }
+    }
+    
+    // 执行批处理渲染
+    if (this.batchManager) {
+      // 这里需要适当的投影矩阵，简化处理
+      const projectionMatrix = { multiply: (m: any) => m } as any; // 占位符
+      this.batchManager.flush(projectionMatrix);
     }
   }
 
@@ -449,5 +463,263 @@ export class RenderEngine implements IRenderEngine {
 
     this.stats.fps = this.frameTimeHistory.length;
     this.lastFrameTime = currentTime;
+  }
+
+  /**
+   * 适配器：将 IRenderEngine.IRenderable 转换为批处理系统的 IRenderable
+   */
+  private adaptRenderable(renderable: IRenderable): import('../batch').IRenderable {
+    // 从可渲染对象中提取几何数据
+    const geometryData = this.extractGeometryFromRenderable(renderable);
+    
+    return {
+      getVertices: () => geometryData.vertices,
+      getIndices: () => geometryData.indices,
+      getShader: () => this.determineShaderType(renderable),
+      getBlendMode: () => this.determineBlendMode(renderable),
+      getZIndex: () => renderable.zIndex || 0
+    };
+  }
+
+  /**
+   * 从可渲染对象中提取几何数据
+   */
+  private extractGeometryFromRenderable(renderable: IRenderable): { vertices: Float32Array; indices: Uint16Array } {
+    // 如果是 RenderableShapeView 类型，可以直接访问其实体数据
+    if ((renderable as any).getEntity) {
+      const entity = (renderable as any).getEntity();
+      return this.createGeometryFromEntity(entity);
+    }
+    
+    // 对于其他类型的可渲染对象，从边界框生成基本几何体
+    const bounds = renderable.getBounds();
+    return this.createRectangleGeometry(bounds.x, bounds.y, bounds.width, bounds.height);
+  }
+
+  /**
+   * 从形状实体创建几何数据
+   */
+  private createGeometryFromEntity(entity: any): { vertices: Float32Array; indices: Uint16Array } {
+    const { GeometryGenerator } = require('../adapters/GeometryGenerator');
+    
+    // 解析颜色
+    const color = this.parseEntityColor(entity);
+    const { position, scale } = entity.transform;
+
+    switch (entity.type) {
+      case 'rectangle': {
+        const { size, borderRadius } = entity;
+        if (borderRadius && borderRadius > 0) {
+          // 对于圆角矩形，使用多边形近似
+          const points = this.generateRoundedRectPoints(
+            position.x, position.y, 
+            size.width * scale.x, size.height * scale.y, 
+            borderRadius
+          );
+          const geometryData = GeometryGenerator.createPolygon(points, color);
+          return { vertices: geometryData.vertices, indices: geometryData.indices };
+        } else {
+          const geometryData = GeometryGenerator.createRectangle(
+            position.x, position.y,
+            size.width * scale.x, size.height * scale.y,
+            color
+          );
+          return { vertices: geometryData.vertices, indices: geometryData.indices };
+        }
+      }
+      
+      case 'circle': {
+        const { radius } = entity;
+        const geometryData = GeometryGenerator.createCircle(
+          position.x, position.y,
+          radius * Math.max(scale.x, scale.y),
+          32, // segments
+          color
+        );
+        return { vertices: geometryData.vertices, indices: geometryData.indices };
+      }
+      
+      case 'path': {
+        // 对于路径，简化处理，返回包围盒矩形
+        const bounds = this.calculateEntityBounds(entity);
+        return this.createRectangleGeometry(bounds.x, bounds.y, bounds.width, bounds.height, color);
+      }
+      
+      case 'text': {
+        // 对于文本，创建文本边界框
+        const bounds = this.calculateTextBounds(entity);
+        return this.createRectangleGeometry(bounds.x, bounds.y, bounds.width, bounds.height, color);
+      }
+      
+      default: {
+        // 未知类型，使用包围盒
+        const bounds = this.calculateEntityBounds(entity);
+        return this.createRectangleGeometry(bounds.x, bounds.y, bounds.width, bounds.height, color);
+      }
+    }
+  }
+
+  /**
+   * 创建矩形几何体
+   */
+  private createRectangleGeometry(
+    x: number, y: number, width: number, height: number, 
+    color: [number, number, number, number] = [1, 1, 1, 1]
+  ): { vertices: Float32Array; indices: Uint16Array } {
+    const { GeometryGenerator } = require('../adapters/GeometryGenerator');
+    const geometryData = GeometryGenerator.createRectangle(x, y, width, height, color);
+    return { vertices: geometryData.vertices, indices: geometryData.indices };
+  }
+
+  /**
+   * 解析实体颜色
+   */
+  private parseEntityColor(entity: any): [number, number, number, number] {
+    const { GeometryGenerator } = require('../adapters/GeometryGenerator');
+    
+    if (entity.style.fillColor) {
+      return GeometryGenerator.parseColor(entity.style.fillColor);
+    } else if (entity.style.strokeColor) {
+      return GeometryGenerator.parseColor(entity.style.strokeColor);
+    }
+    
+    return [1, 1, 1, 1]; // 默认白色
+  }
+
+  /**
+   * 生成圆角矩形顶点
+   */
+  private generateRoundedRectPoints(
+    x: number, y: number, width: number, height: number, radius: number
+  ): { x: number; y: number }[] {
+    const points: { x: number; y: number }[] = [];
+    const segments = 8; // 每个角的分段数
+    
+    // 限制圆角半径
+    const maxRadius = Math.min(width, height) / 2;
+    const r = Math.min(radius, maxRadius);
+    
+    // 右上角
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * (Math.PI / 2);
+      points.push({
+        x: x + width - r + Math.cos(angle) * r,
+        y: y + r - Math.sin(angle) * r
+      });
+    }
+    
+    // 右下角
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * (Math.PI / 2) + Math.PI / 2;
+      points.push({
+        x: x + width - r + Math.cos(angle) * r,
+        y: y + height - r - Math.sin(angle) * r
+      });
+    }
+    
+    // 左下角
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * (Math.PI / 2) + Math.PI;
+      points.push({
+        x: x + r + Math.cos(angle) * r,
+        y: y + height - r - Math.sin(angle) * r
+      });
+    }
+    
+    // 左上角
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * (Math.PI / 2) + (3 * Math.PI / 2);
+      points.push({
+        x: x + r + Math.cos(angle) * r,
+        y: y + r - Math.sin(angle) * r
+      });
+    }
+    
+    return points;
+  }
+
+  /**
+   * 计算实体包围盒
+   */
+  private calculateEntityBounds(entity: any): { x: number; y: number; width: number; height: number } {
+    const { position, scale } = entity.transform;
+    
+    switch (entity.type) {
+      case 'rectangle':
+        return {
+          x: position.x,
+          y: position.y,
+          width: entity.size.width * scale.x,
+          height: entity.size.height * scale.y
+        };
+      case 'circle':
+        const radius = entity.radius * Math.max(scale.x, scale.y);
+        return {
+          x: position.x - radius,
+          y: position.y - radius,
+          width: radius * 2,
+          height: radius * 2
+        };
+      case 'text':
+        return this.calculateTextBounds(entity);
+      default:
+        return { x: position.x, y: position.y, width: 100, height: 100 };
+    }
+  }
+
+  /**
+   * 计算文本包围盒
+   */
+  private calculateTextBounds(entity: any): { x: number; y: number; width: number; height: number } {
+    const { position, scale } = entity.transform;
+    const { content, fontSize } = entity;
+    
+    // 简化的文本尺寸计算
+    const estimatedWidth = content.length * fontSize * 0.6 * scale.x;
+    const estimatedHeight = fontSize * scale.y;
+    
+    return {
+      x: position.x,
+      y: position.y - estimatedHeight, // 文本基线调整
+      width: estimatedWidth,
+      height: estimatedHeight
+    };
+  }
+
+  /**
+   * 确定着色器类型
+   */
+  private determineShaderType(renderable: IRenderable): string {
+    // 如果是形状视图，根据实体类型选择着色器
+    if ((renderable as any).getEntity) {
+      const entity = (renderable as any).getEntity();
+      switch (entity.type) {
+        case 'text':
+          return 'text'; // 文本着色器
+        case 'circle':
+          return 'circle'; // 圆形着色器（可能需要抗锯齿）
+        default:
+          return 'basic'; // 基础着色器
+      }
+    }
+    
+    return 'basic';
+  }
+
+  /**
+   * 确定混合模式
+   */
+  private determineBlendMode(renderable: IRenderable): number {
+    // 如果是形状视图，根据样式确定混合模式
+    if ((renderable as any).getEntity) {
+      const entity = (renderable as any).getEntity();
+      const opacity = entity.style.opacity || 1;
+      
+      if (opacity < 1) {
+        return 1; // Alpha blending
+      }
+    }
+    
+    return 0; // 默认混合模式
   }
 }

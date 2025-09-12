@@ -10,23 +10,20 @@ import { WebGLShaderManager } from '../shaders/ShaderManager';
 import { BatchBuffer } from './core/BatchBuffer';
 import { BatchGeometry } from './core/BatchGeometry';
 import { BatchRenderManager } from './core/BatchRenderer';
-import { 
-  BatchConfig, 
-  BatchState, 
-  QuadParams, 
-  TriangleParams, 
-  LineParams 
+import {
+  BatchConfig,
+  BatchState,
+  LineParams,
+  QuadParams,
+  TriangleParams
 } from './types/BatchTypes';
 
 // 重新导出类型以保持向后兼容
-export type { 
-  BatchVertex, 
-  BatchConfig, 
-  QuadParams, 
-  TriangleParams, 
-  LineParams 
-} from './types/BatchTypes';
 export { BatchState } from './types/BatchTypes';
+export type {
+  BatchConfig, BatchVertex, LineParams, QuadParams,
+  TriangleParams
+} from './types/BatchTypes';
 
 /**
  * 批量渲染器主类
