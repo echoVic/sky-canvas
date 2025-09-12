@@ -7,6 +7,7 @@ import { proxy } from 'valtio';
 
 import { IPoint } from '@sky-canvas/render-engine';
 import { ShapeEntity } from '../../models/entities/Shape';
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { ISelectionService } from '../../services/selection/selectionService';
 import { IViewModel } from '../interfaces/IViewModel';
@@ -45,14 +46,19 @@ export interface ISelectToolViewModel extends IViewModel {
 }
 
 /**
+ * 选择工具 ViewModel 服务标识符
+ */
+export const ISelectToolViewModel = createDecorator<ISelectToolViewModel>('SelectToolViewModel');
+
+/**
  * 选择工具 ViewModel 实现
  */
 export class SelectToolViewModel implements ISelectToolViewModel {
   private readonly _state: ISelectToolState;
 
   constructor(
-    private selectionService: ISelectionService,
-    private eventBus: IEventBusService
+    @ISelectionService private selectionService: ISelectionService,
+    @IEventBusService private eventBus: IEventBusService
   ) {
     this._state = proxy<ISelectToolState>({
       isSelecting: false,

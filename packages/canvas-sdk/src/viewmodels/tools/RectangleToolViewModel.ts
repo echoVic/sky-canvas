@@ -6,6 +6,7 @@
 import { proxy } from 'valtio';
 
 import { IPoint } from '@sky-canvas/render-engine';
+import { createDecorator } from '../../di';
 import { ICanvasManager } from '../../managers/CanvasManager';
 import { IRectangleEntity, ShapeEntityFactory } from '../../models/entities/Shape';
 import { IEventBusService } from '../../services/eventBus/eventBusService';
@@ -43,14 +44,19 @@ export interface IRectangleToolViewModel extends IViewModel {
 }
 
 /**
+ * 矩形工具 ViewModel 服务标识符
+ */
+export const IRectangleToolViewModel = createDecorator<IRectangleToolViewModel>('RectangleToolViewModel');
+
+/**
  * 矩形工具 ViewModel 实现
  */
 export class RectangleToolViewModel implements IRectangleToolViewModel {
   private readonly _state: IRectangleToolState;
 
   constructor(
-    private canvasManager: ICanvasManager,
-    private eventBus: IEventBusService
+    @ICanvasManager private canvasManager: ICanvasManager,
+    @IEventBusService private eventBus: IEventBusService
   ) {
     this._state = proxy<IRectangleToolState>({
       isDrawing: false,

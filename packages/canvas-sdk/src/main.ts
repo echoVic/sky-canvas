@@ -13,6 +13,10 @@ import { getSingletonServiceDescriptors } from './di/instantiation';
 import { CanvasManager, ICanvasManager } from './managers/CanvasManager';
 import { IToolManager, ToolManager } from './managers/ToolManager';
 
+// ViewModels
+import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
+import { IRectangleToolViewModel, RectangleToolViewModel } from './viewmodels/tools/RectangleToolViewModel';
+
 // 服务
 import {
   CanvasRenderingService,
@@ -31,9 +35,11 @@ import {
   InteractionService,
   ISelectionService,
   IShapeService,
+  IShortcutService,
   LogService,
   SelectionService,
   ShapeService,
+  ShortcutService,
   type LogLevel
 } from './services';
 
@@ -231,6 +237,9 @@ class CanvasSDKBootstrap {
     // 配置服务
     services.set(IConfigurationService, new SyncDescriptor(ConfigurationService));
 
+    // 快捷键服务
+    services.set(IShortcutService, new SyncDescriptor(ShortcutService));
+
     // 选择服务
     services.set(ISelectionService, new SyncDescriptor(SelectionService));
 
@@ -239,6 +248,10 @@ class CanvasSDKBootstrap {
 
     // 剪贴板服务
     services.set(IClipboardService, new SyncDescriptor(ClipboardService));
+
+    // ViewModels
+    services.set(ISelectToolViewModel, new SyncDescriptor(SelectToolViewModel));
+    services.set(IRectangleToolViewModel, new SyncDescriptor(RectangleToolViewModel));
 
     // 工具管理器
     services.set(IToolManager, new SyncDescriptor(ToolManager));

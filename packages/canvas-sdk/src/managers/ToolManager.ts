@@ -6,8 +6,7 @@
 import { createDecorator } from '../di';
 import { ICanvasManager } from './CanvasManager';
 import { ISelectToolViewModel, IRectangleToolViewModel } from '../viewmodels/tools';
-import { IShortcutService, IHistoryService, IEventBusService } from '../services';
-import type { ILogService } from '../services';
+import { IShortcutService, IHistoryService, IEventBusService, ILogService } from '../services';
 
 /**
  * 工具管理器接口
@@ -44,13 +43,13 @@ export class ToolManager implements IToolManager {
   private currentToolName: string | null = null;
 
   constructor(
-    private canvasManager: ICanvasManager,
-    private selectToolViewModel: ISelectToolViewModel,
-    private rectangleToolViewModel: IRectangleToolViewModel,
-    private shortcutService: IShortcutService,
-    private historyService: IHistoryService,
-    private eventBus: IEventBusService,
-    private logService: ILogService
+    @ICanvasManager private canvasManager: ICanvasManager,
+    @ISelectToolViewModel private selectToolViewModel: ISelectToolViewModel,
+    @IRectangleToolViewModel private rectangleToolViewModel: IRectangleToolViewModel,
+    @IShortcutService private shortcutService: IShortcutService,
+    @IHistoryService private historyService: IHistoryService,
+    @IEventBusService private eventBus: IEventBusService,
+    @ILogService private logService: ILogService
   ) {
     this.initializeToolViewModels();
     this.registerShortcuts();
@@ -64,10 +63,12 @@ export class ToolManager implements IToolManager {
     // 注册工具 ViewModels
     this.toolViewModels.set('select', this.selectToolViewModel);
     this.toolViewModels.set('rectangle', this.rectangleToolViewModel);
-    // TODO: 添加其他工具 ViewModels
-    // this.toolViewModels.set('circle', this.circleToolViewModel);
-    // this.toolViewModels.set('line', this.lineToolViewModel);
-    // this.toolViewModels.set('path', this.pathToolViewModel);
+    
+    // 注册占位符工具 - 暂时未实现的工具
+    const placeholderTools = ['diamond', 'circle', 'arrow', 'line', 'draw', 'text', 'image', 'sticky', 'link', 'frame', 'hand'];
+    placeholderTools.forEach(toolName => {
+      this.toolViewModels.set(toolName, this.createPlaceholderTool(toolName));
+    });
 
     // 默认激活选择工具
     this.activateTool('select');
@@ -230,6 +231,61 @@ export class ToolManager implements IToolManager {
     
     const currentTool = this.toolViewModels.get(this.currentToolName);
     return currentTool?.state?.cursor || 'default';
+  }
+
+  /**
+   * 创建占位符工具
+   */
+  private createPlaceholderTool(toolName: string) {
+    return {
+      activate: () => {
+        this.logService.info(`Placeholder tool '${toolName}' activated - not implemented yet`);
+        this.eventBus.emit('tool:activated', { toolName });
+      },
+      deactivate: () => {
+        this.logService.debug(`Placeholder tool '${toolName}' deactivated`);
+      },
+      handleMouseDown: () => {
+        this.logService.debug(`Tool '${toolName}' mouse down - not implemented`);
+      },
+      handleMouseMove: () => {
+        this.logService.debug(`Tool '${toolName}' mouse move - not implemented`);
+      },
+      handleMouseUp: () => {
+        this.logService.debug(`Tool '${toolName}' mouse up - not implemented`);
+      },
+      handleKeyDown: () => {
+        this.logService.debug(`Tool '${toolName}' key down - not implemented`);
+      },
+      handleKeyUp: () => {
+        this.logService.debug(`Tool '${toolName}' key up - not implemented`);
+      },
+      state: {
+        cursor: this.getCursorForTool(toolName)
+      }
+    };
+  }
+
+  /**
+   * 获取工具对应的鼠标样式
+   */
+  private getCursorForTool(toolName: string): string {
+    const cursorMap: Record<string, string> = {
+      'select': 'default',
+      'hand': 'grab',
+      'rectangle': 'crosshair',
+      'diamond': 'crosshair',
+      'circle': 'crosshair',
+      'arrow': 'crosshair',
+      'line': 'crosshair',
+      'draw': 'crosshair',
+      'text': 'text',
+      'image': 'crosshair',
+      'sticky': 'crosshair',
+      'link': 'pointer',
+      'frame': 'crosshair'
+    };
+    return cursorMap[toolName] || 'default';
   }
 
   /**

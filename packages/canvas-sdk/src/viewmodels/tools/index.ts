@@ -6,11 +6,11 @@
  * - 复杂工具：通过 Manager 协调多个 Services (DrawingTools -> CanvasManager)
  */
 
-export { SelectToolViewModel } from './SelectToolViewModel';
-export type { ISelectToolViewModel, ISelectToolState } from './SelectToolViewModel';
+export { ISelectToolViewModel, SelectToolViewModel } from './SelectToolViewModel';
+export type { ISelectToolState } from './SelectToolViewModel';
 
-export { RectangleToolViewModel } from './RectangleToolViewModel';
-export type { IRectangleToolViewModel, IRectangleToolState } from './RectangleToolViewModel';
+export { IRectangleToolViewModel, RectangleToolViewModel } from './RectangleToolViewModel';
+export type { IRectangleToolState } from './RectangleToolViewModel';
 
 // TODO: 添加其他工具 ViewModels
 // export { CircleToolViewModel } from './CircleToolViewModel';
