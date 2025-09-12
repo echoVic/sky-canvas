@@ -5,12 +5,11 @@
 
 import {
     ContrastParameters,
-    FilterContext,
     FilterType
 } from '../types/FilterTypes';
-import { BaseFilter } from './BaseFilter';
+import { PixelProcessor, RGBProcessorFunction } from './PixelProcessor';
 
-export class ContrastFilter extends BaseFilter<ContrastParameters> {
+export class ContrastFilter extends PixelProcessor<ContrastParameters> {
   readonly type = FilterType.CONTRAST;
   readonly name = 'Contrast';
   readonly description = 'Adjusts the contrast of the image';
@@ -18,45 +17,18 @@ export class ContrastFilter extends BaseFilter<ContrastParameters> {
   readonly requiresWebGL = false;
 
   /**
-   * 处理对比度调整滤镜
+   * 检查是否应该跳过处理
    */
-  protected async processFilter(
-    context: FilterContext, 
-    parameters: ContrastParameters
-  ): Promise<ImageData> {
-    const { sourceImageData } = context;
-    
-    if (parameters.contrast === 0) {
-      return this.cloneImageData(sourceImageData);
-    }
+  protected shouldSkipProcessing(parameters: ContrastParameters): boolean {
+    return parameters.contrast === 0;
+  }
 
-    const result = this.cloneImageData(sourceImageData);
-    const data = result.data;
-    
-    // 将对比度值从-100~100转换为调整因子
-    // 对比度公式: newValue = (oldValue - 128) * factor + 128
-    // factor = (100 + contrast) / 100
+  /**
+   * 获取RGB处理函数
+   */
+  protected getRGBProcessor(parameters: ContrastParameters): RGBProcessorFunction {
     const factor = (100 + parameters.contrast) / 100;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      // 调整RGB通道，保持Alpha不变
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      
-      // 应用对比度调整
-      data[i] = this.clamp((r - 128) * factor + 128);
-      data[i + 1] = this.clamp((g - 128) * factor + 128);
-      data[i + 2] = this.clamp((b - 128) * factor + 128);
-      // data[i + 3] = data[i + 3]; // Alpha保持不变
-    }
-
-    // 应用不透明度
-    if (parameters.opacity !== undefined && parameters.opacity < 1) {
-      return this.applyOpacity(result, parameters.opacity);
-    }
-    
-    return result;
+    return PixelProcessor.createFactorProcessor(factor, 128);
   }
 
   /**

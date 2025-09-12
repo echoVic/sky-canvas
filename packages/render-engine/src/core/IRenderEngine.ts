@@ -222,6 +222,19 @@ export interface IRenderEngine {
   getStats(): IRenderStats;
   
   /**
+   * 点击测试 - 查找指定位置的可渲染对象
+   * @param point 屏幕坐标点
+   * @returns 命中的可渲染对象，如果没有则返回null
+   */
+  hitTest(point: IPoint): IRenderable | null;
+  
+  /**
+   * 获取视口内的对象
+   * @returns 视口范围内的所有可渲染对象
+   */
+  getObjectsInViewport(): IRenderable[];
+  
+  /**
    * 销毁渲染引擎
    */
   dispose(): void;

@@ -9,6 +9,8 @@ import {
     FilterType
 } from '../types/FilterTypes';
 import { BaseFilter } from './BaseFilter';
+import { GaussianBlurFilter } from './GaussianBlurFilter';
+import { parseColor } from '../../utils/ColorUtils';
 
 export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
   readonly type = FilterType.DROP_SHADOW;
@@ -16,6 +18,8 @@ export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
   readonly description = 'Adds a drop shadow effect to the image';
   readonly supportedInputFormats = ['image/png', 'image/jpeg', 'image/webp'];
   readonly requiresWebGL = false;
+
+  private blurFilter = new GaussianBlurFilter();
 
   /**
    * 处理投影滤镜
@@ -32,8 +36,8 @@ export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
     }
 
     // 解析颜色
-    const shadowColor = this.parseColor(parameters.color);
-    const shadowOpacity = (parameters.opacity ?? 1) * (shadowColor.a / 255);
+    const shadowColor = parseColor(parameters.color);
+    const shadowOpacity = (parameters.opacity ?? 1) * shadowColor.a;
     
     // 计算扩展的画布尺寸以容纳阴影
     const blurRadius = Math.max(0, parameters.blur);
@@ -45,7 +49,6 @@ export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
     const extendedHeight = sourceImageData.height + padding * 2 + Math.abs(shadowOffsetY);
     
     // 创建扩展画布来绘制阴影
-    const shadowCanvas = this.createCanvas(extendedWidth, extendedHeight);
     const shadowImageData = new ImageData(extendedWidth, extendedHeight);
     
     // 计算原图在扩展画布中的位置
@@ -69,7 +72,20 @@ export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
     // 第二步：应用模糊效果
     let blurredShadow = shadowImageData;
     if (blurRadius > 0) {
-      blurredShadow = await this.applyGaussianBlur(shadowImageData, blurRadius);
+      const blurContext: FilterContext = {
+        sourceImageData: shadowImageData,
+        width: shadowImageData.width,
+        height: shadowImageData.height,
+        timestamp: Date.now()
+      };
+      const blurResult = await this.blurFilter.apply(blurContext, {
+        type: FilterType.GAUSSIAN_BLUR,
+        radius: blurRadius,
+        enabled: true
+      });
+      if (blurResult.success && blurResult.processedImageData) {
+        blurredShadow = blurResult.processedImageData;
+      }
     }
     
     // 第三步：合成原图到阴影上方
@@ -122,9 +138,9 @@ export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
             // 使用原图的alpha通道来创建阴影
             const shadowAlpha = (sourceAlpha / 255) * opacity;
             
-            targetData[targetIndex] = color.r;
-            targetData[targetIndex + 1] = color.g;
-            targetData[targetIndex + 2] = color.b;
+            targetData[targetIndex] = Math.round(color.r * 255);
+            targetData[targetIndex + 1] = Math.round(color.g * 255);
+            targetData[targetIndex + 2] = Math.round(color.b * 255);
             targetData[targetIndex + 3] = Math.round(shadowAlpha * 255);
           }
         }
@@ -214,123 +230,8 @@ export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
     return result;
   }
 
-  /**
-   * 解析颜色字符串
-   */
-  private parseColor(colorStr: string): { r: number; g: number; b: number; a: number } {
-    // 简单的颜色解析，支持 hex 和 rgba
-    if (colorStr.startsWith('#')) {
-      const hex = colorStr.substring(1);
-      if (hex.length === 3) {
-        return {
-          r: parseInt(hex[0] + hex[0], 16),
-          g: parseInt(hex[1] + hex[1], 16),
-          b: parseInt(hex[2] + hex[2], 16),
-          a: 255
-        };
-      } else if (hex.length === 6) {
-        return {
-          r: parseInt(hex.substring(0, 2), 16),
-          g: parseInt(hex.substring(2, 4), 16),
-          b: parseInt(hex.substring(4, 6), 16),
-          a: 255
-        };
-      }
-    } else if (colorStr.startsWith('rgba(')) {
-      const values = colorStr.match(/rgba?\(([^)]+)\)/)?.[1].split(',');
-      if (values && values.length >= 3) {
-        return {
-          r: parseInt(values[0].trim()),
-          g: parseInt(values[1].trim()),
-          b: parseInt(values[2].trim()),
-          a: values.length > 3 ? Math.round(parseFloat(values[3].trim()) * 255) : 255
-        };
-      }
-    }
-    
-    // 默认黑色
-    return { r: 0, g: 0, b: 0, a: 255 };
-  }
 
-  /**
-   * 应用高斯模糊
-   */
-  private async applyGaussianBlur(imageData: ImageData, radius: number): Promise<ImageData> {
-    if (radius <= 0) return imageData;
-    
-    // 简化的高斯模糊实现
-    const result = this.cloneImageData(imageData);
-    const data = result.data;
-    const width = result.width;
-    const height = result.height;
-    
-    // 水平模糊
-    const temp = new Uint8ClampedArray(data.length);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        let totalR = 0, totalG = 0, totalB = 0, totalA = 0;
-        let totalWeight = 0;
-        
-        const kernelSize = Math.ceil(radius * 2);
-        for (let kx = -kernelSize; kx <= kernelSize; kx++) {
-          const sampleX = Math.max(0, Math.min(width - 1, x + kx));
-          const weight = Math.exp(-(kx * kx) / (2 * radius * radius));
-          const index = (y * width + sampleX) * 4;
-          
-          totalR += data[index] * weight;
-          totalG += data[index + 1] * weight;
-          totalB += data[index + 2] * weight;
-          totalA += data[index + 3] * weight;
-          totalWeight += weight;
-        }
-        
-        const targetIndex = (y * width + x) * 4;
-        temp[targetIndex] = totalR / totalWeight;
-        temp[targetIndex + 1] = totalG / totalWeight;
-        temp[targetIndex + 2] = totalB / totalWeight;
-        temp[targetIndex + 3] = totalA / totalWeight;
-      }
-    }
-    
-    // 垂直模糊
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        let totalR = 0, totalG = 0, totalB = 0, totalA = 0;
-        let totalWeight = 0;
-        
-        const kernelSize = Math.ceil(radius * 2);
-        for (let ky = -kernelSize; ky <= kernelSize; ky++) {
-          const sampleY = Math.max(0, Math.min(height - 1, y + ky));
-          const weight = Math.exp(-(ky * ky) / (2 * radius * radius));
-          const index = (sampleY * width + x) * 4;
-          
-          totalR += temp[index] * weight;
-          totalG += temp[index + 1] * weight;
-          totalB += temp[index + 2] * weight;
-          totalA += temp[index + 3] * weight;
-          totalWeight += weight;
-        }
-        
-        const targetIndex = (y * width + x) * 4;
-        data[targetIndex] = Math.round(totalR / totalWeight);
-        data[targetIndex + 1] = Math.round(totalG / totalWeight);
-        data[targetIndex + 2] = Math.round(totalB / totalWeight);
-        data[targetIndex + 3] = Math.round(totalA / totalWeight);
-      }
-    }
-    
-    return result;
-  }
 
-  /**
-   * 创建临时画布
-   */
-  private createCanvas(width: number, height: number): HTMLCanvasElement {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    return canvas;
-  }
 
   /**
    * 验证投影特定参数

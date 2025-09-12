@@ -5,6 +5,7 @@
 
 import { BaseAnimation } from '../core/BaseAnimation';
 import { MultiPropertyAnimationConfig } from '../types/AnimationTypes';
+import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils';
 
 interface PropertyState {
   property: string;
@@ -50,7 +51,7 @@ export class MultiPropertyAnimation extends BaseAnimation {
       );
       
       try {
-        this.setNestedProperty(this.target, propState.property, currentValue);
+        setNestedProperty(this.target, propState.property, currentValue);
       } catch (error) {
         console.error(`Failed to set property ${propState.property}:`, error);
       }
@@ -69,46 +70,20 @@ export class MultiPropertyAnimation extends BaseAnimation {
    */
   private getCurrentPropertyValue(property: string): number {
     try {
-      const value = this.getNestedProperty(this.target, property);
+      const value = getNestedProperty(this.target, property);
       return typeof value === 'number' ? value : 0;
     } catch {
       return 0;
     }
   }
 
-  /**
-   * 获取嵌套属性值
-   */
-  private getNestedProperty(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : undefined;
-    }, obj);
-  }
-
-  /**
-   * 设置嵌套属性值
-   */
-  private setNestedProperty(obj: any, path: string, value: number): void {
-    const keys = path.split('.');
-    const lastKey = keys.pop()!;
-    
-    // 导航到最后一级对象
-    const target = keys.reduce((current, key) => {
-      if (!current[key] || typeof current[key] !== 'object') {
-        current[key] = {};
-      }
-      return current[key];
-    }, obj);
-
-    target[lastKey] = value;
-  }
 
   /**
    * 重置所有属性到初始值
    */
   reset(): this {
     for (const propState of this.properties) {
-      this.setNestedProperty(
+      setNestedProperty(
         this.target,
         propState.property,
         propState.initialValue

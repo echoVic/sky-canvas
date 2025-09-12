@@ -9,6 +9,7 @@ import {
     GlowParameters
 } from '../types/FilterTypes';
 import { BaseFilter } from './BaseFilter';
+import { parseColor } from '../../utils/ColorUtils';
 
 export class GlowFilter extends BaseFilter<GlowParameters> {
   readonly type = FilterType.GLOW;
@@ -32,7 +33,7 @@ export class GlowFilter extends BaseFilter<GlowParameters> {
     }
 
     // 解析发光颜色
-    const glowColor = this.parseColor(parameters.color);
+    const glowColor = parseColor(parameters.color);
     const quality = parameters.quality || 'medium';
     
     // 计算扩展的画布尺寸以容纳发光效果
@@ -116,9 +117,9 @@ export class GlowFilter extends BaseFilter<GlowParameters> {
           // 使用原图的alpha通道创建发光
           const glowAlpha = (sourceAlpha / 255) * strength;
           
-          targetData[targetIndex] = color.r;
-          targetData[targetIndex + 1] = color.g;
-          targetData[targetIndex + 2] = color.b;
+          targetData[targetIndex] = Math.round(color.r * 255);
+          targetData[targetIndex + 1] = Math.round(color.g * 255);
+          targetData[targetIndex + 2] = Math.round(color.b * 255);
           targetData[targetIndex + 3] = Math.min(255, Math.round(glowAlpha * 255));
         }
       }
@@ -346,42 +347,6 @@ export class GlowFilter extends BaseFilter<GlowParameters> {
     return result;
   }
 
-  /**
-   * 解析颜色字符串
-   */
-  private parseColor(colorStr: string): { r: number; g: number; b: number; a: number } {
-    if (colorStr.startsWith('#')) {
-      const hex = colorStr.substring(1);
-      if (hex.length === 3) {
-        return {
-          r: parseInt(hex[0] + hex[0], 16),
-          g: parseInt(hex[1] + hex[1], 16),
-          b: parseInt(hex[2] + hex[2], 16),
-          a: 255
-        };
-      } else if (hex.length === 6) {
-        return {
-          r: parseInt(hex.substring(0, 2), 16),
-          g: parseInt(hex.substring(2, 4), 16),
-          b: parseInt(hex.substring(4, 6), 16),
-          a: 255
-        };
-      }
-    } else if (colorStr.startsWith('rgba(')) {
-      const values = colorStr.match(/rgba?\(([^)]+)\)/)?.[1].split(',');
-      if (values && values.length >= 3) {
-        return {
-          r: parseInt(values[0].trim()),
-          g: parseInt(values[1].trim()),
-          b: parseInt(values[2].trim()),
-          a: values.length > 3 ? Math.round(parseFloat(values[3].trim()) * 255) : 255
-        };
-      }
-    }
-    
-    // 默认白色发光
-    return { r: 255, g: 255, b: 255, a: 255 };
-  }
 
   /**
    * 验证发光特定参数

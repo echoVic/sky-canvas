@@ -9,6 +9,7 @@ import {
   InnerShadowParameters
 } from '../types/FilterTypes';
 import { BaseFilter } from './BaseFilter';
+import { parseColor } from '../../utils/ColorUtils';
 
 export class InnerShadowFilter extends BaseFilter<InnerShadowParameters> {
   readonly type = FilterType.INNER_SHADOW;
@@ -32,8 +33,8 @@ export class InnerShadowFilter extends BaseFilter<InnerShadowParameters> {
     }
 
     // 解析颜色
-    const shadowColor = this.parseColor(parameters.color);
-    const shadowOpacity = (parameters.opacity ?? 1) * (shadowColor.a / 255);
+    const shadowColor = parseColor(parameters.color);
+    const shadowOpacity = (parameters.opacity ?? 1) * shadowColor.a;
     
     const result = this.cloneImageData(sourceImageData);
     
@@ -133,15 +134,15 @@ export class InnerShadowFilter extends BaseFilter<InnerShadowParameters> {
           // 混合阴影颜色
           targetData[index] = Math.round(
             targetData[index] * (1 - shadowStrength) + 
-            color.r * shadowStrength * 0.5
+            color.r * 255 * shadowStrength * 0.5
           );
           targetData[index + 1] = Math.round(
             targetData[index + 1] * (1 - shadowStrength) + 
-            color.g * shadowStrength * 0.5
+            color.g * 255 * shadowStrength * 0.5
           );
           targetData[index + 2] = Math.round(
             targetData[index + 2] * (1 - shadowStrength) + 
-            color.b * shadowStrength * 0.5
+            color.b * 255 * shadowStrength * 0.5
           );
         }
       }
@@ -218,43 +219,6 @@ export class InnerShadowFilter extends BaseFilter<InnerShadowParameters> {
     return result;
   }
 
-  /**
-   * 解析颜色字符串
-   */
-  private parseColor(colorStr: string): { r: number; g: number; b: number; a: number } {
-    // 简单的颜色解析，支持 hex 和 rgba
-    if (colorStr.startsWith('#')) {
-      const hex = colorStr.substring(1);
-      if (hex.length === 3) {
-        return {
-          r: parseInt(hex[0] + hex[0], 16),
-          g: parseInt(hex[1] + hex[1], 16),
-          b: parseInt(hex[2] + hex[2], 16),
-          a: 255
-        };
-      } else if (hex.length === 6) {
-        return {
-          r: parseInt(hex.substring(0, 2), 16),
-          g: parseInt(hex.substring(2, 4), 16),
-          b: parseInt(hex.substring(4, 6), 16),
-          a: 255
-        };
-      }
-    } else if (colorStr.startsWith('rgba(')) {
-      const values = colorStr.match(/rgba?\(([^)]+)\)/)?.[1].split(',');
-      if (values && values.length >= 3) {
-        return {
-          r: parseInt(values[0].trim()),
-          g: parseInt(values[1].trim()),
-          b: parseInt(values[2].trim()),
-          a: values.length > 3 ? Math.round(parseFloat(values[3].trim()) * 255) : 255
-        };
-      }
-    }
-    
-    // 默认黑色
-    return { r: 0, g: 0, b: 0, a: 255 };
-  }
 
   /**
    * 验证内阴影特定参数

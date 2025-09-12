@@ -5,12 +5,11 @@
 
 import {
     BrightnessParameters,
-    FilterContext,
     FilterType
 } from '../types/FilterTypes';
-import { BaseFilter } from './BaseFilter';
+import { PixelProcessor, RGBProcessorFunction } from './PixelProcessor';
 
-export class BrightnessFilter extends BaseFilter<BrightnessParameters> {
+export class BrightnessFilter extends PixelProcessor<BrightnessParameters> {
   readonly type = FilterType.BRIGHTNESS;
   readonly name = 'Brightness';
   readonly description = 'Adjusts the brightness of the image';
@@ -18,38 +17,18 @@ export class BrightnessFilter extends BaseFilter<BrightnessParameters> {
   readonly requiresWebGL = false;
 
   /**
-   * 处理亮度调整滤镜
+   * 检查是否应该跳过处理
    */
-  protected async processFilter(
-    context: FilterContext, 
-    parameters: BrightnessParameters
-  ): Promise<ImageData> {
-    const { sourceImageData } = context;
-    
-    if (parameters.brightness === 0) {
-      return this.cloneImageData(sourceImageData);
-    }
+  protected shouldSkipProcessing(parameters: BrightnessParameters): boolean {
+    return parameters.brightness === 0;
+  }
 
-    const result = this.cloneImageData(sourceImageData);
-    const data = result.data;
-    
-    // 将亮度值从-100~100转换为调整因子
-    const adjustment = parameters.brightness * 2.55; // 转换为0-255范围的调整值
-    
-    for (let i = 0; i < data.length; i += 4) {
-      // 调整RGB通道，保持Alpha不变
-      data[i] = this.clamp(data[i] + adjustment);     // Red
-      data[i + 1] = this.clamp(data[i + 1] + adjustment); // Green
-      data[i + 2] = this.clamp(data[i + 2] + adjustment); // Blue
-      // data[i + 3] = data[i + 3]; // Alpha保持不变
-    }
-
-    // 应用不透明度
-    if (parameters.opacity !== undefined && parameters.opacity < 1) {
-      return this.applyOpacity(result, parameters.opacity);
-    }
-    
-    return result;
+  /**
+   * 获取RGB处理函数
+   */
+  protected getRGBProcessor(parameters: BrightnessParameters): RGBProcessorFunction {
+    const adjustment = parameters.brightness * 2.55;
+    return PixelProcessor.createAdjustmentProcessor(adjustment);
   }
 
   /**

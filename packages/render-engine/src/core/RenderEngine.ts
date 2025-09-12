@@ -287,6 +287,70 @@ export class RenderEngine implements IRenderEngine {
     this.layerCache.cleanupExpiredCache();
   }
 
+  /**
+   * 点击测试 - 查找指定位置的可渲染对象
+   * @param point 屏幕坐标点
+   * @returns 命中的可渲染对象，如果没有则返回null
+   */
+  hitTest(point: IPoint): IRenderable | null {
+    const worldPoint = this.screenToWorld(point);
+    
+    // 从上到下遍历层（按z轴倒序）
+    const sortedLayers = Array.from(this.layers.values())
+      .filter(layer => layer.visible)
+      .sort((a, b) => b.zIndex - a.zIndex);
+    
+    for (const layer of sortedLayers) {
+      const renderables = layer.getRenderables().reverse(); // 从上到下
+      
+      for (const renderable of renderables) {
+        if (renderable.hitTest(worldPoint)) {
+          return renderable;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * 获取视口内的对象
+   * @returns 视口范围内的所有可渲染对象
+   */
+  getObjectsInViewport(): IRenderable[] {
+    const cullMargin = this.config.cullMargin || 50;
+    const viewportBounds = {
+      x: this.viewport.x - cullMargin,
+      y: this.viewport.y - cullMargin,
+      width: this.viewport.width / this.viewport.zoom + cullMargin * 2,
+      height: this.viewport.height / this.viewport.zoom + cullMargin * 2
+    };
+    
+    const result: IRenderable[] = [];
+    
+    for (const layer of this.layers.values()) {
+      if (!layer.visible) continue;
+      
+      for (const renderable of layer.getRenderables()) {
+        if (this.boundsIntersect(renderable.getBounds(), viewportBounds)) {
+          result.push(renderable);
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * 检查两个边界框是否相交
+   */
+  private boundsIntersect(a: any, b: any): boolean {
+    return !(a.x + a.width < b.x || 
+             b.x + b.width < a.x || 
+             a.y + a.height < b.y || 
+             b.y + b.height < a.y);
+  }
+
   dispose(): void {
     this.stop();
 

@@ -1,17 +1,17 @@
-import { IPoint, IRect } from '../graphics/IGraphicsContext';
-import { BaseRenderer, Drawable, RendererCapabilities, RenderState, RenderContext } from '../core';
+import { BaseRenderer, Drawable, RenderContext, RendererCapabilities, RenderState } from '../core';
 import {
   BlendMode,
   Buffer,
   BufferType,
   RenderStats
 } from '../core/RenderTypes';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { Matrix3x3, Vector2 } from '../math';
-import { WebGLBuffer, WebGLResourceManager } from '../resources/ResourceManager';
-import { DefaultShaders, WebGLShaderManager } from '../shaders/ShaderManager';
-import { WebGLTextureManager, TextureAtlas } from '../textures/TextureManager';
-import { WebGLMemoryManager, PoolType } from '../memory/MemoryManager';
+import { WebGLMemoryManager } from '../memory/MemoryManager';
 import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../performance/WebGLAnalyzer';
+import { WebGLResourceManager } from '../resources/ResourceManager';
+import { DefaultShaders, WebGLShaderManager } from '../shaders/ShaderManager';
+import { TextureAtlas, WebGLTextureManager } from '../textures/TextureManager';
 
 // WebGL渲染上下文
 export interface WebGLRenderContext extends RenderContext {

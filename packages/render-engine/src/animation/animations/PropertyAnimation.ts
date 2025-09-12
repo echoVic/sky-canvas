@@ -5,6 +5,7 @@
 
 import { BaseAnimation } from '../core/BaseAnimation';
 import { PropertyAnimationConfig } from '../types/AnimationTypes';
+import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils';
 
 export class PropertyAnimation extends BaseAnimation {
   private target: Record<string, any>;
@@ -41,7 +42,7 @@ export class PropertyAnimation extends BaseAnimation {
     
     try {
       // 支持嵌套属性（如 "transform.x"）
-      this.setNestedProperty(this.target, this.property, currentValue);
+      setNestedProperty(this.target, this.property, currentValue);
     } catch (error) {
       console.error(`Failed to set property ${this.property}:`, error);
     }
@@ -59,46 +60,20 @@ export class PropertyAnimation extends BaseAnimation {
    */
   private getCurrentPropertyValue(): number {
     try {
-      const value = this.getNestedProperty(this.target, this.property);
+      const value = getNestedProperty(this.target, this.property);
       return typeof value === 'number' ? value : 0;
     } catch {
       return 0;
     }
   }
 
-  /**
-   * 获取嵌套属性值
-   */
-  private getNestedProperty(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : undefined;
-    }, obj);
-  }
-
-  /**
-   * 设置嵌套属性值
-   */
-  private setNestedProperty(obj: any, path: string, value: number): void {
-    const keys = path.split('.');
-    const lastKey = keys.pop()!;
-    
-    // 导航到最后一级对象
-    const target = keys.reduce((current, key) => {
-      if (!current[key] || typeof current[key] !== 'object') {
-        current[key] = {};
-      }
-      return current[key];
-    }, obj);
-
-    target[lastKey] = value;
-  }
 
   /**
    * 重置属性到初始值
    */
   reset(): this {
     if (this.initialValue !== undefined) {
-      this.setNestedProperty(this.target, this.property, this.initialValue);
+      setNestedProperty(this.target, this.property, this.initialValue);
     }
     return this;
   }

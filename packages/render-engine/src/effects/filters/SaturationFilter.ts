@@ -4,13 +4,12 @@
  */
 
 import {
-    FilterContext,
     FilterType,
     SaturationParameters
 } from '../types/FilterTypes';
-import { BaseFilter } from './BaseFilter';
+import { PixelProcessor, RGBProcessorFunction } from './PixelProcessor';
 
-export class SaturationFilter extends BaseFilter<SaturationParameters> {
+export class SaturationFilter extends PixelProcessor<SaturationParameters> {
   readonly type = FilterType.SATURATION;
   readonly name = 'Saturation';
   readonly description = 'Adjusts the saturation of the image';
@@ -18,51 +17,27 @@ export class SaturationFilter extends BaseFilter<SaturationParameters> {
   readonly requiresWebGL = false;
 
   /**
-   * 处理饱和度调整滤镜
+   * 检查是否应该跳过处理
    */
-  protected async processFilter(
-    context: FilterContext, 
-    parameters: SaturationParameters
-  ): Promise<ImageData> {
-    const { sourceImageData } = context;
-    
-    if (parameters.saturation === 0) {
-      return this.cloneImageData(sourceImageData);
-    }
+  protected shouldSkipProcessing(parameters: SaturationParameters): boolean {
+    return parameters.saturation === 0;
+  }
 
-    const result = this.cloneImageData(sourceImageData);
-    const data = result.data;
-    
-    // 将饱和度值从-100~100转换为调整因子
+  /**
+   * 获取RGB处理函数
+   */
+  protected getRGBProcessor(parameters: SaturationParameters): RGBProcessorFunction {
     const saturation = 1 + (parameters.saturation / 100);
+    const calculateLuminance = PixelProcessor.createLuminanceProcessor();
     
-    // 计算灰度权重 (ITU-R BT.709标准)
-    const lumR = 0.2126;
-    const lumG = 0.7152;
-    const lumB = 0.0722;
-    
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      
-      // 计算亮度
-      const luminance = r * lumR + g * lumG + b * lumB;
-      
-      // 应用饱和度调整
-      // newColor = luminance + (originalColor - luminance) * saturation
-      data[i] = this.clamp(luminance + (r - luminance) * saturation);
-      data[i + 1] = this.clamp(luminance + (g - luminance) * saturation);
-      data[i + 2] = this.clamp(luminance + (b - luminance) * saturation);
-      // data[i + 3] = data[i + 3]; // Alpha保持不变
-    }
-
-    // 应用不透明度
-    if (parameters.opacity !== undefined && parameters.opacity < 1) {
-      return this.applyOpacity(result, parameters.opacity);
-    }
-    
-    return result;
+    return (r, g, b) => {
+      const luminance = calculateLuminance(r, g, b);
+      return [
+        luminance + (r - luminance) * saturation,
+        luminance + (g - luminance) * saturation,
+        luminance + (b - luminance) * saturation
+      ];
+    };
   }
 
   /**

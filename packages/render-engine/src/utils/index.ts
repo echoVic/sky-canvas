@@ -2,7 +2,13 @@
  * 工具函数库
  */
 
-// TODO: 实现工具函数
+// 对象工具函数
+export * from './ObjectUtils';
+
+// 颜色工具函数  
+export * from './ColorUtils';
+
+// 工具函数集合
 export const utils = {
-  // 工具函数将在后续实现
+  // 所有工具函数通过模块导出
 };
