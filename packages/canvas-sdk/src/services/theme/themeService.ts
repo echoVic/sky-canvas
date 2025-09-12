@@ -3,7 +3,7 @@
  * 功能单一：只负责主题配置和切换
  */
 
-import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { IConfigurationService } from '../configuration/configurationService';
 
@@ -79,7 +79,7 @@ export interface IThemeService {
 /**
  * 主题服务标识符
  */
-export const IThemeService = createServiceIdentifier<IThemeService>('ThemeService');
+export const IThemeService = createDecorator<IThemeService>('ThemeService');
 
 /**
  * 预定义主题配置
@@ -133,14 +133,13 @@ const THEME_CONFIGS: Record<ThemeType, IThemeConfig> = {
 /**
  * 主题服务实现
  */
-@injectable
 export class ThemeService implements IThemeService {
   private currentTheme: ThemeType;
   private customThemes = new Map<string, IThemeConfig>();
 
   constructor(
-    @inject(IEventBusService) private eventBus: IEventBusService,
-    @inject(IConfigurationService) private configService: IConfigurationService
+    @IEventBusService private eventBus: IEventBusService,
+    @IConfigurationService private configService: IConfigurationService
   ) {
     // 从配置中读取保存的主题，默认为浅色主题
     this.currentTheme = this.configService.get<ThemeType>('theme.current') || ThemeType.LIGHT;

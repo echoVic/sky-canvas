@@ -3,7 +3,7 @@
  * 纯业务协调单元，协调多个工具 ViewModels
  */
 
-import { createServiceIdentifier } from '../di/ServiceIdentifier';
+import { createDecorator } from '../di';
 import { ICanvasManager } from './CanvasManager';
 import { ISelectToolViewModel, IRectangleToolViewModel } from '../viewmodels/tools';
 import { IShortcutService, IHistoryService, IEventBusService } from '../services';
@@ -34,7 +34,7 @@ export interface IToolManager {
 /**
  * 工具管理器服务标识符
  */
-export const IToolManager = createServiceIdentifier<IToolManager>('ToolManager');
+export const IToolManager = createDecorator<IToolManager>('ToolManager');
 
 /**
  * 工具管理器实现

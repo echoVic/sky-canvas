@@ -7,11 +7,11 @@ import type { CanvasSDK } from './CanvasSDK';
 import { InstantiationService } from './di/InstantiationService';
 import { ServiceCollection } from './di/ServiceCollection';
 import { SyncDescriptor } from './di/descriptors';
-import { createDecorator, getSingletonServiceDescriptors } from './di/instantiation';
+import { getSingletonServiceDescriptors } from './di/instantiation';
 
 // 管理器
-import { CanvasManager } from './managers/CanvasManager';
-import { ToolManager } from './managers/ToolManager';
+import { CanvasManager, ICanvasManager } from './managers/CanvasManager';
+import { IToolManager, ToolManager } from './managers/ToolManager';
 
 // 服务
 import {
@@ -20,25 +20,22 @@ import {
   ConfigurationService,
   EventBusService,
   HistoryService,
+  ICanvasRenderingService,
+  IClipboardService,
+  IConfigurationService,
+  IEventBusService,
+  IHistoryService,
+  IInteractionService,
+  // 服务标识符
+  ILogService,
   InteractionService,
+  ISelectionService,
+  IShapeService,
   LogService,
   SelectionService,
   ShapeService,
   type LogLevel
 } from './services';
-
-// 创建服务标识符 - 按照 VSCode 模式
-export const ILogService = createDecorator<any>('logService');
-export const IEventBusService = createDecorator<any>('eventBusService');
-export const IConfigurationService = createDecorator<any>('configurationService');
-export const ISelectionService = createDecorator<any>('selectionService');
-export const IShapeService = createDecorator<any>('shapeService');
-export const IClipboardService = createDecorator<any>('clipboardService');
-export const IToolManager = createDecorator<any>('toolManager');
-export const ICanvasManager = createDecorator<any>('canvasManager');
-export const ICanvasRenderingService = createDecorator<any>('canvasRenderingService');
-export const IHistoryService = createDecorator<any>('historyService');
-export const IInteractionService = createDecorator<any>('interactionService');
 
 /**
  * SDK 配置接口

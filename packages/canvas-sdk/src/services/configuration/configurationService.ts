@@ -2,7 +2,7 @@
  * 配置服务
  */
 
-import { createServiceIdentifier, injectable } from '../../di/ServiceIdentifier';
+import { createDecorator } from '../../di';
 
 /**
  * 配置服务接口
@@ -19,12 +19,11 @@ export interface IConfigurationService {
 /**
  * 配置服务标识符
  */
-export const IConfigurationService = createServiceIdentifier<IConfigurationService>('ConfigurationService');
+export const IConfigurationService = createDecorator<IConfigurationService>('ConfigurationService');
 
 /**
  * 配置服务实现
  */
-@injectable
 export class ConfigurationService implements IConfigurationService {
   private config = new Map<string, any>();
 

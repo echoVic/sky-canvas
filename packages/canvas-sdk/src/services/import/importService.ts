@@ -2,7 +2,8 @@
  * 导入服务 - 单一职责：处理各种格式的导入功能
  */
 
-import { injectable } from '../../di/ServiceIdentifier';
+// 导入服务不需要DI注册，作为工具类使用
+import { createDecorator } from '../../di';
 import { ShapeEntity, ShapeEntityFactory } from '../../models/entities/Shape';
 
 /**
@@ -40,6 +41,8 @@ export interface IImportService {
   validateFileFormat(file: File): boolean;
 }
 
+export const IImportService = createDecorator<IImportService>('ImportService');
+
 /**
  * 支持的文件格式
  */
@@ -54,7 +57,6 @@ export enum SupportedFormat {
 /**
  * 导入服务实现
  */
-@injectable
 export class ImportService implements IImportService {
 
   /**

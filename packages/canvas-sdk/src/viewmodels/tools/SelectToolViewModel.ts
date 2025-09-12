@@ -4,12 +4,12 @@
  */
 
 import { proxy } from 'valtio';
-import { inject, injectable } from '../../di/ServiceIdentifier';
-import { ISelectionService } from '../../services/selection/selectionService';
-import { IEventBusService } from '../../services/eventBus/eventBusService';
-import { IViewModel } from '../interfaces/IViewModel';
+
 import { IPoint } from '@sky-canvas/render-engine';
 import { ShapeEntity } from '../../models/entities/Shape';
+import { IEventBusService } from '../../services/eventBus/eventBusService';
+import { ISelectionService } from '../../services/selection/selectionService';
+import { IViewModel } from '../interfaces/IViewModel';
 
 /**
  * 选择工具状态
@@ -47,13 +47,12 @@ export interface ISelectToolViewModel extends IViewModel {
 /**
  * 选择工具 ViewModel 实现
  */
-@injectable
 export class SelectToolViewModel implements ISelectToolViewModel {
   private readonly _state: ISelectToolState;
 
   constructor(
-    @inject(ISelectionService) private selectionService: ISelectionService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    private selectionService: ISelectionService,
+    private eventBus: IEventBusService
   ) {
     this._state = proxy<ISelectToolState>({
       isSelecting: false,

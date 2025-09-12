@@ -146,7 +146,3 @@ export * from './plugins/index';
 
 // 场景编辑器
 export * from './editor/index';
-
-// 组件库 - 避免与数学库的Rectangle冲突
-export { Circle, Text, Line } from './components/index';
-export { Rectangle as GraphicsRectangle } from './components/index';

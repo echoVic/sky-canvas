@@ -2,6 +2,8 @@
  * 日志服务 - 基于 VSCode DI 架构
  */
 
+import { createDecorator } from '../../di';
+
 /**
  * 日志级别
  */
@@ -20,6 +22,11 @@ export interface ILogService {
   setLevel(level: LogLevel): void;
   getLevel(): LogLevel;
 }
+
+/**
+ * 日志服务标识符
+ */
+export const ILogService = createDecorator<ILogService>('LogService');
 
 /**
  * 日志服务实现

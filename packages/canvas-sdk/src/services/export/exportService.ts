@@ -2,8 +2,8 @@
  * 导出服务 - 单一职责：处理各种格式的导出功能
  */
 
+import { createDecorator } from '../../di';
 import { ShapeEntity } from '../../models/entities/Shape';
-import { injectable } from '../../di/ServiceIdentifier';
 
 /**
  * 导出选项接口
@@ -34,10 +34,11 @@ export interface IExportService {
   downloadFile(content: string | Blob, filename: string, mimeType?: string): void;
 }
 
+export const IExportService = createDecorator<IExportService>('ExportService');
+
 /**
  * 导出服务实现
  */
-@injectable
 export class ExportService implements IExportService {
   
   /**

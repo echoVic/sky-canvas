@@ -4,7 +4,6 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { inject, injectable } from '../di/ServiceIdentifier';
 import { ICanvasManager } from '../managers/CanvasManager';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
@@ -73,13 +72,12 @@ export interface ICanvasViewModel extends IViewModel {
 /**
  * Canvas ViewModel 实现
  */
-@injectable
 export class CanvasViewModel implements ICanvasViewModel {
   private readonly _state: ICanvasState;
 
   constructor(
-    @inject(ICanvasManager) private canvasManager: ICanvasManager,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    private canvasManager: ICanvasManager,
+    private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<ICanvasState>({

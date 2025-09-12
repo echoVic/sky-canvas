@@ -3,6 +3,7 @@
  * 功能单一：只负责形状的复制、剪切、粘贴
  */
 
+import { createDecorator } from '../../di';
 import { IShapeEntity } from '../../models/entities/Shape';
 
 /**
@@ -34,6 +35,11 @@ export interface IClipboardService {
   hasData(): boolean;
   getClipboardData(): IClipboardData | null;
 }
+
+/**
+ * 剪贴板服务标识符
+ */
+export const IClipboardService = createDecorator<IClipboardService>('ClipboardService');
 
 /**
  * 剪贴板服务实现

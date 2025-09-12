@@ -2,6 +2,7 @@
  * 选择服务
  */
 
+import { createDecorator } from '../../di';
 import { IShapeEntity } from '../../models/entities/Shape';
 
 /**
@@ -25,6 +26,11 @@ export interface ISelectionService {
   getSelectionCount(): number;
   setSelectionMode(mode: SelectionMode): void;
 }
+
+/**
+ * 选择服务标识符
+ */
+export const ISelectionService = createDecorator<ISelectionService>('SelectionService');
 
 /**
  * 选择服务实现

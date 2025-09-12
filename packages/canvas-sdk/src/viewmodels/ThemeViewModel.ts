@@ -4,7 +4,6 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { inject, injectable } from '../di/ServiceIdentifier';
 import { IThemeService, ThemeType, IThemeConfig } from '../services/theme/themeService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
@@ -32,13 +31,12 @@ export interface IThemeViewModel extends IViewModel {
 /**
  * 主题 ViewModel 实现
  */
-@injectable
 export class ThemeViewModel implements IThemeViewModel {
   private readonly _state: IThemeState;
 
   constructor(
-    @inject(IThemeService) private themeService: IThemeService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    private themeService: IThemeService,
+    private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IThemeState>({

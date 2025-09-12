@@ -3,8 +3,9 @@
  * 由 DI 容器创建，通过构造函数注入获取服务
  */
 
-import { ICanvasManager, IEventBusService, ILogService } from './main';
+import { ICanvasManager } from './managers/CanvasManager';
 import type { LogLevel } from './services';
+import { IEventBusService, ILogService } from './services';
 
 /**
  * SDK 配置选项
@@ -50,94 +51,18 @@ export class CanvasSDK {
     this.logger.info('Canvas SDK disposed');
   }
 
-  // === 便民方法 - 直接委托给 CanvasManager ===
-
   /**
-   * 添加形状
+   * 事件监听
    */
-  addShape(shapeData: any): void {
-    const manager = this.getCanvasManager();
-    manager.addShape(shapeData);
+  on(eventName: string, callback: Function): void {
+    this.eventBus.on(eventName, callback);
   }
 
   /**
-   * 移除形状
+   * 移除事件监听
    */
-  removeShape(id: string): void {
-    const manager = this.getCanvasManager();
-    manager.removeShape(id);
-  }
-
-  /**
-   * 更新形状
-   */
-  updateShape(id: string, updates: any): void {
-    const manager = this.getCanvasManager();
-    manager.updateShape(id, updates);
-  }
-
-  /**
-   * 获取形状
-   */
-  getShape(id: string): any | undefined {
-    const manager = this.getCanvasManager();
-    return manager.getShape?.(id);
-  }
-
-  /**
-   * 获取所有形状
-   */
-  getShapes(): any[] {
-    const manager = this.getCanvasManager();
-    return manager.getShapes?.() || [];
-  }
-
-  /**
-   * 选择形状
-   */
-  selectShape(id: string): void {
-    const manager = this.getCanvasManager();
-    manager.selectShape(id);
-  }
-
-  /**
-   * 取消选择形状
-   */
-  deselectShape(id: string): void {
-    const manager = this.getCanvasManager();
-    manager.deselectShape(id);
-  }
-
-  /**
-   * 清空选择
-   */
-  clearSelection(): void {
-    const manager = this.getCanvasManager();
-    manager.clearSelection();
-  }
-
-  /**
-   * 撤销
-   */
-  undo(): void {
-    const manager = this.getCanvasManager();
-    manager.undo();
-  }
-
-  /**
-   * 重做
-   */
-  redo(): void {
-    const manager = this.getCanvasManager();
-    manager.redo();
-  }
-
-  /**
-   * 获取统计信息
-   */
-  getStats(): any {
-    const manager = this.getCanvasManager();
-    return manager.getStats();
+  off(eventName: string, callback?: Function): void {
+    this.eventBus.off(eventName, callback);
   }
 }
 

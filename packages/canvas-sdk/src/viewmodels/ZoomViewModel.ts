@@ -4,7 +4,7 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { inject, injectable } from '../di/ServiceIdentifier';
+// ViewModel不需要DI装饰器，使用构造函数注入
 import { IZoomService, IZoomConfig } from '../services/zoom/zoomService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
@@ -36,13 +36,12 @@ export interface IZoomViewModel extends IViewModel {
 /**
  * 缩放 ViewModel 实现
  */
-@injectable
 export class ZoomViewModel implements IZoomViewModel {
   private readonly _state: IZoomState;
 
   constructor(
-    @inject(IZoomService) private zoomService: IZoomService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    private zoomService: IZoomService,
+    private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IZoomState>({

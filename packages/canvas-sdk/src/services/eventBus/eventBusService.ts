@@ -2,6 +2,8 @@
  * 事件总线服务 - 基于 VSCode DI 架构
  */
 
+import { createDecorator } from '../../di';
+
 /**
  * 事件总线服务接口
  */
@@ -13,6 +15,11 @@ export interface IEventBusService {
   once<T>(event: string, handler: (data: T) => void): void;
   removeAllListeners(event?: string): void;
 }
+
+/**
+ * 事件总线服务标识符
+ */
+export const IEventBusService = createDecorator<IEventBusService>('EventBusService');
 
 /**
  * 事件总线服务实现

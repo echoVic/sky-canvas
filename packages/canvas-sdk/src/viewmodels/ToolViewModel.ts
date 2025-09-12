@@ -4,7 +4,7 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { inject, injectable } from '../di/ServiceIdentifier';
+// ViewModel不需要DI装饰器，使用构造函数注入
 import { IToolManager } from '../managers/ToolManager';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
@@ -57,13 +57,12 @@ export interface IToolViewModel extends IViewModel {
 /**
  * 工具 ViewModel 实现
  */
-@injectable
 export class ToolViewModel implements IToolViewModel {
   private readonly _state: IToolState;
 
   constructor(
-    @inject(IToolManager) private toolManager: IToolManager,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    private toolManager: IToolManager,
+    private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IToolState>({

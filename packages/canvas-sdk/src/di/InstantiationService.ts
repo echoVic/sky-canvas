@@ -2,8 +2,8 @@
  * 实例化服务 - 基于 VSCode DI 架构
  */
 
-import { illegalState } from '../../../base/common/errors';
-import { DisposableStore, dispose, isDisposable } from '../../../base/common/lifecycle';
+import { illegalState } from './common/errors';
+import { DisposableStore, dispose, isDisposable } from './common/lifecycle';
 import { SyncDescriptor, SyncDescriptor0 } from './descriptors';
 import { Graph } from './graph';
 import { GetLeadingNonServiceArgs, IInstantiationService, ServiceIdentifier, ServicesAccessor, _util } from './instantiation';

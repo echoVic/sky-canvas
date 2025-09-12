@@ -2,6 +2,7 @@
  * 历史服务 - 基于 VSCode DI 架构
  */
 
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService } from '../logging/logService';
 
@@ -28,6 +29,11 @@ export interface IHistoryService {
   getHistory(): ICommand[];
   getCurrentIndex(): number;
 }
+
+/**
+ * 历史服务标识符
+ */
+export const IHistoryService = createDecorator<IHistoryService>('HistoryService');
 
 /**
  * 历史服务实现

@@ -1,16 +1,18 @@
 /**
- * sky-canvas - Canvas SDK Public API
+ * Sky Canvas SDK - Public API
  * 
  * @packageDocumentation
  */
 
-// The primary factory function for creating an SDK instance.
+// 主要工厂函数 - 创建SDK实例
 export { createCanvasSDK } from './main';
 
-// Core types for consumers of the SDK.
+// 核心类型
 export type { CanvasSDK, ICanvasSDKConfig } from './CanvasSDK';
 export type { SDKConfig } from './main';
 
-// Export any other public-facing types or interfaces your SDK offers.
-// For example, if you want users to be able to interact with shapes:
-// export type { Shape, ShapeType, Circle, Rect } from './shapes';
+// 形状实体类型
+export type {
+  ICircleEntity,
+  IPathEntity, IRectangleEntity, ITextEntity, ShapeEntity
+} from './models/entities/Shape';

@@ -4,8 +4,16 @@
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
+import { createDecorator } from '../di';
 import { ShapeEntity } from '../models/entities/Shape';
-import { Container } from '../container/Container';
+import {
+  IClipboardService,
+  IEventBusService,
+  IHistoryService,
+  ILogService,
+  ISelectionService,
+  IShapeService
+} from '../services';
 
 /**
  * Canvas 管理器接口
@@ -43,6 +51,11 @@ export interface ICanvasManager {
 }
 
 /**
+ * Canvas 管理器服务标识符
+ */
+export const ICanvasManager = createDecorator<ICanvasManager>('CanvasManager');
+
+/**
  * Canvas 管理器实现
  * 使用 VSCode DI 模式的构造函数注入
  */
@@ -50,12 +63,12 @@ export class CanvasManager implements ICanvasManager {
   readonly _serviceBrand: undefined;
 
   constructor(
-    @Container.IEventBusService private eventBus: any,
-    @Container.ILogService private logService: any,
-    @Container.IShapeService private shapeService: any,
-    @Container.ISelectionService private selectionService: any,
-    @Container.IClipboardService private clipboardService: any,
-    @Container.IHistoryService private historyService: any
+    @IEventBusService private eventBus: any,
+    @ILogService private logService: any,
+    @IShapeService private shapeService: any,
+    @ISelectionService private selectionService: any,
+    @IClipboardService private clipboardService: any,
+    @IHistoryService private historyService: any
   ) {
     this.setupIntegration();
   }

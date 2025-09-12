@@ -2,7 +2,7 @@
  * 渲染服务
  */
 
-import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 
@@ -25,20 +25,19 @@ export interface ICanvasRenderingService {
 /**
  * 渲染服务标识符
  */
-export const ICanvasRenderingService = createServiceIdentifier<ICanvasRenderingService>('CanvasRenderingService');
+export const ICanvasRenderingService = createDecorator<ICanvasRenderingService>('CanvasRenderingService');
 
 /**
  * 渲染服务实现
  */
-@injectable
 export class CanvasRenderingService implements ICanvasRenderingService {
   private renderEngine: any;
   private running = false;
   private renderables = new Map<string, any>();
 
   constructor(
-    @inject(IEventBusService) private eventBus: IEventBusService,
-    @inject(ILogService) private logger: ILogServiceInterface
+    @IEventBusService private eventBus: IEventBusService,
+    @ILogService private logger: ILogServiceInterface
   ) {}
 
   async initialize(canvas: HTMLCanvasElement, config: any): Promise<void> {

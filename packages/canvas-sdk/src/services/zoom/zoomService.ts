@@ -3,7 +3,7 @@
  * 功能单一：只负责缩放级别的管理和计算
  */
 
-import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 
 /**
@@ -45,18 +45,17 @@ export interface IZoomService {
 /**
  * 缩放服务标识符
  */
-export const IZoomService = createServiceIdentifier<IZoomService>('ZoomService');
+export const IZoomService = createDecorator<IZoomService>('ZoomService');
 
 /**
  * 缩放服务实现
  */
-@injectable
 export class ZoomService implements IZoomService {
   private currentZoom: number;
   private config: IZoomConfig;
 
   constructor(
-    @inject(IEventBusService) private eventBus: IEventBusService
+    @IEventBusService private eventBus: IEventBusService
   ) {
     this.config = {
       minZoom: 0.1,

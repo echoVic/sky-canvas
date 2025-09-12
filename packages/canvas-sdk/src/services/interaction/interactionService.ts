@@ -2,7 +2,7 @@
  * 交互服务
  */
 
-import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 
@@ -37,12 +37,11 @@ export interface IInteractionService {
 /**
  * 交互服务标识符
  */
-export const IInteractionService = createServiceIdentifier<IInteractionService>('InteractionService');
+export const IInteractionService = createDecorator<IInteractionService>('InteractionService');
 
 /**
  * 交互服务实现
  */
-@injectable
 export class InteractionService implements IInteractionService {
   private canvas?: HTMLCanvasElement;
   private activeTool: ITool | null = null;
@@ -51,8 +50,8 @@ export class InteractionService implements IInteractionService {
   private eventListeners: Array<{ element: any; event: string; handler: any }> = [];
 
   constructor(
-    @inject(IEventBusService) private eventBus: IEventBusService,
-    @inject(ILogService) private logger: ILogServiceInterface
+    @IEventBusService private eventBus: IEventBusService,
+    @ILogService private logger: ILogServiceInterface
   ) {}
 
   initialize(canvas: HTMLCanvasElement): void {

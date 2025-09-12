@@ -3,6 +3,7 @@
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
+import { createDecorator } from '../../di';
 import { ShapeEntity } from '../../models/entities/Shape';
 import { RenderableShapeView } from '../../views/RenderableShapeView';
 /**
@@ -35,6 +36,11 @@ export interface IShapeService {
     shapesByType: Record<string, number>;
   };
 }
+
+/**
+ * 形状服务标识符
+ */
+export const IShapeService = createDecorator<IShapeService>('ShapeService');
 
 /**
  * 形状服务实现

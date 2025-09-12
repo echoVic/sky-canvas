@@ -1,8 +1,9 @@
 /**
- * Sky Canvas AI扩展系统
- * 为画板SDK提供完整的AI交互能力
+ * Sky Canvas AI扩展系统 - 已注释
+ * 此文件已被完全注释，后续需要时再启用
  */
 
+/*
 // 导出核心类型定义
 export * from './types';
 
@@ -37,3 +38,4 @@ export {
   ShapeGeneratorAIExtension,
   AIExtensionExample
 } from './example';
+*/

@@ -1,8 +1,7 @@
 /**
  * 依赖注入核心类型定义 - 基于 VSCode DI 架构
  */
-
-import { DisposableStore } from '../../../base/common/lifecycle';
+import { DisposableStore } from './common/lifecycle';
 import * as descriptors from './descriptors';
 import { ServiceCollection } from './ServiceCollection';
 

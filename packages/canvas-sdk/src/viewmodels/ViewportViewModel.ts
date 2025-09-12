@@ -4,21 +4,20 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { inject, injectable } from '../di/ServiceIdentifier';
-import { IZoomService } from '../services/zoom/zoomService';
+// ViewModel不需要DI装饰器，使用构造函数注入
+import { ShapeEntity } from '../models/entities/Shape';
 import { IConfigurationService } from '../services/configuration/configurationService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewportViewModel, IViewportState } from './interfaces/IViewModel';
-import { ShapeEntity } from '../models/entities/Shape';
+import { IZoomService } from '../services/zoom/zoomService';
+import { IViewportState, IViewportViewModel } from './interfaces/IViewModel';
 
-@injectable
 export class ViewportViewModel implements IViewportViewModel {
   private readonly _state: IViewportState;
 
   constructor(
-    @inject(IZoomService) private zoomService: IZoomService,
-    @inject(IConfigurationService) private configService: IConfigurationService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    private zoomService: IZoomService,
+    private configService: IConfigurationService,
+    private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IViewportState>({

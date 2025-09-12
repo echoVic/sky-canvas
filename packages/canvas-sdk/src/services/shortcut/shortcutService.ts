@@ -3,7 +3,7 @@
  * 功能单一：只负责快捷键的注册、监听和触发
  */
 
-import { createServiceIdentifier, injectable, inject } from '../../di/ServiceIdentifier';
+import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 
 /**
@@ -48,19 +48,18 @@ export interface IShortcutService {
 /**
  * 快捷键服务标识符
  */
-export const IShortcutService = createServiceIdentifier<IShortcutService>('ShortcutService');
+export const IShortcutService = createDecorator<IShortcutService>('ShortcutService');
 
 /**
  * 快捷键服务实现
  */
-@injectable
 export class ShortcutService implements IShortcutService {
   private shortcuts = new Map<string, { config: IShortcutConfig; handler: ShortcutHandler }>();
   private enabled = false;
   private boundHandler: (event: KeyboardEvent) => void;
 
   constructor(
-    @inject(IEventBusService) private eventBus: IEventBusService
+    @IEventBusService private eventBus: IEventBusService
   ) {
     this.boundHandler = this.handleKeydown.bind(this);
   }
