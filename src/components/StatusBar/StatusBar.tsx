@@ -1,24 +1,19 @@
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
 import { HelpCircle, Minus, Plus, Redo, Settings, Undo } from 'lucide-react'
 import React from 'react'
-import { useCanvas } from '../../contexts'
+import { useCanvasSDK } from '../../hooks'
 import { useCanvasStore } from '../../store/canvasStore'
 
 const StatusBar: React.FC = () => {
   const { zoom, setZoom } = useCanvasStore()
-  const [sdkState, sdkActions] = useCanvas()
+  const [sdkState, sdkActions] = useCanvasSDK()
 
   // 预设缩放级别
   const zoomLevels = [25, 50, 75, 100, 125, 150, 200, 300, 400]
 
   const handleZoomChange = (newZoom: number) => {
     setZoom(newZoom)
-    if (sdkState.isInitialized && sdkActions.zoomViewport) {
-      // 将百分比转换为缩放因子
-      const zoomFactor = newZoom / 100
-      const currentZoom = sdkState.viewport?.zoom || 1
-      sdkActions.zoomViewport(zoomFactor / currentZoom)
-    }
+    // TODO: 实现缩放功能，需要通过CanvasManager
   }
 
   const handleZoomIn = () => {
@@ -42,19 +37,13 @@ const StatusBar: React.FC = () => {
   }
 
   const handleFitToContent = () => {
-    if (sdkState.isInitialized && sdkActions.fitToContent) {
-      sdkActions.fitToContent()
-      // 更新store中的缩放值
-      setTimeout(() => {
-        const newZoom = Math.round((sdkState.viewport?.zoom || 1) * 100)
-        setZoom(newZoom)
-      }, 100)
-    }
+    // TODO: 实现适应内容功能，需要通过CanvasManager
+    console.log('Fit to content - 功能待实现')
   }
 
   return (
     <div className="flex items-center gap-2 bg-white dark:bg-gray-900 rounded-lg p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
-      {/* 撤销重做按钮 */}
+      {/* 撤销重做按钮 - 功能待实现 */}
       {sdkState.isInitialized && (
         <>
           <div className="flex items-center gap-0.5">
@@ -62,10 +51,10 @@ const StatusBar: React.FC = () => {
               variant="light"
               size="sm"
               isIconOnly
-              isDisabled={!sdkState.canUndo}
-              onPress={sdkActions.undo}
+              isDisabled={true}
+              onPress={() => console.log('Undo - 功能待实现')}
               className="flex items-center justify-center min-w-0 rounded-md h-7 w-7 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="撤销"
+              title="撤销（待实现）"
             >
               <div className="flex items-center justify-center w-full h-full">
                 <Undo size={12} />
@@ -76,10 +65,10 @@ const StatusBar: React.FC = () => {
               variant="light"
               size="sm"
               isIconOnly
-              isDisabled={!sdkState.canRedo}
-              onPress={sdkActions.redo}
+              isDisabled={true}
+              onPress={() => console.log('Redo - 功能待实现')}
               className="flex items-center justify-center min-w-0 rounded-md h-7 w-7 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="重做"
+              title="重做（待实现）"
             >
               <div className="flex items-center justify-center w-full h-full">
                 <Redo size={12} />

@@ -1,34 +1,35 @@
 /**
- * Vitest 测试环境设置
+ * Vitest 测试设置文件
  */
 
-import { vi, afterEach } from 'vitest';
 import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
+import { vi } from 'vitest';
 
-// 每个测试后清理
-afterEach(() => {
-  cleanup();
-});
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  key: vi.fn(),
-  length: 0
+// Mock Canvas 2D Context
+const mockCanvas2DContext = {
+  clearRect: vi.fn(),
+  fillRect: vi.fn(),
+  strokeRect: vi.fn(),
+  fillText: vi.fn(),
+  strokeText: vi.fn(),
+  measureText: vi.fn(() => ({ width: 0 })),
+  beginPath: vi.fn(),
+  closePath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  arc: vi.fn(),
+  stroke: vi.fn(),
+  fill: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  scale: vi.fn(),
+  setTransform: vi.fn(),
+  getTransform: vi.fn(),
+  setLineDash: vi.fn(),
+  getLineDash: vi.fn(),
 };
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
-});
-
-// Mock sessionStorage
-Object.defineProperty(window, 'sessionStorage', {
-  value: localStorageMock
-});
 
 // Mock performance.memory
 Object.defineProperty(performance, 'memory', {
@@ -40,312 +41,59 @@ Object.defineProperty(performance, 'memory', {
   configurable: true
 });
 
-// Mock window.confirm
-Object.defineProperty(window, 'confirm', {
-  value: vi.fn(() => true),
-  configurable: true
-});
-
-// Mock window.alert
-Object.defineProperty(window, 'alert', {
-  value: vi.fn(),
-  configurable: true
-});
-
-// Mock console methods to reduce noise in tests
-global.console = {
-  ...console,
-  log: vi.fn(),
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn()
-};
-
-// Mock global.gc for memory management tests
-Object.defineProperty(global, 'gc', {
-  value: vi.fn(),
-  configurable: true
-});
-
 // Mock ResizeObserver
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn()
+  disconnect: vi.fn(),
 }));
 
-// Mock IntersectionObserver
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn()
-}));
+// Mock WebGL Context
+const mockWebGLContext = {
+  canvas: null,
+  drawingBufferWidth: 800,
+  drawingBufferHeight: 600,
+  getExtension: vi.fn(),
+  getParameter: vi.fn(),
+  createShader: vi.fn(),
+  shaderSource: vi.fn(),
+  compileShader: vi.fn(),
+  getShaderParameter: vi.fn(),
+  createProgram: vi.fn(),
+  attachShader: vi.fn(),
+  linkProgram: vi.fn(),
+  getProgramParameter: vi.fn(),
+  useProgram: vi.fn(),
+  createBuffer: vi.fn(),
+  bindBuffer: vi.fn(),
+  bufferData: vi.fn(),
+  getAttribLocation: vi.fn(),
+  vertexAttribPointer: vi.fn(),
+  enableVertexAttribArray: vi.fn(),
+  getUniformLocation: vi.fn(),
+  uniform1f: vi.fn(),
+  uniform2f: vi.fn(),
+  uniform3f: vi.fn(),
+  uniform4f: vi.fn(),
+  uniformMatrix4fv: vi.fn(),
+  clear: vi.fn(),
+  clearColor: vi.fn(),
+  enable: vi.fn(),
+  disable: vi.fn(),
+  depthFunc: vi.fn(),
+  blendFunc: vi.fn(),
+  viewport: vi.fn(),
+  drawArrays: vi.fn(),
+  drawElements: vi.fn(),
+};
 
-// Mock requestAnimationFrame
-global.requestAnimationFrame = vi.fn((cb) => {
-  setTimeout(cb, 16);
-  return 1;
-});
-
-global.cancelAnimationFrame = vi.fn();
-
-// Mock URL.createObjectURL
-global.URL.createObjectURL = vi.fn(() => 'mock-url');
-global.URL.revokeObjectURL = vi.fn();
-
-// Mock HTMLCanvasElement
-(HTMLCanvasElement.prototype.getContext as any) = vi.fn((type: string) => {
-  if (type === '2d') {
-    return {
-      fillRect: vi.fn(),
-      clearRect: vi.fn(),
-      getImageData: vi.fn(),
-      putImageData: vi.fn(),
-      createLinearGradient: vi.fn(),
-      createRadialGradient: vi.fn(),
-      createPattern: vi.fn(),
-      setTransform: vi.fn(),
-      resetTransform: vi.fn(),
-      drawImage: vi.fn(),
-      save: vi.fn(),
-      restore: vi.fn(),
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      closePath: vi.fn(),
-      stroke: vi.fn(),
-      fill: vi.fn(),
-      arc: vi.fn(),
-      rect: vi.fn(),
-      transform: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      scale: vi.fn(),
-      measureText: vi.fn(() => ({ width: 100 })),
-      fillText: vi.fn(),
-      strokeText: vi.fn(),
-      canvas: {
-        width: 800,
-        height: 600,
-      },
-    };
+// Mock HTMLCanvasElement.getContext with proper typing
+HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
+  if (contextType === 'webgl' || contextType === 'webgl2') {
+    return mockWebGLContext as any;
   }
-  if (type === 'webgl' || type === 'webgl2') {
-    return {
-      canvas: {
-        width: 800,
-        height: 600,
-      },
-      createShader: vi.fn(),
-      shaderSource: vi.fn(),
-      compileShader: vi.fn(),
-      createProgram: vi.fn(),
-      attachShader: vi.fn(),
-      linkProgram: vi.fn(),
-      useProgram: vi.fn(),
-      createBuffer: vi.fn(),
-      bindBuffer: vi.fn(),
-      bufferData: vi.fn(),
-      getAttribLocation: vi.fn(),
-      enableVertexAttribArray: vi.fn(),
-      vertexAttribPointer: vi.fn(),
-      drawArrays: vi.fn(),
-      clear: vi.fn(),
-      clearColor: vi.fn(),
-      viewport: vi.fn(),
-    };
+  if (contextType === '2d') {
+    return mockCanvas2DContext as any;
   }
   return null;
-});
-
-HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,mock');
-
-// Mock Blob
-global.Blob = class MockBlob {
-  constructor(public parts: any[], public options?: any) {}
-  
-  size = 0;
-  type = '';
-  
-  arrayBuffer() {
-    return Promise.resolve(new ArrayBuffer(0));
-  }
-  
-  text() {
-    return Promise.resolve('');
-  }
-  
-  stream() {
-    return new ReadableStream();
-  }
-  
-  slice() {
-    return new MockBlob([]);
-  }
-} as any;
-
-// Mock File
-global.File = class MockFile extends global.Blob {
-  constructor(
-    parts: any[], 
-    public name: string, 
-    options?: any
-  ) {
-    super(parts, options);
-  }
-  
-  lastModified = Date.now();
-  webkitRelativePath = '';
-} as any;
-
-// Mock FileReader
-global.FileReader = class MockFileReader {
-  result: any = null;
-  error: any = null;
-  readyState = 0;
-  
-  onload: ((event: any) => void) | null = null;
-  onerror: ((event: any) => void) | null = null;
-  onabort: ((event: any) => void) | null = null;
-  
-  readAsText() {
-    setTimeout(() => {
-      this.result = 'mock file content';
-      this.readyState = 2;
-      if (this.onload) {
-        this.onload({ target: this });
-      }
-    }, 0);
-  }
-  
-  readAsDataURL() {
-    setTimeout(() => {
-      this.result = 'data:text/plain;base64,bW9jayBmaWxlIGNvbnRlbnQ=';
-      this.readyState = 2;
-      if (this.onload) {
-        this.onload({ target: this });
-      }
-    }, 0);
-  }
-  
-  readAsArrayBuffer() {
-    setTimeout(() => {
-      this.result = new ArrayBuffer(0);
-      this.readyState = 2;
-      if (this.onload) {
-        this.onload({ target: this });
-      }
-    }, 0);
-  }
-  
-  abort() {
-    this.readyState = 0;
-    if (this.onabort) {
-      this.onabort({ target: this });
-    }
-  }
-} as any;
-
-// 设置测试环境变量
-process.env.NODE_ENV = 'test';
-
-// Simple way to mock WebGL types without type conflicts
-Object.defineProperty(global, 'WebGLRenderingContext', {
-  value: class {
-    static ARRAY_BUFFER = 0x8892;
-    static ELEMENT_ARRAY_BUFFER = 0x8893;
-    static STATIC_DRAW = 0x88E4;
-    static DYNAMIC_DRAW = 0x88E8;
-    static STREAM_DRAW = 0x88E0;
-    static UNSIGNED_SHORT = 0x1403;
-    static VERTEX_SHADER = 0x8B31;
-    static FRAGMENT_SHADER = 0x8B30;
-    
-    canvas = { width: 800, height: 600 };
-    
-    // Mock all methods to avoid undefined errors
-    createShader = vi.fn();
-    shaderSource = vi.fn();
-    compileShader = vi.fn();
-    createProgram = vi.fn();
-    attachShader = vi.fn();
-    linkProgram = vi.fn();
-    useProgram = vi.fn();
-    createBuffer = vi.fn();
-    bindBuffer = vi.fn();
-    bufferData = vi.fn();
-    getAttribLocation = vi.fn();
-    enableVertexAttribArray = vi.fn();
-    vertexAttribPointer = vi.fn();
-    drawArrays = vi.fn();
-    clear = vi.fn();
-    clearColor = vi.fn();
-    viewport = vi.fn();
-    getExtension = vi.fn();
-    deleteBuffer = vi.fn();
-    getUniformLocation = vi.fn();
-    uniform1i = vi.fn();
-    uniform1f = vi.fn();
-    uniform2f = vi.fn();
-    uniform3f = vi.fn();
-    uniform4f = vi.fn();
-    uniformMatrix4fv = vi.fn();
-    enable = vi.fn();
-    disable = vi.fn();
-    blendFunc = vi.fn();
-    depthFunc = vi.fn();
-    cullFace = vi.fn();
-    frontFace = vi.fn();
-    drawElements = vi.fn();
-    bufferSubData = vi.fn();
-    deleteShader = vi.fn();
-    deleteProgram = vi.fn();
-    getShaderParameter = vi.fn();
-    getProgramParameter = vi.fn();
-    getShaderInfoLog = vi.fn();
-    getProgramInfoLog = vi.fn();
-    scissor = vi.fn();
-    activeTexture = vi.fn();
-    bindTexture = vi.fn();
-    texImage2D = vi.fn();
-    texParameteri = vi.fn();
-    generateMipmap = vi.fn();
-    getError = vi.fn();
-    finish = vi.fn();
-    flush = vi.fn();
-  },
-  configurable: true,
-  writable: true
-});
-
-Object.defineProperty(global, 'WebGL2RenderingContext', {
-  value: class extends (global as any).WebGLRenderingContext {
-    // WebGL2 specific methods
-    texStorage2D = vi.fn();
-    texSubImage2D = vi.fn();
-    vertexAttribIPointer = vi.fn();
-    uniform1ui = vi.fn();
-    uniform2ui = vi.fn();
-    uniform3ui = vi.fn();
-    uniform4ui = vi.fn();
-    getActiveUniforms = vi.fn();
-    getUniformBlockIndex = vi.fn();
-    uniformBlockBinding = vi.fn();
-    createVertexArray = vi.fn();
-    bindVertexArray = vi.fn();
-    deleteVertexArray = vi.fn();
-  },
-  configurable: true,
-  writable: true
-});
-
-Object.defineProperty(global, 'OES_vertex_array_object', {
-  value: class {
-    createVertexArrayOES = vi.fn();
-    bindVertexArrayOES = vi.fn();
-    deleteVertexArrayOES = vi.fn();
-  },
-  configurable: true,
-  writable: true
-});
+}) as any;

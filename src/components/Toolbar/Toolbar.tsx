@@ -17,7 +17,7 @@ import {
   LucideIcon
 } from 'lucide-react'
 import { useCanvasStore } from '../../store/canvasStore'
-import { useCanvas } from '../../contexts'
+import { useCanvasSDK } from '../../hooks'
 
 const iconMap: Record<string, LucideIcon> = {
   MousePointer2, Hand, Square, Diamond, Circle, MoveRight, Minus, 
@@ -26,7 +26,7 @@ const iconMap: Record<string, LucideIcon> = {
 
 const Toolbar: React.FC = () => {
   const { tools, selectedTool, setSelectedTool } = useCanvasStore()
-  const [sdkState, sdkActions] = useCanvas()
+  const [sdkState, sdkActions] = useCanvasSDK()
 
   return (
     <div className="flex items-center gap-0.5 bg-white dark:bg-gray-900 rounded-lg p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
@@ -50,7 +50,10 @@ const Toolbar: React.FC = () => {
               setSelectedTool(tool.id)
               // 然后同步到SDK
               if (sdkState.isInitialized) {
-                sdkActions.setTool(tool.id)
+                const toolManager = sdkActions.getToolManager()
+                if (toolManager) {
+                  toolManager.activateTool(tool.id)
+                }
               }
             }}
             title={tool.name}

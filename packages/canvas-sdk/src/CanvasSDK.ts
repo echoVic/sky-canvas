@@ -4,6 +4,7 @@
  */
 
 import { ICanvasManager } from './managers/CanvasManager';
+import { IToolManager } from './managers/ToolManager';
 import type { LogLevel } from './services';
 import { IEventBusService, ILogService } from './services';
 
@@ -31,6 +32,7 @@ export interface ICanvasSDKConfig {
 export class CanvasSDK {
   constructor(
     @ICanvasManager private canvasManager: any,
+    @IToolManager private toolManager: any,
     @IEventBusService private eventBus: any,
     @ILogService private logger: any
   ) {
@@ -42,6 +44,13 @@ export class CanvasSDK {
    */
   getCanvasManager(): any {
     return this.canvasManager;
+  }
+
+  /**
+   * 获取 Tool Manager - 工具管理
+   */
+  getToolManager(): any {
+    return this.toolManager;
   }
 
   /**

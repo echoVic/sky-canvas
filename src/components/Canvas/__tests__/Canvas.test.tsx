@@ -1,15 +1,14 @@
-import React, { act } from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import Canvas from '../Canvas';
-import { useCanvasStore } from '../../../store/canvasStore';
-import { useCanvas } from '../../../contexts';
-import { useCanvasInteraction } from '../../../hooks';
+// useCanvas已被useCanvasSDK替代
 import { InteractionMode } from '@sky-canvas/canvas-sdk';
+import { render, screen, waitFor } from '@testing-library/react';
+import React, { act } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useCanvasInteraction, useCanvasSDK } from '../../../hooks';
+import { useCanvasStore } from '../../../store/canvasStore';
+import Canvas from '../Canvas';
 
 // Mock dependencies
 vi.mock('../../../store/canvasStore');
-vi.mock('../../../contexts');
 vi.mock('../../../hooks');
 vi.mock('@sky-canvas/render-engine', () => ({
   Canvas2DContextFactory: vi.fn(() => ({
@@ -37,35 +36,21 @@ const mockSDKState = {
 
 const mockSDKActions = {
   initialize: vi.fn(),
+  getCanvasManager: vi.fn(),
+  getToolManager: vi.fn(),
   addShape: vi.fn(),
   removeShape: vi.fn(),
   updateShape: vi.fn(),
   selectShape: vi.fn(),
   deselectShape: vi.fn(),
   clearSelection: vi.fn(),
+  hitTest: vi.fn(),
   undo: vi.fn(),
   redo: vi.fn(),
   clearShapes: vi.fn(),
-  hitTest: vi.fn(),
-  // 新增的交互系统方法
-  setActiveTool: vi.fn(() => true),
-  getActiveTool: vi.fn(),
-  registerTool: vi.fn(),
-  setInteractionMode: vi.fn(),
-  getInteractionManager: vi.fn(),
-  registerInteractionTool: vi.fn(),
-  setInteractionEnabled: vi.fn(),
-  setTool: vi.fn(() => true),
-  // 新增的视口控制方法
-  setViewport: vi.fn(),
-  panViewport: vi.fn(),
-  zoomViewport: vi.fn(),
-  fitToContent: vi.fn(),
-  resetViewport: vi.fn(),
-  // 新增的渲染控制方法
-  startRender: vi.fn(),
-  stopRender: vi.fn(),
-  render: vi.fn(),
+  setTool: vi.fn(),
+  on: vi.fn(),
+  off: vi.fn(),
   dispose: vi.fn(),
 };
 
@@ -185,7 +170,7 @@ describe('Canvas', () => {
     
     // 设置mock
     vi.mocked(useCanvasStore).mockReturnValue(mockCanvasStore);
-    vi.mocked(useCanvas).mockReturnValue([mockSDKState, mockSDKActions]);
+    vi.mocked(useCanvasSDK).mockReturnValue([mockSDKState, mockSDKActions]);
     
     // 模拟 useCanvasInteraction hook 的行为
     vi.mocked(useCanvasInteraction).mockReturnValue({ interactionState: mockInteractionState });
@@ -261,7 +246,7 @@ describe('Canvas', () => {
         isInitialized: true,
       };
       
-      vi.mocked(useCanvas).mockReturnValue([initializedState, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([initializedState, mockSDKActions]);
       
       render(<Canvas />);
       
@@ -311,14 +296,9 @@ describe('Canvas', () => {
         shapes: [mockShape],
       };
 
-      vi.mocked(useCanvas).mockReturnValue([stateWithShapes, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([stateWithShapes, mockSDKActions]);
 
-      // Mock InteractionManager
-      const mockInteractionManager = {
-        registerTool: vi.fn(),
-        setActiveTool: vi.fn(),
-      };
-      vi.mocked(mockSDKActions.getInteractionManager).mockReturnValue(mockInteractionManager);
+      // InteractionManager功能暂时移除
 
       // 直接调用render方法
       render(<Canvas />);
@@ -342,14 +322,9 @@ describe('Canvas', () => {
         selectedShapes: [mockShape],
       };
 
-      vi.mocked(useCanvas).mockReturnValue([stateWithSelectedShape, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([stateWithSelectedShape, mockSDKActions]);
 
-      // Mock InteractionManager
-      const mockInteractionManager = {
-        registerTool: vi.fn(),
-        setActiveTool: vi.fn(),
-      };
-      vi.mocked(mockSDKActions.getInteractionManager).mockReturnValue(mockInteractionManager);
+      // InteractionManager功能暂时移除
 
       // 直接调用render方法
       render(<Canvas />);
@@ -372,7 +347,7 @@ describe('Canvas', () => {
         shapes: [invisibleShape],
       };
 
-      vi.mocked(useCanvas).mockReturnValue([stateWithInvisibleShape, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([stateWithInvisibleShape, mockSDKActions]);
 
       render(<Canvas />);
 
@@ -388,7 +363,7 @@ describe('Canvas', () => {
         shapes: [mockShape],
       };
 
-      vi.mocked(useCanvas).mockReturnValue([uninitializedState, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([uninitializedState, mockSDKActions]);
 
       render(<Canvas />);
 
@@ -404,7 +379,7 @@ describe('Canvas', () => {
         shapes: [createMockShape({ id: 'shape-1' })],
       };
 
-      vi.mocked(useCanvas).mockReturnValue([stateWithShapes, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([stateWithShapes, mockSDKActions]);
 
       expect(() => render(<Canvas />)).not.toThrow();
     });
@@ -429,7 +404,7 @@ describe('Canvas', () => {
         interactionMode: InteractionMode.SELECT,
       };
 
-      vi.mocked(useCanvas).mockReturnValue([stateWithData, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([stateWithData, mockSDKActions]);
 
       render(<Canvas />);
 
@@ -462,7 +437,7 @@ describe('Canvas', () => {
   describe('Hook集成', () => {
     it('应该正确渲染并应用交互状态', async () => {
       // 注意：现在工具选择由SDK管理，不再从store中获取
-      vi.mocked(useCanvas).mockReturnValue([mockSDKState, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([mockSDKState, mockSDKActions]);
 
       // 首先验证默认状态（select工具，default光标）
       vi.mocked(useCanvasInteraction).mockReturnValue({ interactionState: mockInteractionState });
@@ -495,7 +470,7 @@ describe('Canvas', () => {
 
     it('应该能够重新渲染并响应状态变化', () => {
       // 初始设置
-      vi.mocked(useCanvas).mockReturnValue([mockSDKState, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([mockSDKState, mockSDKActions]);
       vi.mocked(useCanvasInteraction).mockReturnValue({ interactionState: mockInteractionState });
       
       // 第一次渲染
@@ -534,7 +509,7 @@ describe('Canvas', () => {
         shapes: [],
       };
 
-      vi.mocked(useCanvas).mockReturnValue([emptyState, mockSDKActions]);
+      vi.mocked(useCanvasSDK).mockReturnValue([emptyState, mockSDKActions]);
 
       expect(() => render(<Canvas />)).not.toThrow();
     });

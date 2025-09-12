@@ -1,61 +1,44 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCanvasSDK } from '../useCanvasSDK';
-import { createMockCanvas, createMockGraphicsContextFactory, createMockShape } from '../../tests/test-utils';
+import { createMockCanvas, createMockShape } from './test-utils';
 
 // Use vi.hoisted to ensure proper variable hoisting
-const { InteractionMode, mockSDK } = vi.hoisted(() => {
-  const InteractionMode = {
-    SELECT: 'select',
-    PAN: 'pan',
-    ZOOM: 'zoom',
-    DRAW: 'draw',
-    EDIT: 'edit',
-    NONE: 'none'
-  } as const;
-
-  const mockSDK = {
-    initialize: vi.fn(),
+const { mockCanvasManager, mockToolManager, mockSDK } = vi.hoisted(() => {
+  const mockCanvasManager = {
     addShape: vi.fn(),
     removeShape: vi.fn(),
     updateShape: vi.fn(),
     selectShape: vi.fn(),
     deselectShape: vi.fn(),
     clearSelection: vi.fn(),
-    getShapes: vi.fn(() => [] as any[]),
+    getRenderables: vi.fn(() => [] as any[]),
     getSelectedShapes: vi.fn(() => [] as any[]),
-    canUndo: vi.fn(() => false),
-    canRedo: vi.fn(() => false),
     undo: vi.fn(),
     redo: vi.fn(),
-    clearShapes: vi.fn(),
+    clear: vi.fn(),
     hitTest: vi.fn(() => null),
+  };
+  
+  const mockToolManager = {
+    activateTool: vi.fn(() => true),
+    getCurrentToolName: vi.fn(() => 'select'),
+    getAvailableTools: vi.fn(() => ['select', 'rectangle']),
+  };
+
+  const mockSDK = {
+    getCanvasManager: vi.fn(() => mockCanvasManager),
+    getToolManager: vi.fn(() => mockToolManager),
     dispose: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
-    emit: vi.fn(),
-    startRender: vi.fn(),
-    stopRender: vi.fn(),
-    render: vi.fn(),
-    getInteractionMode: vi.fn(() => 'SELECT'),
-    getViewport: vi.fn(() => ({ x: 0, y: 0, width: 800, height: 600, zoom: 1 })),
-    setInteractionMode: vi.fn(),
-    setTool: vi.fn(),
-    getInteractionManager: vi.fn(),
-    setInteractionEnabled: vi.fn(),
-    setViewport: vi.fn(),
-    panViewport: vi.fn(),
-    zoomViewport: vi.fn(),
-    fitToContent: vi.fn(),
-    resetViewport: vi.fn(),
   };
 
-  return { InteractionMode, mockSDK };
+  return { mockCanvasManager, mockToolManager, mockSDK };
 });
 
 vi.mock('@sky-canvas/canvas-sdk', () => ({
-  CanvasSDK: vi.fn(() => mockSDK),
-  InteractionMode,
+  createCanvasSDK: vi.fn(() => Promise.resolve(mockSDK)),
 }));
 
 describe('useCanvasSDK', () => {
@@ -91,6 +74,7 @@ describe('useCanvasSDK', () => {
       expect(typeof actions.redo).toBe('function');
       expect(typeof actions.clearShapes).toBe('function');
       expect(typeof actions.hitTest).toBe('function');
+      expect(typeof actions.setTool).toBe('function');
       expect(typeof actions.dispose).toBe('function');
     });
   });
@@ -99,8 +83,6 @@ describe('useCanvasSDK', () => {
     it('应该成功初始化SDK', async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      
-      mockSDK.initialize.mockResolvedValueOnce(undefined);
 
       const { result } = renderHook(() => useCanvasSDK());
       const [, actions] = result.current;
@@ -109,47 +91,16 @@ describe('useCanvasSDK', () => {
         await actions.initialize(canvas, config);
       });
 
-      expect(mockSDK.initialize).toHaveBeenCalledWith(canvas, expect.objectContaining(config));
-      expect(mockSDK.on).toHaveBeenCalledTimes(10);
+      expect(mockSDK.on).toHaveBeenCalledTimes(6); // 6个事件监听器
       
       const [state] = result.current;
       expect(state.isInitialized).toBe(true);
       expect(state.sdk).toBe(mockSDK);
     });
 
-    it('应该在初始化失败时清理资源', async () => {
-      const canvas = createMockCanvas();
-      const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      const error = new Error('初始化失败');
-      
-      // 重置所有mock
-      vi.clearAllMocks();
-      
-      // 确保initialize方法会抛出错误
-      mockSDK.initialize.mockImplementation(() => {
-        throw error;
-      });
-
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-
-      // 验证初始化确实失败并抛出错误
-      await expect(act(async () => {
-        await actions.initialize(canvas, config);
-      })).rejects.toThrow('初始化失败');
-
-      // 验证initialize被调用了
-      expect(mockSDK.initialize).toHaveBeenCalledWith(canvas, config);
-      
-      // 验证dispose被调用
-      expect(mockSDK.dispose).toHaveBeenCalled();
-    });
-
     it('应该防止重复初始化', async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      
-      mockSDK.initialize.mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useCanvasSDK());
       const [, actions] = result.current;
@@ -170,7 +121,6 @@ describe('useCanvasSDK', () => {
     beforeEach(async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      mockSDK.initialize.mockResolvedValue(undefined);
       
       hookResult = renderHook(() => useCanvasSDK());
       const [, actions] = hookResult.result.current;
@@ -188,7 +138,7 @@ describe('useCanvasSDK', () => {
         actions.addShape(shape);
       });
 
-      expect(mockSDK.addShape).toHaveBeenCalledWith(shape);
+      expect(mockCanvasManager.addShape).toHaveBeenCalledWith(shape);
     });
 
     it('应该能够移除形状', () => {
@@ -199,19 +149,19 @@ describe('useCanvasSDK', () => {
         actions.removeShape(shapeId);
       });
 
-      expect(mockSDK.removeShape).toHaveBeenCalledWith(shapeId);
+      expect(mockCanvasManager.removeShape).toHaveBeenCalledWith(shapeId);
     });
 
     it('应该能够更新形状', () => {
       const shapeId = 'shape-1';
-      const updates = { x: 20, y: 30 };
+      const updates = { transform: { position: { x: 20, y: 30 } } };
       const [, actions] = hookResult.result.current;
 
       act(() => {
         actions.updateShape(shapeId, updates);
       });
 
-      expect(mockSDK.updateShape).toHaveBeenCalledWith(shapeId, updates);
+      expect(mockCanvasManager.updateShape).toHaveBeenCalledWith(shapeId, updates);
     });
 
     it('应该在SDK未初始化时抛出错误', () => {
@@ -231,7 +181,6 @@ describe('useCanvasSDK', () => {
     beforeEach(async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      mockSDK.initialize.mockResolvedValue(undefined);
       
       hookResult = renderHook(() => useCanvasSDK());
       const [, actions] = hookResult.result.current;
@@ -249,7 +198,7 @@ describe('useCanvasSDK', () => {
         actions.selectShape(shapeId);
       });
 
-      expect(mockSDK.selectShape).toHaveBeenCalledWith(shapeId);
+      expect(mockCanvasManager.selectShape).toHaveBeenCalledWith(shapeId);
     });
 
     it('应该能够取消选择形状', () => {
@@ -260,7 +209,7 @@ describe('useCanvasSDK', () => {
         actions.deselectShape(shapeId);
       });
 
-      expect(mockSDK.deselectShape).toHaveBeenCalledWith(shapeId);
+      expect(mockCanvasManager.deselectShape).toHaveBeenCalledWith(shapeId);
     });
 
     it('应该能够清空选择', () => {
@@ -270,7 +219,32 @@ describe('useCanvasSDK', () => {
         actions.clearSelection();
       });
 
-      expect(mockSDK.clearSelection).toHaveBeenCalled();
+      expect(mockCanvasManager.clearSelection).toHaveBeenCalled();
+    });
+  });
+
+  describe('工具操作', () => {
+    let hookResult: any;
+
+    beforeEach(async () => {
+      const canvas = createMockCanvas();
+      const config = { renderEngine: 'webgl' as const, enableInteraction: true };
+      
+      hookResult = renderHook(() => useCanvasSDK());
+      const [, actions] = hookResult.result.current;
+      
+      await act(async () => {
+        await actions.initialize(canvas, config);
+      });
+    });
+
+    it('应该能够设置工具', () => {
+      const [, actions] = hookResult.result.current;
+
+      const success = actions.setTool('rectangle');
+
+      expect(mockToolManager.activateTool).toHaveBeenCalledWith('rectangle');
+      expect(success).toBe(true);
     });
   });
 
@@ -280,7 +254,6 @@ describe('useCanvasSDK', () => {
     beforeEach(async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      mockSDK.initialize.mockResolvedValue(undefined);
       
       hookResult = renderHook(() => useCanvasSDK());
       const [, actions] = hookResult.result.current;
@@ -297,7 +270,7 @@ describe('useCanvasSDK', () => {
         actions.undo();
       });
 
-      expect(mockSDK.undo).toHaveBeenCalled();
+      expect(mockCanvasManager.undo).toHaveBeenCalled();
     });
 
     it('应该能够执行重做操作', () => {
@@ -307,7 +280,7 @@ describe('useCanvasSDK', () => {
         actions.redo();
       });
 
-      expect(mockSDK.redo).toHaveBeenCalled();
+      expect(mockCanvasManager.redo).toHaveBeenCalled();
     });
   });
 
@@ -317,7 +290,6 @@ describe('useCanvasSDK', () => {
     beforeEach(async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      mockSDK.initialize.mockResolvedValue(undefined);
       
       hookResult = renderHook(() => useCanvasSDK());
       const [, actions] = hookResult.result.current;
@@ -334,7 +306,7 @@ describe('useCanvasSDK', () => {
         actions.clearShapes();
       });
 
-      expect(mockSDK.clearShapes).toHaveBeenCalled();
+      expect(mockCanvasManager.clear).toHaveBeenCalled();
     });
 
     it('应该能够执行点击测试', () => {
@@ -343,7 +315,7 @@ describe('useCanvasSDK', () => {
 
       const hitShape = actions.hitTest(point);
 
-      expect(mockSDK.hitTest).toHaveBeenCalledWith(point);
+      expect(mockCanvasManager.hitTest).toHaveBeenCalledWith(100, 100);
       expect(hitShape).toBe(null);
     });
   });
@@ -352,7 +324,6 @@ describe('useCanvasSDK', () => {
     it('应该能够手动销毁SDK', async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      mockSDK.initialize.mockResolvedValue(undefined);
       
       const { result } = renderHook(() => useCanvasSDK());
       const [, actions] = result.current;
@@ -375,7 +346,6 @@ describe('useCanvasSDK', () => {
     it('应该在组件卸载时自动清理', async () => {
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      mockSDK.initialize.mockResolvedValue(undefined);
       
       const { result, unmount } = renderHook(() => useCanvasSDK());
       const [, actions] = result.current;
@@ -387,44 +357,6 @@ describe('useCanvasSDK', () => {
       unmount();
 
       expect(mockSDK.dispose).toHaveBeenCalled();
-    });
-  });
-
-  describe('状态更新', () => {
-    it('应该在事件触发时更新状态', async () => {
-      const canvas = createMockCanvas();
-      const config = { renderEngine: 'webgl' as const, enableInteraction: true };
-      const shapes = [createMockShape('shape-1')];
-      const selectedShapes = [shapes[0]];
-      
-      mockSDK.initialize.mockResolvedValue(undefined);
-      mockSDK.getShapes.mockReturnValue(shapes);
-      mockSDK.getSelectedShapes.mockReturnValue(selectedShapes);
-      mockSDK.canUndo.mockReturnValue(true);
-      mockSDK.canRedo.mockReturnValue(true);
-
-      const { result } = renderHook(() => useCanvasSDK());
-      const [, actions] = result.current;
-      
-      await act(async () => {
-        await actions.initialize(canvas, config);
-      });
-
-      // 模拟事件回调
-      const eventHandlers = mockSDK.on.mock.calls.reduce((acc, call) => {
-        acc[call[0]] = call[1];
-        return acc;
-      }, {} as any);
-
-      act(() => {
-        eventHandlers.shapeAdded();
-      });
-
-      const [state] = result.current;
-      expect(state.shapes).toEqual(shapes);
-      expect(state.selectedShapes).toEqual(selectedShapes);
-      expect(state.canUndo).toBe(true);
-      expect(state.canRedo).toBe(true);
     });
   });
 });

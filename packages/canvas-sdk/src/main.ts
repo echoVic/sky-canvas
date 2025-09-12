@@ -42,6 +42,7 @@ import {
  */
 export interface SDKConfig {
   canvas: HTMLCanvasElement;
+  renderEngine?: 'webgl' | 'canvas2d' | 'webgpu';
   logLevel?: LogLevel;
   enableHistory?: boolean;
   enableInteraction?: boolean;
@@ -112,6 +113,7 @@ class CanvasSDKBootstrap {
 
     // 设置默认配置
     this.config = {
+      renderEngine: 'webgl',
       logLevel: 'info',
       enableHistory: true,
       enableInteraction: true,

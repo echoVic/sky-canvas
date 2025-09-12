@@ -72,10 +72,14 @@ export function useCanvasInteraction(
   // 同步工具选择到SDK
   const syncToolToSDK = useMemoizedFn(() => {
     if (sdkState.isInitialized) {
-      const toolName = getToolName(currentTool);
-      const success = sdkActions.setTool(toolName);
-      if (!success) {
-        console.log('Failed to set tool, SDK may not be ready yet');
+      try {
+        const toolName = getToolName(currentTool);
+        const success = sdkActions.setTool(toolName);
+        if (!success) {
+          console.log('Failed to set tool, SDK may not be ready yet');
+        }
+      } catch (error) {
+        console.log('Error setting tool:', error);
       }
     }
   });
