@@ -13,7 +13,7 @@ import { SHADER_LIBRARY } from '../webgl/ShaderLibrary';
  * 渲染命令接口
  */
 interface IRenderCommand {
-  type: 'rectangle' | 'circle' | 'line';
+  type: 'rectangle' | 'circle' | 'line' | 'polygon' | 'text' | 'texture';
   geometry: GeometryData;
   shader: string;
   uniforms?: Record<string, any>;
@@ -336,6 +336,69 @@ export class WebGLRenderManager {
       shaderStats: this.shaderManager.getStats(),
       bufferStats: this.bufferManager.getStats()
     };
+  }
+
+  /**
+   * 绘制多边形
+   */
+  drawPolygon(points: { x: number; y: number }[], fillColor?: string): void {
+    if (points.length < 3) return;
+    
+    const color = fillColor ? 
+      GeometryGenerator.parseColor(fillColor) : 
+      [1, 1, 1, 1] as [number, number, number, number];
+    
+    // 将多边形三角化
+    const geometry = GeometryGenerator.createPolygon(points, color);
+    
+    if (geometry.vertexCount > 0) {
+      this.renderQueue.push({
+        type: 'polygon',
+        geometry,
+        shader: 'basic_shape'
+      });
+    }
+  }
+
+  /**
+   * 绘制文本（占位符实现）
+   */
+  drawText(
+    text: string, 
+    x: number, 
+    y: number, 
+    color?: string, 
+    font?: string, 
+    stroke?: boolean
+  ): void {
+    // WebGL文本渲染需要预渲染文本到纹理
+    // 这里是简化实现，实际项目中需要文本纹理系统
+    console.warn(`WebGL text rendering not implemented: "${text}" at (${x}, ${y})`);
+  }
+
+  /**
+   * 绘制纹理（占位符实现）
+   */
+  drawTexture(
+    texture: WebGLTexture | null, 
+    x: number, 
+    y: number, 
+    width: number, 
+    height: number
+  ): void {
+    if (!texture) return;
+    
+    // 创建纹理矩形几何体
+    const geometry = GeometryGenerator.createTextureRect(x, y, width, height);
+    
+    this.renderQueue.push({
+      type: 'texture',
+      geometry,
+      shader: 'texture',
+      uniforms: {
+        u_texture: texture
+      }
+    });
   }
 
   /**

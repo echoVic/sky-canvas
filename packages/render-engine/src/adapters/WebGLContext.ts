@@ -1,7 +1,7 @@
 /**
  * WebGL图形上下文实现
  */
-import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint } from '../graphics/IGraphicsContext';
+import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint, ITransform } from '../graphics/IGraphicsContext';
 import { Matrix3 } from '../math/Matrix3';
 import { WebGLRenderManager } from './WebGLRenderManager';
 
@@ -137,6 +137,9 @@ class WebGLContext implements IWebGLContext {
       lineWidth: this.lineWidth,
       globalAlpha: this.globalAlpha
     });
+    
+    // 保存WebGL状态
+    this.transformStack.push(this.currentTransform.clone());
   }
 
   restore(): void {
@@ -148,6 +151,15 @@ class WebGLContext implements IWebGLContext {
       this.strokeStyle = state.strokeStyle;
       this.lineWidth = state.lineWidth;
       this.globalAlpha = state.globalAlpha;
+      
+      // 恢复WebGL线宽状态
+      this.gl.lineWidth(this.lineWidth);
+    }
+    
+    // 恢复变换栈
+    const transform = this.transformStack.pop();
+    if (transform) {
+      this.currentTransform = transform;
     }
   }
 
@@ -283,16 +295,15 @@ class WebGLContext implements IWebGLContext {
   }
 
   setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
-    // WebGL中文本对齐需要在文本渲染时处理
+    this.textAlign = align;
   }
 
   setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
-    // WebGL中文本基线需要在文本渲染时处理
+    this.textBaseline = baseline;
   }
 
   setFont(font: string): void {
-    // WebGL中字体设置需要在文本渲染时处理
-    // 这里可以解析字体字符串并存储字体信息
+    this.currentFont = font;
   }
 
   drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
@@ -348,21 +359,41 @@ class WebGLContext implements IWebGLContext {
     console.log('Drawing image', { imageData, dx, dy, dw, dh });
   }
 
-  // 添加缺失的接口方法
+  // 状态管理
   getState(): any {
-    return {}; // 占位符实现
+    return {
+      transform: this.currentTransform.clone(),
+      fillStyle: this.fillStyle,
+      strokeStyle: this.strokeStyle,
+      lineWidth: this.lineWidth,
+      globalAlpha: this.globalAlpha
+    };
   }
 
   setState(state: any): void {
-    // 占位符实现
+    if (state.transform) this.currentTransform = state.transform.clone();
+    if (state.fillStyle) this.fillStyle = state.fillStyle;
+    if (state.strokeStyle) this.strokeStyle = state.strokeStyle;
+    if (state.lineWidth) this.setLineWidth(state.lineWidth);
+    if (state.globalAlpha) this.setGlobalAlpha(state.globalAlpha);
   }
 
-  setTransform(transform: any): void {
-    this.currentTransform = transform;
+  setTransform(transform: ITransform): void {
+    // 将ITransform转换为Matrix3
+    this.currentTransform = new Matrix3([
+      transform.a, transform.b, 0,
+      transform.c, transform.d, 0,
+      transform.e, transform.f, 1
+    ]);
   }
 
   transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
-    // 占位符实现
+    const matrix = new Matrix3([
+      a, b, 0,
+      c, d, 0,
+      e, f, 1
+    ]);
+    this.currentTransform.multiply(matrix);
   }
 
   resetTransform(): void {
@@ -370,107 +401,292 @@ class WebGLContext implements IWebGLContext {
   }
 
   setStyle(style: any): void {
-    // 占位符实现
+    if (style.fillStyle) this.fillStyle = style.fillStyle;
+    if (style.strokeStyle) this.strokeStyle = style.strokeStyle;
+    if (style.lineWidth) this.setLineWidth(style.lineWidth);
+    if (style.globalAlpha) this.setGlobalAlpha(style.globalAlpha);
   }
 
-  setFillColor(color: any): void {
-    // 占位符实现
+  setFillColor(color: string): void {
+    this.fillStyle = color;
   }
 
-  setStrokeColor(color: any): void {
-    // 占位符实现
+  setStrokeColor(color: string): void {
+    this.strokeStyle = color;
   }
 
   clearRect(x: number, y: number, width: number, height: number): void {
-    // 占位符实现
+    // WebGL中清除矩形区域需要使用剪切
+    this.gl.enable(this.gl.SCISSOR_TEST);
+    this.gl.scissor(x, this.height - y - height, width, height);
+    this.gl.clearColor(0, 0, 0, 0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    this.gl.disable(this.gl.SCISSOR_TEST);
   }
 
   present(): void {
     // WebGL需要显式提交渲染
   }
 
+  // 路径相关状态
+  private currentPath: { x: number; y: number }[] = [];
+  private pathStarted: boolean = false;
+
   beginPath(): void {
-    // 占位符实现
+    this.currentPath = [];
+    this.pathStarted = true;
   }
 
   closePath(): void {
-    // 占位符实现
+    if (this.currentPath.length > 0) {
+      const firstPoint = this.currentPath[0];
+      this.currentPath.push({ x: firstPoint.x, y: firstPoint.y });
+    }
   }
 
   moveTo(x: number, y: number): void {
-    // 占位符实现
+    this.currentPath = [{ x, y }];
+    this.pathStarted = true;
   }
 
   lineTo(x: number, y: number): void {
-    // 占位符实现
+    if (this.pathStarted) {
+      this.currentPath.push({ x, y });
+    }
   }
 
   quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void {
-    // 占位符实现
+    if (this.pathStarted && this.currentPath.length > 0) {
+      const lastPoint = this.currentPath[this.currentPath.length - 1];
+      // 用多段直线近似二次贝塞尔曲线
+      const segments = 20;
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const it = 1 - t;
+        const newX = it * it * lastPoint.x + 2 * it * t * cpx + t * t * x;
+        const newY = it * it * lastPoint.y + 2 * it * t * cpy + t * t * y;
+        this.currentPath.push({ x: newX, y: newY });
+      }
+    }
   }
 
   bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
-    // 占位符实现
+    if (this.pathStarted && this.currentPath.length > 0) {
+      const lastPoint = this.currentPath[this.currentPath.length - 1];
+      // 用多段直线近似三次贝塞尔曲线
+      const segments = 30;
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const it = 1 - t;
+        const newX = it * it * it * lastPoint.x + 3 * it * it * t * cp1x + 3 * it * t * t * cp2x + t * t * t * x;
+        const newY = it * it * it * lastPoint.y + 3 * it * it * t * cp1y + 3 * it * t * t * cp2y + t * t * t * y;
+        this.currentPath.push({ x: newX, y: newY });
+      }
+    }
   }
 
   arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void {
-    // 占位符实现
+    const segments = Math.max(16, Math.ceil(Math.abs(endAngle - startAngle) * 32 / (2 * Math.PI)));
+    const angleStep = (endAngle - startAngle) / segments * (counterclockwise ? -1 : 1);
+    
+    for (let i = 0; i <= segments; i++) {
+      const angle = startAngle + angleStep * i;
+      const pointX = x + Math.cos(angle) * radius;
+      const pointY = y + Math.sin(angle) * radius;
+      
+      if (i === 0 && !this.pathStarted) {
+        this.moveTo(pointX, pointY);
+      } else {
+        this.lineTo(pointX, pointY);
+      }
+    }
   }
 
   rect(x: number, y: number, width: number, height: number): void {
-    // 占位符实现
+    this.moveTo(x, y);
+    this.lineTo(x + width, y);
+    this.lineTo(x + width, y + height);
+    this.lineTo(x, y + height);
+    this.closePath();
   }
 
   fill(): void {
-    // 占位符实现
+    if (this.currentPath.length >= 3) {
+      this.renderManager.drawPolygon(this.currentPath, this.fillStyle);
+      this.flushRender();
+    }
   }
 
   stroke(): void {
-    // 占位符实现
+    if (this.currentPath.length >= 2) {
+      for (let i = 0; i < this.currentPath.length - 1; i++) {
+        const p1 = this.currentPath[i];
+        const p2 = this.currentPath[i + 1];
+        this.renderManager.drawLine(p1.x, p1.y, p2.x, p2.y, this.strokeStyle, this.lineWidth);
+      }
+      this.flushRender();
+    }
   }
 
   fillRect(x: number, y: number, width: number, height: number): void {
-    // 占位符实现
+    this.renderManager.drawRectangle(x, y, width, height, this.fillStyle);
+    this.flushRender();
   }
 
   strokeRect(x: number, y: number, width: number, height: number): void {
-    // 占位符实现
+    this.renderManager.drawRectangle(x, y, width, height, undefined, this.strokeStyle, this.lineWidth);
+    this.flushRender();
   }
 
   fillCircle(x: number, y: number, radius: number): void {
-    // 占位符实现
+    this.renderManager.drawCircle(x, y, radius, this.fillStyle);
+    this.flushRender();
   }
 
   strokeCircle(x: number, y: number, radius: number): void {
-    // 占位符实现
+    this.renderManager.drawCircle(x, y, radius, undefined, this.strokeStyle, this.lineWidth);
+    this.flushRender();
   }
 
+  // 文本渲染状态
+  private currentFont: string = '16px Arial';
+  private textAlign: string = 'left';
+  private textBaseline: string = 'alphabetic';
+
   fillText(text: string, x: number, y: number, style?: any): void {
-    // 占位符实现
+    // WebGL文本渲染需要纹理，这里使用简化实现
+    // 实际项目中可以使用文本纹理或SDF字体
+    console.warn('WebGL text rendering not fully implemented, use Canvas2D for text');
+    this.renderManager.drawText(text, x, y, this.fillStyle, this.currentFont);
   }
 
   strokeText(text: string, x: number, y: number, style?: any): void {
-    // 占位符实现
+    console.warn('WebGL text rendering not fully implemented, use Canvas2D for text');
+    this.renderManager.drawText(text, x, y, this.strokeStyle, this.currentFont, true);
   }
 
   measureText(text: string, style?: any): { width: number; height: number } {
-    return { width: 0, height: 0 }; // 占位符实现
+    // 简单的文本测量实现
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.font = style?.font || this.currentFont;
+      const metrics = ctx.measureText(text);
+      return { 
+        width: metrics.width, 
+        height: parseInt(this.currentFont) || 16 // 简化的高度估算
+      };
+    }
+    return { width: text.length * 8, height: 16 }; // 简化估算
   }
 
-  getImageData(x: number, y: number, width: number, height: number): any {
-    return null; // 占位符实现
+  getImageData(x: number, y: number, width: number, height: number): ImageData {
+    const pixels = new Uint8ClampedArray(width * height * 4);
+    // WebGL读取像素数据
+    this.gl.readPixels(x, this.height - y - height, width, height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixels);
+    
+    // 翻转Y轴（WebGL和Canvas的Y轴方向相反）
+    const flippedPixels = new Uint8ClampedArray(pixels.length);
+    for (let row = 0; row < height; row++) {
+      const srcRow = height - 1 - row;
+      for (let col = 0; col < width; col++) {
+        const srcIndex = (srcRow * width + col) * 4;
+        const dstIndex = (row * width + col) * 4;
+        flippedPixels[dstIndex] = pixels[srcIndex];
+        flippedPixels[dstIndex + 1] = pixels[srcIndex + 1];
+        flippedPixels[dstIndex + 2] = pixels[srcIndex + 2];
+        flippedPixels[dstIndex + 3] = pixels[srcIndex + 3];
+      }
+    }
+    
+    return new ImageData(flippedPixels, width, height);
   }
 
-  putImageData(imageData: any, x: number, y: number): void {
-    // 占位符实现
+  putImageData(imageData: ImageData, x: number, y: number): void {
+    // WebGL中放置图像数据需要创建纹理
+    const texture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.texImage2D(
+      this.gl.TEXTURE_2D,
+      0,
+      this.gl.RGBA,
+      imageData.width,
+      imageData.height,
+      0,
+      this.gl.RGBA,
+      this.gl.UNSIGNED_BYTE,
+      imageData.data
+    );
+    
+    // 设置纹理参数
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+    
+    // 渲染纹理到指定位置
+    this.renderManager.drawTexture(texture, x, y, imageData.width, imageData.height);
+    
+    // 清理纹理
+    this.gl.deleteTexture(texture);
   }
+
+  // 裁剪状态
+  private clipRegions: { x: number; y: number; width: number; height: number }[] = [];
 
   clip(): void {
-    // 占位符实现
+    // 使用当前路径作为裁剪区域
+    if (this.currentPath.length >= 3) {
+      // 简化实现：计算路径的边界框作为裁剪区域
+      let minX = this.currentPath[0].x;
+      let minY = this.currentPath[0].y;
+      let maxX = minX;
+      let maxY = minY;
+      
+      for (const point of this.currentPath) {
+        minX = Math.min(minX, point.x);
+        minY = Math.min(minY, point.y);
+        maxX = Math.max(maxX, point.x);
+        maxY = Math.max(maxY, point.y);
+      }
+      
+      this.clipRect(minX, minY, maxX - minX, maxY - minY);
+    }
   }
 
   clipRect(x: number, y: number, width: number, height: number): void {
-    // 占位符实现
+    // 保存当前裁剪区域
+    this.clipRegions.push({ x, y, width, height });
+    
+    // 启用剪切测试
+    this.gl.enable(this.gl.SCISSOR_TEST);
+    
+    // 计算与现有裁剪区域的交集
+    const currentClip = this.getCurrentClipRect();
+    this.gl.scissor(currentClip.x, this.height - currentClip.y - currentClip.height, currentClip.width, currentClip.height);
+  }
+  
+  private getCurrentClipRect(): { x: number; y: number; width: number; height: number } {
+    if (this.clipRegions.length === 0) {
+      return { x: 0, y: 0, width: this.width, height: this.height };
+    }
+    
+    // 计算所有裁剪区域的交集
+    let result = this.clipRegions[0];
+    for (let i = 1; i < this.clipRegions.length; i++) {
+      const clip = this.clipRegions[i];
+      const x1 = Math.max(result.x, clip.x);
+      const y1 = Math.max(result.y, clip.y);
+      const x2 = Math.min(result.x + result.width, clip.x + clip.width);
+      const y2 = Math.min(result.y + result.height, clip.y + clip.height);
+      
+      result = {
+        x: x1,
+        y: y1,
+        width: Math.max(0, x2 - x1),
+        height: Math.max(0, y2 - y1)
+      };
+    }
+    
+    return result;
   }
 
   dispose(): void {

@@ -255,6 +255,80 @@ export class GeometryGenerator {
   }
 
   /**
+   * 生成多边形几何体（使用三角化）
+   * @param points 多边形顶点数组
+   * @param color 颜色 [r, g, b, a]
+   */
+  static createPolygon(
+    points: { x: number; y: number }[],
+    color: [number, number, number, number] = [1, 1, 1, 1]
+  ): GeometryData {
+    if (points.length < 3) {
+      return {
+        vertices: new Float32Array(0),
+        indices: new Uint16Array(0),
+        vertexCount: 0,
+        indexCount: 0
+      };
+    }
+
+    const vertexCount = points.length;
+    const vertices = new Float32Array(vertexCount * 8);
+    
+    // 使用扇形三角化：以第一个点为中心，连接相邻点构成三角形
+    const triangleCount = Math.max(0, vertexCount - 2);
+    const indices = new Uint16Array(triangleCount * 3);
+
+    const [r, g, b, a] = color;
+    let offset = 0;
+
+    // 设置顶点数据
+    for (let i = 0; i < vertexCount; i++) {
+      const point = points[i];
+      vertices[offset++] = point.x;
+      vertices[offset++] = point.y;
+      vertices[offset++] = r;
+      vertices[offset++] = g;
+      vertices[offset++] = b;
+      vertices[offset++] = a;
+      vertices[offset++] = 0; // u
+      vertices[offset++] = 0; // v
+    }
+
+    // 生成三角形索引（扇形三角化）
+    let indexOffset = 0;
+    for (let i = 1; i < vertexCount - 1; i++) {
+      indices[indexOffset++] = 0;     // 第一个点作为中心
+      indices[indexOffset++] = i;     // 当前点
+      indices[indexOffset++] = i + 1; // 下一个点
+    }
+
+    return {
+      vertices,
+      indices,
+      vertexCount,
+      indexCount: triangleCount * 3
+    };
+  }
+
+  /**
+   * 创建纹理矩形（用于纹理绘制）
+   * @param x X坐标
+   * @param y Y坐标
+   * @param width 宽度
+   * @param height 高度
+   */
+  static createTextureRect(
+    x: number,
+    y: number, 
+    width: number,
+    height: number
+  ): GeometryData {
+    // 纹理矩形使用白色，颜色由纹理提供
+    return this.createRectangle(x, y, width, height, [1, 1, 1, 1]);
+  }
+
+  /**
    * 创建单位四边形（用于纹理绘制）
    */
   static createUnitQuad(color: [number, number, number, number] = [1, 1, 1, 1]): GeometryData {
