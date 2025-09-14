@@ -4,24 +4,19 @@
  */
 
 import { IGraphicsContextFactory } from '../IGraphicsContext';
-import { Canvas2DGraphicsContextFactory } from './Canvas2DAdapter';
 import { WebGLGraphicsContextFactory } from './WebGLAdapter';
 import { WebGPUGraphicsContextFactory } from './WebGPUAdapter';
-
-export { Canvas2DGraphicsContext, Canvas2DGraphicsContextFactory } from './Canvas2DAdapter';
 export { WebGLGraphicsContext, WebGLGraphicsContextFactory } from './WebGLAdapter';
 export { WebGPUGraphicsContext, WebGPUGraphicsContextFactory } from './WebGPUAdapter';
 
 // 适配器类型枚举
 export enum GraphicsAdapterType {
-  CANVAS_2D = 'canvas2d',
   WEBGL = 'webgl',
   WEBGPU = 'webgpu' // 预留
 }
 
 // 适配器工厂映射
 const ADAPTER_FACTORIES = {
-  [GraphicsAdapterType.CANVAS_2D]: () => new Canvas2DGraphicsContextFactory(),
   [GraphicsAdapterType.WEBGL]: () => new WebGLGraphicsContextFactory(),
   [GraphicsAdapterType.WEBGPU]: () => new WebGPUGraphicsContextFactory(),
 } as const;
@@ -43,15 +38,7 @@ export function createGraphicsAdapterFactory(type: GraphicsAdapterType): IGraphi
 export async function getSupportedAdapterTypes(): Promise<GraphicsAdapterType[]> {
   const supported: GraphicsAdapterType[] = [];
   
-  // 检查Canvas 2D支持
-  try {
-    const canvas2dFactory = new Canvas2DGraphicsContextFactory();
-    if (canvas2dFactory.isSupported()) {
-      supported.push(GraphicsAdapterType.CANVAS_2D);
-    }
-  } catch {
-    // Canvas 2D不支持
-  }
+  // Canvas 2D现在直接通过Canvas2DContext支持
   
   // 检查WebGL支持
   try {
@@ -76,13 +63,9 @@ export async function selectBestAdapterType(): Promise<GraphicsAdapterType> {
     throw new Error('No supported graphics adapters found');
   }
   
-  // 优先级：WebGL > Canvas 2D
+  // 优先级：WebGL
   if (supported.includes(GraphicsAdapterType.WEBGL)) {
     return GraphicsAdapterType.WEBGL;
-  }
-  
-  if (supported.includes(GraphicsAdapterType.CANVAS_2D)) {
-    return GraphicsAdapterType.CANVAS_2D;
   }
   
   return supported[0];

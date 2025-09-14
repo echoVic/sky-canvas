@@ -10,11 +10,9 @@ export { ToolManager } from './ToolManager';
 export type { IToolManager } from './ToolManager';
 
 export { SceneManager } from './SceneManager';
-export type { ISceneManager, ILayerInfo, ISceneManagerState } from './SceneManager';
+export type { ILayerInfo, ISceneManager, ISceneManagerState } from './SceneManager';
 
-export { ImportExportManager } from './ImportExportManager';
-export type { IImportExportManager, IBatchOperationOptions } from './ImportExportManager';
 
-export { TransactionManager } from './TransactionManager';
+export { transactional, transactionalAsync, TransactionManager } from './TransactionManager';
 export type { ITransactionManager } from './TransactionManager';
-export { transactional, transactionalAsync } from './TransactionManager';
+

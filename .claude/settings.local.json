@@ -34,7 +34,11 @@
       "Bash(pnpm list:*)",
       "mcp__github__get_file_contents",
       "mcp__ide__getDiagnostics",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(pnpm exec vitest run:*)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk test src/services/zIndex/__tests__/zIndexService.test.ts)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk test -- --testPathPattern=\"zIndex\" --reporter=verbose)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk test -- --testPathPattern=\"zIndex\" --run)"
     ],
     "deny": [],
     "ask": []

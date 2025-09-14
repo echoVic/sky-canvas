@@ -1,8 +1,8 @@
 import {
-  CanvasSDK,
   createCanvasSDK,
-  ICanvasSDKConfig,
-  ShapeEntity
+  type CanvasSDK,
+  type ICanvasSDKConfig,
+  type ShapeEntity
 } from '@sky-canvas/canvas-sdk';
 import { useMemoizedFn } from 'ahooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -61,6 +61,18 @@ export interface CanvasSDKActions {
   on: (eventName: string, callback: Function) => void;
   /** 移除事件监听 */
   off: (eventName: string, callback?: Function) => void;
+  /** 置顶 */
+  bringToFront: () => void;
+  /** 置底 */
+  sendToBack: () => void;
+  /** 上移一层 */
+  bringForward: () => void;
+  /** 下移一层 */
+  sendBackward: () => void;
+  /** 设置zIndex */
+  setZIndex: (shapeIds: string[], zIndex: number) => void;
+  /** 按Z轴顺序获取形状 */
+  getShapesByZOrder: () => ShapeEntity[];
   /** 销毁SDK */
   dispose: () => void;
 }
@@ -305,7 +317,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   /**
    * 事件监听
    */
-  const on = useMemoizedFn((eventName: string, callback: Function) => {
+  const on = useMemoizedFn((eventName: any, callback: Function) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
@@ -315,11 +327,91 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   /**
    * 移除事件监听
    */
-  const off = useMemoizedFn((eventName: string, callback?: Function) => {
+  const off = useMemoizedFn((eventName: any, callback?: Function) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
     sdkRef.current.off(eventName, callback);
+  });
+
+  // === Z轴管理方法 ===
+
+  /**
+   * 置顶 - 将选中的形状移到最前面
+   */
+  const bringToFront = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    const manager = sdkRef.current.getCanvasManager();
+    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
+    if (selectedIds.length > 0) {
+      manager.bringToFront(selectedIds);
+    }
+  });
+
+  /**
+   * 置底 - 将选中的形状移到最后面
+   */
+  const sendToBack = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    const manager = sdkRef.current.getCanvasManager();
+    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
+    if (selectedIds.length > 0) {
+      manager.sendToBack(selectedIds);
+    }
+  });
+
+  /**
+   * 上移一层
+   */
+  const bringForward = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    const manager = sdkRef.current.getCanvasManager();
+    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
+    if (selectedIds.length > 0) {
+      manager.bringForward(selectedIds);
+    }
+  });
+
+  /**
+   * 下移一层
+   */
+  const sendBackward = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    const manager = sdkRef.current.getCanvasManager();
+    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
+    if (selectedIds.length > 0) {
+      manager.sendBackward(selectedIds);
+    }
+  });
+
+  /**
+   * 设置指定形状的zIndex
+   */
+  const setZIndex = useMemoizedFn((shapeIds: string[], zIndex: number) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    const manager = sdkRef.current.getCanvasManager();
+    manager.setZIndex(shapeIds, zIndex);
+  });
+
+  /**
+   * 获取按Z轴顺序排序的形状
+   */
+  const getShapesByZOrder = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    const manager = sdkRef.current.getCanvasManager();
+    return manager.getShapesByZOrder();
   });
 
   /**
@@ -367,11 +459,19 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     setTool,
     on,
     off,
+    // Z轴管理方法
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+    setZIndex,
+    getShapesByZOrder,
     dispose,
   }), [
     initialize, getCanvasManager, getToolManager, addShape, removeShape, updateShape,
     selectShape, deselectShape, clearSelection, hitTest, undo, redo, clearShapes,
-    setTool, on, off, dispose
+    setTool, on, off, bringToFront, sendToBack, bringForward, sendBackward,
+    setZIndex, getShapesByZOrder, dispose
   ]);
 
   return [state, actions];

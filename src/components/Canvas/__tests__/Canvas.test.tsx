@@ -1,5 +1,5 @@
 // useCanvas已被useCanvasSDK替代
-import { InteractionMode } from '@sky-canvas/canvas-sdk';
+// InteractionMode export removed - using local types if needed
 import { render, screen, waitFor } from '@testing-library/react';
 import React, { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -23,7 +23,7 @@ const mockSDKState = {
   selectedShapes: [],
   canUndo: false,
   canRedo: false,
-  interactionMode: InteractionMode.SELECT,
+  interactionMode: 'select' as any,
   currentTool: null,
   viewport: {
     x: 0,
@@ -51,6 +51,12 @@ const mockSDKActions = {
   setTool: vi.fn(),
   on: vi.fn(),
   off: vi.fn(),
+  bringToFront: vi.fn(),
+  sendToBack: vi.fn(),
+  bringForward: vi.fn(),
+  sendBackward: vi.fn(),
+  setZIndex: vi.fn(),
+  getShapesByZOrder: vi.fn(() => []),
   dispose: vi.fn(),
 };
 
@@ -401,7 +407,7 @@ describe('Canvas', () => {
         shapes: [createMockShape({ id: '1' }), createMockShape({ id: '2' })],
         selectedShapes: [createMockShape({ id: '1' })],
         // SDK初始化后默认工具是select
-        interactionMode: InteractionMode.SELECT,
+        interactionMode: 'select' as any,
       };
 
       vi.mocked(useCanvasSDK).mockReturnValue([stateWithData, mockSDKActions]);

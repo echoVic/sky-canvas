@@ -3,19 +3,13 @@
  * 提供基于 WebGPU 的高性能渲染能力的接口定义
  */
 
-import { BaseRenderer, RendererCapabilities, Drawable } from '../core';
-import { IGraphicsContext, IRect } from '../graphics/IGraphicsContext';
+import { WebGPUContext } from '../adapters/WebGPUContext';
+import { BaseRenderer, RenderContext, RendererCapabilities } from '../core';
+import { IPoint, IRect } from '../graphics/IGraphicsContext';
+import { Rectangle } from '../math/Rectangle';
 
 // 定义本地类型别名
 type Rect = IRect;
-type RenderContext = {
-  canvas: HTMLCanvasElement;
-  ctx: any;
-  viewport: Rect;
-  devicePixelRatio: number;
-};
-import { IPoint } from '../graphics/IGraphicsContext';
-import { Rectangle } from '../math/Rectangle';
 
 /**
  * WebGPU 渲染上下文（占位符）
@@ -122,21 +116,16 @@ export class WebGPUTexture {
  * WebGPU 渲染器类（占位符实现）
  */
 export class WebGPURenderer extends BaseRenderer {
-  private canvas: HTMLCanvasElement;
-  private context: WebGPURenderContext;
+  private context: WebGPUContext;
   private buffers: Map<string, WebGPUBuffer> = new Map();
   private textures: Map<string, WebGPUTexture> = new Map();
   private initialized = false;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(context: WebGPUContext) {
     super();
-    this.canvas = canvas;
-    this.context = {
-      canvas,
-      width: canvas.width,
-      height: canvas.height
-    };
+    this.context = context;
     // 设置初始视口
+    const canvas = context.getCanvas();
     this.setViewport({ x: 0, y: 0, width: canvas.width, height: canvas.height });
   }
 
@@ -144,20 +133,16 @@ export class WebGPURenderer extends BaseRenderer {
    * 初始化渲染器
    */
   async initialize(canvas: HTMLCanvasElement): Promise<boolean> {
-    // 占位符实现
-    console.warn('WebGPU renderer initialization not implemented', canvas);
-    this.initialized = true;
-    return true;
+    // WebGPU渲染器在构造时已经初始化
+    this.initialized = await this.context.initialize();
+    return this.initialized;
   }
 
   /**
    * 调整画布大小
    */
   resize(width: number, height: number): void {
-    this.canvas.width = width;
-    this.canvas.height = height;
-    this.context.width = width;
-    this.context.height = height;
+    this.context.resize(width, height);
     this.setViewport({ x: 0, y: 0, width, height });
   }
 
@@ -165,22 +150,21 @@ export class WebGPURenderer extends BaseRenderer {
    * 清除画布
    */
   clear(color: { r: number; g: number; b: number; a: number } = { r: 1, g: 1, b: 1, a: 1 }): void {
-    // 占位符实现
-    console.warn('WebGPU clear not implemented');
+    this.context.clear();
   }
 
   /**
    * 开始渲染帧
    */
   beginFrame(): void {
-    // 占位符实现
+    this.context.beginFrame();
   }
 
   /**
    * 结束渲染帧
    */
   endFrame(): void {
-    // 占位符实现
+    this.context.endFrame();
   }
 
   /**
@@ -237,10 +221,8 @@ export class WebGPURenderer extends BaseRenderer {
   setViewport(viewport: Rect): void {
     // 调用父类方法
     super.setViewport(viewport);
-    // 占位符实现
-    console.warn('WebGPU setViewport not implemented');
-    this.context.width = viewport.width;
-    this.context.height = viewport.height;
+    // 使用适配器设置视口
+    this.context.setViewport(viewport.x, viewport.y, viewport.width, viewport.height);
   }
 
   // 保留原有的四参数方法作为便利方法
@@ -273,12 +255,13 @@ export class WebGPURenderer extends BaseRenderer {
    * 获取渲染器能力
    */
   getCapabilities(): RendererCapabilities {
+    const contextCaps = this.context.getCapabilities();
     return {
-      supportsTransforms: true,
-      supportsFilters: true,
-      supportsBlending: true,
-      maxTextureSize: 8192,
-      supportedFormats: ['rgba8unorm', 'bgra8unorm']
+      supportsTransforms: contextCaps.supportsTransforms,
+      supportsFilters: contextCaps.supportsFilters,
+      supportsBlending: contextCaps.supportsBlending,
+      maxTextureSize: contextCaps.maxTextureSize,
+      supportedFormats: contextCaps.supportedFormats
     };
   }
 
@@ -339,29 +322,12 @@ export class WebGPURenderer extends BaseRenderer {
     this.textures.forEach(texture => texture.destroy());
     this.textures.clear();
 
+    // 释放上下文适配器
+    this.context.dispose();
+
     super.dispose();
     this.initialized = false;
     console.log('WebGPU renderer disposed');
   }
 }
 
-/**
- * WebGPU 渲染器工厂
- */
-export class WebGPURendererFactory {
-  /**
-   * 创建 WebGPU 渲染器实例
-   */
-  static async create(canvas: HTMLCanvasElement): Promise<WebGPURenderer> {
-    const renderer = new WebGPURenderer(canvas);
-    await renderer.initialize(canvas);
-    return renderer;
-  }
-
-  /**
-   * 检查是否支持 WebGPU
-   */
-  static isSupported(): boolean {
-    return WebGPURenderer.isSupported();
-  }
-}

@@ -4,9 +4,9 @@
  */
 
 import { createDecorator } from '../di';
+import { IEventBusService, IHistoryService, ILogService, IShortcutService } from '../services';
+import { IRectangleToolViewModel, ISelectToolViewModel } from '../viewmodels/tools';
 import { ICanvasManager } from './CanvasManager';
-import { ISelectToolViewModel, IRectangleToolViewModel } from '../viewmodels/tools';
-import { IShortcutService, IHistoryService, IEventBusService, ILogService } from '../services';
 
 /**
  * 工具管理器接口

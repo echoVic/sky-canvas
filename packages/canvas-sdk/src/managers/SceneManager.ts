@@ -4,9 +4,8 @@
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
-import { ICanvasRenderingService, IEventBusService, IConfigurationService } from '../services';
 import type { ILogService } from '../services';
-import { ShapeEntity } from '../models/entities/Shape';
+import { ICanvasRenderingService, IConfigurationService, IEventBusService } from '../services';
 import { ICanvasManager } from './CanvasManager';
 
 /**

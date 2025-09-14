@@ -22,6 +22,8 @@ export { CanvasRenderingService, ICanvasRenderingService } from './rendering/ren
 // 扩展服务
 export { IShortcutService, ShortcutService } from './shortcut/shortcutService';
 export { IThemeService, ThemeService } from './theme/themeService';
+export { IZIndexService, ZIndexService } from './zIndex/zIndexService';
+export type { IZIndexChangeEvent, ZIndexOperation } from './zIndex/zIndexService';
 export { IZoomService, ZoomService } from './zoom/zoomService';
 
 // 工具服务

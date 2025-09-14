@@ -2,20 +2,15 @@
  * WebGL 模块导出
  */
 
-// 着色器管理
+// 基础模块
 export * from './ShaderManager';
-
-// 缓冲区管理
 export * from './BufferManager';
-
-// 内置着色器库
 export * from './ShaderLibrary';
 
-// 高级着色器管理
+// 高级功能模块
 export * from './AdvancedShaderManager';
-
-// WebGL优化系统
 export * from './WebGLOptimizer';
-
-// WebGL资源管理
 export * from './WebGLResourceManager';
+
+// 高级功能统一接口
+export * from './WebGLAdvanced';

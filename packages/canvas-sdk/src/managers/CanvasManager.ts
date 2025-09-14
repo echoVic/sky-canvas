@@ -12,7 +12,8 @@ import {
   IHistoryService,
   ILogService,
   ISelectionService,
-  IShapeService
+  IShapeService,
+  IZIndexService
 } from '../services';
 
 /**
@@ -43,7 +44,15 @@ export interface ICanvasManager {
   // 历史操作
   undo(): void;
   redo(): void;
-  
+
+  // Z轴管理
+  bringToFront(shapeIds: string[]): void;
+  sendToBack(shapeIds: string[]): void;
+  bringForward(shapeIds: string[]): void;
+  sendBackward(shapeIds: string[]): void;
+  setZIndex(shapeIds: string[], zIndex: number): void;
+  getShapesByZOrder(): ShapeEntity[];
+
   // 状态查询
   getStats(): any;
   clear(): void;
@@ -68,7 +77,8 @@ export class CanvasManager implements ICanvasManager {
     @IShapeService private shapeService: any,
     @ISelectionService private selectionService: any,
     @IClipboardService private clipboardService: any,
-    @IHistoryService private historyService: any
+    @IHistoryService private historyService: any,
+    @IZIndexService private zIndexService: any
   ) {
     this.setupIntegration();
   }
@@ -336,6 +346,132 @@ export class CanvasManager implements ICanvasManager {
     
     this.eventBus.emit('canvas:cleared', {});
     this.logService.info('Canvas cleared');
+  }
+
+  // === Z轴管理 ===
+
+  /**
+   * 置顶 - 将形状移到最前面
+   */
+  bringToFront(shapeIds: string[]): void {
+    if (shapeIds.length === 0) return;
+
+    const shapesToMove = shapeIds
+      .map(id => this.shapeService.getShapeEntity(id))
+      .filter(shape => shape !== null) as ShapeEntity[];
+
+    if (shapesToMove.length === 0) return;
+
+    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const updatedShapes = this.zIndexService.bringToFront(shapesToMove, allShapes);
+
+    // 批量更新形状
+    this.batchUpdateShapes(updatedShapes);
+
+    this.eventBus.emit('canvas:shapesBroughtToFront', { shapeIds });
+    this.logService.debug(`Brought ${shapeIds.length} shapes to front`);
+  }
+
+  /**
+   * 置底 - 将形状移到最后面
+   */
+  sendToBack(shapeIds: string[]): void {
+    if (shapeIds.length === 0) return;
+
+    const shapesToMove = shapeIds
+      .map(id => this.shapeService.getShapeEntity(id))
+      .filter(shape => shape !== null) as ShapeEntity[];
+
+    if (shapesToMove.length === 0) return;
+
+    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const updatedShapes = this.zIndexService.sendToBack(shapesToMove, allShapes);
+
+    this.batchUpdateShapes(updatedShapes);
+
+    this.eventBus.emit('canvas:shapesSentToBack', { shapeIds });
+    this.logService.debug(`Sent ${shapeIds.length} shapes to back`);
+  }
+
+  /**
+   * 上移一层
+   */
+  bringForward(shapeIds: string[]): void {
+    if (shapeIds.length === 0) return;
+
+    const shapesToMove = shapeIds
+      .map(id => this.shapeService.getShapeEntity(id))
+      .filter(shape => shape !== null) as ShapeEntity[];
+
+    if (shapesToMove.length === 0) return;
+
+    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const updatedShapes = this.zIndexService.bringForward(shapesToMove, allShapes);
+
+    this.batchUpdateShapes(updatedShapes);
+
+    this.eventBus.emit('canvas:shapesBroughtForward', { shapeIds });
+    this.logService.debug(`Brought ${shapeIds.length} shapes forward`);
+  }
+
+  /**
+   * 下移一层
+   */
+  sendBackward(shapeIds: string[]): void {
+    if (shapeIds.length === 0) return;
+
+    const shapesToMove = shapeIds
+      .map(id => this.shapeService.getShapeEntity(id))
+      .filter(shape => shape !== null) as ShapeEntity[];
+
+    if (shapesToMove.length === 0) return;
+
+    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const updatedShapes = this.zIndexService.sendBackward(shapesToMove, allShapes);
+
+    this.batchUpdateShapes(updatedShapes);
+
+    this.eventBus.emit('canvas:shapesSentBackward', { shapeIds });
+    this.logService.debug(`Sent ${shapeIds.length} shapes backward`);
+  }
+
+  /**
+   * 设置指定的zIndex值
+   */
+  setZIndex(shapeIds: string[], zIndex: number): void {
+    if (shapeIds.length === 0) return;
+
+    const shapesToUpdate = shapeIds
+      .map(id => this.shapeService.getShapeEntity(id))
+      .filter(shape => shape !== null) as ShapeEntity[];
+
+    if (shapesToUpdate.length === 0) return;
+
+    const updatedShapes = this.zIndexService.setZIndex(shapesToUpdate, zIndex);
+
+    updatedShapes.forEach((shape: ShapeEntity) => {
+      this.shapeService.updateShapeEntity(shape.id, shape);
+    });
+
+    this.eventBus.emit('canvas:shapesZIndexSet', { shapeIds, zIndex });
+    this.logService.debug(`Set zIndex to ${zIndex} for ${shapeIds.length} shapes`);
+  }
+
+  /**
+   * 获取按Z轴顺序排序的形状列表
+   */
+  getShapesByZOrder(): ShapeEntity[] {
+    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    return this.zIndexService.getSortedShapes(allShapes);
+  }
+
+  /**
+   * 批量更新形状实体
+   */
+  private batchUpdateShapes(shapes: ShapeEntity[]): void {
+    shapes.forEach((shape: ShapeEntity) => {
+      this.shapeService.updateShapeEntity(shape.id, shape);
+    });
   }
 
   /**

@@ -1,14 +1,48 @@
 /**
  * WebGL图形上下文实现
  */
+import {
+  BatchManager,
+  createBatchManagerWithDefaultStrategies,
+  IRenderable,
+  type BatchManagerConfig
+} from '../batch';
 import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint, ITransform } from '../graphics/IGraphicsContext';
 import { Matrix3 } from '../math/Matrix3';
-import { WebGLRenderManager } from './WebGLRenderManager';
+import { BufferManager, IBuffer } from '../webgl/BufferManager';
+import { SHADER_LIBRARY } from '../webgl/ShaderLibrary';
+import { IShaderProgram, ShaderManager } from '../webgl/ShaderManager';
+import { AdvancedShaderManager } from '../webgl/AdvancedShaderManager';
+import { WebGLOptimizer } from '../webgl/WebGLOptimizer';
+import { GeometryGenerator } from './GeometryGenerator';
+
+/**
+ * WebGL上下文高级功能配置
+ */
+export interface WebGLAdvancedConfig {
+  /** 启用高级着色器管理 */
+  enableAdvancedShaders?: boolean;
+  /** 启用WebGL优化器 */
+  enableOptimizer?: boolean;
+  /** 高级着色器管理器配置 */
+  advancedShaderConfig?: {
+    enableHotReload?: boolean;
+    precompileCommonVariants?: boolean;
+    enableAsyncCompilation?: boolean;
+  };
+  /** WebGL优化器配置 */
+  optimizerConfig?: {
+    enableStateTracking?: boolean;
+    enableBatchOptimization?: boolean;
+    enableShaderWarmup?: boolean;
+    enableBufferPooling?: boolean;
+  };
+}
 
 export interface IWebGLContext extends IGraphicsContext {
   readonly gl: WebGLRenderingContext;
-  
-  // WebGL特有方法
+
+  // WebGL特有的基础方法
   clear(color?: string): void;
   setBlendMode(mode: string): void;
   drawElements(count: number, offset: number): void;
@@ -18,6 +52,10 @@ export interface IWebGLContext extends IGraphicsContext {
   bufferData(target: number, data: BufferSource | null, usage: number): void;
   useProgram(program: WebGLProgram | null): void;
   bindTexture(target: number, texture: WebGLTexture | null): void;
+
+  // 高级功能访问接口
+  getAdvancedShaderManager?(): AdvancedShaderManager | undefined;
+  getWebGLOptimizer?(): WebGLOptimizer | undefined;
 }
 
 /**
@@ -34,13 +72,17 @@ export class WebGLContextFactory implements IGraphicsContextFactory<HTMLCanvasEl
     }
   }
 
-  async createContext(canvas: HTMLCanvasElement): Promise<IWebGLContext> {
+  async createContext(
+    canvas: HTMLCanvasElement,
+    config?: Partial<BatchManagerConfig>,
+    advancedConfig?: WebGLAdvancedConfig
+  ): Promise<IWebGLContext> {
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl || !(gl instanceof WebGLRenderingContext)) {
+    if (!gl) {
       throw new Error('WebGL not supported');
     }
 
-    return new WebGLContext(gl, canvas);
+    return new WebGLContext(gl as WebGLRenderingContext, canvas, config, advancedConfig);
   }
 
   getCapabilities(): IGraphicsCapabilities {
@@ -84,24 +126,69 @@ class WebGLContext implements IWebGLContext {
   private lineWidth: number = 1;
   private globalAlpha: number = 1;
 
-  // 渲染管理器
-  private renderManager: WebGLRenderManager;
 
-  constructor(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+  // 批处理和着色器管理
+  private shaderManager: ShaderManager;
+  private bufferManager: BufferManager;
+  private batchManager: BatchManager;
+
+  // 高级功能（可选）
+  private advancedShaderManager?: AdvancedShaderManager;
+  private webglOptimizer?: WebGLOptimizer;
+
+  // 常用缓冲区
+  private vertexBuffer: IBuffer | null = null;
+  private indexBuffer: IBuffer | null = null;
+  private currentShader: IShaderProgram | null = null;
+
+  constructor(
+    gl: WebGLRenderingContext,
+    canvas: HTMLCanvasElement,
+    config?: Partial<BatchManagerConfig>,
+    advancedConfig?: WebGLAdvancedConfig
+  ) {
     this.gl = gl;
     this.width = canvas.width;
     this.height = canvas.height;
-    
+
     // 初始化变换矩阵
     this.currentTransform = Matrix3.identity();
     // 创建投影矩阵 - 简化实现
     this.projectionMatrix = Matrix3.identity();
-    
-    // 初始化渲染管理器
-    this.renderManager = new WebGLRenderManager(gl);
-    
+
+    // 初始化基础管理器
+    this.shaderManager = new ShaderManager(this.gl);
+    this.bufferManager = new BufferManager(this.gl);
+    this.batchManager = createBatchManagerWithDefaultStrategies(this.gl, config);
+
+    // 初始化高级功能（如果启用）
+    this.initializeAdvancedFeatures(advancedConfig);
+
     // 初始化WebGL状态
     this.setupWebGLState();
+    this.setup();
+  }
+
+  /**
+   * 初始化高级功能
+   */
+  private initializeAdvancedFeatures(advancedConfig?: WebGLAdvancedConfig): void {
+    if (!advancedConfig) return;
+
+    // 初始化高级着色器管理器
+    if (advancedConfig.enableAdvancedShaders) {
+      this.advancedShaderManager = new AdvancedShaderManager(this.gl, advancedConfig.advancedShaderConfig);
+    }
+
+    // 初始化WebGL优化器
+    if (advancedConfig.enableOptimizer) {
+      this.webglOptimizer = new WebGLOptimizer(
+        this.gl,
+        this.shaderManager,
+        this.bufferManager,
+        advancedConfig.optimizerConfig
+      );
+    }
   }
 
   private setupWebGLState(): void {
@@ -117,6 +204,25 @@ class WebGLContext implements IWebGLContext {
 
     // 设置视口
     this.gl.viewport(0, 0, this.width, this.height);
+  }
+
+  /**
+   * 初始化设置
+   */
+  private setup(): void {
+    try {
+      // 初始化基础着色器
+      for (const [name, shaderSource] of Object.entries(SHADER_LIBRARY)) {
+        this.shaderManager.createShader({
+          name,
+          vertex: shaderSource.vertex,
+          fragment: shaderSource.fragment
+        });
+      }
+      console.log('WebGL context setup completed');
+    } catch (error) {
+      console.error('WebGL setup failed:', error);
+    }
   }
 
   clear(color?: string): void {
@@ -306,50 +412,8 @@ class WebGLContext implements IWebGLContext {
     this.currentFont = font;
   }
 
-  drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
-    const fillColor = fill ? this.fillStyle : undefined;
-    const strokeColor = stroke ? this.strokeStyle : undefined;
-    const strokeWidth = stroke ? this.lineWidth : undefined;
-    
-    this.renderManager.drawRectangle(
-      rect.x, rect.y, rect.width, rect.height,
-      fillColor, strokeColor, strokeWidth
-    );
-    
-    // 立即渲染以保持与Canvas2D的兼容性
-    this.flushRender();
-  }
 
-  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
-    const fillColor = fill ? this.fillStyle : undefined;
-    const strokeColor = stroke ? this.strokeStyle : undefined;
-    const strokeWidth = stroke ? this.lineWidth : undefined;
-    
-    this.renderManager.drawCircle(
-      center.x, center.y, radius,
-      fillColor, strokeColor, strokeWidth
-    );
-    
-    // 立即渲染以保持与Canvas2D的兼容性
-    this.flushRender();
-  }
 
-  drawLine(x1: number, y1: number, x2: number, y2: number): void {
-    this.renderManager.drawLine(
-      x1, y1, x2, y2,
-      this.strokeStyle, this.lineWidth
-    );
-    
-    // 立即渲染以保持与Canvas2D的兼容性
-    this.flushRender();
-  }
-  
-  /**
-   * 执行渲染
-   */
-  private flushRender(): void {
-    this.renderManager.flush(this.projectionMatrix, this.currentTransform);
-  }
 
   drawImage(imageData: IImageData, dx: number, dy: number): void;
   drawImage(imageData: IImageData, dx: number, dy: number, dw: number, dh: number): void;
@@ -424,9 +488,6 @@ class WebGLContext implements IWebGLContext {
     this.gl.disable(this.gl.SCISSOR_TEST);
   }
 
-  present(): void {
-    // WebGL需要显式提交渲染
-  }
 
   // 路径相关状态
   private currentPath: { x: number; y: number }[] = [];
@@ -511,41 +572,37 @@ class WebGLContext implements IWebGLContext {
   }
 
   fill(): void {
-    if (this.currentPath.length >= 3) {
-      this.renderManager.drawPolygon(this.currentPath, this.fillStyle);
-      this.flushRender();
-    }
+    // WebGL中的路径填充需要上层渲染器实现
+    console.log('Path fill operation - requires higher level renderer');
   }
 
   stroke(): void {
-    if (this.currentPath.length >= 2) {
-      for (let i = 0; i < this.currentPath.length - 1; i++) {
-        const p1 = this.currentPath[i];
-        const p2 = this.currentPath[i + 1];
-        this.renderManager.drawLine(p1.x, p1.y, p2.x, p2.y, this.strokeStyle, this.lineWidth);
-      }
-      this.flushRender();
-    }
+    // WebGL中的路径描边需要上层渲染器实现
+    console.log('Path stroke operation - requires higher level renderer');
   }
 
   fillRect(x: number, y: number, width: number, height: number): void {
-    this.renderManager.drawRectangle(x, y, width, height, this.fillStyle);
-    this.flushRender();
+    const color = GeometryGenerator.parseColor(this.fillStyle);
+    const renderable = this.createRectangleRenderable(x, y, width, height, color);
+    this.batchManager.addRenderable(renderable);
   }
 
   strokeRect(x: number, y: number, width: number, height: number): void {
-    this.renderManager.drawRectangle(x, y, width, height, undefined, this.strokeStyle, this.lineWidth);
-    this.flushRender();
+    const color = GeometryGenerator.parseColor(this.strokeStyle);
+    this.drawRectangleStroke(x, y, width, height, this.strokeStyle, this.lineWidth);
   }
 
   fillCircle(x: number, y: number, radius: number): void {
-    this.renderManager.drawCircle(x, y, radius, this.fillStyle);
-    this.flushRender();
+    const color = GeometryGenerator.parseColor(this.fillStyle);
+    const renderable = this.createCircleRenderable(x, y, radius, 32, color);
+    this.batchManager.addRenderable(renderable);
   }
 
   strokeCircle(x: number, y: number, radius: number): void {
-    this.renderManager.drawCircle(x, y, radius, undefined, this.strokeStyle, this.lineWidth);
-    this.flushRender();
+    const strokeColorParsed = GeometryGenerator.parseColor(this.strokeStyle);
+    const outerRadius = radius + this.lineWidth / 2;
+    const outerRenderable = this.createCircleRenderable(x, y, outerRadius, 32, strokeColorParsed);
+    this.batchManager.addRenderable(outerRenderable);
   }
 
   // 文本渲染状态
@@ -554,15 +611,13 @@ class WebGLContext implements IWebGLContext {
   private textBaseline: string = 'alphabetic';
 
   fillText(text: string, x: number, y: number, style?: any): void {
-    // WebGL文本渲染需要纹理，这里使用简化实现
-    // 实际项目中可以使用文本纹理或SDF字体
-    console.warn('WebGL text rendering not fully implemented, use Canvas2D for text');
-    this.renderManager.drawText(text, x, y, this.fillStyle, this.currentFont);
+    // WebGL文本渲染需要上层渲染器实现
+    console.log('Text fill operation - requires higher level renderer with texture system');
   }
 
   strokeText(text: string, x: number, y: number, style?: any): void {
-    console.warn('WebGL text rendering not fully implemented, use Canvas2D for text');
-    this.renderManager.drawText(text, x, y, this.strokeStyle, this.currentFont, true);
+    // WebGL文本描边需要上层渲染器实现
+    console.log('Text stroke operation - requires higher level renderer with texture system');
   }
 
   measureText(text: string, style?: any): { width: number; height: number } {
@@ -622,8 +677,8 @@ class WebGLContext implements IWebGLContext {
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
     
-    // 渲染纹理到指定位置
-    this.renderManager.drawTexture(texture, x, y, imageData.width, imageData.height);
+    // 渲染纹理到指定位置需要上层渲染器实现
+    console.log('Texture rendering operation - requires higher level renderer');
     
     // 清理纹理
     this.gl.deleteTexture(texture);
@@ -689,7 +744,240 @@ class WebGLContext implements IWebGLContext {
     return result;
   }
 
+  // IGraphicsContext要求的高级绘图方法
+  drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+    if (stroke) {
+      this.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    }
+  }
+
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillCircle(center.x, center.y, radius);
+    }
+    if (stroke) {
+      this.strokeCircle(center.x, center.y, radius);
+    }
+  }
+
+  drawLine(x1: number, y1: number, x2: number, y2: number): void {
+    const color = GeometryGenerator.parseColor(this.strokeStyle);
+    const renderable = this.createLineRenderable(x1, y1, x2, y2, this.lineWidth, color);
+    this.batchManager.addRenderable(renderable);
+  }
+
+
+  /**
+   * 执行批处理渲染
+   */
+  present(): void {
+    // 创建投影矩阵并执行渲染
+    const projectionMatrix = this.createProjectionMatrix();
+    const combinedMatrix = projectionMatrix.multiply(this.currentTransform);
+    this.batchManager.flush(combinedMatrix);
+  }
+
+  /**
+   * 创建投影矩阵
+   */
+  private createProjectionMatrix(): Matrix3 {
+    // 创建正交投影矩阵，覆盖整个画布
+    const left = 0;
+    const right = this.width;
+    const bottom = this.height;
+    const top = 0;
+
+    const width = right - left;
+    const height = bottom - top;
+
+    return new Matrix3([
+      2 / width, 0, 0,
+      0, -2 / height, 0,
+      -(right + left) / width, (bottom + top) / height, 1
+    ]);
+  }
+
+  /**
+   * 创建矩形可渲染对象
+   */
+  private createRectangleRenderable(
+    x: number, y: number, width: number, height: number,
+    color: [number, number, number, number]
+  ): IRenderable {
+    const vertices = new Float32Array([
+      // position + color + uv
+      x, y, color[0], color[1], color[2], color[3], 0, 0,
+      x + width, y, color[0], color[1], color[2], color[3], 1, 0,
+      x + width, y + height, color[0], color[1], color[2], color[3], 1, 1,
+      x, y + height, color[0], color[1], color[2], color[3], 0, 1
+    ]);
+
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => indices,
+      getShader: () => 'basic_shape',
+      getBlendMode: () => 0, // NORMAL
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 创建圆形可渲染对象
+   */
+  private createCircleRenderable(
+    centerX: number, centerY: number, radius: number, segments: number,
+    color: [number, number, number, number]
+  ): IRenderable {
+    const vertexCount = segments + 1; // 中心点 + 圆周点
+    const vertices = new Float32Array(vertexCount * 8); // position(2) + color(4) + uv(2)
+    const indices: number[] = [];
+
+    // 中心点
+    vertices[0] = centerX;
+    vertices[1] = centerY;
+    vertices[2] = color[0];
+    vertices[3] = color[1];
+    vertices[4] = color[2];
+    vertices[5] = color[3];
+    vertices[6] = 0.5; // UV中心
+    vertices[7] = 0.5;
+
+    // 圆周点
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * 2 * Math.PI;
+      const x = centerX + Math.cos(angle) * radius;
+      const y = centerY + Math.sin(angle) * radius;
+
+      const offset = (i + 1) * 8;
+      vertices[offset] = x;
+      vertices[offset + 1] = y;
+      vertices[offset + 2] = color[0];
+      vertices[offset + 3] = color[1];
+      vertices[offset + 4] = color[2];
+      vertices[offset + 5] = color[3];
+      vertices[offset + 6] = 0.5 + Math.cos(angle) * 0.5; // UV
+      vertices[offset + 7] = 0.5 + Math.sin(angle) * 0.5;
+
+      // 创建三角形索引
+      const next = (i + 1) % segments + 1;
+      indices.push(0, i + 1, next);
+    }
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => new Uint16Array(indices),
+      getShader: () => 'basic_shape',
+      getBlendMode: () => 0,
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 绘制矩形描边
+   */
+  private drawRectangleStroke(
+    x: number, y: number, width: number, height: number,
+    strokeColor: string, strokeWidth: number
+  ): void {
+    const color = GeometryGenerator.parseColor(strokeColor);
+
+    // 绘制四条边线
+    const lines = [
+      // 上边
+      { x1: x, y1: y, x2: x + width, y2: y },
+      // 右边
+      { x1: x + width, y1: y, x2: x + width, y2: y + height },
+      // 下边
+      { x1: x + width, y1: y + height, x2: x, y2: y + height },
+      // 左边
+      { x1: x, y1: y + height, x2: x, y2: y }
+    ];
+
+    lines.forEach(line => {
+      const renderable = this.createLineRenderable(
+        line.x1, line.y1, line.x2, line.y2, strokeWidth, color
+      );
+      this.batchManager.addRenderable(renderable);
+    });
+  }
+
+  /**
+   * 创建线条可渲染对象
+   */
+  private createLineRenderable(
+    x1: number, y1: number, x2: number, y2: number, width: number,
+    color: [number, number, number, number]
+  ): IRenderable {
+    // 简化的线条实现：创建矩形表示线条
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const angle = Math.atan2(dy, dx);
+
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const halfWidth = width / 2;
+
+    // 创建线条的四个顶点（矩形）
+    const vertices = new Float32Array([
+      x1 - sin * halfWidth, y1 + cos * halfWidth, color[0], color[1], color[2], color[3], 0, 0,
+      x2 - sin * halfWidth, y2 + cos * halfWidth, color[0], color[1], color[2], color[3], 1, 0,
+      x2 + sin * halfWidth, y2 - cos * halfWidth, color[0], color[1], color[2], color[3], 1, 1,
+      x1 + sin * halfWidth, y1 - cos * halfWidth, color[0], color[1], color[2], color[3], 0, 1
+    ]);
+
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+    return {
+      getVertices: () => vertices,
+      getIndices: () => indices,
+      getShader: () => 'basic_shape',
+      getBlendMode: () => 0,
+      getZIndex: () => 0
+    };
+  }
+
+  /**
+   * 获取高级着色器管理器
+   */
+  getAdvancedShaderManager(): AdvancedShaderManager | undefined {
+    return this.advancedShaderManager;
+  }
+
+  /**
+   * 获取WebGL优化器
+   */
+  getWebGLOptimizer(): WebGLOptimizer | undefined {
+    return this.webglOptimizer;
+  }
+
+  /**
+   * 销毁上下文及其资源
+   */
   dispose(): void {
-    this.renderManager.dispose();
+    // 销毁高级功能
+    if (this.advancedShaderManager) {
+      this.advancedShaderManager.dispose();
+    }
+    if (this.webglOptimizer) {
+      this.webglOptimizer.dispose();
+    }
+
+    // 销毁基础管理器
+    this.batchManager.dispose();
+    this.shaderManager.dispose();
+    this.bufferManager.dispose();
+
+    // 清理缓冲区
+    if (this.vertexBuffer) {
+      this.vertexBuffer.dispose(this.gl);
+    }
+    if (this.indexBuffer) {
+      this.indexBuffer.dispose(this.gl);
+    }
   }
 }

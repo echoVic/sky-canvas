@@ -3,10 +3,10 @@
  * 支持批量操作、嵌套事务和自动管理事务边界
  */
 
+import type { ILogService } from '../services';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { CompositeCommand } from '../services/history/commands';
 import { ICommand, IHistoryService } from '../services/history/historyService';
-import type { ILogService } from '../services';
 
 /**
  * 事务管理器接口
