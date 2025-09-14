@@ -3,7 +3,7 @@
  * 支持内存监控、智能资源清理和自动垃圾收集
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 
 /**
  * 缓存项接口

@@ -38,7 +38,9 @@
       "Bash(pnpm exec vitest run:*)",
       "Bash(pnpm --filter @sky-canvas/canvas-sdk test src/services/zIndex/__tests__/zIndexService.test.ts)",
       "Bash(pnpm --filter @sky-canvas/canvas-sdk test -- --testPathPattern=\"zIndex\" --reporter=verbose)",
-      "Bash(pnpm --filter @sky-canvas/canvas-sdk test -- --testPathPattern=\"zIndex\" --run)"
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk test -- --testPathPattern=\"zIndex\" --run)",
+      "Bash(curl:*)",
+      "Bash(npx vitest run:*)"
     ],
     "deny": [],
     "ask": []

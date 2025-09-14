@@ -3,7 +3,7 @@
  * 集成异步资源加载器和 LRU 缓存策略，实现完整的资源生命周期管理
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 import { AsyncResourceLoader, ResourceConfig, ResourceType, LoadingState, LoadingProgress } from './AsyncResourceLoader';
 import { LRUCache, GPUResourceCache, MemoryAwareLRUCache, CacheItem, MemoryStats } from './LRUCache';
 

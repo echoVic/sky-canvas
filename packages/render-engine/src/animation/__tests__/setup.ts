@@ -37,10 +37,11 @@ global.cancelAnimationFrame = vi.fn((id: number) => {
 });
 
 // 模拟 setTimeout 和 clearTimeout
+const originalSetTimeout = global.setTimeout;
 Object.defineProperty(global, 'setTimeout', {
   value: vi.fn((fn: Function, delay?: number) => {
     const id = Math.random();
-    setTimeout(() => fn(), delay || 0);
+    originalSetTimeout(() => fn(), delay || 0);
     return id;
   }),
   writable: true

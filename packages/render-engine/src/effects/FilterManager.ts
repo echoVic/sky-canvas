@@ -3,7 +3,7 @@
  * 统一管理和执行各种图像滤镜
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 import {
   FilterType,
   FilterParameters,

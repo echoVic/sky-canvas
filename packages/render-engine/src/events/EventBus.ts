@@ -100,6 +100,7 @@ export class EventBus implements IEventBus, IDisposable {
   }
 }
 
+
 /**
  * 类型安全的事件发射器
  * 基于 EventEmitter3，提供更强的类型支持

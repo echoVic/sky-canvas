@@ -3,7 +3,7 @@
  * 统一管理所有动画实例和播放控制
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 import {
   IAnimation,
   AnimationState,
@@ -23,7 +23,8 @@ export interface AnimationManagerEvents {
   tick: (deltaTime: number) => void;
 }
 
-export class AnimationManager extends EventEmitter {
+export class AnimationManager {
+  private emitter = new EventEmitter();
   private animations = new Map<string, IAnimation>();
   private activeAnimations = new Set<IAnimation>();
   private lastUpdateTime: number = 0;
@@ -31,7 +32,7 @@ export class AnimationManager extends EventEmitter {
   private isRunning: boolean = false;
 
   constructor() {
-    super();
+    // 不需要调用 super()
   }
 
   /**
@@ -121,7 +122,7 @@ export class AnimationManager extends EventEmitter {
     // 监听动画事件
     animation.on('start', () => {
       this.activeAnimations.add(animation);
-      this.emit('animationStart', animation);
+      this.emitter.emit('animationStart', animation);
       
       // 如果管理器未运行，自动启动
       if (!this.isRunning) {
@@ -131,7 +132,7 @@ export class AnimationManager extends EventEmitter {
 
     animation.on('complete', () => {
       this.activeAnimations.delete(animation);
-      this.emit('animationComplete', animation);
+      this.emitter.emit('animationComplete', animation);
     });
 
     animation.on('cancel', () => {
@@ -267,7 +268,7 @@ export class AnimationManager extends EventEmitter {
     
     this.animations.clear();
     this.activeAnimations.clear();
-    this.removeAllListeners();
+    this.emitter.removeAllListeners();
   }
 
   private scheduleUpdate(): void {
@@ -286,7 +287,7 @@ export class AnimationManager extends EventEmitter {
     this.lastUpdateTime = currentTime;
 
     // 发射tick事件
-    this.emit('tick', deltaTime);
+    this.emitter.emit('tick', deltaTime);
 
     // 更新所有活动动画
     const completedAnimations: IAnimation[] = [];
@@ -296,7 +297,7 @@ export class AnimationManager extends EventEmitter {
         const isStillActive = animation.update(deltaTime);
         
         // 发射更新事件
-        this.emit('animationUpdate', {
+        this.emitter.emit('animationUpdate', {
           animation,
           deltaTime,
           currentTime: animation.currentTime,
@@ -322,25 +323,27 @@ export class AnimationManager extends EventEmitter {
     }
   }
 
-  // EventEmitter 类型重写
+  // 强类型事件方法
   on<K extends keyof AnimationManagerEvents>(
     event: K,
     listener: AnimationManagerEvents[K]
   ): this {
-    return super.on(event, listener as any);
+    this.emitter.on(event, listener as any);
+    return this;
   }
 
   off<K extends keyof AnimationManagerEvents>(
     event: K,
     listener: AnimationManagerEvents[K]
   ): this {
-    return super.off(event, listener as any);
+    this.emitter.off(event, listener as any);
+    return this;
   }
 
   emit<K extends keyof AnimationManagerEvents>(
     event: K,
     ...args: Parameters<AnimationManagerEvents[K]>
   ): boolean {
-    return super.emit(event, ...args);
+    return this.emitter.emit(event, ...args);
   }
 }

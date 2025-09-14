@@ -3,7 +3,7 @@
  * 提供 FPS 统计、内存监控和渲染调用统计，用于检测性能回归
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 import { UnifiedPerformanceMonitor } from './UnifiedPerformanceMonitor';
 
 /**

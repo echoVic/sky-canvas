@@ -42,13 +42,53 @@ export class CanvasRenderingService implements ICanvasRenderingService {
 
   async initialize(canvas: HTMLCanvasElement, config: any): Promise<void> {
     this.logger.info('Initializing canvas rendering service', { config });
-    
+
     // TODO: 根据配置创建对应的渲染引擎
     try {
-      const { RenderEngine } = require('@sky-canvas/render-engine');
-      this.renderEngine = new RenderEngine(canvas, config);
-      await this.renderEngine.initialize();
-      
+      const { RenderEngine, WebGLContextFactory, Canvas2DContextFactory, WebGPUContextFactory } = await import('@sky-canvas/render-engine');
+
+      // 根据配置选择对应的图形上下文工厂
+      let factory;
+      const renderType = config.renderEngine || 'webgl';
+
+      switch (renderType) {
+        case 'webgl':
+          factory = new WebGLContextFactory();
+          break;
+        case 'canvas2d':
+          factory = new Canvas2DContextFactory();
+          break;
+        case 'webgpu':
+          factory = new WebGPUContextFactory();
+          break;
+        default:
+          factory = new WebGLContextFactory();
+      }
+
+      this.renderEngine = new RenderEngine(config);
+      await this.renderEngine.initialize(factory, canvas);
+
+      // 监听形状变化事件并触发重绘
+      this.eventBus.on('canvas:shapeAdded', () => {
+        this.logger.debug('Shape added, triggering render');
+        this.render();
+      });
+
+      this.eventBus.on('canvas:shapeUpdated', () => {
+        this.logger.debug('Shape updated, triggering render');
+        this.render();
+      });
+
+      this.eventBus.on('canvas:shapeRemoved', () => {
+        this.logger.debug('Shape removed, triggering render');
+        this.render();
+      });
+
+      this.eventBus.on('canvas:cleared', () => {
+        this.logger.debug('Canvas cleared, triggering render');
+        this.render();
+      });
+
       this.eventBus.emit('rendering:initialized', { canvas, config });
       this.logger.info('Canvas rendering service initialized successfully');
     } catch (error) {

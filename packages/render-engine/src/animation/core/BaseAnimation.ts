@@ -3,7 +3,7 @@
  * 提供动画生命周期管理和事件系统
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 import {
   IAnimation,
   AnimationState,
@@ -14,9 +14,10 @@ import {
 } from '../types/AnimationTypes';
 import { EasingFunctions } from '../easing/EasingFunctions';
 
-export abstract class BaseAnimation extends EventEmitter implements IAnimation {
+export abstract class BaseAnimation implements IAnimation {
   private static nextId = 1;
 
+  private emitter = new EventEmitter();
   protected _id: string;
   protected _state: AnimationState = AnimationState.IDLE;
   protected _duration: number;
@@ -29,13 +30,13 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
   protected _currentLoopCount: number = 0;
   protected _isReversed: boolean = false;
   protected _easingFunction: EasingFunction;
-  
+
   protected _delayTimer: number | null = null;
   protected _animationFrameId: number | null = null;
 
   constructor(config: AnimationConfig) {
-    super();
-    
+    // 不需要调用 super()
+
     this._id = `animation_${BaseAnimation.nextId++}`;
     this._duration = Math.max(0, config.duration);
     this._delay = config.delay || 0;
@@ -95,7 +96,7 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
       this.startAnimation();
     }
 
-    this.emit('start', this);
+    this.emitter.emit('start', this);
     return this;
   }
 
@@ -117,7 +118,7 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
       this._animationFrameId = null;
     }
 
-    this.emit('pause', this);
+    this.emitter.emit('pause', this);
     return this;
   }
 
@@ -133,14 +134,14 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
     this._startTime += pausedDuration;
     
     this.startAnimation();
-    this.emit('resume', this);
+    this.emitter.emit('resume', this);
     return this;
   }
 
   stop(): this {
     this._state = AnimationState.CANCELLED;
     this.cleanup();
-    this.emit('cancel', this);
+    this.emitter.emit('cancel', this);
     return this;
   }
 
@@ -167,14 +168,14 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
 
     const progress = this.calculateProgress();
     this.applyAnimation(progress);
-    this.emit('update', this, progress);
+    this.emitter.emit('update', this, progress);
     
     return true;
   }
 
   dispose(): void {
     this.stop();
-    this.removeAllListeners();
+    this.emitter.removeAllListeners();
   }
 
   protected abstract applyAnimation(progress: number): void;
@@ -196,7 +197,7 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
       } else {
         const progress = this.calculateProgress();
         this.applyAnimation(progress);
-        this.emit('update', this, progress);
+        this.emitter.emit('update', this, progress);
       }
 
       this._animationFrameId = requestAnimationFrame(animate);
@@ -209,7 +210,7 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
     if (this._loop === false) {
       this._state = AnimationState.COMPLETED;
       this.cleanup();
-      this.emit('complete', this);
+      this.emitter.emit('complete', this);
       return false;
     }
 
@@ -217,7 +218,7 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
     if (typeof this._loop === 'number' && this._currentLoopCount >= this._loop - 1) {
       this._state = AnimationState.COMPLETED;
       this.cleanup();
-      this.emit('complete', this);
+      this.emitter.emit('complete', this);
       return false;
     }
 
@@ -229,7 +230,7 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
       this._isReversed = !this._isReversed;
     }
 
-    this.emit('loop', this, this._currentLoopCount);
+    this.emitter.emit('loop', this, this._currentLoopCount);
     return true;
   }
 
@@ -259,19 +260,21 @@ export abstract class BaseAnimation extends EventEmitter implements IAnimation {
     }
   }
 
-  // EventEmitter 类型重写以支持强类型事件
+  // 强类型事件方法
   on<K extends keyof AnimationEvents>(event: K, listener: AnimationEvents[K]): this {
-    return super.on(event, listener as any);
+    this.emitter.on(event, listener as any);
+    return this;
   }
 
   off<K extends keyof AnimationEvents>(event: K, listener: AnimationEvents[K]): this {
-    return super.off(event, listener as any);
+    this.emitter.off(event, listener as any);
+    return this;
   }
 
   emit<K extends keyof AnimationEvents>(
     event: K,
     ...args: Parameters<AnimationEvents[K]>
   ): boolean {
-    return super.emit(event, ...args);
+    return this.emitter.emit(event, ...args);
   }
 }

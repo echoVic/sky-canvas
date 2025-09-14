@@ -25,6 +25,7 @@ export interface ITool {
  */
 export interface IInteractionService {
   initialize(canvas: HTMLCanvasElement): void;
+  setToolManager(toolManager: any): void;
   setActiveTool(toolName: string | null): boolean;
   getActiveTool(): ITool | null;
   registerTool(tool: ITool): void;
@@ -48,6 +49,7 @@ export class InteractionService implements IInteractionService {
   private tools = new Map<string, ITool>();
   private enabled = true;
   private eventListeners: Array<{ element: any; event: string; handler: any }> = [];
+  private toolManager?: any;
 
   constructor(
     @IEventBusService private eventBus: IEventBusService,
@@ -61,35 +63,83 @@ export class InteractionService implements IInteractionService {
     this.logger.info('Interaction service initialized');
   }
 
+  setToolManager(toolManager: any): void {
+    this.toolManager = toolManager;
+    this.logger.debug('ToolManager set in InteractionService');
+  }
+
   private setupEventListeners(): void {
     if (!this.canvas) return;
 
     const mouseDownHandler = (event: MouseEvent) => {
-      if (this.enabled && this.activeTool?.handleMouseDown) {
+      if (!this.enabled) return;
+
+      const canvasPoint = this.getCanvasPoint(event);
+      const eventData = {
+        point: canvasPoint,
+        originalEvent: event
+      };
+
+      // 优先使用ToolManager处理事件
+      if (this.toolManager) {
+        this.toolManager.handleMouseDown(eventData);
+      } else if (this.activeTool?.handleMouseDown) {
         this.activeTool.handleMouseDown(event);
       }
     };
 
     const mouseMoveHandler = (event: MouseEvent) => {
-      if (this.enabled && this.activeTool?.handleMouseMove) {
+      if (!this.enabled) return;
+
+      const canvasPoint = this.getCanvasPoint(event);
+      const eventData = {
+        point: canvasPoint,
+        originalEvent: event
+      };
+
+      // 优先使用ToolManager处理事件
+      if (this.toolManager) {
+        this.toolManager.handleMouseMove(eventData);
+      } else if (this.activeTool?.handleMouseMove) {
         this.activeTool.handleMouseMove(event);
       }
     };
 
     const mouseUpHandler = (event: MouseEvent) => {
-      if (this.enabled && this.activeTool?.handleMouseUp) {
+      if (!this.enabled) return;
+
+      const canvasPoint = this.getCanvasPoint(event);
+      const eventData = {
+        point: canvasPoint,
+        originalEvent: event
+      };
+
+      // 优先使用ToolManager处理事件
+      if (this.toolManager) {
+        this.toolManager.handleMouseUp(eventData);
+      } else if (this.activeTool?.handleMouseUp) {
         this.activeTool.handleMouseUp(event);
       }
     };
 
     const keyDownHandler = (event: KeyboardEvent) => {
-      if (this.enabled && this.activeTool?.handleKeyDown) {
+      if (!this.enabled) return;
+
+      // 优先使用ToolManager处理事件
+      if (this.toolManager) {
+        this.toolManager.handleKeyDown(event);
+      } else if (this.activeTool?.handleKeyDown) {
         this.activeTool.handleKeyDown(event);
       }
     };
 
     const keyUpHandler = (event: KeyboardEvent) => {
-      if (this.enabled && this.activeTool?.handleKeyUp) {
+      if (!this.enabled) return;
+
+      // 优先使用ToolManager处理事件
+      if (this.toolManager) {
+        this.toolManager.handleKeyUp(event);
+      } else if (this.activeTool?.handleKeyUp) {
         this.activeTool.handleKeyUp(event);
       }
     };
@@ -180,6 +230,28 @@ export class InteractionService implements IInteractionService {
     return this.enabled;
   }
 
+  /**
+   * 获取画布坐标点
+   */
+  private getCanvasPoint(event: MouseEvent): { x: number; y: number } {
+    if (!this.canvas) {
+      return { x: 0, y: 0 };
+    }
+
+    const rect = this.canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // 考虑画布的缩放比例
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+
+    return {
+      x: x * scaleX,
+      y: y * scaleY
+    };
+  }
+
   dispose(): void {
     // 停用当前工具
     if (this.activeTool) {
@@ -195,7 +267,8 @@ export class InteractionService implements IInteractionService {
 
     // 清理工具
     this.tools.clear();
-    
+    this.toolManager = undefined;
+
     this.eventBus.emit('interaction:disposed', {});
     this.logger.info('Interaction service disposed');
   }

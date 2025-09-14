@@ -36,10 +36,12 @@ import {
   ISelectionService,
   IShapeService,
   IShortcutService,
+  IZIndexService,
   LogService,
   SelectionService,
   ShapeService,
   ShortcutService,
+  ZIndexService,
   type LogLevel
 } from './services';
 
@@ -184,7 +186,45 @@ class CanvasSDKBootstrap {
       accessor.get(ICanvasManager)
     );
 
+    // 初始化Canvas和核心服务连接
+    if (this.config.canvas) {
+      await this.initializeCanvasServices();
+    }
+
     this.logger.info('Canvas SDK Bootstrap core started');
+  }
+
+  /**
+   * 初始化Canvas相关服务并建立连接
+   */
+  private async initializeCanvasServices(): Promise<void> {
+    if (!this.config.canvas || !this.instantiationService) return;
+
+    // 初始化渲染服务
+    const renderingService = this.instantiationService.invokeFunction(accessor =>
+      accessor.get(ICanvasRenderingService)
+    );
+    await renderingService.initialize(this.config.canvas, {
+      renderEngine: this.config.renderEngine || 'webgl'
+    });
+
+    // 初始化交互服务
+    if (this.config.enableInteraction) {
+      const interactionService = this.instantiationService.invokeFunction(accessor =>
+        accessor.get(IInteractionService)
+      );
+      const toolManager = this.instantiationService.invokeFunction(accessor =>
+        accessor.get(IToolManager)
+      );
+
+      // 初始化交互服务
+      interactionService.initialize(this.config.canvas);
+
+      // 连接InteractionService和ToolManager
+      interactionService.setToolManager(toolManager);
+
+      this.logger.info('Canvas services initialized and connected');
+    }
   }
 
   /**
@@ -245,6 +285,9 @@ class CanvasSDKBootstrap {
 
     // 形状服务
     services.set(IShapeService, new SyncDescriptor(ShapeService));
+
+    // Z-Index服务
+    services.set(IZIndexService, new SyncDescriptor(ZIndexService));
 
     // 剪贴板服务
     services.set(IClipboardService, new SyncDescriptor(ClipboardService));

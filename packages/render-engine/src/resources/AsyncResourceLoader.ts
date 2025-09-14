@@ -3,7 +3,7 @@
  * 支持现代 Promise/async-await 模式，提供加载进度回调和错误重试机制
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from 'eventemitter3';
 
 /**
  * 资源类型定义
