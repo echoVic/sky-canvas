@@ -4,3 +4,7 @@ packages:
 ignoredBuiltDependencies:
   - '@heroui/shared-utils'
   - esbuild
+
+onlyBuiltDependencies:
+  - '@heroui/shared-utils'
+  - esbuild

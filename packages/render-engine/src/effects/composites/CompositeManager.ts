@@ -2,15 +2,15 @@
  * 复合操作管理器
  */
 
-import { EventEmitter } from '../../animation/core/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 import {
-    CompositeEvents,
-    CompositeLayer,
-    CompositeOperation,
-    CompositeResult,
-    CompositeStats,
-    ICompositeManager,
-    ICompositeOperation
+  CompositeEvents,
+  CompositeLayer,
+  CompositeOperation,
+  CompositeResult,
+  CompositeStats,
+  ICompositeManager,
+  ICompositeOperation
 } from '../types/CompositeTypes';
 
 export class CompositeManager extends EventEmitter<CompositeEvents> implements ICompositeManager {

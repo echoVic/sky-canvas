@@ -2,15 +2,15 @@
  * 后处理效果管理器
  */
 
-import { EventEmitter } from '../../animation/core/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 import {
-    IPostProcessEffect,
-    IPostProcessManager,
-    PostProcessEvents,
-    PostProcessLayer,
-    PostProcessResult,
-    PostProcessStats,
-    PostProcessType
+  IPostProcessEffect,
+  IPostProcessManager,
+  PostProcessEvents,
+  PostProcessLayer,
+  PostProcessResult,
+  PostProcessStats,
+  PostProcessType
 } from '../types/PostProcessTypes';
 
 export class PostProcessManager extends EventEmitter<PostProcessEvents> implements IPostProcessManager {

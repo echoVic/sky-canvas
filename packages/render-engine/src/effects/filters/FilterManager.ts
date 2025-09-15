@@ -3,22 +3,21 @@
  * 管理多个滤镜的应用和处理
  */
 
+import { EventEmitter } from 'eventemitter3';
 import {
+  FilterChainConfig,
+  FilterContext,
+  FilterEvents,
   FilterParameters,
   FilterResult,
-  FilterContext,
-  FilterChainConfig,
-  FilterProcessingOptions,
-  FilterEvents,
   FilterType,
   IFilter
 } from '../types/FilterTypes';
-import { EventEmitter } from '../../animation/core/EventEmitter';
 
 // 导入滤镜实现
 import { BaseFilter } from './BaseFilter';
-import { GaussianBlurFilter } from './GaussianBlurFilter';
 import { BrightnessFilter } from './BrightnessFilter';
+import { GaussianBlurFilter } from './GaussianBlurFilter';
 
 export class FilterManager extends EventEmitter<FilterEvents> {
   private filters: Map<FilterType, IFilter> = new Map();

@@ -9,7 +9,7 @@ import {
   ParticleSystemState 
 } from '../types/ParticleTypes';
 import { ParticleSystem } from './ParticleSystem';
-import { EventEmitter } from '../core/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 
 interface ParticleSystemManagerEvents {
   systemAdded: (system: IParticleSystem) => void;

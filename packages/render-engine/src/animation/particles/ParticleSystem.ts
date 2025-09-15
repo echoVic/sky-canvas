@@ -14,7 +14,7 @@ import {
 } from '../types/ParticleTypes';
 import { ParticlePool } from './ParticlePool';
 import { ParticleFactory } from './ParticleFactory';
-import { EventEmitter } from '../core/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 
 // 导入影响器
 import { GravityAffector } from './affectors/GravityAffector';

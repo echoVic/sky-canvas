@@ -12,7 +12,7 @@ import {
   LightingEvents
 } from '../types/LightingTypes';
 import { Point2D, Vector2D } from '../../animation/types/PathTypes';
-import { EventEmitter } from '../../animation/core/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 
 export class LightingManager extends EventEmitter<LightingEvents> implements ILightingManager {
   private lights: Map<string, ILight> = new Map();

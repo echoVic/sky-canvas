@@ -351,7 +351,7 @@ export interface IParticleSystem {
   // 事件
   on<K extends keyof ParticleSystemEvents>(event: K, listener: ParticleSystemEvents[K]): this;
   off<K extends keyof ParticleSystemEvents>(event: K, listener?: ParticleSystemEvents[K]): this;
-  emit<K extends keyof ParticleSystemEvents>(event: K, ...args: Parameters<ParticleSystemEvents[K]>): this;
+  emit<K extends keyof ParticleSystemEvents>(event: K, ...args: Parameters<ParticleSystemEvents[K]>): boolean;
 }
 
 /**

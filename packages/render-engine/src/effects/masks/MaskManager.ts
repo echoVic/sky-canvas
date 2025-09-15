@@ -2,12 +2,14 @@
  * 遮罩管理器
  */
 
-import { 
-  IMask, 
-  IMaskManager,
+import { EventEmitter } from 'eventemitter3';
+import {
   AnyMaskConfig,
+  IMask,
+  IMaskManager,
   MaskEvents
 } from '../types/MaskTypes';
+import { MaskFactory } from './MaskFactory';
 // Shape interface definition for render-engine
 interface IShape {
   id: string;
@@ -25,8 +27,6 @@ interface IShape {
     center: { x: number; y: number };
   };
 }
-import { EventEmitter } from '../../animation/core/EventEmitter';
-import { MaskFactory } from './MaskFactory';
 
 export class MaskManager extends EventEmitter<MaskEvents> implements IMaskManager {
   private masks: Map<string, IMask> = new Map();

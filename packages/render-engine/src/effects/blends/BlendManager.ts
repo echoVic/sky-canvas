@@ -2,17 +2,17 @@
  * 混合管理器
  */
 
-import { EventEmitter } from '../../animation/core/EventEmitter';
+import { EventEmitter } from 'eventemitter3';
 import {
-    BlendColor,
-    BlendColorWithMode,
-    BlendEvents,
-    BlendLayer,
-    BlendMode,
-    BlendResult,
-    BlendStats,
-    IBlendManager,
-    IBlendOperation
+  BlendColor,
+  BlendColorWithMode,
+  BlendEvents,
+  BlendLayer,
+  BlendMode,
+  BlendResult,
+  BlendStats,
+  IBlendManager,
+  IBlendOperation
 } from '../types/BlendTypes';
 
 export class BlendManager extends EventEmitter<BlendEvents> implements IBlendManager {
