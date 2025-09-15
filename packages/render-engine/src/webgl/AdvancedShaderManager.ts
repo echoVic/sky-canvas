@@ -2,8 +2,8 @@
  * 高级着色器管理系统
  * 提供着色器预编译、热重载、变体管理和性能优化
  */
-import { IShaderSource, IShaderProgram, ShaderType, ShaderCompilationError, ShaderProgramLinkError } from './ShaderManager';
 import { EventEmitter } from '../events/EventBus';
+import { IShaderProgram, ShaderCompilationError, ShaderProgramLinkError, ShaderType } from './ShaderManager';
 
 /**
  * 着色器变体定义
@@ -208,7 +208,7 @@ export class AdvancedShaderManager extends EventEmitter<ShaderManagerEvents> {
   getProgram(templateId: string, variantName?: string): Promise<IShaderProgram> {
     const template = this.templates.get(templateId);
     if (!template) {
-      throw new Error(`Shader template not found: ${templateId}`);
+      return Promise.reject(new Error(`Shader template not found: ${templateId}`));
     }
     
     const variant = variantName 
@@ -216,7 +216,7 @@ export class AdvancedShaderManager extends EventEmitter<ShaderManagerEvents> {
       : template.variants[0];
       
     if (!variant) {
-      throw new Error(`Shader variant not found: ${variantName} in template ${templateId}`);
+      return Promise.reject(new Error(`Shader variant not found: ${variantName} in template ${templateId}`));
     }
     
     const cacheKey = `${templateId}_${variant.name}`;
@@ -234,7 +234,11 @@ export class AdvancedShaderManager extends EventEmitter<ShaderManagerEvents> {
     if (this.config.enableAsyncCompilation) {
       return this.compileAsync(template, variant);
     } else {
-      return Promise.resolve(this.compileSync(template, variant));
+      try {
+        return Promise.resolve(this.compileSync(template, variant));
+      } catch (error) {
+        return Promise.reject(error);
+      }
     }
   }
   

@@ -1,5 +1,4 @@
-import { BlendMode, Buffer, BufferType } from '../webgl/types';
-import { RenderStats } from './types';
+import { WebGLContext } from '../adapters/WebGLContext';
 import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { Matrix3x3, Vector2 } from '../math';
 import { WebGLMemoryManager } from '../memory/MemoryManager';
@@ -7,7 +6,9 @@ import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../performanc
 import { WebGLResourceManager } from '../resources/ResourceManager';
 import { DefaultShaders, WebGLShaderManager } from '../shaders/ShaderManager';
 import { TextureAtlas, WebGLTextureManager } from '../textures/TextureManager';
-import { BaseRenderer, Drawable, RenderContext, RendererCapabilities, RenderState } from './BaseRenderer';
+import { BlendMode, Buffer, BufferType } from '../webgl/types';
+import { BaseRenderer } from './BaseRenderer';
+import { Drawable, RenderContext, RendererCapabilities, RenderState, RenderStats } from './types';
 
 // WebGL渲染上下文
 export interface WebGLRenderContext extends RenderContext {
@@ -30,7 +31,8 @@ export interface BatchData {
 }
 
 export class WebGLRenderer extends BaseRenderer {
-  private gl: WebGLRenderingContext | null = null;
+  private webglContext: WebGLContext | null = null; // 使用 WebGLContext 替代原生 gl
+  private gl: WebGLRenderingContext | null = null; // 保留以兼容现有代码
   private shaderManager: WebGLShaderManager | null = null;
   private resourceManager: WebGLResourceManager | null = null;
   private textureManager: WebGLTextureManager | null = null;
@@ -192,6 +194,15 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   render(context: RenderContext): void {
+    // 优先使用统一的图形上下文
+    if (context.context instanceof WebGLContext) {
+      this.webglContext = context.context;
+      this.gl = this.webglContext.gl; // 获取原生 WebGL 上下文用于兼容
+    } else if (!this.gl) {
+      console.error('WebGLRenderer requires WebGLContext or WebGL context');
+      return;
+    }
+
     if (!this.gl || !this.shaderManager) return;
 
     // 开始性能分析
@@ -205,8 +216,15 @@ export class WebGLRenderer extends BaseRenderer {
     // 重置统计
     this.resetStats();
 
-    // 设置视口
-    this.gl.viewport(0, 0, context.canvas.width, context.canvas.height);
+    // 使用统一接口或原生接口设置视口
+    if (this.webglContext) {
+      // 使用 WebGLContext 的高级方法
+      this.webglContext.save();
+      // 可以使用 webglContext 的其他方法...
+    } else {
+      // 兼容模式：直接使用原生 WebGL
+      this.gl.viewport(0, 0, context.canvas.width, context.canvas.height);
+    }
 
     // 更新投影矩阵
     this.updateProjectionMatrix(context.viewport);
@@ -543,8 +561,12 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   clear(): void {
-    if (!this.gl) return;
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    // 使用统一接口或原生接口
+    if (this.webglContext) {
+      this.webglContext.clear();
+    } else if (this.gl) {
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    }
   }
 
   getCapabilities(): RendererCapabilities {

@@ -14,10 +14,11 @@ import { CanvasManager, ICanvasManager } from './managers/CanvasManager';
 import { IToolManager, ToolManager } from './managers/ToolManager';
 
 // ViewModels
-import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
 import { IRectangleToolViewModel, RectangleToolViewModel } from './viewmodels/tools/RectangleToolViewModel';
+import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
 
 // 服务
+import { RenderEngineType } from '@sky-canvas/render-engine';
 import {
   CanvasRenderingService,
   ClipboardService,
@@ -45,12 +46,13 @@ import {
   type LogLevel
 } from './services';
 
+
 /**
  * SDK 配置接口
  */
 export interface SDKConfig {
   canvas: HTMLCanvasElement;
-  renderEngine?: 'webgl' | 'canvas2d' | 'webgpu';
+  renderEngine?: RenderEngineType;
   logLevel?: LogLevel;
   enableHistory?: boolean;
   enableInteraction?: boolean;
@@ -121,7 +123,7 @@ class CanvasSDKBootstrap {
 
     // 设置默认配置
     this.config = {
-      renderEngine: 'webgl',
+      renderEngine: 'auto', // 改为 auto 以支持自动选择最佳渲染引擎
       logLevel: 'info',
       enableHistory: true,
       enableInteraction: true,

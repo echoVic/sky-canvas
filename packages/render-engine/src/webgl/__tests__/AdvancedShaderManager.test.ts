@@ -31,14 +31,17 @@ const createMockGL = () => {
     linkProgram: vi.fn(),
     deleteShader: vi.fn(),
     deleteProgram: vi.fn(),
-    getShaderParameter: vi.fn(() => true),
+    getShaderParameter: vi.fn((shader, param) => {
+      if (param === 0x8B81) return true; // COMPILE_STATUS
+      return 0;
+    }),
     getProgramParameter: vi.fn((program, param) => {
       if (param === 0x8B82) return true; // LINK_STATUS (35714)
       if (param === 0x8B89) return 2;    // ACTIVE_ATTRIBUTES (35721)
       if (param === 0x8B86) return 3;    // ACTIVE_UNIFORMS (35718)
       return 0;
     }),
-    getShaderInfoLog: vi.fn(() => ''),
+    getShaderInfoLog: vi.fn(() => 'Mock shader compilation successful'),
     getProgramInfoLog: vi.fn(() => ''),
     getActiveAttrib: vi.fn(() => ({ name: 'a_position', type: 0x8B50 })),
     getActiveUniform: vi.fn(() => ({ name: 'u_matrix', type: 0x8B5C })),
@@ -119,6 +122,13 @@ describe('AdvancedShaderManager', () => {
 
   beforeEach(() => {
     mockGL = createMockGL();
+    // 重置mock行为为默认成功状态
+    mockGL.getShaderParameter.mockImplementation((shader: any, param: number) => {
+       if (param === 0x8B81) return true; // COMPILE_STATUS
+       return 0;
+     });
+    mockGL.getShaderInfoLog.mockReturnValue('Mock shader compilation successful');
+    
     manager = new AdvancedShaderManager(mockGL, {
       cacheMemoryLimit: 10 * 1024 * 1024, // 10MB
       enableHotReload: false,
@@ -324,7 +334,10 @@ describe('AdvancedShaderManager', () => {
       manager.on('shader-error', errorHandler);
       
       // 模拟编译失败
-      mockGL.getShaderParameter.mockReturnValue(false);
+      mockGL.getShaderParameter.mockImplementation((shader: any, param: number) => {
+        if (param === 0x8B81) return false; // COMPILE_STATUS - 返回false表示编译失败
+        return 0;
+      });
       mockGL.getShaderInfoLog.mockReturnValue('Compilation error');
       
       const badTemplate = {
@@ -334,7 +347,7 @@ describe('AdvancedShaderManager', () => {
       
       manager.registerTemplate(badTemplate);
       
-      await expect(manager.getProgram('bad-shader')).rejects.toThrow();
+      await expect(manager.getProgram('bad-shader')).rejects.toThrow('Shader compilation failed: Compilation error');
       expect(errorHandler).toHaveBeenCalled();
     });
   });

@@ -1,57 +1,56 @@
 import { IPoint } from '../graphics/IGraphicsContext';
 import { Transform } from '../math';
-import { BaseRenderer, Drawable, RenderContext, RendererCapabilities, RenderState } from './BaseRenderer';
+import { BaseRenderer } from './BaseRenderer';
+import { Drawable, CanvasRenderContext, RendererCapabilities, RenderState } from './types';
 
-export class CanvasRenderer extends BaseRenderer {
-  private currentContext: RenderContext | null = null;
+export class CanvasRenderer extends BaseRenderer<CanvasRenderingContext2D> {
+  private currentContext: CanvasRenderContext | null = null;
 
-  render(context: RenderContext): void {
+  render(context: CanvasRenderContext): void {
     this.currentContext = context;
-    const { ctx, viewport, devicePixelRatio } = context;
-    
-    // 确保是Canvas2D上下文
-    if (!(ctx instanceof CanvasRenderingContext2D)) {
+    const { context: canvas2DContext, viewport, devicePixelRatio } = context;
+
+    if (!canvas2DContext) {
       console.error('CanvasRenderer requires CanvasRenderingContext2D');
       return;
     }
-    
+
     // 清空画布
     this.clear();
 
     // 设置视口变换
-    ctx.save();
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-    ctx.translate(-viewport.x, -viewport.y);
+    canvas2DContext.save();
+    canvas2DContext.scale(devicePixelRatio, devicePixelRatio);
+    canvas2DContext.translate(-viewport.x, -viewport.y);
 
     // 应用全局渲染状态
-    this.applyRenderState(ctx as CanvasRenderingContext2D, this.renderState);
+    this.applyRenderState(canvas2DContext, this.renderState);
 
     // 绘制所有可见的对象
     for (const drawable of this.drawables) {
       if (drawable.visible && this.isDrawableInViewport(drawable, viewport)) {
-        ctx.save();
-        
+        canvas2DContext.save();
+
         // 应用对象变换
-        this.applyTransform(ctx, drawable.transform);
-        
+        this.applyTransform(canvas2DContext, drawable.transform);
+
         drawable.draw(context);
-        ctx.restore();
+        canvas2DContext.restore();
       }
     }
 
-    ctx.restore();
+    canvas2DContext.restore();
   }
 
   clear(): void {
     if (!this.currentContext) return;
-    
-    const { ctx, canvas } = this.currentContext;
-    if (ctx instanceof CanvasRenderingContext2D) {
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
-    }
+
+    const { context: ctx, canvas } = this.currentContext;
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
   }
 
   getCapabilities(): RendererCapabilities {
@@ -64,7 +63,7 @@ export class CanvasRenderer extends BaseRenderer {
     };
   }
 
-  getContext(): RenderContext | null {
+  getContext(): CanvasRenderContext | null {
     return this.currentContext;
   }
 
@@ -78,17 +77,20 @@ export class CanvasRenderer extends BaseRenderer {
   drawLine(start: IPoint, end: IPoint, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
     
-    const { ctx } = this.currentContext;
-    if (ctx instanceof CanvasRenderingContext2D) {
+    const { context: graphicsContext } = this.currentContext;
+    const ctx = graphicsContext instanceof CanvasRenderingContext2D ?
+      graphicsContext : this.currentContext.canvas.getContext('2d');
+
+    if (ctx) {
       ctx.save();
-      
+
       if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
-      
+
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
-      
+
       ctx.restore();
     }
   }
@@ -96,49 +98,58 @@ export class CanvasRenderer extends BaseRenderer {
   drawRect(x: number, y: number, width: number, height: number, filled = false, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
     
-    const { ctx } = this.currentContext;
-    if (ctx instanceof CanvasRenderingContext2D) {
+    const { context: graphicsContext } = this.currentContext;
+    const ctx = graphicsContext instanceof CanvasRenderingContext2D ?
+      graphicsContext : this.currentContext.canvas.getContext('2d');
+
+    if (ctx) {
       ctx.save();
-      
+
       if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
-      
+
       if (filled) {
         ctx.fillRect(x, y, width, height);
       } else {
         ctx.strokeRect(x, y, width, height);
       }
-      
+
       ctx.restore();
     }
   }
 
   drawCircle(center: IPoint, radius: number, filled = false, style?: Partial<RenderState>): void {
     if (!this.currentContext) return;
-    
-    const { ctx } = this.currentContext;
-    if (ctx instanceof CanvasRenderingContext2D) {
+
+    const { context: graphicsContext } = this.currentContext;
+    const ctx = graphicsContext instanceof CanvasRenderingContext2D ?
+      graphicsContext : this.currentContext.canvas.getContext('2d');
+
+    if (ctx) {
       ctx.save();
-      
+
       if (style) this.applyRenderState(ctx, { ...this.renderState, ...style });
-      
+
       ctx.beginPath();
       ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-      
+
       if (filled) {
         ctx.fill();
       } else {
         ctx.stroke();
       }
-      
+
       ctx.restore();
     }
   }
 
   drawText(text: string, position: IPoint, style?: Partial<RenderState> & { font?: string; textAlign?: CanvasTextAlign; textBaseline?: CanvasTextBaseline }): void {
     if (!this.currentContext) return;
-    
-    const { ctx } = this.currentContext;
-    if (ctx instanceof CanvasRenderingContext2D) {
+
+    const { context: graphicsContext } = this.currentContext;
+    const ctx = graphicsContext instanceof CanvasRenderingContext2D ?
+      graphicsContext : this.currentContext.canvas.getContext('2d');
+
+    if (ctx) {
       ctx.save();
       
       if (style) {

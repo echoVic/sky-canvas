@@ -10,11 +10,8 @@ import Canvas from '../Canvas';
 // Mock dependencies
 vi.mock('../../../store/canvasStore');
 vi.mock('../../../hooks');
-vi.mock('@sky-canvas/render-engine', () => ({
-  Canvas2DContextFactory: vi.fn(() => ({
-    createContext: vi.fn(),
-  })),
-}));
+// Mock render-engine if needed
+// vi.mock('@sky-canvas/render-engine');
 
 const mockSDKState = {
   sdk: null,

@@ -1,82 +1,13 @@
-import { RendererType } from './types';
-import { BaseRenderer } from './BaseRenderer';
-import { CanvasRenderer } from './CanvasRenderer';
-import { WebGLRenderer } from './WebGLRenderer';
-import { WebGPURenderer } from './WebGPURenderer'; // Temporarily disabled
-
-// 导出基类和接口
+// 导出基类
 export { BaseRenderer } from './BaseRenderer';
+
+// 导出类型定义
 export type {
-  Drawable, RenderContext, Renderer, RendererCapabilities, RenderState
-} from './BaseRenderer';
+  CanvasRenderContext, Drawable, RenderContext, Renderer, RendererCapabilities, RendererType, RenderState, RenderStats, WebGLRenderContext, WebGPURenderContext
+} from './types';
 
 // 导出具体渲染器
-export { CanvasRenderer, WebGLRenderer, WebGPURenderer };
+export { CanvasRenderer } from './CanvasRenderer';
+export { WebGLRenderer } from './WebGLRenderer';
+export { WebGPURenderer } from './WebGPURenderer';
 
-export class RendererFactory {
-  static createCanvasRenderer(): CanvasRenderer {
-    return new CanvasRenderer();
-  }
-
-  static createWebGLRenderer(): WebGLRenderer {
-    return new WebGLRenderer();
-  }
-
-  static createWebGPURenderer(canvas: HTMLCanvasElement): WebGPURenderer {
-    return new WebGPURenderer(canvas);
-  }
-
-  static async createRenderer(type: RendererType, canvas: HTMLCanvasElement): Promise<BaseRenderer | null> {
-    let renderer: BaseRenderer;
-
-    switch (type) {
-      case RendererType.CANVAS_2D:
-        renderer = new CanvasRenderer();
-        break;
-      case RendererType.WEBGL:
-      case RendererType.WEBGL2:
-        renderer = new WebGLRenderer();
-        if (renderer.initialize && !renderer.initialize(canvas)) {
-          return null;
-        }
-        break;
-      case RendererType.WEBGPU:
-        renderer = new WebGPURenderer(canvas);
-        if (renderer.initialize && !await renderer.initialize(canvas)) {
-          return null;
-        }
-        break;
-      default:
-        return null;
-    }
-
-    return renderer;
-  }
-
-  static isRendererSupported(type: string): boolean {
-    switch (type) {
-      case 'canvas2d':
-        return true;
-      case 'webgl':
-      case 'webgl2':
-        return !!document.createElement('canvas').getContext('webgl');
-      case 'webgpu':
-        return 'gpu' in navigator;
-      default:
-        return false;
-    }
-  }
-
-  static getBestSupportedRenderer(): RendererType {
-    if (this.isRendererSupported('webgpu')) {
-      return RendererType.WEBGPU;
-    }
-    if (this.isRendererSupported('webgl2')) {
-      return RendererType.WEBGL2;
-    }
-    if (this.isRendererSupported('webgl')) {
-      return RendererType.WEBGL;
-    }
-    return RendererType.CANVAS_2D;
-  }
-}

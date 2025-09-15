@@ -5,7 +5,9 @@
 
 // ===== 主要导出 - 统一入口 =====
 export { RenderEngine } from './engine/RenderEngine';
-export type { RenderEngineConfig } from './engine/types';
+export type {
+  RenderEngineCapabilities, RenderEngineConfig, RenderEngineType
+} from './engine/types';
 
 // 核心类型和接口
 export type {
@@ -15,9 +17,7 @@ export type {
 } from './graphics/IGraphicsContext';
 
 export type {
-  IRenderable,
-  IViewport,
-  IRenderStats
+  IRenderable, IRenderStats, IViewport
 } from './engine/types';
 
 // 现代渲染管道已移除

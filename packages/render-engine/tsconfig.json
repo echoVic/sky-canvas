@@ -14,15 +14,13 @@
     "rootDir": "src",
     "removeComments": false,
     "sourceMap": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "types": ["@webgpu/types", "vitest/globals"]
   },
   "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
-    "tests",
-    "src/renderers/WebGPURenderer.ts",
-    "src/adapters/WebGPUContext.ts",
-    "src/graphics/adapters/WebGPUAdapter.ts"
+    "tests"
   ]
 }

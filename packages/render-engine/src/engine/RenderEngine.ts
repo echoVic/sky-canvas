@@ -3,8 +3,8 @@
  * 根据配置自动选择合适的渲染器，提供统一的API接口
  */
 
-import { IGraphicsContext } from '../graphics/IGraphicsContext';
-import { BaseRenderer, Drawable, RenderContext, RendererCapabilities } from '../renderers/BaseRenderer';
+import { BaseRenderer } from '../renderers/BaseRenderer';
+import { Drawable, RenderContext, RendererCapabilities } from '../renderers/types';
 import { CanvasRenderer } from '../renderers/CanvasRenderer';
 import { WebGLRenderer } from '../renderers/WebGLRenderer';
 import { WebGPURenderer } from '../renderers/WebGPURenderer';
@@ -300,10 +300,10 @@ export class RenderEngine {
    * 创建渲染上下文
    */
   private createRenderContext(): RenderContext {
-    const ctx = this.getContext();
+    const context = this.getContext();
     return {
       canvas: this.canvas,
-      ctx,
+      context,
       viewport: this.renderer.getViewport(),
       devicePixelRatio: window.devicePixelRatio || 1
     };
@@ -346,16 +346,10 @@ export class RenderEngine {
         scale: { x: 1, y: 1 }
       } as any,
       draw: (context: RenderContext) => {
-        // 适配不同上下文类型
-        if (context.ctx instanceof CanvasRenderingContext2D) {
-          // 为 Canvas2D 创建 IGraphicsContext 适配器
-          const graphicsContext = this.createCanvas2DGraphicsContext(context.ctx);
-          renderable.render(graphicsContext);
-        } else {
-          // WebGL/WebGPU 需要更复杂的适配
-          // 暂时直接调用 render，后续可以扩展
-          renderable.render({} as any);
-        }
+        // 现在不需要适配器了，渲染器直接处理自己的上下文类型
+        // 这个方法主要是为了兼容旧的 IRenderable 接口
+        // 实际使用中，应该直接使用渲染器的 render 方法
+        console.warn('Using deprecated convertToDrawable - consider using renderer directly');
       },
       hitTest: (point: any) => renderable.hitTest(point),
       getBounds: () => renderable.getBounds(),
@@ -363,68 +357,6 @@ export class RenderEngine {
     };
   }
 
-  /**
-   * 创建 Canvas2D 图形上下文适配器
-   */
-  private createCanvas2DGraphicsContext(ctx: CanvasRenderingContext2D): IGraphicsContext {
-    return {
-      // 基础绘制方法
-      save: () => ctx.save(),
-      restore: () => ctx.restore(),
-      scale: (x: number, y: number) => ctx.scale(x, y),
-      rotate: (angle: number) => ctx.rotate(angle),
-      translate: (x: number, y: number) => ctx.translate(x, y),
-      transform: (a: number, b: number, c: number, d: number, e: number, f: number) =>
-        ctx.transform(a, b, c, d, e, f),
-
-      // 路径方法
-      beginPath: () => ctx.beginPath(),
-      closePath: () => ctx.closePath(),
-      moveTo: (x: number, y: number) => ctx.moveTo(x, y),
-      lineTo: (x: number, y: number) => ctx.lineTo(x, y),
-      quadraticCurveTo: (cpx: number, cpy: number, x: number, y: number) =>
-        ctx.quadraticCurveTo(cpx, cpy, x, y),
-      bezierCurveTo: (cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number) =>
-        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y),
-      arc: (x: number, y: number, radius: number, startAngle: number, endAngle: number, anticlockwise?: boolean) =>
-        ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise),
-      rect: (x: number, y: number, width: number, height: number) => ctx.rect(x, y, width, height),
-
-      // 绘制方法
-      fill: () => ctx.fill(),
-      stroke: () => ctx.stroke(),
-      clip: () => ctx.clip(),
-
-      // 样式属性
-      get fillStyle() { return ctx.fillStyle; },
-      set fillStyle(value) { ctx.fillStyle = value; },
-      get strokeStyle() { return ctx.strokeStyle; },
-      set strokeStyle(value) { ctx.strokeStyle = value; },
-      get lineWidth() { return ctx.lineWidth; },
-      set lineWidth(value) { ctx.lineWidth = value; },
-      get lineCap() { return ctx.lineCap; },
-      set lineCap(value) { ctx.lineCap = value; },
-      get lineJoin() { return ctx.lineJoin; },
-      set lineJoin(value) { ctx.lineJoin = value; },
-      get globalAlpha() { return ctx.globalAlpha; },
-      set globalAlpha(value) { ctx.globalAlpha = value; },
-
-      // 尺寸属性
-      get width() { return this.canvas?.width || 0; },
-      get height() { return this.canvas?.height || 0; },
-
-      // 清除方法
-      clear: () => {
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        ctx.restore();
-      },
-
-      // 销毁方法
-      dispose: () => {}
-    } as any;
-  }
 
   /**
    * 检测 WebGL 支持

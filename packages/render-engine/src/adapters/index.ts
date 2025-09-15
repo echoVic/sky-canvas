@@ -2,43 +2,13 @@
  * 渲染适配器导出
  */
 
-// 导入核心接口
-
 // WebGL适配器
-export { WebGLContextFactory } from './WebGLContext';
-export type { IWebGLContext } from './WebGLContext';
+export { WebGLContext } from './WebGLContext';
+export type { IWebGLContext, WebGLAdvancedConfig } from './WebGLContext';
 
-// Canvas 2D适配器 (占位符)
-export { Canvas2DContextFactory } from './Canvas2DContext';
-export type { ICanvas2DContext } from './Canvas2DContext';
+// WebGPU适配器
+export { WebGPUContext } from './WebGPUContext';
+export type { WebGPUContextConfig, WebGPUDeviceInfo } from './WebGPUContext';
 
-// WebGPU适配器 (占位符)  
-export { WebGPUContextFactory } from './WebGPUContext';
-// export type { IWebGPUContext } from './WebGPUContext'; // Temporarily disabled
-
-// 导入工厂类
-import { Canvas2DContextFactory } from './Canvas2DContext';
-import { WebGLContextFactory } from './WebGLContext';
-import { WebGPUContextFactory } from './WebGPUContext'; // Temporarily disabled
-
-// 统一适配器接口
-export interface IGraphicsAdapter {
-  name: string;
-  initialize(): Promise<void>;
-  dispose(): void;
-}
-
-// 适配器工厂
-export class AdapterFactory {
-  static createWebGLAdapter(): WebGLContextFactory {
-    return new WebGLContextFactory();
-  }
-
-  static createCanvas2DAdapter(): Canvas2DContextFactory {
-    return new Canvas2DContextFactory();
-  }
-
-  static createWebGPUAdapter(): WebGPUContextFactory {
-    return new WebGPUContextFactory();
-  }
-}
+// 几何生成工具
+export { GeometryGenerator } from './GeometryGenerator';

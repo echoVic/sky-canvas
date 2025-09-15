@@ -2,7 +2,7 @@
  * WebGLContext 架构验证测试
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IWebGLContext, WebGLContextFactory } from '../WebGLContext';
+import { IWebGLContext, WebGLContext } from '../WebGLContext';
 
 // Mock WebGL API
 const mockWebGLContext = {
@@ -74,9 +74,8 @@ describe('WebGLContext 架构验证', () => {
     // Mock getContext 返回 WebGL 上下文
     canvas.getContext = vi.fn().mockReturnValue(mockWebGLContext);
 
-    // 使用工厂创建适配器
-    const factory = new WebGLContextFactory();
-    context = await factory.createContext(canvas);
+    // 直接使用构造函数创建适配器
+    context = new WebGLContext(mockWebGLContext as any, canvas);
   });
 
   it('应该创建 WebGLContext 实例', () => {

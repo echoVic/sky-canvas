@@ -1,71 +1,21 @@
 /**
  * 简化的渲染器基类
  */
-import { IPoint, IRect } from '../graphics/IGraphicsContext';
-import { Transform } from '../math';
 import type { IViewport } from '../engine/types';
-
-// 简化的渲染上下文接口
-export interface RenderContext {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext;
-  viewport: IViewport;
-  devicePixelRatio: number;
-}
-
-// 简化的渲染状态接口
-export interface RenderState {
-  transform: Transform;
-  fillStyle: string | CanvasGradient | CanvasPattern;
-  strokeStyle: string | CanvasGradient | CanvasPattern;
-  lineWidth: number;
-  lineCap: CanvasLineCap;
-  lineJoin: CanvasLineJoin;
-  globalAlpha: number;
-  globalCompositeOperation: GlobalCompositeOperation;
-  shadowColor: string;
-  shadowBlur: number;
-  shadowOffsetX: number;
-  shadowOffsetY: number;
-}
-
-// 可绘制对象接口
-export interface Drawable {
-  id: string;
-  bounds: IRect;
-  visible: boolean;
-  zIndex: number;
-  transform: Transform;
-  draw(context: RenderContext): void;
-  hitTest(point: IPoint): boolean;
-  getBounds(): IRect;
-  setTransform(transform: Transform): void;
-}
-
-// 渲染器能力接口
-export interface RendererCapabilities {
-  supportsTransforms: boolean;
-  supportsFilters: boolean;
-  supportsBlending: boolean;
-  maxTextureSize: number;
-  supportedFormats: string[];
-}
-
-// 基础渲染器接口
-export interface Renderer {
-  render(context: RenderContext): void;
-  update(deltaTime: number): void;
-  dispose(): void;
-  clear(): void;
-  setViewport(viewport: Partial<IViewport>): void;
-  getViewport(): IViewport;
-  getCapabilities(): RendererCapabilities;
-}
+import { IRect } from '../graphics/IGraphicsContext';
+import { Transform } from '../math';
+import type {
+  Drawable,
+  RenderContext,
+  Renderer,
+  RendererCapabilities,
+  RenderState
+} from './types';
 
 /**
  * 简化的渲染器基类
  */
-export abstract class BaseRenderer implements Renderer {
+export abstract class BaseRenderer<TContext = any> implements Renderer<TContext> {
   protected drawables: Drawable[] = [];
   protected viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
   protected renderState: RenderState;
@@ -77,7 +27,7 @@ export abstract class BaseRenderer implements Renderer {
     this.renderState = this.createDefaultRenderState();
   }
 
-  abstract render(context: RenderContext): void;
+  abstract render(context: RenderContext<TContext>): void;
   abstract clear(): void;
   abstract getCapabilities(): RendererCapabilities;
 
@@ -120,7 +70,7 @@ export abstract class BaseRenderer implements Renderer {
   }
 
   // 添加渲染循环管理
-  startRenderLoop(context: RenderContext): void {
+  startRenderLoop(context: RenderContext<TContext>): void {
     if (this._isRunning) return;
     this._isRunning = true;
 

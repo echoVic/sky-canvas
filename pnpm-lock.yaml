@@ -148,6 +148,9 @@ importers:
       '@vitest/ui':
         specifier: ^1.0.0
         version: 1.6.1(vitest@1.6.1)
+      '@webgpu/types':
+        specifier: ^0.1.64
+        version: 0.1.64
       jsdom:
         specifier: ^22.0.0
         version: 22.1.0
@@ -2074,6 +2077,9 @@ packages:
 
   '@vitest/utils@1.6.1':
     resolution: {integrity: sha512-jOrrUvXM4Av9ZWiG1EajNto0u96kWAhJ1LmPmJhXXQx/32MecEKd10pOLYgS2BQx1TgkGhloPU1ArDW2vvaY6g==}
+
+  '@webgpu/types@0.1.64':
+    resolution: {integrity: sha512-84kRIAGV46LJTlJZWxShiOrNL30A+9KokD7RB3dRCIqODFjodS5tCD5yyiZ8kIReGVZSDfA3XkkwyyOIF6K62A==}
 
   abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -6299,7 +6305,7 @@ snapshots:
       std-env: 3.9.0
       strip-literal: 2.1.1
       test-exclude: 6.0.0
-      vitest: 1.6.1(@types/node@24.3.0)(@vitest/ui@1.6.1)(happy-dom@12.10.3)(jsdom@23.2.0)(lightningcss@1.30.1)
+      vitest: 1.6.1(@types/node@24.3.0)(@vitest/ui@1.6.1)(happy-dom@12.10.3)(jsdom@22.1.0)(lightningcss@1.30.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -6334,7 +6340,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@24.3.0)(@vitest/ui@1.6.1)(happy-dom@12.10.3)(jsdom@23.2.0)(lightningcss@1.30.1)
+      vitest: 1.6.1(@types/node@24.3.0)(@vitest/ui@1.6.1)(happy-dom@12.10.3)(jsdom@22.1.0)(lightningcss@1.30.1)
 
   '@vitest/utils@1.6.1':
     dependencies:
@@ -6342,6 +6348,8 @@ snapshots:
       estree-walker: 3.0.3
       loupe: 2.3.7
       pretty-format: 29.7.0
+
+  '@webgpu/types@0.1.64': {}
 
   abab@2.0.6: {}
 

@@ -93,6 +93,7 @@ export interface IImageData {
 
 /**
  * 框架无关的图形上下文接口
+ * 提供统一的图形操作抽象，不依赖具体的渲染后端
  */
 export interface IGraphicsContext {
   // 基础属性
@@ -132,7 +133,7 @@ export interface IGraphicsContext {
   clear(): void;
   clearRect(x: number, y: number, width: number, height: number): void;
   present(): void; // 提交当前渲染通道
-  
+
   // 路径绘制
   beginPath(): void;
   closePath(): void;
@@ -142,7 +143,7 @@ export interface IGraphicsContext {
   bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void;
   arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void;
   rect(x: number, y: number, width: number, height: number): void;
-  
+
   // 绘制方法
   fill(): void;
   stroke(): void;
@@ -150,31 +151,31 @@ export interface IGraphicsContext {
   strokeRect(x: number, y: number, width: number, height: number): void;
   drawLine(x1: number, y1: number, x2: number, y2: number): void;
   drawRect(rect: IRect, fill?: boolean, stroke?: boolean): void;
-  
+
   // 圆形绘制
   fillCircle(x: number, y: number, radius: number): void;
   strokeCircle(x: number, y: number, radius: number): void;
   drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void;
-  
+
   // 文本绘制
   fillText(text: string, x: number, y: number, style?: ITextStyle): void;
   strokeText(text: string, x: number, y: number, style?: ITextStyle): void;
   measureText(text: string, style?: ITextStyle): { width: number; height: number };
-  
+
   // 图像操作
   drawImage(imageData: IImageData, dx: number, dy: number): void;
   drawImage(imageData: IImageData, dx: number, dy: number, dw: number, dh: number): void;
   getImageData(x: number, y: number, width: number, height: number): IImageData;
   putImageData(imageData: IImageData, x: number, y: number): void;
-  
+
   // 裁剪
   clip(): void;
   clipRect(x: number, y: number, width: number, height: number): void;
-  
+
   // 坐标转换
   screenToWorld(point: IPoint): IPoint;
   worldToScreen(point: IPoint): IPoint;
-  
+
   // 资源管理
   dispose(): void;
 }
@@ -199,3 +200,4 @@ export interface IGraphicsCapabilities {
   maxTextureSize: number;
   supportedFormats: string[];
 }
+

@@ -119,9 +119,14 @@ export function deleteNestedProperty(obj: any, path: string): boolean {
  * @param obj 要克隆的对象
  * @returns 克隆后的对象
  */
-export function deepClone<T>(obj: T): T {
+export function deepClone<T>(obj: T, visited = new WeakMap()): T {
   if (obj === null || typeof obj !== 'object') {
     return obj;
+  }
+
+  // 处理循环引用
+  if (visited.has(obj as any)) {
+    throw new Error('Circular reference detected');
   }
 
   if (obj instanceof Date) {
@@ -129,16 +134,21 @@ export function deepClone<T>(obj: T): T {
   }
 
   if (obj instanceof Array) {
-    return obj.map(item => deepClone(item)) as T;
+    visited.set(obj as any, true);
+    const result = obj.map(item => deepClone(item, visited)) as T;
+    visited.delete(obj as any);
+    return result;
   }
 
   if (typeof obj === 'object') {
+    visited.set(obj as any, true);
     const cloned = {} as T;
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
-        cloned[key] = deepClone(obj[key]);
+        cloned[key] = deepClone(obj[key], visited);
       }
     }
+    visited.delete(obj as any);
     return cloned;
   }
 
@@ -197,10 +207,13 @@ export function getObjectPaths(obj: any, prefix: string = ''): string[] {
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       const currentPath = prefix ? `${prefix}.${key}` : key;
-      paths.push(currentPath);
       
       if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+        // 递归处理嵌套对象，只收集叶子节点路径
         paths.push(...getObjectPaths(obj[key], currentPath));
+      } else {
+        // 叶子节点（非对象值）才添加到路径列表
+        paths.push(currentPath);
       }
     }
   }

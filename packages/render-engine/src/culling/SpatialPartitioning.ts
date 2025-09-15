@@ -2,8 +2,8 @@
  * 空间分割和剔除优化系统
  * 提供高效的空间查询和视锥剔除功能
  */
-import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { IRenderCommand } from '../commands/IRenderCommand';
+import { IRect } from '../graphics/IGraphicsContext';
 
 /**
  * 空间节点接口
@@ -427,10 +427,14 @@ export class CullingManager {
 
     // 更新统计信息
     const queryTime = performance.now() - startTime;
+    const totalObjects = this.spatialIndex instanceof SpatialHashGrid
+      ? this.spatialIndex.getStats().totalObjects
+      : this.getTotalObjectsFromQuadTree();
+    
     this.stats = {
-      totalObjects: visibleObjects.length,
+      totalObjects,
       visibleObjects: finalVisibleObjects.length,
-      culledObjects: visibleObjects.length - finalVisibleObjects.length,
+      culledObjects: totalObjects - finalVisibleObjects.length,
       queryTime
     };
 
@@ -478,15 +482,37 @@ export class CullingManager {
   getStats() {
     const spatialStats = this.spatialIndex instanceof SpatialHashGrid
       ? this.spatialIndex.getStats()
-      : { totalObjects: 0, totalCells: 0 };
+      : { totalObjects: this.getTotalObjectsFromQuadTree(), totalCells: 0 };
 
     return {
       ...this.stats,
-      cullingRatio: this.stats.totalObjects > 0 
-        ? this.stats.culledObjects / this.stats.totalObjects 
+      totalObjects: spatialStats.totalObjects,
+      cullingRatio: spatialStats.totalObjects > 0 
+        ? this.stats.culledObjects / spatialStats.totalObjects 
         : 0,
       spatialIndex: spatialStats
     };
+  }
+
+  private getTotalObjectsFromQuadTree(): number {
+    if (this.spatialIndex instanceof SpatialHashGrid) {
+      return 0;
+    }
+    return this.countObjectsInNode(this.spatialIndex);
+  }
+
+  private countObjectsInNode(node: ISpatialNode): number {
+    let count = node.objects.length;
+    if (!node.isLeaf && node instanceof QuadTreeNode) {
+      // Access children through reflection or add a public getter
+      const children = (node as any).children;
+      if (children) {
+        for (const child of children) {
+          count += this.countObjectsInNode(child);
+        }
+      }
+    }
+    return count;
   }
 
   /**

@@ -3,10 +3,11 @@
  * 提供基于 WebGPU 的高性能渲染能力的接口定义
  */
 
-import { BaseRenderer, RendererCapabilities, Drawable, RenderContext } from './BaseRenderer';
-import { IGraphicsContext, IRect } from '../graphics/IGraphicsContext';
+import { WebGPUContext } from '../adapters/WebGPUContext';
 import { IPoint } from '../graphics/IGraphicsContext';
 import { Rectangle } from '../math/Rectangle';
+import { BaseRenderer } from './BaseRenderer';
+import { RenderContext, RendererCapabilities } from './types';
 
 /**
  * WebGPU 渲染上下文（占位符）
@@ -114,7 +115,8 @@ export class WebGPUTexture {
  */
 export class WebGPURenderer extends BaseRenderer {
   private canvas: HTMLCanvasElement;
-  private context: WebGPURenderContext;
+  private webgpuContext: WebGPUContext | null = null; // 使用统一的 WebGPUContext
+  private context: WebGPURenderContext; // 保留以兼容现有代码
   private buffers: Map<string, WebGPUBuffer> = new Map();
   private textures: Map<string, WebGPUTexture> = new Map();
   private initialized = false;
@@ -243,8 +245,17 @@ export class WebGPURenderer extends BaseRenderer {
    * 渲染场景
    */
   render(context: RenderContext): void {
-    // 占位符实现
-    console.warn('WebGPU render not implemented');
+    // 优先使用统一的图形上下文
+    if (context.context instanceof WebGPUContext) {
+      this.webgpuContext = context.context;
+      // 使用 WebGPUContext 的高级 API
+      this.webgpuContext.clear();
+      // 可以调用其他 WebGPUContext 方法...
+    } else {
+      // 占位符实现
+      console.warn('WebGPU render not implemented - requires WebGPUContext');
+    }
+
     // 渲染所有可绘制对象
     this.drawables.forEach(drawable => {
       if (drawable.visible) {
@@ -329,23 +340,3 @@ export class WebGPURenderer extends BaseRenderer {
   }
 }
 
-/**
- * WebGPU 渲染器工厂
- */
-export class WebGPURendererFactory {
-  /**
-   * 创建 WebGPU 渲染器实例
-   */
-  static async create(canvas: HTMLCanvasElement): Promise<WebGPURenderer> {
-    const renderer = new WebGPURenderer(canvas);
-    await renderer.initialize(canvas);
-    return renderer;
-  }
-
-  /**
-   * 检查是否支持 WebGPU
-   */
-  static isSupported(): boolean {
-    return WebGPURenderer.isSupported();
-  }
-}

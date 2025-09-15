@@ -58,49 +58,11 @@ export interface IWebGLContext extends IGraphicsContext {
   getWebGLOptimizer?(): WebGLOptimizer | undefined;
 }
 
-/**
- * WebGL上下文工厂
- */
-export class WebGLContextFactory implements IGraphicsContextFactory<HTMLCanvasElement> {
-  isSupported(): boolean {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      return gl !== null;
-    } catch {
-      return false;
-    }
-  }
-
-  async createContext(
-    canvas: HTMLCanvasElement,
-    config?: Partial<BatchManagerConfig>,
-    advancedConfig?: WebGLAdvancedConfig
-  ): Promise<IWebGLContext> {
-    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) {
-      throw new Error('WebGL not supported');
-    }
-
-    return new WebGLContext(gl as WebGLRenderingContext, canvas, config, advancedConfig);
-  }
-
-  getCapabilities(): IGraphicsCapabilities {
-    return {
-      supportsHardwareAcceleration: true,
-      supportsTransforms: true,
-      supportsBlending: true,
-      supportsFilters: false,
-      maxTextureSize: 4096,
-      supportedFormats: ['png', 'jpg', 'jpeg', 'webp']
-    };
-  }
-}
 
 /**
  * WebGL上下文实现
  */
-class WebGLContext implements IWebGLContext {
+export class WebGLContext implements IWebGLContext {
   public readonly width: number;
   public readonly height: number;
   public readonly devicePixelRatio: number = window.devicePixelRatio || 1;
@@ -979,5 +941,32 @@ class WebGLContext implements IWebGLContext {
     if (this.indexBuffer) {
       this.indexBuffer.dispose(this.gl);
     }
+  }
+
+  /**
+   * 检查 WebGL 支持
+   */
+  static isSupported(): boolean {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return gl !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 获取 WebGL 能力信息
+   */
+  static getCapabilities(): IGraphicsCapabilities {
+    return {
+      supportsHardwareAcceleration: true,
+      supportsTransforms: true,
+      supportsBlending: true,
+      supportsFilters: false,
+      maxTextureSize: 4096,
+      supportedFormats: ['png', 'jpg', 'jpeg', 'webp']
+    };
   }
 }

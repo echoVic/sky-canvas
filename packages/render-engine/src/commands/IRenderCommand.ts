@@ -2,7 +2,7 @@
  * 渲染命令接口
  * 基于Command模式，将渲染操作抽象为可批处理的命令
  */
-import { IPoint, IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
 
 /**
  * 渲染命令类型
@@ -14,7 +14,9 @@ export enum RenderCommandType {
   PATH = 'path',
   TEXT = 'text',
   IMAGE = 'image',
-  COMPOSITE = 'composite'
+  COMPOSITE = 'composite',
+  QUAD = 'quad',
+  TRIANGLE = 'triangle'
 }
 
 /**

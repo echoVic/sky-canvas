@@ -228,28 +228,30 @@ describe('FilterManager', () => {
     expect(typeof supportsWebGL).toBe('boolean');
   });
 
-  it('应该正确处理事件', (done) => {
-    const imageData = new ImageData(5, 5);
-    
-    const params: BrightnessParameters = {
-      type: FilterType.BRIGHTNESS,
-      brightness: 10,
-      opacity: 1,
-      enabled: true
-    };
+  it('应该正确处理事件', () => {
+    return new Promise<void>((resolve) => {
+      const imageData = new ImageData(5, 5);
+      
+      const params: BrightnessParameters = {
+        type: FilterType.BRIGHTNESS,
+        brightness: 10,
+        opacity: 1,
+        enabled: true
+      };
 
-    let eventFired = false;
-    
-    filterManager.on('filter-start', (type) => {
-      expect(type).toBe(FilterType.BRIGHTNESS);
-      eventFired = true;
+      let eventFired = false;
+      
+      filterManager.on('filter-start', (type) => {
+        expect(type).toBe(FilterType.BRIGHTNESS);
+        eventFired = true;
+      });
+
+      filterManager.on('filter-complete', () => {
+        expect(eventFired).toBe(true);
+        resolve();
+      });
+
+      filterManager.applyFilter(imageData, params);
     });
-
-    filterManager.on('filter-complete', () => {
-      expect(eventFired).toBe(true);
-      done();
-    });
-
-    filterManager.applyFilter(imageData, params);
   });
 });

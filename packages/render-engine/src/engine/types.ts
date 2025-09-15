@@ -4,29 +4,58 @@
 import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
 
 /**
+ * 支持的渲染引擎类型
+ */
+export type RenderEngineType = 'webgl' | 'canvas2d' | 'webgpu' | 'auto';
+
+/**
  * 渲染引擎配置接口
  */
 export interface RenderEngineConfig {
   /** 渲染器类型，auto表示自动选择 */
-  renderer?: 'auto' | 'webgl' | 'canvas2d' | 'webgpu';
+  renderer?: RenderEngineType;
 
-  /** 是否启用抗锯齿 */
-  antialias?: boolean;
+  /** 是否启用调试模式 */
+  debug?: boolean;
 
-  /** 是否支持透明通道 */
-  alpha?: boolean;
-
-  /** 是否保留绘图缓冲区 */
-  preserveDrawingBuffer?: boolean;
-
-  /** 是否启用批处理优化 */
+  /** 是否启用批处理 */
   enableBatching?: boolean;
 
   /** 目标帧率 */
   targetFPS?: number;
 
-  /** 是否启用调试模式 */
-  debug?: boolean;
+  /** 是否启用抗锯齿 */
+  antialias?: boolean;
+
+  /** 是否启用 Alpha 通道 */
+  alpha?: boolean;
+
+  /** 是否启用透明度 */
+  premultipliedAlpha?: boolean;
+
+  /** 是否保留绘图缓冲区 */
+  preserveDrawingBuffer?: boolean;
+
+  /** 色彩空间 */
+  colorSpace?: 'srgb' | 'display-p3';
+}
+
+/**
+ * 渲染引擎能力信息
+ */
+export interface RenderEngineCapabilities {
+  /** 是否支持硬件加速 */
+  supportsHardwareAcceleration: boolean;
+  /** 是否支持变换 */
+  supportsTransforms: boolean;
+  /** 是否支持滤镜 */
+  supportsFilters: boolean;
+  /** 是否支持混合 */
+  supportsBlending: boolean;
+  /** 最大纹理尺寸 */
+  maxTextureSize: number;
+  /** 支持的格式 */
+  supportedFormats: string[];
 }
 
 /**
@@ -103,3 +132,4 @@ export interface IRenderStats {
   /** 已渲染对象数 */
   objectsRendered: number;
 }
+

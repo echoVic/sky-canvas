@@ -3,7 +3,7 @@
  * 验证AdvancedShaderManager和WebGLOptimizer与WebGLContext的集成
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IWebGLContext, WebGLContextFactory, WebGLAdvancedConfig } from '../WebGLContext';
+import { IWebGLContext, WebGLAdvancedConfig, WebGLContext } from '../WebGLContext';
 
 // Mock WebGL API (复用之前的mock)
 const mockWebGLContext = {
@@ -104,15 +104,13 @@ describe('WebGL高级功能集成测试', () => {
 
   describe('基础集成测试', () => {
     it('应该支持不启用高级功能的情况', async () => {
-      const factory = new WebGLContextFactory();
-      context = await factory.createContext(canvas);
+      context = new WebGLContext(mockWebGLContext as any, canvas);
 
       expect(context.getAdvancedShaderManager?.()).toBeUndefined();
       expect(context.getWebGLOptimizer?.()).toBeUndefined();
     });
 
     it('应该能够启用高级着色器管理', async () => {
-      const factory = new WebGLContextFactory();
       const advancedConfig: WebGLAdvancedConfig = {
         enableAdvancedShaders: true,
         advancedShaderConfig: {
@@ -121,14 +119,14 @@ describe('WebGL高级功能集成测试', () => {
         }
       };
 
-      context = await factory.createContext(canvas, undefined, advancedConfig);
+      context = new WebGLContext(mockWebGLContext as any, canvas, undefined, advancedConfig);
 
       expect(context.getAdvancedShaderManager?.()).toBeDefined();
       expect(context.getWebGLOptimizer?.()).toBeUndefined();
     });
 
     it('应该能够启用WebGL优化器', async () => {
-      const factory = new WebGLContextFactory();
+      // 直接使用构造函数
       const advancedConfig: WebGLAdvancedConfig = {
         enableOptimizer: true,
         optimizerConfig: {
@@ -137,14 +135,14 @@ describe('WebGL高级功能集成测试', () => {
         }
       };
 
-      context = await factory.createContext(canvas, undefined, advancedConfig);
+      context = new WebGLContext(mockWebGLContext as any, canvas, undefined, advancedConfig);
 
       expect(context.getAdvancedShaderManager?.()).toBeUndefined();
       expect(context.getWebGLOptimizer?.()).toBeDefined();
     });
 
     it('应该能够同时启用所有高级功能', async () => {
-      const factory = new WebGLContextFactory();
+      // 直接使用构造函数
       const advancedConfig: WebGLAdvancedConfig = {
         enableAdvancedShaders: true,
         enableOptimizer: true,
@@ -156,7 +154,7 @@ describe('WebGL高级功能集成测试', () => {
         }
       };
 
-      context = await factory.createContext(canvas, undefined, advancedConfig);
+      context = new WebGLContext(mockWebGLContext as any, canvas, undefined, advancedConfig);
 
       expect(context.getAdvancedShaderManager?.()).toBeDefined();
       expect(context.getWebGLOptimizer?.()).toBeDefined();
@@ -165,13 +163,13 @@ describe('WebGL高级功能集成测试', () => {
 
   describe('高级功能使用测试', () => {
     beforeEach(async () => {
-      const factory = new WebGLContextFactory();
+      // 直接使用构造函数
       const advancedConfig: WebGLAdvancedConfig = {
         enableAdvancedShaders: true,
         enableOptimizer: true
       };
 
-      context = await factory.createContext(canvas, undefined, advancedConfig);
+      context = new WebGLContext(mockWebGLContext as any, canvas, undefined, advancedConfig);
     });
 
     it('应该能够通过高级着色器管理器注册着色器模板', () => {
@@ -235,13 +233,13 @@ describe('WebGL高级功能集成测试', () => {
 
   describe('资源管理测试', () => {
     it('应该能够正确清理高级功能资源', async () => {
-      const factory = new WebGLContextFactory();
+      // 直接使用构造函数
       const advancedConfig: WebGLAdvancedConfig = {
         enableAdvancedShaders: true,
         enableOptimizer: true
       };
 
-      context = await factory.createContext(canvas, undefined, advancedConfig);
+      context = new WebGLContext(mockWebGLContext as any, canvas, undefined, advancedConfig);
 
       // 验证高级功能已初始化
       expect(context.getAdvancedShaderManager?.()).toBeDefined();
@@ -257,15 +255,15 @@ describe('WebGL高级功能集成测试', () => {
   describe('性能测试', () => {
     it('高级功能不应该显著影响基础渲染性能', async () => {
       // 创建没有高级功能的上下文
-      const factory = new WebGLContextFactory();
-      const basicContext = await factory.createContext(canvas);
+      // 直接使用构造函数
+      const basicContext = new WebGLContext(mockWebGLContext as any, canvas);
 
       // 创建有高级功能的上下文
       const advancedConfig: WebGLAdvancedConfig = {
         enableAdvancedShaders: true,
         enableOptimizer: true
       };
-      const advancedContext = await factory.createContext(canvas, undefined, advancedConfig);
+      const advancedContext = new WebGLContext(mockWebGLContext as any, canvas, undefined, advancedConfig);
 
       // 基准测试
       const testRenderOperations = (ctx: any) => {
