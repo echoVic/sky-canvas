@@ -1,61 +1,29 @@
-import { Canvas2DContextFactory } from '../adapters/Canvas2DContext';
-import { WebGLContextFactory } from '../adapters/WebGLContext';
-import { WebGPUContextConfig, WebGPUContextFactory } from '../adapters/WebGPUContext';
-import { BaseRenderer } from '../core';
-import { RendererType } from '../core/RenderTypes';
+import { RendererType } from './types';
+import { BaseRenderer } from './BaseRenderer';
 import { CanvasRenderer } from './CanvasRenderer';
 import { WebGLRenderer } from './WebGLRenderer';
-import { WebGPURenderer } from './WebGPURenderer';
+import { WebGPURenderer } from './WebGPURenderer'; // Temporarily disabled
 
+// 导出基类和接口
+export { BaseRenderer } from './BaseRenderer';
+export type {
+  Drawable, RenderContext, Renderer, RendererCapabilities, RenderState
+} from './BaseRenderer';
+
+// 导出具体渲染器
 export { CanvasRenderer, WebGLRenderer, WebGPURenderer };
 
 export class RendererFactory {
-  static async createCanvasRenderer(canvas: HTMLCanvasElement): Promise<CanvasRenderer | null> {
-    const factory = new Canvas2DContextFactory();
-
-    if (!factory.isSupported()) {
-      return null;
-    }
-
-    try {
-      const context = await factory.createContext(canvas);
-      return new CanvasRenderer(context);
-    } catch (error) {
-      console.error('Failed to create Canvas2D context:', error);
-      return null;
-    }
+  static createCanvasRenderer(): CanvasRenderer {
+    return new CanvasRenderer();
   }
 
-  static async createWebGLRenderer(canvas: HTMLCanvasElement): Promise<WebGLRenderer | null> {
-    const factory = new WebGLContextFactory();
-    
-    if (!factory.isSupported()) {
-      return null;
-    }
-    
-    try {
-      const context = await factory.createContext(canvas);
-      return new WebGLRenderer(context);
-    } catch (error) {
-      console.error('Failed to create WebGL context:', error);
-      return null;
-    }
+  static createWebGLRenderer(): WebGLRenderer {
+    return new WebGLRenderer();
   }
 
-  static async createWebGPURenderer(canvas: HTMLCanvasElement, config?: WebGPUContextConfig): Promise<WebGPURenderer | null> {
-    const factory = new WebGPUContextFactory();
-    
-    if (!factory.isSupported()) {
-      return null;
-    }
-    
-    try {
-      const context = await factory.createContext(canvas, config);
-      return new WebGPURenderer(context);
-    } catch (error) {
-      console.error('Failed to create WebGPU context:', error);
-      return null;
-    }
+  static createWebGPURenderer(canvas: HTMLCanvasElement): WebGPURenderer {
+    return new WebGPURenderer(canvas);
   }
 
   static async createRenderer(type: RendererType, canvas: HTMLCanvasElement): Promise<BaseRenderer | null> {
@@ -63,26 +31,20 @@ export class RendererFactory {
 
     switch (type) {
       case RendererType.CANVAS_2D:
-        const canvasRenderer = await this.createCanvasRenderer(canvas);
-        if (!canvasRenderer) {
-          return null;
-        }
-        renderer = canvasRenderer;
+        renderer = new CanvasRenderer();
         break;
       case RendererType.WEBGL:
       case RendererType.WEBGL2:
-        const webglRenderer = await this.createWebGLRenderer(canvas);
-        if (!webglRenderer) {
+        renderer = new WebGLRenderer();
+        if (renderer.initialize && !renderer.initialize(canvas)) {
           return null;
         }
-        renderer = webglRenderer;
         break;
       case RendererType.WEBGPU:
-        const webgpuRenderer = await this.createWebGPURenderer(canvas);
-        if (!webgpuRenderer) {
+        renderer = new WebGPURenderer(canvas);
+        if (renderer.initialize && !await renderer.initialize(canvas)) {
           return null;
         }
-        renderer = webgpuRenderer;
         break;
       default:
         return null;

@@ -1,4 +1,4 @@
-import { Shader, ShaderSource, ShaderType } from '../core/RenderTypes';
+import { Shader, ShaderSource, ShaderType } from '../webgl/types';
 
 // 着色器编译结果
 export interface ShaderCompileResult {

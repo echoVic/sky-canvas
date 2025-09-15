@@ -130,7 +130,6 @@ export class UnifiedPerformanceManager {
     if (!this.renderEngineAdapter) {
       this.renderEngineAdapter = new RenderEngineAdapter(
         performanceMonitor,
-        performanceMonitorSystem,
         gl
       );
     }

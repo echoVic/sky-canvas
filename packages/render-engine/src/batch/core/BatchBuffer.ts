@@ -2,8 +2,8 @@
  * 批量渲染缓冲区管理
  */
 
-import { BufferType, Buffer } from '../../core/RenderTypes';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
+import { Buffer, BufferType } from '../../webgl/types';
 import { BatchConfig, BatchVertex } from '../types/BatchTypes';
 
 export class BatchBuffer {

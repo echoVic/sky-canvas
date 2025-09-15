@@ -59,7 +59,8 @@ describe('CanvasManager Z轴管理', () => {
       mockSelectionService,
       null as any, // clipboardService
       null as any, // historyService
-      mockZIndexService
+      mockZIndexService,
+      null as any  // renderingService
     );
   });
 

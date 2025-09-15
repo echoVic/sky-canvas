@@ -2,7 +2,8 @@
  * 批量渲染器 - 重构后的主入口
  */
 
-import { BlendMode, RenderStats } from '../core/RenderTypes';
+import { BlendMode } from '../webgl/types';
+import { RenderStats } from '../renderers/types';
 import { Matrix3x3, Vector2 } from '../math';
 import { WebGLResourceManager } from '../resources/ResourceManager';
 import { WebGLShaderManager } from '../shaders/ShaderManager';

@@ -1,15 +1,19 @@
+/**
+ * 简化的渲染器基类
+ */
 import { IPoint, IRect } from '../graphics/IGraphicsContext';
 import { Transform } from '../math';
+import type { IViewport } from '../engine/types';
 
-// 渲染上下文接口
+// 简化的渲染上下文接口
 export interface RenderContext {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D | WebGLRenderingContext | WebGL2RenderingContext;
-  viewport: IRect;
+  viewport: IViewport;
   devicePixelRatio: number;
 }
 
-// 渲染状态接口
+// 简化的渲染状态接口
 export interface RenderState {
   transform: Transform;
   fillStyle: string | CanvasGradient | CanvasPattern;
@@ -23,22 +27,6 @@ export interface RenderState {
   shadowBlur: number;
   shadowOffsetX: number;
   shadowOffsetY: number;
-}
-
-// 渲染命令接口
-export interface RenderCommand {
-  type: string;
-  execute(context: any, state?: any): void;
-}
-
-// 基础渲染器接口
-export interface Renderer {
-  render(context: RenderContext): void;
-  update(deltaTime: number): void;
-  dispose(): void;
-  clear(): void;
-  setViewport(viewport: IRect): void;
-  getViewport(): IRect;
 }
 
 // 可绘制对象接口
@@ -63,12 +51,27 @@ export interface RendererCapabilities {
   supportedFormats: string[];
 }
 
-// 抽象渲染器基类
+// 基础渲染器接口
+export interface Renderer {
+  render(context: RenderContext): void;
+  update(deltaTime: number): void;
+  dispose(): void;
+  clear(): void;
+  setViewport(viewport: Partial<IViewport>): void;
+  getViewport(): IViewport;
+  getCapabilities(): RendererCapabilities;
+}
+
+/**
+ * 简化的渲染器基类
+ */
 export abstract class BaseRenderer implements Renderer {
   protected drawables: Drawable[] = [];
-  protected viewport: IRect = { x: 0, y: 0, width: 0, height: 0 };
+  protected viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
   protected renderState: RenderState;
   protected stateStack: RenderState[] = [];
+  private _isRunning = false;
+  protected animationId: number | null = null;
 
   constructor() {
     this.renderState = this.createDefaultRenderState();
@@ -77,16 +80,12 @@ export abstract class BaseRenderer implements Renderer {
   abstract render(context: RenderContext): void;
   abstract clear(): void;
   abstract getCapabilities(): RendererCapabilities;
-  
-  // 获取渲染上下文（可选实现）
-  getContext?(): RenderContext | null;
-  
-  // 可选的初始化方法，子类可以重写
-  initialize?(canvas: HTMLCanvasElement): boolean | Promise<boolean>;
-  
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+  // 可选的初始化方法
+  initialize?(canvas: HTMLCanvasElement, config?: any): boolean | Promise<boolean>;
+
   update(deltaTime: number): void {
-    // 更新所有可绘制对象
+    // 基础更新逻辑
     this.drawables.forEach(drawable => {
       if (drawable.visible) {
         // 可以在这里添加动画更新逻辑
@@ -107,21 +106,47 @@ export abstract class BaseRenderer implements Renderer {
     return this.drawables.find(d => d.id === id);
   }
 
-  getDrawablesInBounds(bounds: IRect): Drawable[] {
-    return this.drawables.filter(drawable => {
-      if (!drawable.visible) return false;
-      const drawableBounds = drawable.getBounds();
-      return this.boundsIntersect(bounds, drawableBounds);
-    });
+  setViewport(viewport: Partial<IViewport>): void {
+    this.viewport = { ...this.viewport, ...viewport };
   }
 
-  setViewport(viewport: IRect): void {
-    this.viewport = { ...viewport };
-  }
-
-  getViewport(): IRect {
+  getViewport(): IViewport {
     return { ...this.viewport };
   }
+
+  // 添加清空所有可绘制对象的方法
+  clearDrawables(): void {
+    this.drawables = [];
+  }
+
+  // 添加渲染循环管理
+  startRenderLoop(context: RenderContext): void {
+    if (this._isRunning) return;
+    this._isRunning = true;
+
+    const loop = () => {
+      if (!this._isRunning) return;
+      this.render(context);
+      this.animationId = requestAnimationFrame(loop);
+    };
+
+    loop();
+  }
+
+  stopRenderLoop(): void {
+    this._isRunning = false;
+    if (this.animationId !== null) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+  }
+
+  isRunning(): boolean {
+    return this._isRunning;
+  }
+
+  // 可选的统计方法
+  getStats?(): any;
 
   // 渲染状态管理
   pushState(): void {
@@ -147,9 +172,9 @@ export abstract class BaseRenderer implements Renderer {
   }
 
   protected boundsIntersect(a: IRect, b: IRect): boolean {
-    return !(a.x + a.width < b.x || 
-             b.x + b.width < a.x || 
-             a.y + a.height < b.y || 
+    return !(a.x + a.width < b.x ||
+             b.x + b.width < a.x ||
+             a.y + a.height < b.y ||
              b.y + b.height < a.y);
   }
 
@@ -175,8 +200,3 @@ export abstract class BaseRenderer implements Renderer {
     this.stateStack = [];
   }
 }
-
-// 导出基础图形和命令
-export * from './commands';
-export * from './shapes';
-

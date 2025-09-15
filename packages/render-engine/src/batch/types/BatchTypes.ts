@@ -2,7 +2,8 @@
  * 批量渲染系统类型定义
  */
 
-import { BlendMode, RenderStats } from '../../core/RenderTypes';
+import { BlendMode } from '../../webgl/types';
+import { RenderStats } from '../../renderers/types';
 import { Vector2 } from '../../math';
 
 // 批量渲染顶点结构

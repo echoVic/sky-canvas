@@ -9,7 +9,7 @@ import {
   UnifiedMetricType 
 } from '../UnifiedPerformanceMonitor';
 import { PerformanceMonitor } from '../PerformanceMonitor';
-import { PerformanceMonitorSystem } from '../../core/systems/PerformanceMonitorSystem';
+// PerformanceMonitorSystem removed - using local PerformanceMonitor instead
 
 export class RenderEngineAdapter implements IDataSourceAdapter {
   readonly sourceType = DataSourceType.RENDER_ENGINE;
@@ -31,16 +31,14 @@ export class RenderEngineAdapter implements IDataSourceAdapter {
   ];
   
   private performanceMonitor: PerformanceMonitor | null = null;
-  private performanceMonitorSystem: PerformanceMonitorSystem | null = null;
+  // performanceMonitorSystem removed
   private gl: WebGLRenderingContext | null = null;
   
   constructor(
     performanceMonitor?: PerformanceMonitor,
-    performanceMonitorSystem?: PerformanceMonitorSystem,
     gl?: WebGLRenderingContext
   ) {
     this.performanceMonitor = performanceMonitor || null;
-    this.performanceMonitorSystem = performanceMonitorSystem || null;
     this.gl = gl || null;
   }
   
@@ -72,21 +70,7 @@ export class RenderEngineAdapter implements IDataSourceAdapter {
       this.mapMetric(metrics, UnifiedMetricType.SHADER_COMPILE_TIME, currentMetrics.shaderCompileTime);
     }
     
-    // 从 PerformanceMonitorSystem 收集数据
-    if (this.performanceMonitorSystem) {
-      const systemMetrics = this.performanceMonitorSystem.getMetrics();
-      
-      this.mapMetric(metrics, UnifiedMetricType.FPS, systemMetrics.fps);
-      this.mapMetric(metrics, UnifiedMetricType.FRAME_TIME, systemMetrics.frameTime);
-      this.mapMetric(metrics, UnifiedMetricType.RENDER_TIME, systemMetrics.renderTime);
-      this.mapMetric(metrics, UnifiedMetricType.DRAW_CALLS, systemMetrics.drawCalls);
-      this.mapMetric(metrics, UnifiedMetricType.TRIANGLES, systemMetrics.triangles);
-      this.mapMetric(metrics, UnifiedMetricType.BATCH_COUNT, systemMetrics.batchCount);
-      this.mapMetric(metrics, UnifiedMetricType.CULLED_OBJECTS, systemMetrics.culledObjects);
-      this.mapMetric(metrics, UnifiedMetricType.CACHE_HIT_RATE, systemMetrics.cacheHitRate);
-      this.mapMetric(metrics, UnifiedMetricType.LOD_SWITCHES, systemMetrics.lodSwitches);
-      this.mapMetric(metrics, UnifiedMetricType.GPU_MEMORY, systemMetrics.gpuMemoryUsage);
-    }
+    // PerformanceMonitorSystem 已移除
     
     // 收集WebGL上下文信息
     if (this.gl) {
@@ -203,10 +187,7 @@ export class RenderEngineAdapter implements IDataSourceAdapter {
       this.performanceMonitor = null;
     }
     
-    if (this.performanceMonitorSystem) {
-      this.performanceMonitorSystem.dispose();
-      this.performanceMonitorSystem = null;
-    }
+    // performanceMonitorSystem removed
     
     this.gl = null;
   }

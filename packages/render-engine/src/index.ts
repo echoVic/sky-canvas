@@ -3,6 +3,10 @@
  * 高性能图形渲染引擎，专注于WebGL渲染，包含Canvas2D和WebGPU占位符
  */
 
+// ===== 主要导出 - 统一入口 =====
+export { RenderEngine } from './engine/RenderEngine';
+export type { RenderEngineConfig } from './engine/types';
+
 // 核心类型和接口
 export type {
   IGraphicsContext,
@@ -11,13 +15,12 @@ export type {
 } from './graphics/IGraphicsContext';
 
 export type {
-  IRenderable, IRenderEngine, IRenderEngineConfig, IRenderLayer, IRenderStats, IViewport
-} from './core/IRenderEngine';
+  IRenderable,
+  IViewport,
+  IRenderStats
+} from './engine/types';
 
-// 现代渲染管道
-export type {
-  IModernRenderPipeline
-} from './core/ModernRenderPipeline';
+// 现代渲染管道已移除
 
 // 渲染命令系统
 export type {
@@ -49,16 +52,9 @@ export type {
 
 // 统一批处理系统类型
 export type {
-  IBatchRenderer,
-  IRenderable as IBatchRenderable, // 重命名避免冲突
-  BatchStats,
-  IBatchStrategy,
   BatchContext,
-  BatchData,
-  Vertex,
-  BatchKey,
-  RenderBatch,
-  BatchManagerConfig
+  BatchData, BatchKey, BatchManagerConfig, // 重命名避免冲突
+  BatchStats, IRenderable as IBatchRenderable, IBatchRenderer, IBatchStrategy, RenderBatch, Vertex
 } from './batch';
 
 // 空间分割和剔除
@@ -78,11 +74,9 @@ export type {
   PrimitiveCreateOptions
 } from './primitives/PrimitiveFactory';
 
-// 核心实现
-export { RenderEngine } from './core/RenderEngine';
+// 核心实现已在顶部导出
 
-// 现代渲染管道实现
-export * from './core/ModernRenderPipeline';
+// 现代渲染管道实现已移除
 
 // 渲染命令实现
 export * from './commands/index';
@@ -94,19 +88,10 @@ export { ShaderManager } from './webgl/ShaderManager';
 
 // 统一批处理系统实现
 export {
-  BatchManager,
-  createBatchManager,
-  BatchBuffer,
-  BatchDataUtils,
-  BasicStrategy,
-  EnhancedStrategy,
-  InstancedStrategy,
-  BatchOptimizer,
-  OptimizationType,
-  createBatchManagerWithDefaultStrategies,
-  createBasicBatchManager,
-  createEnhancedBatchManager,
-  createInstancedBatchManager
+  BasicStrategy, BatchBuffer,
+  BatchDataUtils, BatchManager, BatchOptimizer, createBasicBatchManager, createBatchManager, createBatchManagerWithDefaultStrategies, createEnhancedBatchManager,
+  createInstancedBatchManager, EnhancedStrategy,
+  InstancedStrategy, OptimizationType
 } from './batch';
 
 // 空间分割和剔除实现
@@ -117,6 +102,9 @@ export * from './primitives/index';
 
 // 数学库
 export * from './math/index';
+
+// 渲染器实现
+export * from './renderers/index';
 
 // 渲染适配器
 export * from './adapters/index';

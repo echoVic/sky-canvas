@@ -7,6 +7,7 @@ import { IRenderable } from '@sky-canvas/render-engine';
 import { createDecorator } from '../di';
 import { ShapeEntity } from '../models/entities/Shape';
 import {
+  ICanvasRenderingService,
   IClipboardService,
   IEventBusService,
   IHistoryService,
@@ -78,7 +79,8 @@ export class CanvasManager implements ICanvasManager {
     @ISelectionService private selectionService: any,
     @IClipboardService private clipboardService: any,
     @IHistoryService private historyService: any,
-    @IZIndexService private zIndexService: any
+    @IZIndexService private zIndexService: any,
+    @ICanvasRenderingService private renderingService: any
   ) {
     this.setupIntegration();
   }
@@ -97,14 +99,21 @@ export class CanvasManager implements ICanvasManager {
    * 添加形状
    */
   addShape(entity: ShapeEntity): void {
+    this.logService.info('CanvasManager.addShape called:', entity);
+
     const view = this.shapeService.addShape(entity);
-    
+    this.logService.info('Shape view created:', view);
+
+    // 添加到渲染服务
+    this.logService.info('Adding to rendering service...');
+    this.renderingService.addRenderable(view);
+
     // 记录到历史
     this.historyService.execute({
       execute: () => {}, // 已经执行了，不需要重复
       undo: () => this.shapeService.removeShape(entity.id)
     });
-    
+
     // 发布事件
     this.eventBus.emit('canvas:shapeAdded', { entity, view });
     this.logService.debug(`Shape added: ${entity.id}`);
@@ -116,15 +125,18 @@ export class CanvasManager implements ICanvasManager {
   removeShape(id: string): void {
     const entity = this.shapeService.getShapeEntity(id);
     if (!entity) return;
-    
+
+    // 从渲染服务中移除
+    this.renderingService.removeRenderable(id);
+
     this.shapeService.removeShape(id);
-    
+
     // 记录到历史
     this.historyService.execute({
       execute: () => {},  // 已经执行了，不需要重复
       undo: () => this.shapeService.addShape(entity)
     });
-    
+
     // 发布事件
     this.eventBus.emit('canvas:shapeRemoved', { id });
     this.logService.debug(`Shape removed: ${id}`);

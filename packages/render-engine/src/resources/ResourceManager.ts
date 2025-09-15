@@ -1,4 +1,6 @@
-import { Buffer, BufferType, GPUResource, Texture, TextureFormat } from '../core/RenderTypes';
+import { Texture, TextureFormat } from '../textures/types';
+import { Buffer, BufferType } from '../webgl/types';
+import { GPUResource } from './types';
 
 // 资源池配置
 export interface ResourcePoolConfig {

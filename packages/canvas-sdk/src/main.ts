@@ -208,6 +208,9 @@ class CanvasSDKBootstrap {
       renderEngine: this.config.renderEngine || 'webgl'
     });
 
+    // 启动渲染服务
+    renderingService.start();
+
     // 初始化交互服务
     if (this.config.enableInteraction) {
       const interactionService = this.instantiationService.invokeFunction(accessor =>

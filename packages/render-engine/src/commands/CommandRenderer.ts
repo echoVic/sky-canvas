@@ -3,7 +3,7 @@
  * 集成命令队列到渲染引擎中
  */
 import { IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
-import { IRenderEngine, IViewport } from '../core/IRenderEngine';
+import { IViewport } from '../engine/types';
 import { IRenderCommand } from './IRenderCommand';
 import { IRenderQueue, RenderQueue, IRenderQueueConfig } from './RenderQueue';
 
@@ -124,22 +124,22 @@ export class CommandRenderer implements ICommandRenderer {
  * 渲染引擎命令扩展
  * 为现有渲染引擎添加命令模式支持
  */
-export interface IRenderEngineWithCommands extends IRenderEngine {
+export interface IRenderEngineWithCommands {
   /** 命令渲染器 */
   readonly commandRenderer: ICommandRenderer;
-  
+
   /**
    * 启用/禁用命令模式渲染
    * @param enabled 是否启用
    */
   setCommandModeEnabled(enabled: boolean): void;
-  
+
   /**
    * 提交渲染命令
    * @param command 渲染命令
    */
   submitCommand(command: IRenderCommand): void;
-  
+
   /**
    * 批量提交渲染命令
    * @param commands 渲染命令数组

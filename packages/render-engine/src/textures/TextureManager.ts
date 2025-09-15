@@ -1,4 +1,4 @@
-import { RenderStats } from '../core/RenderTypes';
+import { RenderStats } from '../renderers/types';
 
 /**
  * 纹理过滤模式

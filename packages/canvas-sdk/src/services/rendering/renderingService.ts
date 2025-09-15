@@ -43,30 +43,27 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   async initialize(canvas: HTMLCanvasElement, config: any): Promise<void> {
     this.logger.info('Initializing canvas rendering service', { config });
 
-    // TODO: 根据配置创建对应的渲染引擎
     try {
-      const { RenderEngine, WebGLContextFactory, Canvas2DContextFactory, WebGPUContextFactory } = await import('@sky-canvas/render-engine');
+      const { RenderEngine } = await import('@sky-canvas/render-engine');
 
-      // 根据配置选择对应的图形上下文工厂
-      let factory;
-      const renderType = config.renderEngine || 'webgl';
+      // 创建渲染引擎配置
+      const engineConfig = {
+        renderer: config.renderEngine || 'auto',
+        debug: config.debug || false,
+        enableBatching: true,
+        targetFPS: config.targetFPS || 60,
+        antialias: config.antialias !== false,
+        alpha: config.alpha !== false
+      };
 
-      switch (renderType) {
-        case 'webgl':
-          factory = new WebGLContextFactory();
-          break;
-        case 'canvas2d':
-          factory = new Canvas2DContextFactory();
-          break;
-        case 'webgpu':
-          factory = new WebGPUContextFactory();
-          break;
-        default:
-          factory = new WebGLContextFactory();
-      }
+      // 直接使用新的 RenderEngine API
+      this.renderEngine = new RenderEngine(canvas, engineConfig);
 
-      this.renderEngine = new RenderEngine(config);
-      await this.renderEngine.initialize(factory, canvas);
+      this.logger.info('RenderEngine created and initialized:', {
+        renderer: this.renderEngine.getRendererType(),
+        config: engineConfig,
+        capabilities: this.renderEngine.getCapabilities()
+      });
 
       // 监听形状变化事件并触发重绘
       this.eventBus.on('canvas:shapeAdded', () => {
@@ -102,10 +99,27 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   }
 
   addRenderable(renderable: any): void {
+    this.logger.info('Adding renderable:', { renderable, renderEngine: !!this.renderEngine });
+
+    if (!this.renderEngine) {
+      this.logger.error('RenderEngine is not initialized!');
+      return;
+    }
+
+    if (!this.renderEngine.addRenderable) {
+      this.logger.error('RenderEngine.addRenderable method is not available!', {
+        renderEngine: this.renderEngine,
+        methods: Object.getOwnPropertyNames(this.renderEngine)
+      });
+      return;
+    }
+
     if (renderable && renderable.id) {
       this.renderables.set(renderable.id, renderable);
-      this.renderEngine?.addRenderable(renderable);
+      this.renderEngine.addRenderable(renderable);
       this.logger.debug('Renderable added', renderable.id);
+    } else {
+      this.logger.warn('Invalid renderable object', renderable);
     }
   }
 

@@ -3,7 +3,6 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WebGPURenderer } from '../WebGPURenderer';
-import { WebGPUContext } from '../../adapters/WebGPUContext';
 
 // Mock WebGPU API
 Object.defineProperty(navigator, 'gpu', {
@@ -17,7 +16,6 @@ Object.defineProperty(navigator, 'gpu', {
 
 describe('WebGPURenderer', () => {
   let canvas: HTMLCanvasElement;
-  let context: WebGPUContext;
   let renderer: WebGPURenderer;
 
   beforeEach(() => {
@@ -25,7 +23,7 @@ describe('WebGPURenderer', () => {
     canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 600;
-
+    
     // Mock getContext for WebGPU
     canvas.getContext = vi.fn().mockReturnValue({
       configure: vi.fn(),
@@ -33,10 +31,8 @@ describe('WebGPURenderer', () => {
         createView: vi.fn()
       })
     });
-
-    // 创建 WebGPU 上下文
-    context = new WebGPUContext(canvas);
-    renderer = new WebGPURenderer(context);
+    
+    renderer = new WebGPURenderer(canvas);
   });
 
   it('should create WebGPU renderer instance', () => {

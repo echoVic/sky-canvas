@@ -2,7 +2,7 @@
  * 基础图形原语接口
  */
 import { IPoint } from '../graphics/IGraphicsContext';
-import { IRenderable } from '../core/IRenderEngine';
+import { IRenderable } from '../engine/types';
 
 /**
  * 图形原语类型
