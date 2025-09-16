@@ -3,7 +3,7 @@
  * 负责异步加载各种格式的纹理资源
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 import { TextureAtlas, TextureInfo, AtlasEntry } from './TextureAtlas';
 
 // 纹理加载状态
@@ -48,7 +48,7 @@ export interface LoaderEvents {
 /**
  * 纹理加载器类
  */
-export class TextureLoader extends EventEmitter<LoaderEvents> {
+export class TextureLoader extends EventEmitter3 {
   private tasks = new Map<string, TextureLoadTask>();
   private loadQueue: TextureLoadTask[] = [];
   private activeLoads = new Set<string>();

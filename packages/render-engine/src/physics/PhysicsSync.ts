@@ -4,7 +4,7 @@
  */
 
 import { PhysicsWorld, PhysicsBody } from './PhysicsWorld';
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface RenderObject {
   id: string;
@@ -44,7 +44,7 @@ export class PhysicsSync {
   private isActive = false;
   private syncInterval = 16; // 60fps
   private lastSyncTime = 0;
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
 
   constructor(
     private physicsWorld: PhysicsWorld
@@ -53,21 +53,22 @@ export class PhysicsSync {
   }
 
   private initialize(): void {
-    // 监听物理世界事件
-    this.physicsWorld.setEventBus({
-      emit: (event: string, data: any) => {
-        this.handlePhysicsEvent(event, data);
-      },
-      on: () => ({ dispose: () => {} }),
-      off: () => {},
-      dispose: () => {}
-    });
+    // 创建一个 EventEmitter3 实例
+    const physicsEventBus = new EventEmitter3();
+
+    // 监听所有事件并转发
+    physicsEventBus.on('collision', (data) => this.handlePhysicsEvent('collision', data));
+    physicsEventBus.on('trigger', (data) => this.handlePhysicsEvent('trigger', data));
+    physicsEventBus.on('bodyAdded', (data) => this.handlePhysicsEvent('bodyAdded', data));
+    physicsEventBus.on('bodyRemoved', (data) => this.handlePhysicsEvent('bodyRemoved', data));
+
+    this.physicsWorld.setEventBus(physicsEventBus);
   }
 
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

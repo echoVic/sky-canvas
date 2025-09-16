@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import EventEmitter3 from 'eventemitter3';
 import { PhysicsWorld, PhysicsConfig } from '../PhysicsWorld';
 
 describe('PhysicsWorld', () => {
@@ -192,19 +193,15 @@ describe('PhysicsWorld', () => {
 
   describe('事件系统', () => {
     it('应该能设置事件总线', () => {
-      const eventBus = {
-        emit: vi.fn(),
-        on: vi.fn(),
-        off: vi.fn(),
-        dispose: vi.fn()
-      };
-      
+      const eventBus = new EventEmitter3();
+      const emitSpy = vi.spyOn(eventBus, 'emit');
+
       physicsWorld.setEventBus(eventBus);
       
       // 创建物理体应该触发事件
       physicsWorld.createRectangle('rect1', 100, 100, 50, 30);
       
-      expect(eventBus.emit).toHaveBeenCalledWith('body-created', expect.any(Object));
+      expect(emitSpy).toHaveBeenCalledWith('body-created', expect.any(Object));
     });
   });
 

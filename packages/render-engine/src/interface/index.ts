@@ -35,7 +35,7 @@ export {
   type BridgeEventListener,
   type EventFilter,
   type EventTransformer
-} from './EventBridge';
+} from '../interaction/EventBridge';
 
 // 数据桥接器
 export {

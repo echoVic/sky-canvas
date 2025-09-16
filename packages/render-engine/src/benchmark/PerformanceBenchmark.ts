@@ -3,7 +3,7 @@
  * 用于测试和比较渲染引擎各个组件的性能
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 /**
  * 基准测试结果
@@ -63,7 +63,7 @@ export interface BenchmarkEvents {
 /**
  * 性能基准测试框架
  */
-export class PerformanceBenchmark extends EventEmitter<BenchmarkEvents> {
+export class PerformanceBenchmark extends EventEmitter3 {
   private suites = new Map<string, {
     config: BenchmarkConfig;
     tests: Map<string, BenchmarkFunction>;

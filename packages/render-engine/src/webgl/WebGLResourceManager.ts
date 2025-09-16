@@ -3,7 +3,7 @@
  * 统一管理WebGL资源的生命周期，包括纹理、帧缓冲、渲染缓冲等
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 // 资源类型
 export enum ResourceType {
@@ -570,7 +570,7 @@ export class FramebufferManager {
 /**
  * WebGL资源管理器
  */
-export class WebGLResourceManager extends EventEmitter<ResourceManagerEvents> {
+export class WebGLResourceManager extends EventEmitter3 {
   private textureManager: TextureManager;
   private framebufferManager: FramebufferManager;
   private refCounter: ResourceRefCounter;

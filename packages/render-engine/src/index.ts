@@ -112,8 +112,8 @@ export * from './adapters/index';
 // 工具函数
 export * from './utils/index';
 
-// 事件系统
-export * from './events/index';
+// 交互系统（包含事件系统）
+export * from './interaction/index';
 
 // 资源管理
 export * from './resources/index';

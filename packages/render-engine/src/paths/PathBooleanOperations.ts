@@ -3,7 +3,7 @@
  * 实现路径的并集、交集、差集和异或等布尔操作
  */
 
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface PathPoint {
   x: number;
@@ -48,7 +48,7 @@ export interface PathBooleanEvents {
  * 使用Sutherland-Hodgman算法和Weiler-Atherton算法实现
  */
 export class PathBooleanOperations {
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   private precision = 1e-10;
 
   constructor() {}
@@ -56,7 +56,7 @@ export class PathBooleanOperations {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

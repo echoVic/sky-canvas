@@ -3,7 +3,7 @@
  * 整合纹理加载、图集管理和缓存功能
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 import { TextureAtlas, AtlasEntry, TextureInfo, AtlasConfig } from './TextureAtlas';
 import { TextureLoader, LoadOptions, TextureLoadState } from './TextureLoader';
 
@@ -41,7 +41,7 @@ export interface ManagerEvents {
 /**
  * 纹理管理器
  */
-export class TextureManager extends EventEmitter<ManagerEvents> {
+export class TextureManager extends EventEmitter3 {
   private atlas: TextureAtlas;
   private loader: TextureLoader;
   private cache = new Map<string, CacheEntry>();

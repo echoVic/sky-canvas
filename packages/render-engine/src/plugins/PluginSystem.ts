@@ -3,7 +3,7 @@
  * 提供可扩展的插件加载、管理和执行框架
  */
 
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface PluginMetadata {
   id: string;
@@ -60,7 +60,7 @@ export type PluginState =
 export interface PluginContext {
   // 核心API
   renderEngine: any;
-  eventBus: IEventBus;
+  eventBus: EventEmitter3;
   
   // 插件信息
   pluginId: string;
@@ -263,7 +263,7 @@ export class PluginSystem {
   private pluginContexts: Map<string, PluginContext> = new Map();
   private pluginConfigs: Map<string, any> = new Map();
   
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   private pluginPaths: string[] = [];
   
   // 扩展注册表
@@ -280,7 +280,7 @@ export class PluginSystem {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

@@ -2,7 +2,8 @@
  * 输入事件系统 - 统一的输入事件处理
  */
 
-import { Vector2 } from '../math/Vector2';
+import { Vector2 } from "../../math";
+
 
 /**
  * 点位置接口
@@ -229,90 +230,94 @@ export class InputState {
 }
 
 /**
- * 事件工厂
+ * 创建鼠标事件的工具函数
  */
-export class InputEventFactory {
-  static createMouseEvent(
-    type: string,
-    nativeEvent: globalThis.MouseEvent,
-    worldPosition: IPoint
-  ): IMouseEvent {
-    const baseEvent = new BaseEvent(type);
-    const event = baseEvent as unknown as IMouseEvent;
-    
-    event.pointerId = 1; // 鼠标总是ID为1
-    event.screenPosition = { x: nativeEvent.clientX, y: nativeEvent.clientY };
-    event.worldPosition = worldPosition;
-    event.button = nativeEvent.button;
-    event.buttons = nativeEvent.buttons;
-    event.ctrlKey = nativeEvent.ctrlKey;
-    event.shiftKey = nativeEvent.shiftKey;
-    event.altKey = nativeEvent.altKey;
-    event.metaKey = nativeEvent.metaKey;
-    
-    if (type === 'mousewheel' && 'deltaX' in nativeEvent) {
-      const wheelEvent = nativeEvent as WheelEvent;
-      event.deltaX = wheelEvent.deltaX;
-      event.deltaY = wheelEvent.deltaY;
-      event.deltaZ = wheelEvent.deltaZ;
-    }
-    
-    return event;
+export function createMouseEvent(
+  type: string,
+  nativeEvent: globalThis.MouseEvent,
+  worldPosition: IPoint
+): IMouseEvent {
+  const baseEvent = new BaseEvent(type);
+  const event = baseEvent as unknown as IMouseEvent;
+
+  event.pointerId = 1; // 鼠标总是ID为1
+  event.screenPosition = { x: nativeEvent.clientX, y: nativeEvent.clientY };
+  event.worldPosition = worldPosition;
+  event.button = nativeEvent.button;
+  event.buttons = nativeEvent.buttons;
+  event.ctrlKey = nativeEvent.ctrlKey;
+  event.shiftKey = nativeEvent.shiftKey;
+  event.altKey = nativeEvent.altKey;
+  event.metaKey = nativeEvent.metaKey;
+
+  if (type === 'mousewheel' && 'deltaX' in nativeEvent) {
+    const wheelEvent = nativeEvent as WheelEvent;
+    event.deltaX = wheelEvent.deltaX;
+    event.deltaY = wheelEvent.deltaY;
+    event.deltaZ = wheelEvent.deltaZ;
   }
 
-  static createTouchEvent(
-    type: string,
-    nativeEvent: globalThis.TouchEvent,
-    worldPositions: IPoint[]
-  ): ITouchEvent {
-    const baseEvent = new BaseEvent(type);
-    const event = baseEvent as unknown as ITouchEvent;
-    
-    const createTouch = (nativeTouch: globalThis.Touch, worldPos: IPoint): ITouch => ({
-      identifier: nativeTouch.identifier,
-      screenPosition: { x: nativeTouch.clientX, y: nativeTouch.clientY },
-      worldPosition: worldPos,
-      force: nativeTouch.force,
-      radiusX: nativeTouch.radiusX,
-      radiusY: nativeTouch.radiusY
-    });
-    
-    event.touches = Array.from(nativeEvent.touches).map((touch, i) => 
-      createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
-    );
-    
-    event.changedTouches = Array.from(nativeEvent.changedTouches).map((touch, i) => 
-      createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
-    );
-    
-    event.targetTouches = Array.from(nativeEvent.targetTouches).map((touch, i) => 
-      createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
-    );
-    
-    return event;
-  }
+  return event;
+}
 
-  static createGestureEvent(
-    type: string,
-    center: IPoint,
-    scale: number,
-    rotation: number,
-    velocity: Vector2,
-    deltaScale: number = 0,
-    deltaRotation: number = 0,
-    deltaTranslation: Vector2 = new Vector2(0, 0)
-  ): IGestureEvent {
-    const baseEvent = new BaseEvent(type);
-    const event = baseEvent as unknown as IGestureEvent;
-    
-    event.center = center;
-    event.scale = scale;
-    event.rotation = rotation;
-    event.velocity = velocity;
-    event.deltaScale = deltaScale;
-    event.deltaRotation = deltaRotation;
-    event.deltaTranslation = deltaTranslation;
-    
-    return event;
-  }
+/**
+ * 创建触摸事件的工具函数
+ */
+export function createTouchEvent(
+  type: string,
+  nativeEvent: globalThis.TouchEvent,
+  worldPositions: IPoint[]
+): ITouchEvent {
+  const baseEvent = new BaseEvent(type);
+  const event = baseEvent as unknown as ITouchEvent;
+
+  const createTouch = (nativeTouch: globalThis.Touch, worldPos: IPoint): ITouch => ({
+    identifier: nativeTouch.identifier,
+    screenPosition: { x: nativeTouch.clientX, y: nativeTouch.clientY },
+    worldPosition: worldPos,
+    force: nativeTouch.force,
+    radiusX: nativeTouch.radiusX,
+    radiusY: nativeTouch.radiusY
+  });
+
+  event.touches = Array.from(nativeEvent.touches).map((touch, i) =>
+    createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
+  );
+
+  event.changedTouches = Array.from(nativeEvent.changedTouches).map((touch, i) =>
+    createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
+  );
+
+  event.targetTouches = Array.from(nativeEvent.targetTouches).map((touch, i) =>
+    createTouch(touch, worldPositions[i] || { x: 0, y: 0 })
+  );
+
+  return event;
+}
+
+/**
+ * 创建手势事件的工具函数
+ */
+export function createGestureEvent(
+  type: string,
+  center: IPoint,
+  scale: number,
+  rotation: number,
+  velocity: Vector2,
+  deltaScale: number = 0,
+  deltaRotation: number = 0,
+  deltaTranslation: Vector2 = new Vector2(0, 0)
+): IGestureEvent {
+  const baseEvent = new BaseEvent(type);
+  const event = baseEvent as unknown as IGestureEvent;
+
+  event.center = center;
+  event.scale = scale;
+  event.rotation = rotation;
+  event.velocity = velocity;
+  event.deltaScale = deltaScale;
+  event.deltaRotation = deltaRotation;
+  event.deltaTranslation = deltaTranslation;
+
+  return event;
 }

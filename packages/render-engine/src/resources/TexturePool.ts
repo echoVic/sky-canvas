@@ -2,7 +2,7 @@
  * 纹理池化管理系统
  * 优化纹理资源的分配、复用和内存管理
  */
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 /**
  * 纹理格式枚举
@@ -368,7 +368,7 @@ class TextureUnitManager {
 /**
  * 纹理池管理器
  */
-export class TexturePool extends EventEmitter<TexturePoolEvents> {
+export class TexturePool extends EventEmitter3 {
   private gl: WebGLRenderingContext;
   private config: TexturePoolConfig;
   

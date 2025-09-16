@@ -3,7 +3,7 @@
  * 提供可视化场景编辑功能，包括对象选择、变换、层级管理等
  */
 
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface SceneObject {
   id: string;
@@ -109,7 +109,7 @@ export interface SceneEditorEvents {
  * 场景编辑器实现
  */
 export class SceneEditor {
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   
   // 场景数据
   private scene: SceneHierarchy = {
@@ -143,7 +143,7 @@ export class SceneEditor {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

@@ -3,56 +3,12 @@
  * 提供高效的事件批处理、优先级队列和智能过滤机制
  */
 
-import { globalInterfaceOptimizer } from './OptimizedInterface';
 import { IPoint } from '../graphics/IGraphicsContext';
+import { BridgeEventType, EventPriority, EVENT_CONSTANTS } from './EventTypes';
 
-/**
- * 事件类型枚举
- */
-export enum BridgeEventType {
-  // 输入事件
-  MOUSE_DOWN = 'mousedown',
-  MOUSE_MOVE = 'mousemove',
-  MOUSE_UP = 'mouseup',
-  MOUSE_WHEEL = 'mousewheel',
-  
-  // 触摸事件
-  TOUCH_START = 'touchstart',
-  TOUCH_MOVE = 'touchmove',
-  TOUCH_END = 'touchend',
-  TOUCH_CANCEL = 'touchcancel',
-  
-  // 键盘事件
-  KEY_DOWN = 'keydown',
-  KEY_UP = 'keyup',
-  
-  // 手势事件
-  GESTURE_START = 'gesturestart',
-  GESTURE_CHANGE = 'gesturechange',
-  GESTURE_END = 'gestureend',
-  
-  // 场景事件
-  SCENE_UPDATE = 'sceneupdate',
-  SELECTION_CHANGE = 'selectionchange',
-  TRANSFORM_CHANGE = 'transformchange',
-  
-  // 系统事件
-  RENDER_START = 'renderstart',
-  RENDER_END = 'renderend',
-  FRAME_START = 'framestart',
-  FRAME_END = 'frameend'
-}
+// 重新导出类型
+export { BridgeEventType, EventPriority } from './EventTypes';
 
-/**
- * 事件优先级
- */
-export enum EventPriority {
-  IMMEDIATE = 0,    // 立即处理（如鼠标点击）
-  HIGH = 1,         // 高优先级（如键盘输入）
-  NORMAL = 2,       // 正常优先级（如鼠标移动）
-  LOW = 3,          // 低优先级（如场景更新）
-  IDLE = 4          // 空闲时处理（如统计更新）
-}
 
 /**
  * 桥接事件接口
@@ -115,11 +71,11 @@ class EventQueueManager {
   
   constructor() {
     // 初始化所有优先级队列
-    Object.values(EventPriority).forEach(priority => {
-      if (typeof priority === 'number') {
-        this.queues.set(priority, []);
-      }
-    });
+    this.queues.set(EventPriority.IMMEDIATE, []);
+    this.queues.set(EventPriority.HIGH, []);
+    this.queues.set(EventPriority.NORMAL, []);
+    this.queues.set(EventPriority.LOW, []);
+    this.queues.set(EventPriority.IDLE, []);
   }
   
   /**
@@ -251,7 +207,7 @@ class EventQueueManager {
  */
 class EventDeduplicator {
   private recentEvents = new Map<string, number>();
-  private deduplicationWindow = 16; // 16ms窗口
+  private deduplicationWindow = EVENT_CONSTANTS.DEDUPLICATION_WINDOW;
   
   /**
    * 检查事件是否重复
@@ -328,8 +284,8 @@ export class EventBridge {
     enableDeduplication: true,
     enableStats: true,
     enableFiltering: true,
-    maxListenersPerEvent: 50,
-    eventTimeout: 5000
+    maxListenersPerEvent: EVENT_CONSTANTS.MAX_LISTENERS_PER_EVENT,
+    eventTimeout: EVENT_CONSTANTS.EVENT_TIMEOUT
   };
   
   constructor() {
@@ -455,21 +411,15 @@ export class EventBridge {
     priority?: EventPriority;
     source?: 'canvas-sdk' | 'render-engine';
   }>): void {
-    globalInterfaceOptimizer.batchManager.addCall(
-      'eventBatch',
-      events,
-      (eventBatches: any[]) => {
-        const allEvents = eventBatches.flat();
-        for (const eventData of allEvents) {
-          this.emit(
-            eventData.type,
-            eventData.data,
-            eventData.priority || EventPriority.NORMAL,
-            eventData.source || 'canvas-sdk'
-          );
-        }
-      }
-    );
+    // 简化实现：直接处理事件批次，不依赖外部优化器
+    for (const eventData of events) {
+      this.emit(
+        eventData.type,
+        eventData.data,
+        eventData.priority || EventPriority.NORMAL,
+        eventData.source || 'canvas-sdk'
+      );
+    }
   }
   
   /**

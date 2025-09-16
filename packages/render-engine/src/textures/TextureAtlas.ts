@@ -3,7 +3,7 @@
  * 实现纹理的自动打包、管理和优化
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 // 纹理信息接口
 export interface TextureInfo {
@@ -75,7 +75,7 @@ interface PackingNode {
 /**
  * 高级纹理图集管理器
  */
-export class TextureAtlas extends EventEmitter<AtlasEvents> {
+export class TextureAtlas extends EventEmitter3 {
   private atlases = new Map<string, {
     id: string;
     canvas: HTMLCanvasElement;

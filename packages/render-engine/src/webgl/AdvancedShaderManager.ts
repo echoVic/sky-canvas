@@ -2,7 +2,7 @@
  * 高级着色器管理系统
  * 提供着色器预编译、热重载、变体管理和性能优化
  */
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 import { IShaderProgram, ShaderCompilationError, ShaderProgramLinkError, ShaderType } from './ShaderManager';
 
 /**
@@ -152,7 +152,7 @@ class ShaderPreprocessor {
 /**
  * 高级着色器管理器
  */
-export class AdvancedShaderManager extends EventEmitter<ShaderManagerEvents> {
+export class AdvancedShaderManager extends EventEmitter3 {
   private gl: WebGLRenderingContext;
   private config: AdvancedShaderConfig;
   

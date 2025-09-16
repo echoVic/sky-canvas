@@ -2,9 +2,9 @@
  * 手势识别器 - 识别和处理多点触控手势
  */
 
-import { Vector2 } from '../math/Vector2';
-import { IPoint, ITouchEvent, IGestureEvent, InputEventFactory } from './InputEvents';
-import { EventDispatcher } from './EventDispatcher';
+import EventEmitter3 from 'eventemitter3';
+import { Vector2 } from '../../math/Vector2';
+import { IPoint, ITouchEvent, IGestureEvent, createGestureEvent } from './InputEvents';
 
 /**
  * 手势类型枚举
@@ -45,7 +45,7 @@ export interface IGestureConfig {
 /**
  * 手势识别器
  */
-export class GestureRecognizer extends EventDispatcher {
+export class GestureRecognizer extends EventEmitter3 {
   private _enabled = true;
   private _config: Required<IGestureConfig>;
   
@@ -234,7 +234,7 @@ export class GestureRecognizer extends EventDispatcher {
     this._totalTranslation = new Vector2(0, 0);
 
     // 发送手势开始事件
-    const gestureEvent = InputEventFactory.createGestureEvent(
+    const gestureEvent = createGestureEvent(
       'gesturestart',
       this._lastCenter,
       this._totalScale,
@@ -244,7 +244,7 @@ export class GestureRecognizer extends EventDispatcher {
       0,
       new Vector2(0, 0)
     );
-    this.dispatchEvent(gestureEvent);
+    this.emit(gestureEvent.type, gestureEvent);
 
     // 清除其他计时器
     this._clearTimers();
@@ -281,7 +281,7 @@ export class GestureRecognizer extends EventDispatcher {
     );
 
     // 发送手势变化事件
-    const gestureEvent = InputEventFactory.createGestureEvent(
+    const gestureEvent = createGestureEvent(
       'gesturechange',
       currentCenter,
       this._totalScale,
@@ -291,7 +291,7 @@ export class GestureRecognizer extends EventDispatcher {
       deltaRotation,
       deltaTranslation
     );
-    this.dispatchEvent(gestureEvent);
+    this.emit(gestureEvent.type, gestureEvent);
 
     // 更新上次状态
     this._lastTouchPositions = [...touches];
@@ -319,7 +319,7 @@ export class GestureRecognizer extends EventDispatcher {
   private _endGesture(): void {
     if (!this._gestureActive) return;
 
-    const gestureEvent = InputEventFactory.createGestureEvent(
+    const gestureEvent = createGestureEvent(
       'gestureend',
       this._lastCenter,
       this._totalScale,
@@ -329,7 +329,7 @@ export class GestureRecognizer extends EventDispatcher {
       0,
       new Vector2(0, 0)
     );
-    this.dispatchEvent(gestureEvent);
+    this.emit(gestureEvent.type, gestureEvent);
 
     this._reset();
   }
@@ -339,7 +339,7 @@ export class GestureRecognizer extends EventDispatcher {
    */
   private _cancelGesture(): void {
     if (this._gestureActive) {
-      const gestureEvent = InputEventFactory.createGestureEvent(
+      const gestureEvent = createGestureEvent(
         'gesturecancel',
         this._lastCenter,
         this._totalScale,
@@ -349,7 +349,7 @@ export class GestureRecognizer extends EventDispatcher {
         0,
         new Vector2(0, 0)
       );
-      this.dispatchEvent(gestureEvent);
+      this.emit(gestureEvent.type, gestureEvent);
     }
 
     this._reset();
@@ -486,6 +486,6 @@ export class GestureRecognizer extends EventDispatcher {
   dispose(): void {
     this._clearTimers();
     this._reset();
-    super.dispose();
+    this.removeAllListeners();
   }
 }

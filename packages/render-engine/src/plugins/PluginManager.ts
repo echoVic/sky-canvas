@@ -4,7 +4,7 @@
  */
 
 import { PluginSystem, Plugin, PluginMetadata, PluginState } from './PluginSystem';
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface PluginPackage {
   metadata: PluginMetadata;
@@ -72,7 +72,7 @@ export interface PluginManagerEvents {
  */
 export class PluginManager {
   private pluginSystem: PluginSystem;
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   
   // 注册源管理
   private registries: Map<string, PluginRegistry> = new Map();
@@ -101,7 +101,7 @@ export class PluginManager {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

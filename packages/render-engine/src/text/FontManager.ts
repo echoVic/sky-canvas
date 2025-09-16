@@ -3,7 +3,7 @@
  * 统一管理字体加载、缓存、回退和生命周期
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 import {
   FontConfig,
   FontLoadingOptions,
@@ -385,7 +385,7 @@ class FontCache implements IFontCache {
 /**
  * 字体管理器实现
  */
-export class FontManager extends EventEmitter<FontEvents> implements IFontManager {
+export class FontManager extends EventEmitter3 implements IFontManager {
   private fonts = new Map<string, IFont>();
   private cache: IFontCache;
   private loader: IFontLoader;

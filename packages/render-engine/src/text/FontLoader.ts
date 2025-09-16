@@ -3,7 +3,7 @@
  * 支持Web字体加载、进度追踪、错误处理和回退机制
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 import {
   FontSource,
   FontConfig,
@@ -38,7 +38,7 @@ interface FontLoaderEvents {
   'cancelled': { id: string };
 }
 
-export class FontLoader extends EventEmitter<FontLoaderEvents> implements IFontLoader {
+export class FontLoader extends EventEmitter3 implements IFontLoader {
   private loadingTasks = new Map<string, LoadingTask>();
   private loadedFonts = new Map<string, ArrayBuffer>();
   private cache = new Map<string, ArrayBuffer>();

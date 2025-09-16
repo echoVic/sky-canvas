@@ -2,7 +2,7 @@
  * 性能监控系统
  * 实时监控渲染性能、内存使用和GPU状态
  */
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 /**
  * 性能指标类型
@@ -274,7 +274,7 @@ class FPSCounter {
 /**
  * 性能监控器
  */
-export class PerformanceMonitor extends EventEmitter<PerformanceEvents> {
+export class PerformanceMonitor extends EventEmitter3 {
   private config: PerformanceConfig;
   private metrics = new Map<MetricType, MetricDataPoint[]>();
   private stats = new Map<MetricType, MetricStats>();

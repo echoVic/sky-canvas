@@ -4,7 +4,7 @@
  */
 
 import { GPUParticleSystem, ParticleData } from './GPUParticleSystem';
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface EmitterConfig {
   // 发射设置
@@ -65,7 +65,7 @@ export class ParticleEmitter {
   private id: string;
   private particleSystem: GPUParticleSystem;
   private config: EmitterConfig;
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   
   // 状态管理
   private isActive = false;
@@ -139,7 +139,7 @@ export class ParticleEmitter {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

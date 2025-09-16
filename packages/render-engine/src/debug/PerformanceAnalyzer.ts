@@ -3,7 +3,7 @@
  * 提供详细的性能监控、分析和优化建议功能
  */
 
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface PerformanceMetrics {
   // 帧率指标
@@ -94,7 +94,7 @@ export interface PerformanceAnalyzerEvents {
  * 性能分析器实现
  */
 export class PerformanceAnalyzer {
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   
   // 性能数据
   private currentMetrics: PerformanceMetrics;
@@ -138,7 +138,7 @@ export class PerformanceAnalyzer {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

@@ -5,7 +5,7 @@
 
 import { GPUParticleSystem, ParticleConfig } from './GPUParticleSystem';
 import { ParticleEmitter, EmitterConfig } from './ParticleEmitter';
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface ParticleManagerEvents {
   'system-created': { systemId: string };
@@ -21,7 +21,7 @@ export interface ParticleManagerEvents {
 export class ParticleManager {
   private systems: Map<string, GPUParticleSystem> = new Map();
   private emitters: Map<string, { emitter: ParticleEmitter; systemId: string }> = new Map();
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   
   // 全局设置
   private isRunning = false;
@@ -32,7 +32,7 @@ export class ParticleManager {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
     
     // 为所有现有的系统和发射器设置事件总线

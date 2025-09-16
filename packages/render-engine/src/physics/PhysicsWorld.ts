@@ -4,7 +4,7 @@
  */
 
 import Matter from 'matter-js';
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface PhysicsConfig {
   gravity: { x: number; y: number; scale: number };
@@ -54,7 +54,7 @@ export class PhysicsWorld {
   private constraints: Map<string, Matter.Constraint> = new Map();
   private isRunning = false;
   private lastTime = 0;
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
 
   constructor(
     private config: PhysicsConfig = {
@@ -123,7 +123,7 @@ export class PhysicsWorld {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

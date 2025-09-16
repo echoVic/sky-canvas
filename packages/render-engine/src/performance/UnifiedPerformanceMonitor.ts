@@ -3,7 +3,7 @@
  * 避免重复数据采集，提供跨包的统一性能监控接口
  */
 
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 /**
  * 统一性能指标类型
@@ -303,7 +303,7 @@ export class CrossSourceCorrelationAnalyzer {
 /**
  * 统一性能监控器
  */
-export class UnifiedPerformanceMonitor extends EventEmitter<UnifiedPerformanceEvents> {
+export class UnifiedPerformanceMonitor extends EventEmitter3 {
   private config: UnifiedPerformanceConfig;
   private adapters = new Map<DataSourceType, IDataSourceAdapter>();
   private metrics = new Map<UnifiedMetricType, UnifiedMetricDataPoint[]>();

@@ -4,7 +4,7 @@
  */
 
 import { PathPoint, Path, PathSegment } from './PathBooleanOperations';
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface SimplificationOptions {
   tolerance: number;
@@ -46,14 +46,14 @@ export interface PathSimplificationEvents {
  * 路径简化和编辑器
  */
 export class PathSimplification {
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
 
   constructor() {}
 
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

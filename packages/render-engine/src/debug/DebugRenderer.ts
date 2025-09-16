@@ -3,7 +3,7 @@
  * 提供可视化调试信息，包括线框、边界框、性能图表等
  */
 
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 import { PerformanceMetrics } from './PerformanceAnalyzer';
 
 export interface DebugRenderOptions {
@@ -101,7 +101,7 @@ export class DebugRenderer {
   private gl?: WebGLRenderingContext;
   
   private options: DebugRenderOptions;
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   
   // 调试元素
   private debugInfos: DebugInfo[] = [];
@@ -141,7 +141,7 @@ export class DebugRenderer {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

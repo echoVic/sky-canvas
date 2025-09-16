@@ -3,7 +3,7 @@
  * 使用WebGL实例化渲染和Transform Feedback实现高性能粒子效果
  */
 
-import { IEventBus } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 export interface ParticleConfig {
   maxParticles: number;
@@ -62,7 +62,7 @@ export class GPUParticleSystem {
   private lastUpdateTime = 0;
   private isRunning = false;
   
-  private eventBus?: IEventBus;
+  private eventBus?: EventEmitter3;
   private config: ParticleConfig;
 
   constructor(canvas: HTMLCanvasElement, config: ParticleConfig) {
@@ -462,7 +462,7 @@ export class GPUParticleSystem {
   /**
    * 设置事件总线
    */
-  setEventBus(eventBus: IEventBus): void {
+  setEventBus(eventBus: EventEmitter3): void {
     this.eventBus = eventBus;
   }
 

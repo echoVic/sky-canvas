@@ -5,7 +5,7 @@
 
 import { IShaderManager, IShaderProgram, IShaderSource } from './ShaderManager';
 import { IBufferManager, IBuffer, IVertexArray, BufferType, BufferUsage } from './BufferManager';
-import { EventEmitter } from '../events/EventBus';
+import EventEmitter3 from 'eventemitter3';
 
 // WebGL状态跟踪
 export interface WebGLState {
@@ -470,7 +470,7 @@ export class RenderBatchOptimizer {
 /**
  * WebGL优化器主类
  */
-export class WebGLOptimizer extends EventEmitter<WebGLOptimizerEvents> {
+export class WebGLOptimizer extends EventEmitter3 {
   private gl: WebGLRenderingContext;
   private config: WebGLOptimizerConfig;
   private shaderCache: ShaderCache;
