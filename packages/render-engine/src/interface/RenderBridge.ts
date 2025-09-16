@@ -14,9 +14,9 @@ import { IPoint, IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
 import { Transform } from '../math/Transform';
 
 /**
- * 渲染命令类型
+ * 桥接渲染命令类型
  */
-export enum RenderCommandType {
+export enum BridgeCommandType {
   DRAW_RECTANGLE = 'drawRectangle',
   DRAW_CIRCLE = 'drawCircle',
   DRAW_LINE = 'drawLine',
@@ -32,10 +32,10 @@ export enum RenderCommandType {
 }
 
 /**
- * 渲染命令接口
+ * 桥接渲染命令接口
  */
-export interface RenderCommand {
-  type: RenderCommandType;
+export interface BridgeCommand {
+  type: BridgeCommandType;
   id?: string;
   priority?: number;
   data: any;
@@ -43,19 +43,19 @@ export interface RenderCommand {
 }
 
 /**
- * 批处理渲染命令
+ * 批处理桥接渲染命令
  */
-export interface BatchRenderCommand {
-  commands: RenderCommand[];
+export interface BatchBridgeCommand {
+  commands: BridgeCommand[];
   bounds?: IRect;
   layer?: number;
   blendMode?: string;
 }
 
 /**
- * 渲染状态
+ * 桥接渲染状态
  */
-export interface RenderState {
+export interface BridgeRenderState {
   transform: Transform;
   fillStyle: string | CanvasGradient | CanvasPattern;
   strokeStyle: string | CanvasGradient | CanvasPattern;
@@ -76,23 +76,23 @@ export class CacheKeyGenerator {
   /**
    * 为渲染命令生成缓存键
    */
-  static generateCommandKey(command: RenderCommand): string {
+  static generateCommandKey(command: BridgeCommand): string {
     const data = command.data;
-    
+
     switch (command.type) {
-      case RenderCommandType.DRAW_RECTANGLE:
+      case BridgeCommandType.DRAW_RECTANGLE:
         return `rect_${data.x}_${data.y}_${data.width}_${data.height}_${data.fillStyle}_${data.strokeStyle}`;
-      
-      case RenderCommandType.DRAW_CIRCLE:
+
+      case BridgeCommandType.DRAW_CIRCLE:
         return `circle_${data.x}_${data.y}_${data.radius}_${data.fillStyle}_${data.strokeStyle}`;
-      
-      case RenderCommandType.DRAW_TEXT:
+
+      case BridgeCommandType.DRAW_TEXT:
         return `text_${data.text}_${data.x}_${data.y}_${data.font}_${data.fillStyle}`;
-      
-      case RenderCommandType.DRAW_PATH:
+
+      case BridgeCommandType.DRAW_PATH:
         const pathString = data.path ? data.path.join(',') : '';
         return `path_${pathString}_${data.fillStyle}_${data.strokeStyle}`;
-      
+
       default:
         return `${command.type}_${JSON.stringify(data).slice(0, 50)}`;
     }
@@ -119,19 +119,19 @@ export class CacheKeyGenerator {
 /**
  * 渲染命令优化器
  */
-export class RenderCommandOptimizer {
+export class BridgeCommandOptimizer {
   /**
    * 合并相邻的相似命令
    */
-  static optimizeCommands(commands: RenderCommand[]): RenderCommand[] {
+  static optimizeCommands(commands: BridgeCommand[]): BridgeCommand[] {
     if (commands.length <= 1) return commands;
-    
-    const optimized: RenderCommand[] = [];
+
+    const optimized: BridgeCommand[] = [];
     let current = commands[0];
-    
+
     for (let i = 1; i < commands.length; i++) {
       const next = commands[i];
-      
+
       // 尝试合并命令
       const merged = this.tryMergeCommands(current, next);
       if (merged) {
@@ -141,7 +141,7 @@ export class RenderCommandOptimizer {
         current = next;
       }
     }
-    
+
     optimized.push(current);
     return optimized;
   }
@@ -149,26 +149,26 @@ export class RenderCommandOptimizer {
   /**
    * 尝试合并两个渲染命令
    */
-  private static tryMergeCommands(cmd1: RenderCommand, cmd2: RenderCommand): RenderCommand | null {
+  private static tryMergeCommands(cmd1: BridgeCommand, cmd2: BridgeCommand): BridgeCommand | null {
     // 只合并相同类型的命令
     if (cmd1.type !== cmd2.type) return null;
-    
+
     switch (cmd1.type) {
-      case RenderCommandType.DRAW_RECTANGLE:
+      case BridgeCommandType.DRAW_RECTANGLE:
         return this.tryMergeRectangles(cmd1, cmd2);
-      
-      case RenderCommandType.DRAW_CIRCLE:
+
+      case BridgeCommandType.DRAW_CIRCLE:
         return this.tryMergeCircles(cmd1, cmd2);
-      
-      case RenderCommandType.SET_STYLE:
+
+      case BridgeCommandType.SET_STYLE:
         return this.tryMergeStyles(cmd1, cmd2);
-      
+
       default:
         return null;
     }
   }
   
-  private static tryMergeRectangles(cmd1: RenderCommand, cmd2: RenderCommand): RenderCommand | null {
+  private static tryMergeRectangles(cmd1: BridgeCommand, cmd2: BridgeCommand): BridgeCommand | null {
     const data1 = cmd1.data;
     const data2 = cmd2.data;
     
@@ -180,7 +180,7 @@ export class RenderCommandOptimizer {
     // 检查是否相邻
     if (this.areRectanglesAdjacent(data1, data2)) {
       return {
-        type: RenderCommandType.DRAW_RECTANGLE,
+        type: BridgeCommandType.DRAW_RECTANGLE,
         data: {
           rectangles: [data1, data2],
           fillStyle: data1.fillStyle,
@@ -193,7 +193,7 @@ export class RenderCommandOptimizer {
     return null;
   }
   
-  private static tryMergeCircles(cmd1: RenderCommand, cmd2: RenderCommand): RenderCommand | null {
+  private static tryMergeCircles(cmd1: BridgeCommand, cmd2: BridgeCommand): BridgeCommand | null {
     const data1 = cmd1.data;
     const data2 = cmd2.data;
     
@@ -204,7 +204,7 @@ export class RenderCommandOptimizer {
     
     // 合并为圆形批次
     return {
-      type: RenderCommandType.DRAW_CIRCLE,
+      type: BridgeCommandType.DRAW_CIRCLE,
       data: {
         circles: [data1, data2],
         fillStyle: data1.fillStyle,
@@ -214,10 +214,10 @@ export class RenderCommandOptimizer {
     };
   }
   
-  private static tryMergeStyles(cmd1: RenderCommand, cmd2: RenderCommand): RenderCommand | null {
+  private static tryMergeStyles(cmd1: BridgeCommand, cmd2: BridgeCommand): BridgeCommand | null {
     // 合并样式设置
     return {
-      type: RenderCommandType.SET_STYLE,
+      type: BridgeCommandType.SET_STYLE,
       data: {
         ...cmd1.data,
         ...cmd2.data
@@ -254,14 +254,14 @@ export class RenderCommandOptimizer {
  */
 export class RenderBridge {
   private context: IGraphicsContext;
-  private commandQueue: RenderCommand[] = [];
+  private commandQueue: BridgeCommand[] = [];
   private batchManager: BatchCallManager;
   private objectPoolManager: ObjectPoolManager;
   private dataOptimizer: DataTransferOptimizer;
   private interceptor: InterfaceInterceptor;
   
   // 缓存
-  private stateCache = new Map<string, RenderState>();
+  private stateCache = new Map<string, BridgeRenderState>();
   private commandCache = new Map<string, any>();
   private transformCache = new Map<string, Transform>();
   
@@ -297,7 +297,7 @@ export class RenderBridge {
   /**
    * 添加渲染命令到队列
    */
-  addCommand(command: RenderCommand): void {
+  addCommand(command: BridgeCommand): void {
     command.timestamp = performance.now();
     
     if (this.config.enableBatching) {
@@ -314,9 +314,9 @@ export class RenderBridge {
   /**
    * 批量添加渲染命令
    */
-  addBatchCommands(batch: BatchRenderCommand): void {
+  addBatchCommands(batch: BatchBridgeCommand): void {
     if (this.config.enableOptimization) {
-      batch.commands = RenderCommandOptimizer.optimizeCommands(batch.commands);
+      batch.commands = BridgeCommandOptimizer.optimizeCommands(batch.commands);
     }
     
     for (const command of batch.commands) {
@@ -334,7 +334,7 @@ export class RenderBridge {
     this.commandQueue = [];
     
     if (this.config.enableOptimization) {
-      const optimizedCommands = RenderCommandOptimizer.optimizeCommands(commands);
+      const optimizedCommands = BridgeCommandOptimizer.optimizeCommands(commands);
       this.stats.commandsBatched += commands.length - optimizedCommands.length;
       
       for (const command of optimizedCommands) {
@@ -350,7 +350,7 @@ export class RenderBridge {
   /**
    * 执行单个渲染命令
    */
-  private executeCommand(command: RenderCommand): void {
+  private executeCommand(command: BridgeCommand): void {
     const cacheKey = this.config.enableCaching ? 
       CacheKeyGenerator.generateCommandKey(command) : null;
     
@@ -369,43 +369,43 @@ export class RenderBridge {
     
     try {
       switch (command.type) {
-        case RenderCommandType.DRAW_RECTANGLE:
+        case BridgeCommandType.DRAW_RECTANGLE:
           result = this.executeDrawRectangle(command.data);
           break;
           
-        case RenderCommandType.DRAW_CIRCLE:
+        case BridgeCommandType.DRAW_CIRCLE:
           result = this.executeDrawCircle(command.data);
           break;
           
-        case RenderCommandType.DRAW_LINE:
+        case BridgeCommandType.DRAW_LINE:
           result = this.executeDrawLine(command.data);
           break;
           
-        case RenderCommandType.DRAW_PATH:
+        case BridgeCommandType.DRAW_PATH:
           result = this.executeDrawPath(command.data);
           break;
           
-        case RenderCommandType.DRAW_TEXT:
+        case BridgeCommandType.DRAW_TEXT:
           result = this.executeDrawText(command.data);
           break;
           
-        case RenderCommandType.SET_TRANSFORM:
+        case BridgeCommandType.SET_TRANSFORM:
           result = this.executeSetTransform(command.data);
           break;
           
-        case RenderCommandType.SET_STYLE:
+        case BridgeCommandType.SET_STYLE:
           result = this.executeSetStyle(command.data);
           break;
           
-        case RenderCommandType.SAVE_STATE:
+        case BridgeCommandType.SAVE_STATE:
           result = this.context.save();
           break;
           
-        case RenderCommandType.RESTORE_STATE:
+        case BridgeCommandType.RESTORE_STATE:
           result = this.context.restore();
           break;
           
-        case RenderCommandType.CLEAR_RECT:
+        case BridgeCommandType.CLEAR_RECT:
           result = this.executeClearRect(command.data);
           break;
           
@@ -592,7 +592,7 @@ export class RenderBridge {
     // 渲染命令对象池
     this.objectPoolManager.createPool(
       'renderCommand',
-      () => ({ type: RenderCommandType.DRAW_RECTANGLE, data: {}, timestamp: Date.now() }),
+      () => ({ type: BridgeCommandType.DRAW_RECTANGLE, data: {}, timestamp: Date.now() }),
       (obj) => { obj.data = {}; obj.timestamp = Date.now(); },
       100
     );

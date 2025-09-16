@@ -17,25 +17,13 @@ export {
 // 渲染桥接器
 export {
   RenderBridge,
-  RenderCommandType,
-  RenderCommandOptimizer,
+  BridgeCommandType,
+  BridgeCommandOptimizer,
   CacheKeyGenerator,
-  type RenderCommand,
-  type BatchRenderCommand,
-  type RenderState
+  type BridgeCommand,
+  type BatchBridgeCommand,
+  type BridgeRenderState
 } from './RenderBridge';
-
-// 事件桥接器
-export {
-  EventBridge,
-  BridgeEventType,
-  EventPriority,
-  globalEventBridge,
-  type BridgeEvent,
-  type BridgeEventListener,
-  type EventFilter,
-  type EventTransformer
-} from '../interaction/EventBridge';
 
 // 数据桥接器
 export {

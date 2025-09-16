@@ -3,14 +3,14 @@
  */
 
 // 基础模块
-export * from './ShaderManager';
-export * from './BufferManager';
-export * from './ShaderLibrary';
+export { BufferManager } from './BufferManager';
+export { SHADER_LIBRARY } from './ShaderLibrary';
+export { ShaderManager } from './ShaderManager';
 
 // 高级功能模块
-export * from './AdvancedShaderManager';
-export * from './WebGLOptimizer';
-export * from './WebGLResourceManager';
+export { AdvancedShaderManager } from './AdvancedShaderManager';
+export { WebGLOptimizer } from './WebGLOptimizer';
+export { WebGLResourceManager } from './WebGLResourceManager';
 
-// 高级功能统一接口
-export * from './WebGLAdvanced';
+// WebGL 高级功能统一接口
+export { WebGLAdvancedManager } from './WebGLAdvanced';

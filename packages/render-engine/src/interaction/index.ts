@@ -22,14 +22,6 @@ export type {
 export { GestureRecognizer, GestureState, GestureType } from './events/GestureRecognizer';
 export type { IGestureConfig } from './events/GestureRecognizer';
 
-// 碰撞检测
-export { CollisionDetector, CollisionType } from '../math/CollisionDetection';
-export type { ICollisionObject, IRaycastHit } from '../math/CollisionDetection';
-
-// 空间分割
-export { SpatialPartitionManager } from '../math/SpatialPartitioning';
-export type { ISpatialObject } from '../math/SpatialPartitioning';
-
 // 事件桥接
 export { EventBridge, globalEventBridge } from './EventBridge';
 export type { BridgeEvent, BridgeEventListener, EventFilter, EventTransformer } from './EventBridge';
