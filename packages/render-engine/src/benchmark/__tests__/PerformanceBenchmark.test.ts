@@ -211,8 +211,8 @@ describe('PerformanceBenchmark', () => {
       const testStartHandler = vi.fn();
       const testCompleteHandler = vi.fn();
 
-      benchmark.on('testStart', testStartHandler);
-      benchmark.on('testComplete', testCompleteHandler);
+      benchmark.on('test-start', testStartHandler);
+      benchmark.on('test-complete', testCompleteHandler);
 
       const suite = benchmark.suite('Event Test', {
         iterations: 2

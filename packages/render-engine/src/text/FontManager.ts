@@ -17,12 +17,9 @@ import {
   IFontManager,
   IFontLoader,
   IFontCache,
-  FontEvents,
   FontMetrics,
   TextMetrics,
-  CharacterMetrics,
-  SystemFontInfo,
-  FontFallbackConfig
+  CharacterMetrics
 } from './types/FontTypes';
 import { FontLoader } from './FontLoader';
 
@@ -382,10 +379,24 @@ class FontCache implements IFontCache {
   }
 }
 
+// 字体管理器事件接口
+export interface FontManagerEvents {
+  // 标准事件
+  update: FontManager;
+  destroy: FontManager;
+
+  // 字体管理事件
+  loading: { font: IFont };
+  loaded: { font: IFont };
+  error: { font: IFont | null; error: Error };
+  unload: { font: IFont };
+  fallback: { font: IFont; fallbackFont: IFont };
+}
+
 /**
  * 字体管理器实现
  */
-export class FontManager extends EventEmitter3 implements IFontManager {
+export class FontManager extends EventEmitter3<FontManagerEvents> implements IFontManager {
   private fonts = new Map<string, IFont>();
   private cache: IFontCache;
   private loader: IFontLoader;
@@ -477,8 +488,9 @@ export class FontManager extends EventEmitter3 implements IFontManager {
   }
 
   getFallbackFont(family: string): IFont | null {
-    // 查找系统默认回退字体
+    // 查找系统默认回退字体 (优先使用原family相似的)
     const systemFallbacks = [
+      family, // 优先尝试原字体
       'Arial',
       'Helvetica',
       'sans-serif',
@@ -536,19 +548,25 @@ export class FontManager extends EventEmitter3 implements IFontManager {
   }
 
   dispose(): void {
-    // 卸载所有字体
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 卸载所有字体
     for (const font of this.fonts.values()) {
       font.unload();
     }
-    
+
+    // 3. 清理资源
     this.fonts.clear();
     this.loadingPromises.clear();
     this.clearCache();
-    this.removeAllListeners();
-    
+
     if (this.loader && 'dispose' in this.loader) {
       (this.loader as any).dispose();
     }
+
+    // 4. 最后移除所有监听器
+    this.removeAllListeners();
   }
 
   private generateFontKey(family: string, weight?: FontWeight | string, style?: FontStyle): string {

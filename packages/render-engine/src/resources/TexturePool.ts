@@ -368,7 +368,7 @@ class TextureUnitManager {
 /**
  * 纹理池管理器
  */
-export class TexturePool extends EventEmitter3 {
+export class TexturePool extends EventEmitter3<TexturePoolEvents> {
   private gl: WebGLRenderingContext;
   private config: TexturePoolConfig;
   

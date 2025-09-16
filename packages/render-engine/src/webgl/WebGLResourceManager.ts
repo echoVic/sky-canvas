@@ -567,10 +567,24 @@ export class FramebufferManager {
   }
 }
 
+// WebGL资源管理器事件接口
+export interface WebGLResourceManagerEvents {
+  // 标准事件
+  update: WebGLResourceManager;
+  destroy: WebGLResourceManager;
+
+  // 资源管理事件
+  resourceCreated: ResourceMetadata;
+  resourceDisposed: ResourceMetadata;
+  memoryPressure: { used: number; budget: number };
+  gcStarted: { reason: string };
+  gcCompleted: { freedMemory: number; freedResources: number };
+}
+
 /**
  * WebGL资源管理器
  */
-export class WebGLResourceManager extends EventEmitter3 {
+export class WebGLResourceManager extends EventEmitter3<WebGLResourceManagerEvents> {
   private textureManager: TextureManager;
   private framebufferManager: FramebufferManager;
   private refCounter: ResourceRefCounter;
@@ -824,14 +838,24 @@ export class WebGLResourceManager extends EventEmitter3 {
    * 销毁资源管理器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 停止垃圾收集
     if (this.gcTimer) {
       clearInterval(this.gcTimer);
       this.gcTimer = null;
     }
 
-    // 删除所有资源
+    // 3. 删除所有资源
     for (const texture of this.textureManager.getAllTextures()) {
       this.textureManager.deleteTexture(texture.id);
     }
+
+    // 4. 清理数据
+    this.memoryUsage = { textures: 0, buffers: 0, other: 0, total: 0 };
+
+    // 5. 最后移除所有监听器
+    this.removeAllListeners();
   }
 }

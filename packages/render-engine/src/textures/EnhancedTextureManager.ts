@@ -38,10 +38,26 @@ export interface ManagerEvents {
   memoryWarning: { usage: number; limit: number };
 }
 
+// 纹理管理器事件接口
+export interface TextureManagerEvents {
+  // 标准事件
+  update: TextureManager;
+  destroy: TextureManager;
+
+  // 纹理管理事件
+  atlasOptimized: { atlasId: string; utilization: number };
+  textureLoaded: { id: string; url: string };
+  textureEvicted: { id: string; reason: string };
+  textureUnloaded: { id: string };
+  memoryPressure: { usage: number; limit: number };
+  memoryWarning: { usage: number; threshold: number };
+  cacheCleared: void;
+}
+
 /**
  * 纹理管理器
  */
-export class TextureManager extends EventEmitter3 {
+export class TextureManager extends EventEmitter3<TextureManagerEvents> {
   private atlas: TextureAtlas;
   private loader: TextureLoader;
   private cache = new Map<string, CacheEntry>();
@@ -369,10 +385,17 @@ export class TextureManager extends EventEmitter3 {
    * 销毁管理器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 清理资源
     this.loader.dispose();
     this.atlas.dispose();
     this.cache.clear();
     this.cacheSize = 0;
+
+    // 3. 最后移除所有监听器
+    this.removeAllListeners();
   }
 }
 

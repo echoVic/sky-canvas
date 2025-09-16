@@ -332,7 +332,13 @@ export class BatchEfficiencyBenchmark implements BenchmarkScenario {
 /**
  * 性能基准测试套件
  */
-export class PerformanceBenchmarkSuite extends EventEmitter {
+export class PerformanceBenchmarkSuite extends EventEmitter<{
+  suiteStart: (totalScenarios: number) => void;
+  scenarioStart: (name: string, current: number, total: number) => void;
+  scenarioComplete: (result: BenchmarkResult) => void;
+  scenarioError: (name: string, error: any) => void;
+  suiteComplete: (results: BenchmarkResult[]) => void;
+}> {
   private scenarios: BenchmarkScenario[] = [];
   private results: BenchmarkResult[] = [];
   private performanceMonitor: UnifiedPerformanceMonitor;

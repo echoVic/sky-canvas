@@ -53,17 +53,22 @@ export type BenchmarkFunction = () => Promise<void> | void;
  * 基准测试事件
  */
 export interface BenchmarkEvents {
-  'suiteStart': { name: string };
-  'suiteComplete': { name: string; results: BenchmarkResult[] };
-  'testStart': { name: string };
-  'testComplete': { name: string; result: BenchmarkResult };
+  // 标准事件
+  update: PerformanceBenchmark;
+  destroy: PerformanceBenchmark;
+
+  // 基准测试事件
+  'suite-start': { name: string };
+  'suite-complete': { name: string; results: BenchmarkResult[] };
+  'test-start': { name: string };
+  'test-complete': { name: string; result: BenchmarkResult };
   'progress': { completed: number; total: number };
 }
 
 /**
  * 性能基准测试框架
  */
-export class PerformanceBenchmark extends EventEmitter3 {
+export class PerformanceBenchmark extends EventEmitter3<BenchmarkEvents> {
   private suites = new Map<string, {
     config: BenchmarkConfig;
     tests: Map<string, BenchmarkFunction>;
@@ -98,10 +103,10 @@ export class PerformanceBenchmark extends EventEmitter3 {
       throw new Error(`Benchmark suite '${suiteName}' not found`);
     }
 
-    this.running = true;
+    this.emit('suite-start', { name: suiteName });
     this.abortController = new AbortController();
     
-    this.emit('suiteStart', { name: suiteName });
+    this.emit('suite-start', { name: suiteName });
 
     try {
       const results: BenchmarkResult[] = [];
@@ -112,27 +117,25 @@ export class PerformanceBenchmark extends EventEmitter3 {
       await suite.config.setup?.();
 
       for (const [testName, testFn] of tests) {
+        this.emit('test-start', { name: testName });
         this.checkAbort();
-        
-        this.emit('testStart', { name: testName });
-        
+
         const result = await this.runTest(
           testName,
           testFn,
           suite.config
         );
-        
+
         results.push(result);
         completed++;
-        
-        this.emit('testComplete', { name: testName, result });
+
+        this.emit('test-complete', { name: testName, result });
         this.emit('progress', { completed, total: tests.length });
       }
 
-      // 执行套件清理
+      this.emit('suite-complete', { name: suiteName, results });
       await suite.config.teardown?.();
       
-      this.emit('suiteComplete', { name: suiteName, results });
       return results;
       
     } finally {

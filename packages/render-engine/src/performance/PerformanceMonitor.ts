@@ -271,10 +271,24 @@ class FPSCounter {
   }
 }
 
+// 性能监控器事件接口
+export interface PerformanceMonitorEvents {
+  // 标准事件
+  update: PerformanceMonitor;
+  destroy: PerformanceMonitor;
+
+  // 性能监控事件
+  'metric-updated': { type: MetricType; value: number; timestamp: number };
+  'performance-warning': { type: string; message: string; severity: 'low' | 'medium' | 'high' };
+  'fps-drop': { from: number; to: number; duration: number };
+  'memory-leak': { type: string; trend: number };
+  'gpu-bottleneck': { metric: string; value: number };
+}
+
 /**
  * 性能监控器
  */
-export class PerformanceMonitor extends EventEmitter3 {
+export class PerformanceMonitor extends EventEmitter3<PerformanceMonitorEvents> {
   private config: PerformanceConfig;
   private metrics = new Map<MetricType, MetricDataPoint[]>();
   private stats = new Map<MetricType, MetricStats>();
@@ -504,8 +518,16 @@ export class PerformanceMonitor extends EventEmitter3 {
    * 销毁监控器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 停止监控
     this.stop();
+
+    // 3. 清理资源
     this.clearHistory();
+
+    // 4. 最后移除所有监听器
     this.removeAllListeners();
   }
   

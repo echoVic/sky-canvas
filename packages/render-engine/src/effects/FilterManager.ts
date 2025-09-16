@@ -5,29 +5,29 @@
 
 import { EventEmitter } from 'eventemitter3';
 import {
-  FilterType,
-  FilterParameters,
-  FilterResult,
-  FilterContext,
   FilterChainConfig,
-  FilterProcessingOptions,
+  FilterContext,
   FilterEvents,
+  FilterParameters,
+  FilterProcessingOptions,
+  FilterResult,
+  FilterType,
   IFilter
 } from './types/FilterTypes';
 
 // 导入具体的滤镜实现
-import { GaussianBlurFilter } from './filters/GaussianBlurFilter';
 import { BrightnessFilter } from './filters/BrightnessFilter';
 import { ContrastFilter } from './filters/ContrastFilter';
-import { SaturationFilter } from './filters/SaturationFilter';
-import { HueRotateFilter } from './filters/HueRotateFilter';
-import { GrayscaleFilter } from './filters/GrayscaleFilter';
-import { DropShadowFilter } from './filters/DropShadowFilter';
-import { InnerShadowFilter } from './filters/InnerShadowFilter';
-import { GlowFilter } from './filters/GlowFilter';
 import { CustomShaderFilter } from './filters/CustomShaderFilter';
+import { DropShadowFilter } from './filters/DropShadowFilter';
+import { GaussianBlurFilter } from './filters/GaussianBlurFilter';
+import { GlowFilter } from './filters/GlowFilter';
+import { GrayscaleFilter } from './filters/GrayscaleFilter';
+import { HueRotateFilter } from './filters/HueRotateFilter';
+import { InnerShadowFilter } from './filters/InnerShadowFilter';
+import { SaturationFilter } from './filters/SaturationFilter';
 
-export class FilterManager extends EventEmitter {
+export class FilterManager extends EventEmitter<FilterEvents> {
   private filters = new Map<FilterType, IFilter>();
   private resultCache = new Map<string, ImageData>();
   private maxCacheSize = 50; // 最大缓存数量
@@ -129,7 +129,7 @@ export class FilterManager extends EventEmitter {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
       
-      this.emit('filter-error', parameters.type, error as Error);
+      this.emit('error-occurred', error as Error, `filter-${parameters.type}`);
       return errorResult;
     }
   }

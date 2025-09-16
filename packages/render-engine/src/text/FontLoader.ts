@@ -6,15 +6,12 @@
 import EventEmitter3 from 'eventemitter3';
 import {
   FontSource,
-  FontConfig,
   FontLoadingOptions,
   FontLoadingProgress,
-  FontLoadingState,
   FontError,
   FontErrorCode,
   IFontLoader,
-  FontFormat,
-  FontDisplayStrategy
+  FontFormat
 } from './types/FontTypes';
 
 interface LoadingTask {
@@ -30,15 +27,22 @@ interface LoadingTask {
   reject: (error: Error) => void;
 }
 
-interface FontLoaderEvents {
-  'progress': { id: string; progress: FontLoadingProgress };
-  'loaded': { id: string; buffer: ArrayBuffer };
-  'error': { id: string; error: FontError };
-  'started': { id: string; source: FontSource };
-  'cancelled': { id: string };
+
+// 字体加载器事件接口
+export interface FontLoaderEvents {
+  // 标准事件
+  update: FontLoader;
+  destroy: FontLoader;
+
+  // 字体加载事件
+  progress: { id: string; progress: FontLoadingProgress };
+  loaded: { id: string; buffer: ArrayBuffer };
+  error: { id: string; error: FontError };
+  started: { id: string; source: FontSource };
+  cancelled: { id: string };
 }
 
-export class FontLoader extends EventEmitter3 implements IFontLoader {
+export class FontLoader extends EventEmitter3<FontLoaderEvents> implements IFontLoader {
   private loadingTasks = new Map<string, LoadingTask>();
   private loadedFonts = new Map<string, ArrayBuffer>();
   private cache = new Map<string, ArrayBuffer>();
@@ -481,13 +485,20 @@ export class FontLoader extends EventEmitter3 implements IFontLoader {
    * 销毁加载器
    */
   dispose(): void {
-    // 取消所有进行中的加载
-    for (const [id, task] of this.loadingTasks.entries()) {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 取消所有进行中的加载
+    for (const task of this.loadingTasks.values()) {
       task.abortController.abort();
     }
-    
+
+    // 3. 清理资源
     this.loadingTasks.clear();
+    this.loadedFonts.clear();
     this.clearCache();
+
+    // 4. 最后移除所有监听器
     this.removeAllListeners();
   }
 }

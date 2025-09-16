@@ -313,7 +313,7 @@ describe('WebGLOptimizer', () => {
     shaderManager = new ShaderManager(gl);
     bufferManager = new BufferManager(gl);
     
-    optimizer = new WebGLOptimizer(gl, shaderManager, bufferManager, {
+    optimizer = new WebGLOptimizer(gl, bufferManager, {
       enableStateTracking: true,
       enableBatchOptimization: true,
       enableShaderWarmup: false // 禁用异步操作以便测试
@@ -460,7 +460,7 @@ describe('createGlobalWebGLOptimizer', () => {
     const shaderManager = new ShaderManager(gl);
     const bufferManager = new BufferManager(gl);
     
-    const optimizer = createGlobalWebGLOptimizer(gl, shaderManager, bufferManager);
+    const optimizer = createGlobalWebGLOptimizer(gl, bufferManager);
     
     expect(optimizer).toBeInstanceOf(WebGLOptimizer);
     

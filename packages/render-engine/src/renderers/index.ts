@@ -10,4 +10,3 @@ export type {
 export { CanvasRenderer } from './CanvasRenderer';
 export { WebGLRenderer } from './WebGLRenderer';
 export { WebGPURenderer } from './WebGPURenderer';
-

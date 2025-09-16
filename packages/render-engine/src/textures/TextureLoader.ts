@@ -45,10 +45,26 @@ export interface LoaderEvents {
   queueEmpty: void;
 }
 
+// 纹理加载器事件接口
+export interface TextureLoaderEvents {
+  // 标准事件
+  update: TextureLoader;
+  destroy: TextureLoader;
+
+  // 加载相关事件
+  load: { url: string; entry: AtlasEntry };
+  error: { url: string; error: Error };
+  progress: { url: string; progress: number };
+  queueEmpty: void;
+  taskStarted: TextureLoadTask;
+  taskCompleted: { task: TextureLoadTask; entry?: AtlasEntry };
+  taskFailed: { task: TextureLoadTask; error: Error };
+}
+
 /**
  * 纹理加载器类
  */
-export class TextureLoader extends EventEmitter3 {
+export class TextureLoader extends EventEmitter3<TextureLoaderEvents> {
   private tasks = new Map<string, TextureLoadTask>();
   private loadQueue: TextureLoadTask[] = [];
   private activeLoads = new Set<string>();
@@ -228,7 +244,8 @@ export class TextureLoader extends EventEmitter3 {
 
     this.activeLoads.add(task.id);
     task.state = TextureLoadState.LOADING;
-    
+
+    this.emit('update', this);
     this.emit('taskStarted', task);
 
     try {
@@ -251,9 +268,11 @@ export class TextureLoader extends EventEmitter3 {
         entry = this.atlas.addTexture(textureInfo) || undefined;
       }
 
+      this.emit('load', { url: task.url, entry });
       this.emit('taskCompleted', { task, entry });
-      
+
     } catch (error) {
+      this.emit('taskFailed', { task, error: error as Error });
       await this.handleLoadError(task, error as Error);
     } finally {
       this.activeLoads.delete(task.id);
@@ -283,7 +302,7 @@ export class TextureLoader extends EventEmitter3 {
       img.onload = () => {
         clearTimeout(timeout);
         task.progress = 100;
-        this.emit('taskProgress', { task, progress: 100 });
+        this.emit('progress', { url: task.url, progress: 100 });
         resolve(img);
       };
 
@@ -296,7 +315,7 @@ export class TextureLoader extends EventEmitter3 {
       const progressInterval = setInterval(() => {
         if (task.progress < 90) {
           task.progress += Math.random() * 20;
-          this.emit('taskProgress', { task, progress: task.progress });
+          this.emit('progress', { url: task.url, progress: task.progress });
         } else {
           clearInterval(progressInterval);
         }
@@ -325,7 +344,7 @@ export class TextureLoader extends EventEmitter3 {
       task.state = TextureLoadState.ERROR;
       task.error = error;
       
-      this.emit('taskFailed', { task, error });
+      this.emit('error', { url: task.url, error });
     }
   }
 
@@ -345,25 +364,25 @@ export class TextureLoader extends EventEmitter3 {
         return;
       }
 
-      // 监听任务完成
-      const onCompleted = (event: { task: TextureLoadTask; entry?: AtlasEntry }) => {
-        if (event.task.id === task.id) {
-          this.off('taskCompleted', onCompleted);
-          this.off('taskFailed', onFailed);
-          resolve(event.entry || event.task.data!);
+      // 监听加载完成
+      const onLoad = (event: { url: string; entry: AtlasEntry }) => {
+        if (event.url === task.url) {
+          this.off('load', onLoad);
+          this.off('error', onError);
+          resolve(task.data!);
         }
       };
 
-      const onFailed = (event: { task: TextureLoadTask; error: Error }) => {
-        if (event.task.id === task.id) {
-          this.off('taskCompleted', onCompleted);
-          this.off('taskFailed', onFailed);
+      const onError = (event: { url: string; error: Error }) => {
+        if (event.url === task.url) {
+          this.off('load', onLoad);
+          this.off('error', onError);
           reject(event.error);
         }
       };
 
-      this.on('taskCompleted', onCompleted);
-      this.on('taskFailed', onFailed);
+      this.on('load', onLoad);
+      this.on('error', onError);
     });
   }
 
@@ -392,7 +411,10 @@ export class TextureLoader extends EventEmitter3 {
    * 销毁加载器
    */
   dispose(): void {
-    // 取消所有活动加载
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 取消所有活动加载
     for (const taskId of this.activeLoads) {
       const task = this.tasks.get(taskId);
       if (task) {
@@ -401,9 +423,13 @@ export class TextureLoader extends EventEmitter3 {
       }
     }
 
+    // 3. 清理资源
     this.tasks.clear();
     this.loadQueue = [];
     this.activeLoads.clear();
+
+    // 4. 最后移除所有监听器
+    this.removeAllListeners();
   }
 }
 

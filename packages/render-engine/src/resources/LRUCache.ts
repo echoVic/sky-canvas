@@ -61,7 +61,7 @@ class ListNode<T> {
 /**
  * LRU 缓存实现
  */
-export class LRUCache<T> extends EventEmitter {
+export class LRUCache<T> extends EventEmitter<CacheEvents<T>> {
   private cache = new Map<string, ListNode<T>>();
   private head: ListNode<T>;
   private tail: ListNode<T>;

@@ -72,10 +72,25 @@ interface PackingNode {
   right?: PackingNode;
 }
 
+// 纹理图集事件接口
+export interface TextureAtlasEvents {
+  // 标准事件
+  update: TextureAtlas;
+  change: { type: 'resize' | 'optimize'; atlasId: string };
+  destroy: TextureAtlas;
+
+  // 纹理管理事件
+  textureAdded: { textureId: string; atlasId: string };
+  textureRemoved: { textureId: string; atlasId: string };
+  memoryPressure: { usage: number; limit: number };
+  atlasCreated: { atlasId: string; width: number; height: number };
+  atlasOptimized: { atlasId: string; beforeUtilization: number; afterUtilization: number };
+}
+
 /**
  * 高级纹理图集管理器
  */
-export class TextureAtlas extends EventEmitter3 {
+export class TextureAtlas extends EventEmitter3<TextureAtlasEvents> {
   private atlases = new Map<string, {
     id: string;
     canvas: HTMLCanvasElement;
@@ -130,7 +145,7 @@ export class TextureAtlas extends EventEmitter3 {
     if (entry) {
       this.textureMap.set(texture.id, entry);
       this.drawTextureToAtlas(texture, entry);
-      this.emit('textureAdded', { textureId: texture.id, entry });
+      this.emit('textureAdded', { textureId: texture.id, atlasId: entry.atlasId });
     }
 
     return entry;
@@ -219,18 +234,14 @@ export class TextureAtlas extends EventEmitter3 {
     if (!atlas) return false;
 
     const beforeUtilization = atlas.utilization;
-    
+
     // 重新打包图集
     if (this.repackAtlas(atlasId)) {
       this.updateAtlasUtilization(atlasId);
-      const afterUtilization = this.atlases.get(atlasId)!.utilization;
-      
-      this.emit('atlasOptimized', {
-        atlasId,
-        beforeUtilization,
-        afterUtilization
-      });
-      
+
+      this.emit('change', { type: 'optimize', atlasId });
+      this.emit('atlasOptimized', { atlasId, beforeUtilization, afterUtilization: atlas.utilization });
+
       return true;
     }
 
@@ -435,12 +446,9 @@ export class TextureAtlas extends EventEmitter3 {
 
     this.atlases.set(atlasId, atlas);
     this.memoryUsage += atlasWidth * atlasHeight * 4;
-    
-    this.emit('atlasCreated', { 
-      atlasId, 
-      width: atlasWidth, 
-      height: atlasHeight 
-    });
+
+    this.emit('change', { type: 'resize', atlasId });
+    this.emit('atlasCreated', { atlasId, width: atlasWidth, height: atlasHeight });
 
     return this.createAtlasEntry(texture, atlasId, this.config.padding, this.config.padding);
   }
@@ -585,14 +593,22 @@ export class TextureAtlas extends EventEmitter3 {
    * 销毁图集
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 清理图集资源
     for (const atlas of this.atlases.values()) {
       atlas.canvas.width = 0;
       atlas.canvas.height = 0;
     }
-    
+
+    // 3. 清理数据
     this.atlases.clear();
     this.textureMap.clear();
     this.memoryUsage = 0;
+
+    // 4. 最后移除所有监听器
+    this.removeAllListeners();
   }
 }
 

@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { AsyncResourceLoader, ResourceConfig, ResourceType, LoadingState, LoadingProgress } from './AsyncResourceLoader';
-import { LRUCache, GPUResourceCache, MemoryAwareLRUCache, CacheItem, MemoryStats } from './LRUCache';
+import { AsyncResourceLoader, LoadingProgress, ResourceConfig, ResourceType } from './AsyncResourceLoader';
+import { GPUResourceCache, MemoryAwareLRUCache, MemoryStats } from './LRUCache';
 
 /**
  * 资源引用
@@ -143,7 +143,7 @@ class InternalResourceRef<T> implements ResourceRef<T> {
 /**
  * 增强型资源管理系统
  */
-export class EnhancedResourceManager<T = any> extends EventEmitter {
+export class EnhancedResourceManager<T = any> extends EventEmitter<ResourceManagerEvents<T>> {
   private loader!: AsyncResourceLoader;
   private cache!: MemoryAwareLRUCache<T>;
   private gpuCache!: GPUResourceCache<T & { dispose(): void }>;

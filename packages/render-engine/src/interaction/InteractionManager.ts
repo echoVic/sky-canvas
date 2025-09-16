@@ -45,10 +45,41 @@ export interface ViewportTransform {
   worldToScreen(point: IPoint): IPoint;
 }
 
+// 交互管理器事件接口
+export interface InteractionManagerEvents {
+  // 标准事件
+  update: InteractionManager;
+  destroy: InteractionManager;
+
+  // 鼠标事件
+  mousedown: IMouseEvent;
+  mouseup: IMouseEvent;
+  mousemove: IMouseEvent;
+  mousewheel: { deltaX: number; deltaY: number; deltaZ: number; clientX: number; clientY: number };
+  click: IMouseEvent;
+  doubleclick: IMouseEvent;
+
+  // 触摸事件
+  touchstart: ITouchEvent;
+  touchmove: ITouchEvent;
+  touchend: ITouchEvent;
+  touchcancel: ITouchEvent;
+
+  // 手势事件
+  gesturestart: IGestureEvent;
+  gesturechange: IGestureEvent;
+  gestureend: IGestureEvent;
+
+  // 拖拽事件
+  dragstart: IMouseEvent;
+  drag: IMouseEvent;
+  dragend: IMouseEvent;
+}
+
 /**
  * 统一交互管理器
  */
-export class InteractionManager extends EventEmitter3 {
+export class InteractionManager extends EventEmitter3<InteractionManagerEvents> {
   private _canvas: HTMLCanvasElement;
   private _inputState: InputState;
   private _gestureRecognizer: GestureRecognizer;
@@ -440,7 +471,7 @@ export class InteractionManager extends EventEmitter3 {
     });
 
     const customEvent = this._createKeyEvent(InputEventType.KEY_DOWN, event);
-    this.emit(customEvent.type, customEvent);
+    this.emit('keydown' as any, customEvent);
   }
 
   /**
@@ -450,7 +481,7 @@ export class InteractionManager extends EventEmitter3 {
     this._inputState.setKeyUp(event.key);
 
     const customEvent = this._createKeyEvent(InputEventType.KEY_UP, event);
-    this.emit(customEvent.type, customEvent);
+    this.emit('keyup' as any, customEvent);
   }
 
   /**
@@ -466,7 +497,7 @@ export class InteractionManager extends EventEmitter3 {
     if (additional) {
       Object.assign(event, additional);
     }
-    this.emit(event.type, event);
+    this.emit(event.type as any, event);
   }
 
   /**
@@ -474,7 +505,7 @@ export class InteractionManager extends EventEmitter3 {
    */
   private _dispatchGestureEvent(type: InputEventType, gestureData: any): void {
     const event = this._createGestureEvent(type, gestureData);
-    this.emit(event.type, event);
+    this.emit(event.type as any, event);
   }
 
   /**
@@ -502,7 +533,7 @@ export class InteractionManager extends EventEmitter3 {
     }
 
     const event = this._createTouchEvent(nativeEvent);
-    this.emit(event.type, event);
+    this.emit(event.type as any, event);
   }
 
   /**
@@ -540,7 +571,7 @@ export class InteractionManager extends EventEmitter3 {
       isPropagationStopped: () => false
     } as IBaseEvent & { position: IPoint };
 
-    this.emit(event.type, event);
+    this.emit(event.type as any, event);
   }
 
   /**
@@ -698,16 +729,22 @@ export class InteractionManager extends EventEmitter3 {
       startPosition: IPoint;
     };
 
-    this.emit(event.type, event);
+    this.emit(event.type as any, event);
   }
 
   /**
    * 销毁交互管理器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 清理资源
     this._removeEventListeners();
     this._cancelLongPress();
     this._gestureRecognizer.dispose?.();
+
+    // 3. 最后移除所有监听器
     this.removeAllListeners();
   }
 }

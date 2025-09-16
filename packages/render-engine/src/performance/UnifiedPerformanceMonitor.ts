@@ -174,7 +174,6 @@ export interface BottleneckAnalysis {
  * 跨源关联分析
  */
 export class CrossSourceCorrelationAnalyzer {
-  private correlationHistory = new Map<string, number[]>();
   private correlationThreshold = 0.7;
   
   /**
@@ -300,10 +299,38 @@ export class CrossSourceCorrelationAnalyzer {
   }
 }
 
+// 统一性能监控器事件接口
+export interface UnifiedPerformanceMonitorEvents {
+  // 标准事件
+  update: UnifiedPerformanceMonitor;
+  destroy: UnifiedPerformanceMonitor;
+
+  // 性能监控事件
+  'metric-updated': {
+    type: UnifiedMetricType;
+    value: number;
+    timestamp: number;
+    source: DataSourceType
+  };
+  'warning-triggered': UnifiedPerformanceWarning;
+  'bottleneck-detected': {
+    type: 'cpu' | 'gpu' | 'memory' | 'io' | 'network';
+    confidence: number;
+    description: string;
+    affectedSources: DataSourceType[];
+    suggestions: string[];
+  };
+  'correlation-found': {
+    metrics: UnifiedMetricType[];
+    correlation: number;
+    description: string;
+  };
+}
+
 /**
  * 统一性能监控器
  */
-export class UnifiedPerformanceMonitor extends EventEmitter3 {
+export class UnifiedPerformanceMonitor extends EventEmitter3<UnifiedPerformanceMonitorEvents> {
   private config: UnifiedPerformanceConfig;
   private adapters = new Map<DataSourceType, IDataSourceAdapter>();
   private metrics = new Map<UnifiedMetricType, UnifiedMetricDataPoint[]>();
@@ -570,17 +597,24 @@ export class UnifiedPerformanceMonitor extends EventEmitter3 {
    * 销毁监控器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 停止监控
     this.stop();
-    
-    // 销毁所有适配器
+
+    // 3. 销毁所有适配器
     for (const adapter of this.adapters.values()) {
       adapter.dispose();
     }
-    
+
+    // 4. 清理资源
     this.adapters.clear();
     this.metrics.clear();
     this.stats.clear();
     this.warnings = [];
+
+    // 5. 最后移除所有监听器
     this.removeAllListeners();
   }
   

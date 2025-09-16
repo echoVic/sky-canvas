@@ -88,7 +88,7 @@ export class FilterManager extends EventEmitter<FilterEvents> {
       if (result.success) {
         this.emit('filter-complete', parameters.type, result);
       } else {
-        this.emit('filter-error', parameters.type, new Error(result.error || 'Unknown error'));
+        this.emit('error-occurred', new Error(result.error || 'Unknown error'), `filter-${parameters.type}`);
       }
 
       return result;
@@ -98,7 +98,7 @@ export class FilterManager extends EventEmitter<FilterEvents> {
         error: error instanceof Error ? error.message : 'Unknown error'
       };
       
-      this.emit('filter-error', parameters.type, error instanceof Error ? error : new Error(String(error)));
+      this.emit('error-occurred', error instanceof Error ? error : new Error(String(error)), `filter-${parameters.type}`);
       return errorResult;
     }
   }

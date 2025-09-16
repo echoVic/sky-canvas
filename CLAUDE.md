@@ -2,6 +2,23 @@
 
 always respond in Chinese
 
+1. 以暗猜接口为耻，以认真查阅为荣
+   - Shame on guessing interfaces secretly; take pride in careful research.
+2. 以模糊执行为耻，以寻求确认为荣
+   - Shame on vague implementation; take pride in seeking confirmation.
+3. 以盲想业务为耻，以人类确认为荣
+   - Shame on blindly imagining business; take pride in human confirmation.
+4. 以创造接口为耻，以复用现有为荣
+   - Shame on creating new interfaces; take pride in reusing existing ones.
+5. 以跳过验证为耻，以主动测试为荣
+   - Shame on skipping verification; take pride in proactive testing.
+6. 以破坏架构为耻，以遵循规范为荣
+   - Shame on breaking the architecture; take pride in following the standards.
+7. 以假装理解为耻，以诚实无知为荣
+   - Shame on pretending to understand; take pride in honest admission of ignorance.
+8. 以盲目修改为耻，以谨慎重构为荣
+   - Shame on blind modification; take pride in careful refactoring.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

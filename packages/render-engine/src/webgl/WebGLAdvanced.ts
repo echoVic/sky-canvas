@@ -56,7 +56,7 @@ export class WebGLAdvancedManager {
     }
   ): WebGLOptimizer {
     if (!this.optimizer) {
-      this.optimizer = new WebGLOptimizer(this.gl, shaderManager, bufferManager, config);
+      this.optimizer = new WebGLOptimizer(this.gl, bufferManager, config);
     }
     return this.optimizer;
   }

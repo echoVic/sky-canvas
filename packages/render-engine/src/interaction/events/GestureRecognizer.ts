@@ -4,7 +4,7 @@
 
 import EventEmitter3 from 'eventemitter3';
 import { Vector2 } from '../../math/Vector2';
-import { IPoint, ITouchEvent, IGestureEvent, createGestureEvent } from './InputEvents';
+import { IGestureEvent, IPoint, ITouchEvent, createGestureEvent } from './InputEvents';
 
 /**
  * 手势类型枚举
@@ -42,10 +42,29 @@ export interface IGestureConfig {
   doubleTapDelay?: number;
 }
 
+// 手势识别器事件接口
+export interface GestureRecognizerEvents {
+  // 标准事件
+  update: GestureRecognizer;
+  destroy: GestureRecognizer;
+
+  // 手势识别事件
+  gesturestart: IGestureEvent;
+  gesturechange: IGestureEvent;
+  gestureend: IGestureEvent;
+  gesturecancel: IGestureEvent;
+  tap: { position: IPoint };
+  doubletap: { position: IPoint };
+  longpress: { position: IPoint };
+  pan: { startPosition: IPoint; currentPosition: IPoint; deltaX: number; deltaY: number };
+  pinch: { scale: number; center: IPoint };
+  rotate: { rotation: number; center: IPoint };
+}
+
 /**
  * 手势识别器
  */
-export class GestureRecognizer extends EventEmitter3 {
+export class GestureRecognizer extends EventEmitter3<GestureRecognizerEvents> {
   private _enabled = true;
   private _config: Required<IGestureConfig>;
   
@@ -244,7 +263,7 @@ export class GestureRecognizer extends EventEmitter3 {
       0,
       new Vector2(0, 0)
     );
-    this.emit(gestureEvent.type, gestureEvent);
+    this.emit('gesturestart', gestureEvent);
 
     // 清除其他计时器
     this._clearTimers();
@@ -291,7 +310,7 @@ export class GestureRecognizer extends EventEmitter3 {
       deltaRotation,
       deltaTranslation
     );
-    this.emit(gestureEvent.type, gestureEvent);
+    this.emit('gesturechange', gestureEvent);
 
     // 更新上次状态
     this._lastTouchPositions = [...touches];
@@ -329,7 +348,7 @@ export class GestureRecognizer extends EventEmitter3 {
       0,
       new Vector2(0, 0)
     );
-    this.emit(gestureEvent.type, gestureEvent);
+    this.emit('gestureend', gestureEvent);
 
     this._reset();
   }
@@ -349,7 +368,7 @@ export class GestureRecognizer extends EventEmitter3 {
         0,
         new Vector2(0, 0)
       );
-      this.emit(gestureEvent.type, gestureEvent);
+      this.emit('gesturecancel', gestureEvent);
     }
 
     this._reset();
@@ -484,8 +503,14 @@ export class GestureRecognizer extends EventEmitter3 {
    * 销毁手势识别器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 清理定时器和状态
     this._clearTimers();
     this._reset();
+
+    // 3. 最后移除所有监听器
     this.removeAllListeners();
   }
 }

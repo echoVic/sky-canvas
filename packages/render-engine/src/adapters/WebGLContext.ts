@@ -146,7 +146,6 @@ export class WebGLContext implements IWebGLContext {
     if (advancedConfig.enableOptimizer) {
       this.webglOptimizer = new WebGLOptimizer(
         this.gl,
-        this.shaderManager,
         this.bufferManager,
         advancedConfig.optimizerConfig
       );

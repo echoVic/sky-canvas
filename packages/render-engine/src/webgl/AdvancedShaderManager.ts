@@ -152,7 +152,7 @@ class ShaderPreprocessor {
 /**
  * 高级着色器管理器
  */
-export class AdvancedShaderManager extends EventEmitter3 {
+export class AdvancedShaderManager extends EventEmitter3<ShaderManagerEvents> {
   private gl: WebGLRenderingContext;
   private config: AdvancedShaderConfig;
   

@@ -194,7 +194,7 @@ export class BufferPool {
    * 释放缓冲区回池中
    */
   releaseBuffer(buffer: IBuffer): void {
-    for (const [poolKey, inUseSet] of this.inUse.entries()) {
+    for (const inUseSet of this.inUse.values()) {
       if (inUseSet.has(buffer)) {
         inUseSet.delete(buffer);
         break;
@@ -467,10 +467,24 @@ export class RenderBatchOptimizer {
   }
 }
 
+// WebGL优化器事件接口
+export interface WebGLOptimizerEvents {
+  // 标准事件
+  update: WebGLOptimizer;
+  destroy: WebGLOptimizer;
+
+  // 优化事件
+  stateChanged: { type: string; from: any; to: any };
+  batchOptimized: { before: number; after: number };
+  shaderCompiled: { name: string; compileTime: number };
+  bufferAllocated: { id: string; size: number; type: string };
+  performanceWarning: { metric: string; value: number; threshold: number };
+}
+
 /**
  * WebGL优化器主类
  */
-export class WebGLOptimizer extends EventEmitter3 {
+export class WebGLOptimizer extends EventEmitter3<WebGLOptimizerEvents> {
   private gl: WebGLRenderingContext;
   private config: WebGLOptimizerConfig;
   private shaderCache: ShaderCache;
@@ -485,7 +499,6 @@ export class WebGLOptimizer extends EventEmitter3 {
 
   constructor(
     gl: WebGLRenderingContext,
-    shaderManager: IShaderManager,
     bufferManager: IBufferManager,
     config?: Partial<WebGLOptimizerConfig>
   ) {
@@ -806,8 +819,14 @@ export class WebGLOptimizer extends EventEmitter3 {
    * 销毁优化器
    */
   dispose(): void {
+    // 1. 先发送 destroy 事件
+    this.emit('destroy', this);
+
+    // 2. 清理资源
     this.performMaintenance();
-    // 清理所有资源
+
+    // 3. 最后移除所有监听器
+    this.removeAllListeners();
   }
 }
 
@@ -816,11 +835,10 @@ let globalWebGLOptimizer: WebGLOptimizer | null = null;
 
 export function createGlobalWebGLOptimizer(
   gl: WebGLRenderingContext,
-  shaderManager: IShaderManager,
   bufferManager: IBufferManager,
   config?: Partial<WebGLOptimizerConfig>
 ): WebGLOptimizer {
-  globalWebGLOptimizer = new WebGLOptimizer(gl, shaderManager, bufferManager, config);
+  globalWebGLOptimizer = new WebGLOptimizer(gl, bufferManager, config);
   return globalWebGLOptimizer;
 }
 
