@@ -5,14 +5,14 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { RenderingBenchmark, RenderingBenchmarkConfig } from '../RenderingBenchmark';
 import { PerformanceBenchmark, BenchmarkResult } from '../PerformanceBenchmark';
-import { BatchManager } from '../../batch/core/BatchManager';
-import { BatchOptimizer } from '../../batch/utils/BatchOptimizer';
+import { BatchManager } from '../../../batch/core/BatchManager';
+import { BatchOptimizer } from '../../../batch/utils/BatchOptimizer';
 
 // Mock dependencies
 vi.mock('../PerformanceBenchmark');
-vi.mock('../../batch/core/BatchManager');
-vi.mock('../../batch/utils/BatchOptimizer');
-vi.mock('../../batch/index', () => ({
+vi.mock('../../../batch/core/BatchManager');
+vi.mock('../../../batch/utils/BatchOptimizer');
+vi.mock('../../../batch/index', () => ({
   createBatchManagerWithDefaultStrategies: vi.fn(),
   BatchOptimizer: vi.fn()
 }));
@@ -113,7 +113,7 @@ const mockPerformanceBenchmark = {
 };
 
 // Import mocked modules
-const { createBatchManagerWithDefaultStrategies } = await import('../../batch/index');
+const { createBatchManagerWithDefaultStrategies } = await import('../../../batch/index');
 
 describe('RenderingBenchmark', () => {
   let renderingBenchmark: RenderingBenchmark;

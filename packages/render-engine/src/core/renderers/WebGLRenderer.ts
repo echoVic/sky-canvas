@@ -1,8 +1,8 @@
 import { WebGLContext } from '../context/WebGLContext';
 import { IPoint, IRect } from '../interface/IGraphicsContext';
 import { Matrix3x3, Vector2 } from '../../math';
-import { WebGLMemoryManager } from '../../memory/MemoryManager';
-import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../../performance/WebGLAnalyzer';
+import { WebGLMemoryManager } from '../../performance/memory/MemoryManager';
+import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../../performance/monitoring/WebGLAnalyzer';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
 import { DefaultShaders, WebGLShaderManager } from '../webgl/ShaderManager';
 import { TextureAtlas, WebGLTextureManager } from '../../textures/TextureManager';

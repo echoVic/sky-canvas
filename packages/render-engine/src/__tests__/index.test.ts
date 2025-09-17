@@ -9,12 +9,12 @@ import { describe, expect, it } from 'vitest';
 import * as RenderEngineModule from '../index';
 
 // 导入各个子模块用于对比
-import { PerformanceBenchmark } from '../benchmark';
+import { PerformanceBenchmark } from '../performance/benchmark';
 import { RenderEngine } from '../core/RenderEngine';
 import { AdvancedShaderManager, BufferManager, SHADER_LIBRARY, WebGLShaderManager as ShaderManager, WebGLOptimizer } from '../core/webgl';
-import { DebugRenderer } from '../debug';
+import { DebugRenderer } from '../performance/debug';
 import * as MathUtils from '../math';
-import { PerformanceMonitor } from '../performance';
+import { PerformanceMonitor } from '../performance/monitoring';
 
 describe('Sky Canvas 渲染引擎主入口', () => {
   describe('核心引擎导出', () => {

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PerformanceMonitor, MetricType } from '../PerformanceMonitor';
+import { PerformanceMonitor, MetricType } from '../monitoring/PerformanceMonitor';
 
 // Mock WebGL context
 const createMockWebGLContext = () => ({

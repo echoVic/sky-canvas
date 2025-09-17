@@ -12,7 +12,7 @@ import {
   BenchmarkType,
   createDefaultBenchmarkSuite,
   BenchmarkConfig
-} from '../PerformanceBenchmark';
+} from '../monitoring/PerformanceBenchmark';
 
 // Mock performance APIs
 Object.defineProperty(global.performance, 'now', {

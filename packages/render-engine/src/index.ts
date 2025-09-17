@@ -48,9 +48,9 @@ export {
 export * from './utils';
 
 // 调试和性能 (使用别名导出避免冲突)
-export { PerformanceBenchmark } from './benchmark';
-export { DebugRenderer } from './debug';
-export { PerformanceMonitor } from './performance';
+export { PerformanceBenchmark } from './performance/benchmark';
+export { DebugRenderer } from './performance/debug';
+export { PerformanceMonitor } from './performance/monitoring';
 
 // 场景编辑器
 export * from './editor';

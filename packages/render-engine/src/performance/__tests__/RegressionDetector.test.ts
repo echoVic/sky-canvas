@@ -8,8 +8,8 @@ import {
   PerformanceAlertSystem,
   createRegressionDetector,
   type RegressionConfig
-} from '../RegressionDetector';
-import { BenchmarkResult, BenchmarkType } from '../PerformanceBenchmark';
+} from '../monitoring/RegressionDetector';
+import { BenchmarkResult, BenchmarkType } from '../monitoring/PerformanceBenchmark';
 
 // Mock 基准测试结果
 const createMockBenchmarkResult = (

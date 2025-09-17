@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../WebGLAnalyzer';
+import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../monitoring/WebGLAnalyzer';
 
 // Mock WebGL context
 const createMockWebGLContext = () => {
