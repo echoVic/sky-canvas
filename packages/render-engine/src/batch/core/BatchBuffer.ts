@@ -3,7 +3,7 @@
  */
 
 import { WebGLResourceManager } from '../../resources/ResourceManager';
-import { Buffer, BufferType } from '../../webgl/types';
+import { Buffer, BufferType } from '../../core/webgl/types';
 import { BatchConfig, BatchVertex } from '../types/BatchTypes';
 
 export class BatchBuffer {

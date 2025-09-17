@@ -2,8 +2,8 @@
  * CommandRenderer 单元测试
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IGraphicsContext, IRect } from '../../graphics/IGraphicsContext';
-import { IViewport } from '../../engine/types';
+import { IGraphicsContext, IRect } from '../../core/interface/IGraphicsContext';
+import { IViewport } from '../../core/types';
 import { IRenderCommand, MaterialKey, RenderCommandType } from '../IRenderCommand';
 import {
   CommandRenderer,

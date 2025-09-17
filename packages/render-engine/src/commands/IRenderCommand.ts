@@ -2,7 +2,7 @@
  * 渲染命令接口
  * 基于Command模式，将渲染操作抽象为可批处理的命令
  */
-import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../core/interface/IGraphicsContext';
 
 /**
  * 渲染命令类型

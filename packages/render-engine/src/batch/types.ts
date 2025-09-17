@@ -1,7 +1,7 @@
 /**
  * 批处理相关类型定义
  */
-import type { VertexLayout, UniformDescriptor } from '../webgl/types';
+import type { VertexLayout, UniformDescriptor } from '../core/webgl/types';
 
 // 渲染批次
 export interface RenderBatch {

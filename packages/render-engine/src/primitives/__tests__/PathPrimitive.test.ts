@@ -2,7 +2,7 @@
  * PathPrimitive 的单元测试
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IGraphicsContext } from '../../graphics/IGraphicsContext';
+import { IGraphicsContext } from '../../core/interface/IGraphicsContext';
 import { PathPrimitive } from '../PathPrimitive';
 
 // Mock IGraphicsContext

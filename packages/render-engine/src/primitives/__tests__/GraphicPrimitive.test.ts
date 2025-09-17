@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GraphicPrimitive } from '../GraphicPrimitive';
-import { IGraphicsContext, IPoint, IRect } from '../../graphics/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../../core/interface/IGraphicsContext';
 import { GraphicPrimitiveType } from '../IGraphicPrimitive';
 
 // 创建测试用的具体实现类

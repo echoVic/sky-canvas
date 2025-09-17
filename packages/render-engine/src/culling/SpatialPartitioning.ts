@@ -3,7 +3,7 @@
  * 提供高效的空间查询和视锥剔除功能
  */
 import { IRenderCommand } from '../commands/IRenderCommand';
-import { IRect } from '../graphics/IGraphicsContext';
+import { IRect } from '../core/interface/IGraphicsContext';
 
 /**
  * 空间节点接口

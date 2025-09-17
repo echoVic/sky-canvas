@@ -3,7 +3,8 @@
  * 测试动画组的功能
  */
 
-import { AnimationGroup, GroupPlayMode } from '../../AnimationGroup';
+import '../setup';
+import { AnimationGroup, GroupPlayMode } from '../../groups/AnimationGroup';
 import { AnimationState } from '../../types/AnimationTypes';
 import { BaseAnimation } from '../../core/BaseAnimation';
 

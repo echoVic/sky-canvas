@@ -2,11 +2,11 @@
  * 批量渲染器 - 重构后的主入口
  */
 
-import { BlendMode } from '../webgl/types';
-import { RenderStats } from '../renderers/types';
+import { BlendMode } from '../core/webgl/types';
+import { RenderStats } from '../core/renderers/types';
 import { Matrix3x3, Vector2 } from '../math';
 import { WebGLResourceManager } from '../resources/ResourceManager';
-import { WebGLShaderManager } from '../shaders/ShaderManager';
+import { WebGLShaderManager } from '../core/webgl/ShaderManager';
 
 import { BatchBuffer } from './core/BatchBuffer';
 import { BatchGeometry } from './core/BatchGeometry';

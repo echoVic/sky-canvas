@@ -3,7 +3,7 @@
  */
 
 import { Vector2 } from '../../math';
-import { BlendMode } from '../../webgl/types';
+import { BlendMode } from '../../core/webgl/types';
 import { BatchVertex, QuadParams, TriangleParams, LineParams } from '../types/BatchTypes';
 import { BatchBuffer } from './BatchBuffer';
 

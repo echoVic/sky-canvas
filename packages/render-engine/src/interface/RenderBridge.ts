@@ -10,7 +10,7 @@ import {
   InterfaceInterceptor,
   globalInterfaceOptimizer
 } from './OptimizedInterface';
-import { IPoint, IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
+import { IPoint, IRect, IGraphicsContext } from '../core/interface/IGraphicsContext';
 import { Transform } from '../math/Transform';
 
 /**

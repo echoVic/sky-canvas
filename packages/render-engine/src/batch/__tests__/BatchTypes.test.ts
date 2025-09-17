@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Vector2 } from '../../math';
-import { BlendMode } from '../../webgl/types';
+import { BlendMode } from '../../core/webgl/types';
 import {
   BatchVertex,
   BatchConfig,

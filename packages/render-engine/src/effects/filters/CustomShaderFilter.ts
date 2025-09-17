@@ -10,6 +10,7 @@ import {
 } from '../types/FilterTypes';
 import { WebGLRenderer } from '../webgl/WebGLRenderer';
 import { WebGLShaderManager } from '../webgl/WebGLShaderManager';
+import { DefaultShaders } from '../../core/webgl/ShaderManager';
 import { BaseFilter } from './BaseFilter';
 
 export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
@@ -28,11 +29,10 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
   private static getRenderer(): WebGLRenderer {
     if (!CustomShaderFilter.renderer) {
       try {
-        CustomShaderFilter.renderer = new WebGLRenderer({
-          width: 1024,
-          height: 1024,
-          preserveDrawingBuffer: false
-        });
+        const canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        CustomShaderFilter.renderer = new WebGLRenderer();
       } catch (error) {
         throw new Error(`Failed to initialize WebGL renderer: ${error}`);
       }
@@ -117,17 +117,9 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
     programId: string,
     parameters: CustomShaderParameters
   ): boolean {
-    // 验证着色器代码
-    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader);
-    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', parameters.fragmentShader);
-
-    if (vertexErrors.length > 0) {
-      console.error('Vertex shader validation errors:', vertexErrors);
-      return false;
-    }
-
-    if (fragmentErrors.length > 0) {
-      console.error('Fragment shader validation errors:', fragmentErrors);
+    // 基本着色器代码验证
+    if (!parameters.vertexShader || !parameters.fragmentShader) {
+      console.error('Vertex or fragment shader is missing');
       return false;
     }
 
@@ -193,7 +185,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
   getDefaultParameters(): CustomShaderParameters {
     return {
       type: FilterType.CUSTOM_SHADER,
-      vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
+      vertexShader: DefaultShaders.basic.vertex,
       fragmentShader: this.getDefaultFragmentShader(),
       uniforms: {},
       enabled: true,
@@ -244,7 +236,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
       // 边缘检测
       edgeDetection: {
         type: FilterType.CUSTOM_SHADER,
-        vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
+        vertexShader: DefaultShaders.basic.vertex,
         fragmentShader: `
           precision mediump float;
           uniform sampler2D u_image;
@@ -279,7 +271,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
       // 色彩反转
       invert: {
         type: FilterType.CUSTOM_SHADER,
-        vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
+        vertexShader: DefaultShaders.basic.vertex,
         fragmentShader: `
           precision mediump float;
           uniform sampler2D u_image;
@@ -298,7 +290,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
       // 旋涡效果
       swirl: {
         type: FilterType.CUSTOM_SHADER,
-        vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
+        vertexShader: DefaultShaders.basic.vertex,
         fragmentShader: `
           precision mediump float;
           uniform sampler2D u_image;
@@ -333,7 +325,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
       // 马赛克效果
       pixelate: {
         type: FilterType.CUSTOM_SHADER,
-        vertexShader: WebGLShaderManager.DEFAULT_VERTEX_SHADER,
+        vertexShader: DefaultShaders.basic.vertex,
         fragmentShader: `
           precision mediump float;
           uniform sampler2D u_image;

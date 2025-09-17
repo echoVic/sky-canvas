@@ -4,7 +4,7 @@
  */
 
 import { globalInterfaceOptimizer } from './OptimizedInterface';
-import { IPoint, IRect } from '../graphics/IGraphicsContext';
+import { IPoint, IRect } from '../core/interface/IGraphicsContext';
 
 /**
  * 数据变更类型

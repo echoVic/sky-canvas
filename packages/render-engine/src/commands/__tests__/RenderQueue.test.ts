@@ -4,7 +4,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IGraphicsContext, IRect } from '../../graphics/IGraphicsContext';
+import { IGraphicsContext, IRect } from '../../core/interface/IGraphicsContext';
 import { IRenderCommand, MaterialKey, RenderCommandType } from '../IRenderCommand';
 import {
   IRenderQueueConfig,

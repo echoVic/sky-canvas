@@ -1,8 +1,8 @@
 /**
  * 基础图形原语接口
  */
-import { IPoint } from '../graphics/IGraphicsContext';
-import { IRenderable } from '../engine/types';
+import { IPoint } from '../core/interface/IGraphicsContext';
+import { IRenderable } from '../core/types';
 
 /**
  * 图形原语类型

@@ -3,7 +3,7 @@
  * 测试时间轴的功能
  */
 
-import { Timeline } from '../../Timeline';
+import { Timeline } from '../../timeline/Timeline';
 import { AnimationState } from '../../types/AnimationTypes';
 import { BaseAnimation } from '../../core/BaseAnimation';
 

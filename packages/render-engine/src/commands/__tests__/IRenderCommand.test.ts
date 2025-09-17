@@ -2,7 +2,7 @@
  * IRenderCommand 接口单元测试
  */
 import { describe, expect, it, vi } from 'vitest';
-import { IRect } from '../../graphics/IGraphicsContext';
+import { IRect } from '../../core/interface/IGraphicsContext';
 import {
   IRenderCommand,
   MaterialKey,

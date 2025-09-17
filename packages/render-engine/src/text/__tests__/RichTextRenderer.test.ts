@@ -10,6 +10,7 @@ import {
   FontWeight,
   FontStyle
 } from '../types/RichTextTypes';
+import { IFontManager } from '../types/FontTypes';
 
 // Mock Canvas API
 const mockContext = {
@@ -38,6 +39,19 @@ const mockCanvas = {
   getContext: vi.fn().mockReturnValue(mockContext)
 };
 
+const mockFontManager: IFontManager = {
+  loadFont: vi.fn().mockResolvedValue({} as any),
+  getFont: vi.fn().mockReturnValue(null),
+  getFallbackFont: vi.fn().mockReturnValue(null),
+  hasFont: vi.fn().mockReturnValue(false),
+  unloadFont: vi.fn(),
+  preloadFonts: vi.fn().mockResolvedValue(undefined),
+  getLoadedFonts: vi.fn().mockReturnValue([]),
+  getLoadingProgress: vi.fn().mockReturnValue(null),
+  clearCache: vi.fn(),
+  dispose: vi.fn()
+};
+
 describe('RichTextRenderer', () => {
   let renderer: RichTextRenderer;
   let defaultStyle: TextStyle;
@@ -46,7 +60,7 @@ describe('RichTextRenderer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    renderer = new RichTextRenderer();
+    renderer = new RichTextRenderer(mockFontManager);
     
     defaultStyle = {
       fontFamily: 'Arial',

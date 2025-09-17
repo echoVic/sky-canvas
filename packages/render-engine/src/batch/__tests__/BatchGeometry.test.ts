@@ -8,7 +8,7 @@ import { BatchGeometry } from '../core/BatchGeometry';
 import { BatchBuffer } from '../core/BatchBuffer';
 import { Vector2 } from '../../math';
 import { QuadParams, TriangleParams, LineParams } from '../types/BatchTypes';
-import { BlendMode } from '../../webgl/types';
+import { BlendMode } from '../../core/webgl/types';
 
 // Mock BatchBuffer
 vi.mock('../core/BatchBuffer');

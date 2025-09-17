@@ -3,7 +3,8 @@
  * 测试动画示例的功能
  */
 
-import { AnimationExamples, runAnimationExamples } from '../../AnimationExamples';
+import '../setup';
+import { AnimationExamples, runAnimationExamples } from '../../examples/AnimationExamples';
 
 describe('AnimationExamples', () => {
   let examples: AnimationExamples;

@@ -1,7 +1,7 @@
 /**
  * 路径图形原语实现
  */
-import { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext';
+import { IGraphicsContext, IPoint, IRect } from '../core/interface/IGraphicsContext';
 import { GraphicPrimitive } from './GraphicPrimitive';
 import { IPathPrimitive } from './IGraphicPrimitive';
 

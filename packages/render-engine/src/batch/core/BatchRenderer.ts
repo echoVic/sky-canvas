@@ -2,11 +2,11 @@
  * 批量渲染器核心渲染管理
  */
 
-import { BlendMode } from '../../webgl/types';
-import { RenderStats } from '../../renderers/types';
+import { BlendMode } from '../../core/webgl/types';
+import { RenderStats } from '../../core/renderers/types';
 import { Matrix3x3 } from '../../math';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
-import { WebGLShaderManager } from '../../shaders/ShaderManager';
+import { WebGLShaderManager } from '../../core/webgl/ShaderManager';
 import { BatchConfig } from '../types/BatchTypes';
 
 export class BatchRenderManager {

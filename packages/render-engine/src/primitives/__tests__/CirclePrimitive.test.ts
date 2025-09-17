@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CirclePrimitive } from '../CirclePrimitive';
-import { IGraphicsContext, IPoint } from '../../graphics/IGraphicsContext';
+import { IGraphicsContext, IPoint } from '../../core/interface/IGraphicsContext';
 
 // Mock IGraphicsContext
 const createMockContext = (): IGraphicsContext => ({

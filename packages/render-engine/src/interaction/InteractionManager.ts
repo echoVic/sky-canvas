@@ -3,7 +3,7 @@
  * 整合事件分发、输入状态、手势识别等功能，提供统一的交互系统入口
  */
 
-import { IPoint } from '../graphics/IGraphicsContext';
+import { IPoint } from '../core/interface/IGraphicsContext';
 import { Vector2 } from '../math/Vector2';
 import EventEmitter3 from 'eventemitter3';
 import { GestureRecognizer, IGestureConfig } from './events/GestureRecognizer';

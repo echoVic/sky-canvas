@@ -3,10 +3,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import './setup';
+import '../setup';
 import { PropertyAnimation } from '../../animations/PropertyAnimation';
 import { EasingType, AnimationState } from '../../types/AnimationTypes';
-import { createTestTarget, TestUtils } from './setup';
+import { createTestTarget, TestUtils } from '../setup';
 
 describe('PropertyAnimation', () => {
   let target: any;

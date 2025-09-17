@@ -2,8 +2,8 @@
  * 命令模式渲染器
  * 集成命令队列到渲染引擎中
  */
-import { IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
-import { IViewport } from '../engine/types';
+import { IRect, IGraphicsContext } from '../core/interface/IGraphicsContext';
+import { IViewport } from '../core/types';
 import { IRenderCommand } from './IRenderCommand';
 import { IRenderQueue, RenderQueue, IRenderQueueConfig } from './RenderQueue';
 

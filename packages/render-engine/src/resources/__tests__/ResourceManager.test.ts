@@ -6,7 +6,7 @@ import {
   ResourceStats,
   IResourceManager
 } from '../ResourceManager';
-import { BufferType } from '../../webgl/types';
+import { BufferType } from '../../core/webgl/types';
 import { TextureFormat } from '../../textures/types';
 
 describe('WebGLBuffer', () => {

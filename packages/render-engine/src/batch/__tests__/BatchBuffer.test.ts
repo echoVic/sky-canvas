@@ -8,7 +8,7 @@ import { BatchBuffer } from '../core/BatchBuffer';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
 import { BatchConfig, BatchVertex } from '../types/BatchTypes';
 import { Vector2 } from '../../math';
-import { Buffer, BufferType } from '../../webgl/types';
+import { Buffer, BufferType } from '../../core/webgl/types';
 
 // Mock WebGLResourceManager
 vi.mock('../../resources/ResourceManager');

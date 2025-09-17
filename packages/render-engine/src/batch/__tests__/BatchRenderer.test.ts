@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Matrix3 } from '../../math/Matrix3';
 import { Vector2 } from '../../math/Vector2';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
-import { WebGLShaderManager } from '../../shaders/ShaderManager';
+import { WebGLShaderManager } from '../../core/webgl/ShaderManager';
 import { BatchRenderer } from '../BatchRenderer';
 
 // Mock implementations

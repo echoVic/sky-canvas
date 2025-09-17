@@ -5,7 +5,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { IRenderCommand, MaterialKey, RenderCommandType } from '../../commands/IRenderCommand';
-import { IGraphicsContext, IRect } from '../../graphics/IGraphicsContext';
+import { IGraphicsContext, IRect } from '../../core/interface/IGraphicsContext';
 import {
   CullingManager,
   CullingManagerFactory,
