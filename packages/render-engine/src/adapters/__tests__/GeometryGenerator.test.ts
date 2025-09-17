@@ -35,13 +35,13 @@ describe('GeometryGenerator', () => {
         expect(geometry.vertices[2]).toBe(1); // r
         expect(geometry.vertices[3]).toBe(0); // g
         expect(geometry.vertices[4]).toBe(0); // b
-        expect(geometry.vertices[5]).toBe(0.8); // a
+        expect(geometry.vertices[5]).toBeCloseTo(0.8); // a
         expect(geometry.vertices[6]).toBe(0); // u
         expect(geometry.vertices[7]).toBe(0); // v
 
         // 右下角顶点
-        expect(geometry.vertices[24]).toBe(x + width); // x
-        expect(geometry.vertices[25]).toBe(y + height); // y
+        expect(geometry.vertices[16]).toBe(x + width); // x
+        expect(geometry.vertices[17]).toBe(y + height); // y
 
         // 验证索引数据
         expect(Array.from(geometry.indices)).toEqual([0, 1, 2, 0, 2, 3]);

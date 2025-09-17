@@ -198,14 +198,14 @@ export class SceneEditor {
   /**
    * 删除场景对象
    */
-  deleteObject(objectId: string): boolean {
+  deleteObject(objectId: string, recordHistory: boolean = true): boolean {
     const object = this.scene.objects[objectId];
     if (!object || object.locked) return false;
     
     // 递归删除子对象
     const childrenToDelete = [...object.children];
     for (const childId of childrenToDelete) {
-      this.deleteObject(childId);
+      this.deleteObject(childId, recordHistory);
     }
     
     // 从父对象中移除
@@ -224,7 +224,9 @@ export class SceneEditor {
     }
     
     // 记录历史
-    this.addToHistory('delete', { object: { ...object } });
+    if (recordHistory) {
+      this.addToHistory('delete', { object: { ...object } });
+    }
     
     // 删除对象
     delete this.scene.objects[objectId];
@@ -255,8 +257,8 @@ export class SceneEditor {
     // 记录历史
     this.addToHistory('modify', { 
       objectId, 
-      originalState, 
-      changes 
+      oldValues: originalState, 
+      newValues: { ...object }
     });
     
     this.eventBus?.emit('object-modified', { objectId, changes });
@@ -803,6 +805,21 @@ export class SceneEditor {
           }
         }
         break;
+      case 'delete':
+        // 重新删除对象
+        this.deleteObject(entry.data.object.id, false);
+        break;
+      case 'modify':
+        // 重新应用修改
+        const targetObj = this.scene.objects[entry.data.objectId];
+        if (targetObj) {
+          Object.assign(targetObj, entry.data.newValues);
+          // 处理父子关系变更
+          if (entry.data.newValues.parent !== entry.data.oldValues.parent) {
+            this.updateParentChild(entry.data.objectId, entry.data.newValues.parent);
+          }
+        }
+        break;
     }
   }
 
@@ -813,7 +830,33 @@ export class SceneEditor {
     switch (entry.action) {
       case 'create':
         // 删除对象
-        this.deleteObject(entry.data.object.id);
+        this.deleteObject(entry.data.object.id, false);
+        break;
+      case 'delete':
+        // 恢复对象
+        const obj = entry.data.object;
+        this.scene.objects[obj.id] = obj;
+        if (obj.parent) {
+          const parent = this.scene.objects[obj.parent];
+          if (parent && !parent.children.includes(obj.id)) {
+            parent.children.push(obj.id);
+          }
+        } else {
+          if (!this.scene.rootObjects.includes(obj.id)) {
+            this.scene.rootObjects.push(obj.id);
+          }
+        }
+        break;
+      case 'modify':
+        // 恢复原始值
+        const targetObj = this.scene.objects[entry.data.objectId];
+        if (targetObj) {
+          Object.assign(targetObj, entry.data.oldValues);
+          // 处理父子关系变更
+          if (entry.data.oldValues.parent !== entry.data.newValues.parent) {
+            this.updateParentChild(entry.data.objectId, entry.data.oldValues.parent);
+          }
+        }
         break;
     }
   }

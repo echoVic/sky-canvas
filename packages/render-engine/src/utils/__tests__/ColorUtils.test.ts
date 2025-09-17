@@ -727,8 +727,8 @@ describe('ColorUtils', () => {
             const result = blendColors(baseColor, overlayColor, 'normal');
 
             // Assert: 验证混合结果
-            expect(result.r).toBe(128);
-            expect(result.g).toBe(128);
+            expect(result.r).toBe(127); // 0 * (128/255) + 255 * (127/255) = 127
+            expect(result.g).toBe(128); // 255 * (128/255) + 0 * (127/255) = 128
             expect(result.b).toBe(0);
             expect(result.a).toBe(255);
           });
@@ -786,7 +786,7 @@ describe('ColorUtils', () => {
             // Assert: 验证滤色结果
             expect(result.r).toBe(160); // 255 - (255-128)*(255-64)/255
             expect(result.g).toBe(160); // 255 - (255-64)*(255-128)/255
-            expect(result.b).toBe(207); // 255 - (255-32)*(255-192)/255
+            expect(result.b).toBe(200); // 255 - (255-32)*(255-192)/255 = 199.9 ≈ 200
           });
         });
 

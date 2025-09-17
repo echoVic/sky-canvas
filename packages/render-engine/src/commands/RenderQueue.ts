@@ -315,11 +315,17 @@ export class RenderQueue implements IRenderQueue {
   
   getStats() {
     const batchStats = Array.from(this.batches.values()).map(batch => batch.getStats());
+    const totalBatches = this._stats.totalBatches;
+    const averageCommandsPerBatch = totalBatches > 0 ? this._stats.totalCommands / totalBatches : 0;
+    
     return {
       ...this._stats,
       batches: batchStats,
       totalDrawCalls: batchStats.reduce((sum, stats) => sum + stats.estimatedDrawCalls, 0),
-      totalMemoryUsage: batchStats.reduce((sum, stats) => sum + stats.memoryUsage, 0)
+      totalMemoryUsage: batchStats.reduce((sum, stats) => sum + stats.memoryUsage, 0),
+      averageCommandsPerBatch,
+      memoryUsage: batchStats.reduce((sum, stats) => sum + stats.memoryUsage, 0),
+      lastFlushTime: Date.now()
     };
   }
   

@@ -60,13 +60,35 @@ export class PostProcessManager extends EventEmitter<PostProcessEvents> implemen
     try {
       const ctx = canvas.getContext('2d')!;
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const processedData = this.processImageData(imageData);
+      
+      // 直接处理图像数据，不调用processImageData以避免重复统计
+      const enabledEffects = this.getEnabledEffects();
+      let currentData = imageData;
+      
+      if (enabledEffects.length > 0) {
+        let tempData = new ImageData(imageData.width, imageData.height);
+
+        // 按顺序应用所有启用的效果
+        for (let i = 0; i < enabledEffects.length; i++) {
+          const effect = enabledEffects[i];
+          
+          if (i === enabledEffects.length - 1) {
+             // 最后一个效果，直接输出到最终结果
+             currentData = effect.apply(currentData);
+           } else {
+             // 中间效果，使用临时数据
+             const nextData = effect.apply(currentData, tempData);
+             currentData = nextData;
+             tempData = new ImageData(imageData.width, imageData.height);
+           }
+        }
+      }
       
       const result = document.createElement('canvas');
       result.width = canvas.width;
       result.height = canvas.height;
       const resultCtx = result.getContext('2d')!;
-      resultCtx.putImageData(processedData, 0, 0);
+      resultCtx.putImageData(currentData, 0, 0);
 
       const endTime = performance.now();
       const renderTime = endTime - startTime;
@@ -75,8 +97,8 @@ export class PostProcessManager extends EventEmitter<PostProcessEvents> implemen
 
       const processResult: PostProcessResult = {
         canvas: result,
-        imageData: processedData,
-        processedEffects: this.getEnabledEffects().length,
+        imageData: currentData,
+        processedEffects: enabledEffects.length,
         renderTime
       };
 
@@ -118,6 +140,10 @@ export class PostProcessManager extends EventEmitter<PostProcessEvents> implemen
           }
         } catch (effectError) {
           console.warn(`Effect ${effect.type} failed:`, effectError);
+          // 如果是最后一个效果或者只有一个效果，重新抛出错误
+          if (enabledEffects.length === 1 || i === enabledEffects.length - 1) {
+            throw effectError;
+          }
           continue;
         }
       }

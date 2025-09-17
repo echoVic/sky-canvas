@@ -183,6 +183,227 @@ describe('WebGLShaderManager', () => {
         expect(result.shader).toBe(mockWebGLShader);
         expect(mockGL.createShader).toHaveBeenCalledWith(mockGL.FRAGMENT_SHADER);
       });
+
+      it('Then should handle shader compilation failure', async () => {
+        // Arrange: 模拟编译失败
+        const invalidSource = 'invalid shader source';
+        (mockGL.getShaderParameter as any).mockReturnValue(false);
+        (mockGL.getShaderInfoLog as any).mockReturnValue('Compilation error: syntax error');
+
+        // Act: 编译无效着色器
+        const result = await shaderManager.compileShader(ShaderType.VERTEX, invalidSource);
+
+        // Assert: 验证编译失败处理
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Compilation error: syntax error');
+        expect(result.shader).toBeUndefined();
+        expect(mockGL.deleteShader).toHaveBeenCalledWith(mockWebGLShader);
+      });
+
+      it('Then should handle createShader failure', async () => {
+        // Arrange: 模拟createShader失败
+        (mockGL.createShader as any).mockReturnValue(null);
+
+        // Act: 尝试编译着色器
+        const result = await shaderManager.compileShader(ShaderType.VERTEX, 'valid source');
+
+        // Assert: 验证失败处理
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Failed to create shader');
+      });
+    });
+
+    describe('When loading shader programs', () => {
+      it('Then should load shader program successfully', async () => {
+        // Arrange: 模拟成功编译和链接
+        (mockGL.getShaderParameter as any).mockReturnValue(true);
+        (mockGL.getProgramParameter as any).mockReturnValue(true);
+        (mockGL.getShaderInfoLog as any).mockReturnValue('');
+        (mockGL.getProgramInfoLog as any).mockReturnValue('');
+        (mockGL.getProgramParameter as any).mockImplementation((program: any, pname: any) => {
+           if (pname === mockGL.ACTIVE_UNIFORMS) return 2;
+           if (pname === mockGL.ACTIVE_ATTRIBUTES) return 2;
+           return true;
+         });
+
+        const shaderSource = {
+          vertex: DefaultShaders.basic.vertex,
+          fragment: DefaultShaders.basic.fragment
+        };
+
+        // Act: 加载着色器程序
+        const result = await shaderManager.loadShader('basic', shaderSource);
+
+        // Assert: 验证加载结果
+        expect(result).toBe(true);
+        expect(mockGL.createProgram).toHaveBeenCalled();
+        expect(mockGL.attachShader).toHaveBeenCalledTimes(2);
+        expect(mockGL.linkProgram).toHaveBeenCalled();
+      });
+
+      it('Then should handle vertex shader compilation failure', async () => {
+        // Arrange: 模拟顶点着色器编译失败
+        (mockGL.getShaderParameter as any).mockImplementation((shader: any, pname: any) => {
+           return false; // 编译失败
+         });
+        (mockGL.getShaderInfoLog as any).mockReturnValue('Vertex shader error');
+
+        const shaderSource = {
+          vertex: 'invalid vertex shader',
+          fragment: DefaultShaders.basic.fragment
+        };
+
+        // Act: 尝试加载着色器程序
+        const result = await shaderManager.loadShader('invalid', shaderSource);
+
+        // Assert: 验证失败处理
+        expect(result).toBe(false);
+      });
+
+      it('Then should handle fragment shader compilation failure', async () => {
+        // Arrange: 模拟片段着色器编译失败
+        let callCount = 0;
+        (mockGL.getShaderParameter as any).mockImplementation(() => {
+          callCount++;
+          return callCount === 1; // 第一次调用(顶点着色器)成功，第二次(片段着色器)失败
+        });
+        (mockGL.getShaderInfoLog as any).mockReturnValue('Fragment shader error');
+
+        const shaderSource = {
+          vertex: DefaultShaders.basic.vertex,
+          fragment: 'invalid fragment shader'
+        };
+
+        // Act: 尝试加载着色器程序
+        const result = await shaderManager.loadShader('invalid', shaderSource);
+
+        // Assert: 验证失败处理
+        expect(result).toBe(false);
+      });
+
+      it('Then should handle program linking failure', async () => {
+        // Arrange: 模拟着色器编译成功但程序链接失败
+        (mockGL.getShaderParameter as any).mockReturnValue(true);
+        (mockGL.getProgramParameter as any).mockReturnValue(false);
+        (mockGL.getProgramInfoLog as any).mockReturnValue('Linking error');
+
+        const shaderSource = {
+          vertex: DefaultShaders.basic.vertex,
+          fragment: DefaultShaders.basic.fragment
+        };
+
+        // Act: 尝试加载着色器程序
+        const result = await shaderManager.loadShader('link-fail', shaderSource);
+
+        // Assert: 验证失败处理
+        expect(result).toBe(false);
+        expect(mockGL.deleteProgram).toHaveBeenCalled();
+      });
+    });
+
+    describe('When managing shader programs', () => {
+      beforeEach(async () => {
+        // Arrange: 预加载一个着色器程序
+        (mockGL.getShaderParameter as any).mockReturnValue(true);
+        (mockGL.getProgramParameter as any).mockReturnValue(true);
+        (mockGL.getProgramParameter as any).mockImplementation((program: any, pname: any) => {
+           if (pname === mockGL.ACTIVE_UNIFORMS) return 1;
+           if (pname === mockGL.ACTIVE_ATTRIBUTES) return 1;
+           return true;
+         });
+        
+        await shaderManager.loadShader('test', {
+          vertex: DefaultShaders.basic.vertex,
+          fragment: DefaultShaders.basic.fragment
+        });
+      });
+
+      it('Then should get loaded shader program', () => {
+        // Act: 获取着色器程序
+        const program = shaderManager.getShader('test');
+
+        // Assert: 验证程序存在
+        expect(program).toBeDefined();
+        expect(program?.id).toBe('test');
+      });
+
+      it('Then should return undefined for non-existent shader', () => {
+        // Act: 获取不存在的着色器程序
+        const program = shaderManager.getShader('non-existent');
+
+        // Assert: 验证返回undefined
+        expect(program).toBeUndefined();
+      });
+
+      it('Then should use shader program successfully', () => {
+        // Act: 使用着色器程序
+        const result = shaderManager.useProgram('test');
+
+        // Assert: 验证使用成功
+        expect(result).toBe(true);
+        expect(mockGL.useProgram).toHaveBeenCalledWith(mockWebGLProgram);
+      });
+
+      it('Then should fail to use non-existent shader program', () => {
+        // Act: 尝试使用不存在的着色器程序
+        const result = shaderManager.useProgram('non-existent');
+
+        // Assert: 验证使用失败
+        expect(result).toBe(false);
+      });
+
+      it('Then should set uniforms successfully', () => {
+        // Arrange: 使用着色器程序
+        shaderManager.useProgram('test');
+        
+        const uniforms = {
+          u_float: 1.0,
+          u_vec2: [1.0, 2.0],
+          u_vec3: [1.0, 2.0, 3.0],
+          u_vec4: [1.0, 2.0, 3.0, 4.0],
+          u_matrix: new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1])
+        };
+
+        // Act: 设置uniform值
+        shaderManager.setUniforms(uniforms);
+
+        // Assert: 验证uniform设置调用
+        expect(mockGL.uniform1f).toHaveBeenCalled();
+        expect(mockGL.uniform2fv).toHaveBeenCalled();
+        expect(mockGL.uniform3fv).toHaveBeenCalled();
+        expect(mockGL.uniform4fv).toHaveBeenCalled();
+        expect(mockGL.uniformMatrix3fv).toHaveBeenCalled();
+      });
+    });
+
+    describe('When disposing resources', () => {
+      it('Then should dispose all resources', async () => {
+        // Arrange: 加载一些着色器程序
+        (mockGL.getShaderParameter as any).mockReturnValue(true);
+        (mockGL.getProgramParameter as any).mockReturnValue(true);
+        (mockGL.getProgramParameter as any).mockImplementation((program: any, pname: any) => {
+           if (pname === mockGL.ACTIVE_UNIFORMS) return 0;
+           if (pname === mockGL.ACTIVE_ATTRIBUTES) return 0;
+           return true;
+         });
+        
+        await shaderManager.loadShader('test1', {
+          vertex: DefaultShaders.basic.vertex,
+          fragment: DefaultShaders.basic.fragment
+        });
+        
+        await shaderManager.loadShader('test2', {
+          vertex: DefaultShaders.textured.vertex,
+          fragment: DefaultShaders.textured.fragment
+        });
+
+        // Act: 释放资源
+        shaderManager.dispose();
+
+        // Assert: 验证资源释放
+        expect(mockGL.deleteProgram).toHaveBeenCalledTimes(2);
+        expect(mockGL.deleteShader).toHaveBeenCalledTimes(4); // 2个程序 × 2个着色器
+      });
     });
   });
 });

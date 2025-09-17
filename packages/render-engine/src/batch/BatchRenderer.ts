@@ -64,7 +64,7 @@ export class BatchRenderer {
    */
   begin(): void {
     if (this.state === BatchState.BUILDING) {
-      this.flush();
+      throw new Error('Batch already in progress');
     }
     
     this.state = BatchState.BUILDING;
@@ -77,7 +77,10 @@ export class BatchRenderer {
    * 结束当前批次
    */
   end(): void {
-    if (this.state === BatchState.BUILDING && this.buffer.getVertexCount() > 0) {
+    if (this.state !== BatchState.BUILDING) {
+      throw new Error('No batch in progress');
+    }
+    if (this.buffer.getVertexCount() > 0) {
       this.flush();
     }
     this.state = BatchState.READY;
@@ -93,9 +96,18 @@ export class BatchRenderer {
     texture?: WebGLTexture,
     blendMode: BlendMode = BlendMode.NORMAL
   ): boolean {
+    // 检查批次状态
+    if (this.state !== BatchState.BUILDING) {
+      throw new Error('Batch not started');
+    }
+
     // 检查是否需要刷新批次
     if (!this.buffer.hasSpace(4, 6) || this.renderManager.needsFlush(4, 6, texture, blendMode)) {
       this.flush();
+      // 刷新后再次检查空间，如果仍然没有空间则返回false
+      if (!this.buffer.hasSpace(4, 6)) {
+        return false;
+      }
     }
 
     const params: QuadParams = {
@@ -124,6 +136,12 @@ export class BatchRenderer {
     texture?: WebGLTexture,
     blendMode: BlendMode = BlendMode.NORMAL
   ): boolean {
+    // 检查批次状态
+    if (this.state !== BatchState.BUILDING) {
+      throw new Error('Batch not started');
+    }
+
+    // 检查是否需要刷新批次
     if (!this.buffer.hasSpace(3, 3) || this.renderManager.needsFlush(3, 3, texture, blendMode)) {
       this.flush();
     }
@@ -153,6 +171,11 @@ export class BatchRenderer {
     color: [number, number, number, number],
     width: number = 1.0
   ): boolean {
+    // 检查批次状态
+    if (this.state !== BatchState.BUILDING) {
+      throw new Error('Batch not started');
+    }
+
     const params: LineParams = {
       start,
       end,
@@ -210,7 +233,7 @@ export class BatchRenderer {
    * 销毁资源
    */
   dispose(): void {
-    this.flush();
     this.buffer.dispose();
+    this.state = BatchState.READY;
   }
 }

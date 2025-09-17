@@ -2,13 +2,13 @@
  * 多边形遮罩
  */
 
-import { BaseMask } from './BaseMask';
-import { 
-  PolygonMaskConfig, 
-  MaskType,
-  IMask 
-} from '../types/MaskTypes';
 import { Point2D } from '../../animation/types/PathTypes';
+import {
+  IMask,
+  MaskType,
+  PolygonMaskConfig
+} from '../types/MaskTypes';
+import { BaseMask } from './BaseMask';
 // Shape interface definition for render-engine
 interface IShape {
   id: string;
@@ -71,17 +71,15 @@ export class PolygonMask extends BaseMask {
       return;
     }
     
-    // 将点转换为相对于遮罩中心的坐标
-    const center = this._config.position;
-    
     ctx.beginPath();
-    ctx.moveTo(points[0].x - center.x, points[0].y - center.y);
+    ctx.moveTo(points[0].x, points[0].y);
     
     for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x - center.x, points[i].y - center.y);
+      ctx.lineTo(points[i].x, points[i].y);
     }
     
     ctx.closePath();
+    console.log('Path created successfully');
   }
 
   private applyClipMask(ctx: CanvasRenderingContext2D): void {

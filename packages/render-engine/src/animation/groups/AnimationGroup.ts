@@ -129,12 +129,16 @@ export class AnimationGroup extends BaseAnimation implements IAnimationGroup {
   stop(): this {
     super.stop();
     
-    // 停止所有子动画
+    // 停止所有子动画并设置为IDLE状态
     for (const animation of this.animations) {
       animation.stop();
+      // 设置子动画状态为IDLE
+      (animation as any)._state = AnimationState.IDLE;
     }
     
     this.currentSequenceIndex = 0;
+    // AnimationGroup自身也应该是IDLE状态
+    this._state = AnimationState.IDLE;
     return this;
   }
 

@@ -147,7 +147,8 @@ export class Particle implements IParticle {
    * 设置生命值
    */
   setLife(life: number): void {
-    this.life = Math.max(0, life);
+    this.life = life;
+    this.maxLife = life;
     if (this.life <= 0) {
       this.state = ParticleState.DEAD;
     }
@@ -158,6 +159,7 @@ export class Particle implements IParticle {
    */
   extendLife(amount: number): void {
     this.life += amount;
+    this.maxLife += amount;
     if (this.state === ParticleState.DEAD && this.life > 0) {
       this.state = ParticleState.ACTIVE;
     }

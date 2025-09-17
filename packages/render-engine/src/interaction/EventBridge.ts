@@ -461,6 +461,11 @@ export class EventBridge {
           try {
             await this.callListener(listener, event);
             listenersNotified++;
+            
+            // 检查once标记
+            if (listener.once) {
+              this.globalListeners.delete(listener);
+            }
           } catch (error) {
             console.error(`Error in global event listener:`, error);
           }

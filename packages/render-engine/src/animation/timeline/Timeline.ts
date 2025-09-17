@@ -29,6 +29,10 @@ export class Timeline extends AnimationGroup implements ITimeline {
   constructor(config: TimelineConfig = { duration: 0 }) {
     super(config);
     this.totalDuration = config.totalDuration || 0;
+    // 如果配置中指定了duration，则覆盖父类的默认值
+    if (config.duration !== undefined) {
+      this._duration = config.duration;
+    }
   }
 
   /**
@@ -112,6 +116,13 @@ export class Timeline extends AnimationGroup implements ITimeline {
     return this.play();
   }
 
+  stop(): this {
+    super.stop();
+    // Timeline停止后应该回到IDLE状态
+    this._state = AnimationState.IDLE;
+    return this;
+  }
+
   reverse(): this {
     this._isReversed = !this._isReversed;
     
@@ -119,6 +130,9 @@ export class Timeline extends AnimationGroup implements ITimeline {
       // 如果正在播放，需要重新计算当前进度
       const currentProgress = this.progress;
       this.seek((1 - currentProgress) * this._duration);
+    } else {
+      // 如果没有播放，启动播放
+      this.play();
     }
     
     return this;
@@ -181,7 +195,7 @@ export class Timeline extends AnimationGroup implements ITimeline {
    */
   getActiveAnimationsAt(time: number): TimelineItem[] {
     return this.timelineItems.filter(item => 
-      time >= item.startTime && time <= item.endTime
+      time >= item.startTime && time < item.endTime
     );
   }
 

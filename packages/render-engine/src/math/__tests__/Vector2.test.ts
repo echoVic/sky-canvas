@@ -643,6 +643,39 @@ describe('Vector2', () => {
         expect(Array.isArray(array)).toBe(true);
       });
     });
+
+    describe('When dividing by zero', () => {
+      it('Then it should throw error for divide method', () => {
+        // Arrange
+        const vector = new Vector2(3, 4);
+
+        // Act & Assert
+        expect(() => vector.divide(0)).toThrow('Division by zero');
+      });
+
+      it('Then it should throw error for divideInPlace method', () => {
+        // Arrange
+        const vector = new Vector2(3, 4);
+
+        // Act & Assert
+        expect(() => vector.divideInPlace(0)).toThrow('Division by zero');
+      });
+    });
+
+    describe('When normalizing zero vector', () => {
+      it('Then normalizeInPlace should handle zero vector', () => {
+        // Arrange
+        const vector = new Vector2(0, 0);
+
+        // Act
+        const result = vector.normalizeInPlace();
+
+        // Assert
+        expect(result.x).toBe(0);
+        expect(result.y).toBe(0);
+        expect(result).toBe(vector); // Should return same instance
+      });
+    });
   });
 
   describe('Given Vector2 static methods', () => {

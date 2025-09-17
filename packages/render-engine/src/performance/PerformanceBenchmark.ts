@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { UnifiedPerformanceMonitor } from './UnifiedPerformanceMonitor';
+import { PerformanceMonitor } from './PerformanceMonitor';
 
 /**
  * 基准测试类型
@@ -341,11 +341,11 @@ export class PerformanceBenchmarkSuite extends EventEmitter<{
 }> {
   private scenarios: BenchmarkScenario[] = [];
   private results: BenchmarkResult[] = [];
-  private performanceMonitor: UnifiedPerformanceMonitor;
+  private performanceMonitor: PerformanceMonitor | null;
 
-  constructor(performanceMonitor?: UnifiedPerformanceMonitor) {
+  constructor(performanceMonitor?: PerformanceMonitor) {
     super();
-    this.performanceMonitor = performanceMonitor || new UnifiedPerformanceMonitor();
+    this.performanceMonitor = performanceMonitor || null;
   }
 
   /**
@@ -597,7 +597,7 @@ export class PerformanceBenchmarkSuite extends EventEmitter<{
  */
 export function createDefaultBenchmarkSuite(
   renderEngine: any,
-  performanceMonitor?: UnifiedPerformanceMonitor
+  performanceMonitor?: PerformanceMonitor
 ): PerformanceBenchmarkSuite {
   const suite = new PerformanceBenchmarkSuite(performanceMonitor);
 

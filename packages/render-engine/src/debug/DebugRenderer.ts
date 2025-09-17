@@ -494,14 +494,16 @@ export class DebugRenderer {
   /**
    * 设置事件监听器
    */
+  private keydownHandler = (e: KeyboardEvent) => {
+    if (e.key === 'F3' || (e.ctrlKey && e.key === 'd')) {
+      e.preventDefault();
+      this.toggleDebugPanel();
+    }
+  };
+
   private setupEventListeners(): void {
     // 键盘快捷键
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F3' || (e.ctrlKey && e.key === 'd')) {
-        e.preventDefault();
-        this.toggleDebugPanel();
-      }
-    });
+    document.addEventListener('keydown', this.keydownHandler);
   }
 
   /**
@@ -758,6 +760,9 @@ export class DebugRenderer {
    */
   dispose(): void {
     this.clear();
+    
+    // 移除事件监听器
+    document.removeEventListener('keydown', this.keydownHandler);
     
     if (this.debugPanel) {
       document.body.removeChild(this.debugPanel);

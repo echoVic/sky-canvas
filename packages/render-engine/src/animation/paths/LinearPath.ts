@@ -60,27 +60,27 @@ export class LinearPath extends BasePath {
   }
 
   concat(other: IPath): IPath {
-    if (other.type === PathType.LINEAR) {
-      const otherLinear = other as LinearPath;
+    // 如果另一个路径也是线性路径且连续，则合并为单一线性路径
+    if (other.type === PathType.LINEAR && other instanceof LinearPath) {
+      const otherStart = other.getStart();
+      const thisEnd = this.getEnd();
       
-      // 如果当前路径的终点与另一路径的起点相同，创建连续的线性路径
-      const thisEnd = this.getPoint(1);
-      const otherStart = otherLinear.getPoint(0);
-      
+      // 检查路径是否连续（终点与起点相同）
       const dx = Math.abs(thisEnd.x - otherStart.x);
       const dy = Math.abs(thisEnd.y - otherStart.y);
-      const epsilon = 0.001;
+      const epsilon = 1e-10;
       
       if (dx < epsilon && dy < epsilon) {
+        // 路径连续，创建新的线性路径
         return new LinearPath({
           type: PathType.LINEAR,
           start: this.start,
-          end: otherLinear.getPoint(1)
+          end: other.getEnd()
         });
       }
     }
     
-    // 如果不能直接连接，创建复合路径
+    // 否则创建复合路径
     return new CompositePath([this, other]);
   }
 

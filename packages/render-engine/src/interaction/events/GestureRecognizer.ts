@@ -126,7 +126,9 @@ export class GestureRecognizer extends EventEmitter3<GestureRecognizerEvents> {
 
     // 更新触摸点
     for (const touch of event.changedTouches) {
-      this._activeTouches.set(touch.identifier, touch.worldPosition);
+      if (touch && touch.identifier !== undefined) {
+        this._activeTouches.set(touch.identifier, touch.worldPosition);
+      }
     }
 
     const touchCount = this._activeTouches.size;
@@ -151,7 +153,9 @@ export class GestureRecognizer extends EventEmitter3<GestureRecognizerEvents> {
 
     // 更新触摸点
     for (const touch of event.changedTouches) {
-      this._activeTouches.set(touch.identifier, touch.worldPosition);
+      if (touch && touch.identifier !== undefined) {
+        this._activeTouches.set(touch.identifier, touch.worldPosition);
+      }
     }
 
     const touchCount = this._activeTouches.size;
@@ -173,7 +177,9 @@ export class GestureRecognizer extends EventEmitter3<GestureRecognizerEvents> {
 
     // 移除结束的触摸点
     for (const touch of event.changedTouches) {
-      this._activeTouches.delete(touch.identifier);
+      if (touch && touch.identifier !== undefined) {
+        this._activeTouches.delete(touch.identifier);
+      }
     }
 
     const touchCount = this._activeTouches.size;
@@ -240,6 +246,9 @@ export class GestureRecognizer extends EventEmitter3<GestureRecognizerEvents> {
     if (this._activeTouches.size !== 2) return;
 
     const touches = Array.from(this._activeTouches.values());
+    // 确保有两个有效的触摸点
+    if (touches.length !== 2 || !touches[0] || !touches[1]) return;
+    
     this._lastTouchPositions = [...touches];
     this._lastDistance = this._calculateDistance(touches[0], touches[1]);
     this._lastAngle = this._calculateAngle(touches[0], touches[1]);

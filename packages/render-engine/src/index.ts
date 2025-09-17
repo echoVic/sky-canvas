@@ -56,7 +56,7 @@ export * from './utils';
 
 // 调试和性能 (使用别名导出避免冲突)
 export { DebugRenderer } from './debug';
-export { UnifiedPerformanceMonitor } from './performance';
+export { PerformanceMonitor } from './performance';
 export { PerformanceBenchmark } from './benchmark';
 
 // 场景编辑器

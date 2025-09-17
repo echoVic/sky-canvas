@@ -31,8 +31,6 @@ export class DropShadow extends BaseShadow {
     try {
       // 设置阴影参数
       this.setShadowStyle(ctx);
-      ctx.shadowOffsetX = this._config.offsetX;
-      ctx.shadowOffsetY = this._config.offsetY;
       
       // 根据目标类型进行不同的处理
       if (target instanceof HTMLCanvasElement) {
@@ -142,11 +140,12 @@ export class DropShadow extends BaseShadow {
   private createShadowLayer(target: HTMLCanvasElement | ImageData): ImageData {
     let targetData: ImageData;
     
-    if (target instanceof HTMLCanvasElement) {
+    // 检查是否有 getContext 方法（canvas 对象）或者是否有 data 属性（ImageData 对象）
+    if ('getContext' in target && typeof target.getContext === 'function') {
       const tempCtx = target.getContext('2d')!;
       targetData = tempCtx.getImageData(0, 0, target.width, target.height);
     } else {
-      targetData = target;
+      targetData = target as ImageData;
     }
     
     // 创建阴影ImageData

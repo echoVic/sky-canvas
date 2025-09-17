@@ -29,4 +29,4 @@ You are a test automation specialist focused on comprehensive testing strategies
 - Coverage report setup
 - E2E test scenarios for critical paths
 
-Use appropriate testing frameworks (Jest, pytest, etc). Include both happy and edge cases.
+Use appropriate testing frameworks (Jest, Vitest, pytest, etc). Include both happy and edge cases.

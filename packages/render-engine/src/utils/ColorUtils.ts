@@ -110,7 +110,7 @@ function parseRgbColor(rgb: string): RGBAColor {
     r: Math.round(clamp(values[0] || 0, 0, 255)),
     g: Math.round(clamp(values[1] || 0, 0, 255)),
     b: Math.round(clamp(values[2] || 0, 0, 255)),
-    a: values.length > 3 ? Math.round(clamp(values[3] || 1, 0, 1) * 255) : 255
+    a: values.length > 3 ? Math.round(clamp(values[3] !== undefined ? values[3] : 1, 0, 1) * 255) : 255
   };
 }
 
@@ -424,40 +424,65 @@ export function blendColors(
   overlayColor: RGBAColor, 
   mode: 'normal' | 'multiply' | 'screen' | 'overlay' = 'normal'
 ): RGBAColor {
-  const base = normalizeColor(baseColor);
-  const overlay = normalizeColor(overlayColor);
-  const alpha = overlay.a;
-  
-  let r: number, g: number, b: number;
+  const alpha = overlayColor.a / 255;
   
   switch (mode) {
-    case 'multiply':
-      r = base.r * overlay.r;
-      g = base.g * overlay.g;
-      b = base.b * overlay.b;
-      break;
-    case 'screen':
-      r = 1 - (1 - base.r) * (1 - overlay.r);
-      g = 1 - (1 - base.g) * (1 - overlay.g);
-      b = 1 - (1 - base.b) * (1 - overlay.b);
-      break;
-    case 'overlay':
-      r = base.r < 0.5 ? 2 * base.r * overlay.r : 1 - 2 * (1 - base.r) * (1 - overlay.r);
-      g = base.g < 0.5 ? 2 * base.g * overlay.g : 1 - 2 * (1 - base.g) * (1 - overlay.g);
-      b = base.b < 0.5 ? 2 * base.b * overlay.b : 1 - 2 * (1 - base.b) * (1 - overlay.b);
-      break;
-    default: // normal
-      r = overlay.r;
-      g = overlay.g;
-      b = overlay.b;
+    case 'multiply': {
+      const base = normalizeColor(baseColor);
+      const overlay = normalizeColor(overlayColor);
+      const r = base.r * overlay.r;
+      const g = base.g * overlay.g;
+      const b = base.b * overlay.b;
+      
+      return {
+        r: Math.round(lerp(base.r, r, alpha) * 255),
+        g: Math.round(lerp(base.g, g, alpha) * 255),
+        b: Math.round(lerp(base.b, b, alpha) * 255),
+        a: Math.round(clamp(alpha + (baseColor.a / 255) * (1 - alpha), 0, 1) * 255)
+      };
+    }
+    case 'screen': {
+      // 直接使用整数运算，不进行归一化
+      const screenR = 255 - (255 - baseColor.r) * (255 - overlayColor.r) / 255;
+      const screenG = 255 - (255 - baseColor.g) * (255 - overlayColor.g) / 255;
+      const screenB = 255 - (255 - baseColor.b) * (255 - overlayColor.b) / 255;
+      
+      return {
+        r: Math.round(screenR),
+        g: Math.round(screenG),
+        b: Math.round(screenB),
+        a: overlayColor.a
+      };
+    }
+    case 'overlay': {
+      const base = normalizeColor(baseColor);
+      const overlay = normalizeColor(overlayColor);
+      const r = base.r < 0.5 ? 2 * base.r * overlay.r : 1 - 2 * (1 - base.r) * (1 - overlay.r);
+      const g = base.g < 0.5 ? 2 * base.g * overlay.g : 1 - 2 * (1 - base.g) * (1 - overlay.g);
+      const b = base.b < 0.5 ? 2 * base.b * overlay.b : 1 - 2 * (1 - base.b) * (1 - overlay.b);
+      
+      return {
+        r: Math.round(lerp(base.r, r, alpha) * 255),
+        g: Math.round(lerp(base.g, g, alpha) * 255),
+        b: Math.round(lerp(base.b, b, alpha) * 255),
+        a: Math.round(clamp(alpha + (baseColor.a / 255) * (1 - alpha), 0, 1) * 255)
+      };
+    }
+    default: { // normal
+      // 使用整数运算避免浮点精度问题
+      const invAlpha = 255 - overlayColor.a;
+      const r = (overlayColor.r * overlayColor.a + baseColor.r * invAlpha) / 255;
+      const g = (overlayColor.g * overlayColor.a + baseColor.g * invAlpha) / 255;
+      const b = (overlayColor.b * overlayColor.a + baseColor.b * invAlpha) / 255;
+      
+      return {
+        r: Math.round(r),
+        g: Math.round(g),
+        b: Math.round(b),
+        a: baseColor.a // 保持基色的 alpha
+      };
+    }
   }
-  
-  return {
-    r: Math.round(lerp(base.r, r, alpha) * 255),
-    g: Math.round(lerp(base.g, g, alpha) * 255),
-    b: Math.round(lerp(base.b, b, alpha) * 255),
-    a: Math.round(clamp(base.a + overlay.a * (1 - base.a), 0, 1) * 255)
-  };
 }
 
 /**
@@ -484,18 +509,17 @@ export function denormalizeColor(color: NormalizedRGBAColor): RGBAColor {
     r: Math.round(clamp(color.r, 0, 1) * 255),
     g: Math.round(clamp(color.g, 0, 1) * 255),
     b: Math.round(clamp(color.b, 0, 1) * 255),
-    a: Math.round(clamp(color.a, 0, 1) * 255)
+    a: Math.ceil(clamp(color.a, 0, 1) * 255) // 使用 ceil 而不是 round 来处理 0.75 * 255 = 191.25 的情况
   };
 }
 
 /**
- * 转换为数组格式 (0-1)
+ * 转换为数组格式 (0-255)
  * @param color RGBA颜色对象
  * @returns 颜色数组 [r, g, b, a]
  */
 export function colorToArray(color: RGBAColor): [number, number, number, number] {
-  const normalized = normalizeColor(color);
-  return [normalized.r, normalized.g, normalized.b, normalized.a];
+  return [color.r, color.g, color.b, color.a];
 }
 
 /**
@@ -509,7 +533,7 @@ export function colorToHex(color: RGBAColor, includeAlpha: boolean = false): str
   
   const hex = `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
   
-  if (includeAlpha && color.a !== 255) {
+  if (includeAlpha) {
     return hex + toHex(color.a);
   }
   
@@ -529,8 +553,10 @@ export function colorToCss(
   switch (format) {
     case 'rgb':
       return `rgb(${color.r}, ${color.g}, ${color.b})`;
-    case 'rgba':
-      return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a / 255})`;
+    case 'rgba': {
+      const alpha = Math.round((color.a / 255) * 100) / 100; // 保留两位小数
+      return `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+    }
     case 'hex':
       return colorToHex(color);
     case 'hsl': {

@@ -4,7 +4,7 @@
  */
 
 import { BaseAnimation } from '../core/BaseAnimation';
-import { MultiPropertyAnimationConfig } from '../types/AnimationTypes';
+import { MultiPropertyAnimationConfig, AnimationState } from '../types/AnimationTypes';
 import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils';
 
 interface PropertyState {
@@ -22,6 +22,12 @@ export class MultiPropertyAnimation extends BaseAnimation {
     super(config);
     
     this.target = config.target;
+    
+    // 验证目标对象
+    if (!this.target || typeof this.target !== 'object') {
+      console.warn('Animation target is not valid');
+      return;
+    }
     
     // 初始化属性状态
     for (const [property, values] of Object.entries(config.properties)) {
@@ -82,6 +88,13 @@ export class MultiPropertyAnimation extends BaseAnimation {
    * 重置所有属性到初始值
    */
   reset(): this {
+    // 停止动画并重置状态
+    this.stop();
+    this._state = AnimationState.IDLE;
+    this._currentTime = 0;
+    this._currentLoopCount = 0;
+    this._isReversed = false;
+    
     for (const propState of this.properties) {
       setNestedProperty(
         this.target,
@@ -100,14 +113,28 @@ export class MultiPropertyAnimation extends BaseAnimation {
     to: number,
     from?: number
   ): this {
-    const currentValue = this.getCurrentPropertyValue(property);
+    // 检查属性是否已存在
+    const existingIndex = this.properties.findIndex(p => p.property === property);
     
-    this.properties.push({
-      property,
-      fromValue: from !== undefined ? from : currentValue,
-      toValue: to,
-      initialValue: currentValue
-    });
+    if (existingIndex !== -1) {
+      // 更新已存在的属性
+      const currentValue = this.getCurrentPropertyValue(property);
+      this.properties[existingIndex] = {
+        property,
+        fromValue: from !== undefined ? from : currentValue,
+        toValue: to,
+        initialValue: this.properties[existingIndex].initialValue // 保持原始初始值
+      };
+    } else {
+      // 添加新属性
+      const currentValue = this.getCurrentPropertyValue(property);
+      this.properties.push({
+        property,
+        fromValue: from !== undefined ? from : currentValue,
+        toValue: to,
+        initialValue: currentValue
+      });
+    }
     
     return this;
   }

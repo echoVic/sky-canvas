@@ -38,10 +38,12 @@ export class PathMask extends BaseMask {
   }
 
   private initializePath(): void {
-    if (typeof this._config.path === 'string') {
+    if (typeof this._config.path === 'string' && this._config.path.trim() !== '') {
       this.pathObject = new Path2D(this._config.path);
     } else if (this._config.path instanceof Path2D) {
       this.pathObject = this._config.path;
+    } else {
+      this.pathObject = null;
     }
   }
 

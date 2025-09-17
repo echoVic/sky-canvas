@@ -332,7 +332,7 @@ export class GeometryGenerator {
    * 创建单位四边形（用于纹理绘制）
    */
   static createUnitQuad(color: [number, number, number, number] = [1, 1, 1, 1]): GeometryData {
-    return this.createRectangle(0, 0, 1, 1, color);
+    return this.createRectangle(-1, -1, 2, 2, color);
   }
 
   /**

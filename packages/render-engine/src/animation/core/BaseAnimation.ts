@@ -81,7 +81,6 @@ export abstract class BaseAnimation implements IAnimation {
       return this;
     }
 
-    this._state = AnimationState.PLAYING;
     this._startTime = performance.now();
     this._currentTime = 0;
     this._currentLoopCount = 0;
@@ -90,9 +89,11 @@ export abstract class BaseAnimation implements IAnimation {
     if (this._delay > 0) {
       this._delayTimer = window.setTimeout(() => {
         this._delayTimer = null;
+        this._state = AnimationState.PLAYING;
         this.startAnimation();
       }, this._delay);
     } else {
+      this._state = AnimationState.PLAYING;
       this.startAnimation();
     }
 
@@ -208,6 +209,8 @@ export abstract class BaseAnimation implements IAnimation {
 
   private handleAnimationEnd(): boolean {
     if (this._loop === false) {
+      // 确保最终值被正确设置
+      this.applyAnimation(1);
       this._state = AnimationState.COMPLETED;
       this.cleanup();
       this.emitter.emit('complete', this);
@@ -216,6 +219,8 @@ export abstract class BaseAnimation implements IAnimation {
 
     // 处理循环
     if (typeof this._loop === 'number' && this._currentLoopCount >= this._loop - 1) {
+      // 确保最终值被正确设置
+      this.applyAnimation(1);
       this._state = AnimationState.COMPLETED;
       this.cleanup();
       this.emitter.emit('complete', this);

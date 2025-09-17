@@ -109,8 +109,29 @@ export class PluginManager {
    * 添加插件注册源
    */
   addRegistry(registry: PluginRegistry): void {
+    // 验证注册源的有效性
+    if (!registry.name || registry.name.trim() === '') {
+      throw new Error('Registry name cannot be empty');
+    }
+    
+    if (!registry.url || !this.isValidUrl(registry.url)) {
+      throw new Error('Registry URL is invalid');
+    }
+    
     this.registries.set(registry.name, registry);
     this.eventBus?.emit('registry-added', { registry });
+  }
+
+  /**
+   * 验证URL是否有效
+   */
+  private isValidUrl(url: string): boolean {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**

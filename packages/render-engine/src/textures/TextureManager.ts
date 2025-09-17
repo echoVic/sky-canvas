@@ -85,7 +85,7 @@ export class WebGLTexture {
       format,
       size,
       lastUsed: Date.now(),
-      refCount: 0
+      refCount: 1
     };
   }
 
@@ -106,7 +106,9 @@ export class WebGLTexture {
   }
 
   release(): void {
-    this.info.refCount--;
+    if (this.info.refCount > 0) {
+      this.info.refCount--;
+    }
   }
 
   isUnused(): boolean {
@@ -287,7 +289,9 @@ export class WebGLTextureManager {
     // 检查是否正在加载
     const loading = this.loadingQueue.get(id);
     if (loading) {
-      return loading;
+      const texture = await loading;
+      texture.addRef(); // 为并发请求增加引用计数
+      return texture;
     }
 
     // 开始加载
@@ -329,7 +333,6 @@ export class WebGLTextureManager {
 
     this.textures.set(id, webglTexture);
     this.currentMemoryUsage += webglTexture.info.size;
-    webglTexture.addRef();
 
     // 检查内存使用
     this.checkMemoryUsage();

@@ -208,6 +208,7 @@ export class InputState {
 
   // 重置状态
   reset(): void {
+    this._mousePosition = { x: 0, y: 0 };
     this._mouseButtons.clear();
     this._keys.clear();
     this._touches.clear();

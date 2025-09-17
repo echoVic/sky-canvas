@@ -1,7 +1,7 @@
 import { IPoint } from '../graphics/IGraphicsContext';
 import { Transform } from '../math';
 import { BaseRenderer } from './BaseRenderer';
-import { Drawable, CanvasRenderContext, RendererCapabilities, RenderState } from './types';
+import { CanvasRenderContext, Drawable, RendererCapabilities, RenderState } from './types';
 
 export class CanvasRenderer extends BaseRenderer<CanvasRenderingContext2D> {
   private currentContext: CanvasRenderContext | null = null;

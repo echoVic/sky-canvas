@@ -129,7 +129,7 @@ export enum CollisionType {
 /**
  * 事件常量定义
  */
-export const EVENT_CONSTANTS = {
+export const EVENT_CONSTANTS = Object.freeze({
   // 双击检测
   DOUBLE_CLICK_DELAY: 300,
   DOUBLE_CLICK_MAX_DISTANCE: 5,
@@ -154,7 +154,7 @@ export const EVENT_CONSTANTS = {
 
   // 时间片调度
   TIME_SLICE: 5 // 5ms
-} as const;
+});
 
 /**
  * 修饰键状态
@@ -169,18 +169,18 @@ export interface ModifierState {
 /**
  * 鼠标按键映射
  */
-export const MOUSE_BUTTONS = {
+export const MOUSE_BUTTONS = Object.freeze({
   PRIMARY: 0,   // 主按键（通常是左键）
   AUXILIARY: 1, // 辅助按键（通常是滚轮）
   SECONDARY: 2, // 次按键（通常是右键）
   FOURTH: 3,    // 第四个按键（通常是后退键）
   FIFTH: 4      // 第五个按键（通常是前进键）
-} as const;
+});
 
 /**
  * 键盘键码映射（常用键）
  */
-export const KEY_CODES = {
+export const KEY_CODES = Object.freeze({
   // 方向键
   ARROW_UP: 'ArrowUp',
   ARROW_DOWN: 'ArrowDown',
@@ -208,4 +208,4 @@ export const KEY_CODES = {
   X: 'KeyX',
   Z: 'KeyZ',
   Y: 'KeyY'
-} as const;
+});

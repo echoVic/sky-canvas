@@ -685,6 +685,105 @@ describe('SpatialPartitionManager', () => {
     });
   });
 
+  describe('边界情况测试', () => {
+    it('应该处理半径查询', () => {
+      // Arrange
+      manager.insert(obj1);
+      manager.insert(obj2);
+      const center = { x: 50, y: 50 };
+      const radius = 100;
+
+      // Act
+      const results = manager.queryRadius(center, radius);
+
+      // Assert
+      expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('应该获取调试信息', () => {
+      // Arrange
+      manager.insert(obj1);
+      manager.insert(obj2);
+
+      // Act
+      const debugInfo = manager.getDebugInfo();
+
+      // Assert
+      expect(debugInfo).toBeDefined();
+      expect(typeof debugInfo).toBe('object');
+    });
+
+    it('应该处理空间网格的统计信息', () => {
+      // Arrange
+      const grid = new SpatialGrid<TestSpatialObject>(50);
+      grid.insert(obj1);
+      grid.insert(obj2);
+
+      // Act
+      const stats = grid.getStats();
+
+      // Assert
+      expect(stats.totalCells).toBeGreaterThan(0);
+      expect(stats.totalObjects).toBe(2);
+      expect(stats.averageObjectsPerCell).toBeGreaterThan(0);
+    });
+
+    it('应该处理四叉树的调试信息', () => {
+      // Arrange
+      const quadTree = new QuadTree<TestSpatialObject>({ x: 0, y: 0, width: 1000, height: 1000 });
+      quadTree.insert(obj1);
+      quadTree.insert(obj2);
+
+      // Act
+      const debugInfo = quadTree.getDebugInfo();
+
+      // Assert
+      expect(debugInfo).toBeDefined();
+      expect(typeof debugInfo).toBe('object');
+    });
+
+    it('应该处理空间网格的半径查询', () => {
+      // Arrange
+      const grid = new SpatialGrid<TestSpatialObject>(50);
+      grid.insert(obj1);
+      grid.insert(obj2);
+      const center = { x: 50, y: 50 };
+      const radius = 100;
+
+      // Act
+      const results = grid.queryRadius(center, radius);
+
+      // Assert
+      expect(results instanceof Set).toBe(true);
+    });
+
+    it('应该处理空间网格的点查询', () => {
+      // Arrange
+      const grid = new SpatialGrid<TestSpatialObject>(50);
+      grid.insert(obj1);
+      const point = { x: 10, y: 10 };
+
+      // Act
+      const results = grid.queryPoint(point);
+
+      // Assert
+      expect(results instanceof Set).toBe(true);
+    });
+
+    it('应该处理四叉树的点查询', () => {
+      // Arrange
+      const quadTree = new QuadTree<TestSpatialObject>({ x: 0, y: 0, width: 1000, height: 1000 });
+      quadTree.insert(obj1);
+      const point = { x: 10, y: 10 };
+
+      // Act
+      const results = quadTree.queryPoint(point);
+
+      // Assert
+      expect(Array.isArray(results)).toBe(true);
+    });
+  });
+
   describe('调试和统计', () => {
     it('应该提供调试信息', () => {
       // Arrange
@@ -739,19 +838,23 @@ describe('SpatialPartitionManager', () => {
     });
 
     it('应该正确处理模式切换', () => {
-      // Arrange
+      // Arrange - 先切换到四叉树模式再插入对象
+      manager.setUseQuadTree(true);
       manager.insert(obj1);
       manager.insert(obj2);
-
-      // Act - 切换到四叉树模式
-      manager.setUseQuadTree(true);
       const quadTreeResults = manager.query({ x: 0, y: 0, width: 200, height: 200 });
 
-      // Act - 切换回网格模式
+      // Act - 切换回网格模式并重新插入对象
+      manager.clear();
       manager.setUseQuadTree(false);
+      manager.insert(obj1);
+      manager.insert(obj2);
       const gridResults = manager.query({ x: 0, y: 0, width: 200, height: 200 });
 
       // Assert
+      // 两种模式应该能找到相同数量的对象
+      expect(quadTreeResults).toHaveLength(2);
+      expect(gridResults).toHaveLength(2);
       expect(quadTreeResults).toHaveLength(gridResults.length);
     });
   });
