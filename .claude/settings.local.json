@@ -41,7 +41,8 @@
       "Bash(pnpm --filter @sky-canvas/canvas-sdk test -- --testPathPattern=\"zIndex\" --run)",
       "Bash(curl:*)",
       "Bash(npx vitest run:*)",
-      "Bash(pnpm --filter @sky-canvas/render-engine test src/performance/)"
+      "Bash(pnpm --filter @sky-canvas/render-engine test src/performance/)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

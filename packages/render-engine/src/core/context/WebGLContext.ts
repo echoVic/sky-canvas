@@ -6,7 +6,7 @@ import {
   createBatchManagerWithDefaultStrategies,
   IRenderable,
   type BatchManagerConfig
-} from '../../batch';
+} from '../../rendering/batch';
 import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint, ITransform } from '../interface/IGraphicsContext';
 import { Matrix3 } from '../../math/Matrix3';
 import { BufferManager, IBuffer } from '../webgl/BufferManager';

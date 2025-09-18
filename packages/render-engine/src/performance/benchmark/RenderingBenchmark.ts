@@ -4,7 +4,7 @@
  */
 
 import { PerformanceBenchmark, BenchmarkResult } from './PerformanceBenchmark';
-import { BatchManager, createBatchManagerWithDefaultStrategies, BatchOptimizer } from '../../batch';
+import { BatchManager, createBatchManagerWithDefaultStrategies, BatchOptimizer } from '../../rendering/batch';
 import { TextureAtlas } from '../../textures/TextureAtlas';
 
 /**

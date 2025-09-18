@@ -9,17 +9,17 @@ export * from './core';
 export * as MathUtils from './math';
 
 // 核心模块 (通过 core 导出，避免重复)
-export * from './primitives';
+export * from './rendering/primitives';
 
 // 渲染管道 (明确处理冲突)
-export { CommandRenderer, RenderQueue } from './commands';
+export { CommandRenderer, RenderQueue } from './rendering/commands';
 export type { IRenderable } from './core/types';
 // 批处理系统 (在 commands 后导出避免 RenderBatch 冲突)
 export {
   BasicStrategy, BatchBuffer, BatchManager, BatchOptimizer, EnhancedStrategy,
   InstancedStrategy,
   OptimizationType
-} from './batch';
+} from './rendering/batch';
 
 // WebGL 系统 (通过 core 导出，避免冲突)
 export {
@@ -28,7 +28,7 @@ export {
 } from './core/webgl';
 
 // 空间分割和剔除
-export * from './culling';
+export * from './rendering/culling';
 
 // 功能模块
 export * from './interaction';
