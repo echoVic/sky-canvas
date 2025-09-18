@@ -2,7 +2,7 @@
  * 纹理相关类型定义
  */
 
-import type { GPUResource } from '../resources/types';
+import type { GPUResource } from '../types';
 
 // 纹理格式
 export enum TextureFormat {

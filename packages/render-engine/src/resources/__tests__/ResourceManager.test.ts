@@ -7,7 +7,7 @@ import {
   IResourceManager
 } from '../ResourceManager';
 import { BufferType } from '../../core/webgl/types';
-import { TextureFormat } from '../../textures/types';
+import { TextureFormat } from '../textures/types';
 
 describe('WebGLBuffer', () => {
   let gl: WebGLRenderingContext;

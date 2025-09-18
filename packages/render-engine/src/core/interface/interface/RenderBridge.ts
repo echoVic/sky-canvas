@@ -10,8 +10,8 @@ import {
   InterfaceInterceptor,
   globalInterfaceOptimizer
 } from './OptimizedInterface';
-import { IPoint, IRect, IGraphicsContext } from '../core/interface/IGraphicsContext';
-import { Transform } from '../math/Transform';
+import { IPoint, IRect, IGraphicsContext } from '../IGraphicsContext';
+import { Transform } from '../../../math/Transform';
 
 /**
  * 桥接渲染命令类型

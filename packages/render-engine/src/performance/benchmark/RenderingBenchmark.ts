@@ -5,7 +5,7 @@
 
 import { PerformanceBenchmark, BenchmarkResult } from './PerformanceBenchmark';
 import { BatchManager, createBatchManagerWithDefaultStrategies, BatchOptimizer } from '../../rendering/batch';
-import { TextureAtlas } from '../../textures/TextureAtlas';
+import { TextureAtlas } from '../../resources/textures/TextureAtlas';
 
 /**
  * 渲染基准测试配置

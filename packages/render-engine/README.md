@@ -9,6 +9,39 @@
 - ⚡ **高性能** - 批量渲染、视锥剔除、内存优化等性能特性
 - 🔧 **类型安全** - 完整的 TypeScript 支持
 - 🧪 **测试覆盖** - 完善的单元测试覆盖
+- 🎭 **丰富特效** - 内置滤镜、混合、灯光、蒙版等视觉效果
+- ⚙️ **模块化架构** - 清晰的模块分层，易于扩展和维护
+
+## 架构概览
+
+```
+src/
+├── core/           # 核心渲染系统
+│   ├── context/    # 渲染上下文
+│   ├── engine/     # 渲染引擎
+│   ├── interface/  # 核心接口定义
+│   └── webgl/      # WebGL实现
+├── features/       # 功能模块
+│   ├── animation/  # 动画系统
+│   ├── editor/     # 场景编辑器
+│   ├── effects/    # 视觉效果
+│   ├── interaction/# 交互系统
+│   ├── particles/  # 粒子系统
+│   ├── physics/    # 物理引擎
+│   ├── plugins/    # 插件系统
+│   ├── paths/      # 路径处理
+│   └── text/       # 文本渲染
+├── rendering/      # 渲染管线
+│   ├── batch/      # 批处理系统
+│   ├── commands/   # 渲染命令
+│   ├── culling/    # 视锥剔除
+│   └── primitives/ # 图形原语
+├── math/          # 数学库
+├── resources/     # 资源管理
+│   └── textures/  # 纹理管理
+├── performance/   # 性能监控
+└── utils/         # 工具函数
+```
 
 ## 安装
 
@@ -59,20 +92,74 @@ constructor(config?: IRenderEngineConfig)
 - `setViewport(viewport)` - 设置视口
 - `dispose()` - 销毁引擎
 
-### 数学库
+### 核心模块
 
 #### Vector2
 
 2D向量数学库
 
 ```typescript
-import { Vector2 } from '@sky-canvas/render-engine';
+import { MathUtils } from '@sky-canvas/render-engine';
 
-const v1 = new Vector2(1, 2);
-const v2 = new Vector2(3, 4);
+const v1 = new MathUtils.Vector2(1, 2);
+const v2 = new MathUtils.Vector2(3, 4);
 const sum = v1.add(v2);
 const length = v1.length();
 const normalized = v1.normalize();
+```
+
+#### 批处理渲染
+
+```typescript
+import { BatchManager, BasicStrategy } from '@sky-canvas/render-engine';
+
+const batchManager = new BatchManager();
+batchManager.setStrategy(new BasicStrategy());
+
+// 添加渲染对象到批次
+batchManager.addToBatch(renderObject);
+batchManager.render(context);
+```
+
+#### 视觉效果
+
+```typescript
+import { FilterManager, GaussianBlurFilter, DropShadowFilter } from '@sky-canvas/render-engine';
+
+const filterManager = new FilterManager();
+
+// 添加滤镜
+filterManager.addFilter(new GaussianBlurFilter({ radius: 5 }));
+filterManager.addFilter(new DropShadowFilter({
+  offsetX: 2,
+  offsetY: 2,
+  blur: 4,
+  color: 'rgba(0,0,0,0.5)'
+}));
+
+// 应用滤镜
+filterManager.applyFilters(imageData, context);
+```
+
+#### 动画系统
+
+```typescript
+import { AnimationManager, PropertyAnimation } from '@sky-canvas/render-engine';
+
+const animationManager = new AnimationManager();
+
+// 创建属性动画
+const animation = new PropertyAnimation({
+  target: sprite,
+  property: 'x',
+  from: 0,
+  to: 100,
+  duration: 1000,
+  easing: 'easeInOut'
+});
+
+animationManager.addAnimation(animation);
+animationManager.start();
 ```
 
 ## 配置选项

@@ -11,7 +11,7 @@ import {
   type BridgeCommand,
   type BatchBridgeCommand
 } from '../RenderBridge';
-import { IGraphicsContext } from '../../core/interface/IGraphicsContext';
+import { IGraphicsContext } from '../../IGraphicsContext';
 
 // Mock graphics context
 const mockContext: IGraphicsContext = {

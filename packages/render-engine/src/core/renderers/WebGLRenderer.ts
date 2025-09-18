@@ -5,7 +5,7 @@ import { WebGLMemoryManager } from '../../performance/memory/MemoryManager';
 import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../../performance/monitoring/WebGLAnalyzer';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
 import { DefaultShaders, WebGLShaderManager } from '../webgl/ShaderManager';
-import { TextureAtlas, WebGLTextureManager } from '../../textures/TextureManager';
+import { TextureAtlas, WebGLTextureManager } from '../../resources/textures/TextureManager';
 import { BlendMode, Buffer, BufferType } from '../webgl/types';
 import { BaseRenderer } from './BaseRenderer';
 import { Drawable, RenderContext, RendererCapabilities, RenderState, RenderStats } from './types';

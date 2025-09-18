@@ -32,8 +32,8 @@ export * from './rendering/culling';
 
 // 功能模块 (通过 features 统一导出)
 export * from './features';
-export * from './interface';
-export * from './plugins';
+export * from './core/interface';
+export * from './features/plugins';
 
 // 资源管理 (明确导出避免冲突)
 export {
@@ -49,4 +49,4 @@ export { DebugRenderer } from './performance/debug';
 export { PerformanceMonitor } from './performance/monitoring';
 
 // 场景编辑器
-export * from './editor';
+export * from './features/editor';

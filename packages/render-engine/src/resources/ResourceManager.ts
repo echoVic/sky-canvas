@@ -1,4 +1,4 @@
-import { Texture, TextureFormat } from '../textures/types';
+import { Texture, TextureFormat } from './textures/types';
 import { Buffer as WebGLBufferInterface, BufferType } from '../core/webgl/types';
 import { GPUResource } from './types';
 
