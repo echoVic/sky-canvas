@@ -1,7 +1,7 @@
 import { IPoint } from '../interface/IGraphicsContext';
 import { Transform } from '../../math';
 import { BaseRenderer } from './BaseRenderer';
-import { CanvasRenderContext, Drawable, RendererCapabilities, RenderState } from './types';
+import { CanvasRenderContext, RendererCapabilities, RenderState } from './types';
 
 export class CanvasRenderer extends BaseRenderer<CanvasRenderingContext2D> {
   private currentContext: CanvasRenderContext | null = null;
@@ -27,14 +27,17 @@ export class CanvasRenderer extends BaseRenderer<CanvasRenderingContext2D> {
     this.applyRenderState(canvas2DContext, this.renderState);
 
     // 绘制所有可见的对象
-    for (const drawable of this.drawables) {
-      if (drawable.visible && this.isDrawableInViewport(drawable, viewport)) {
+    for (const renderable of this.renderables) {
+      if (renderable.visible && this.isRenderableInViewport(renderable, viewport)) {
         canvas2DContext.save();
 
-        // 应用对象变换
-        this.applyTransform(canvas2DContext, drawable.transform);
+        // 应用对象变换（如果有）
+        if (renderable.transform) {
+          this.applyTransform(canvas2DContext, renderable.transform);
+        }
 
-        drawable.draw(context);
+        // 调用对象的渲染方法
+        renderable.render(canvas2DContext);
         canvas2DContext.restore();
       }
     }

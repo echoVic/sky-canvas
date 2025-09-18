@@ -2,6 +2,7 @@
  * 渲染引擎相关类型定义
  */
 import { IGraphicsContext, IPoint, IRect } from './interface/IGraphicsContext';
+import { Transform } from '../math/Transform';
 
 /**
  * 支持的渲染引擎类型
@@ -70,6 +71,9 @@ export interface IRenderable {
 
   /** Z轴层级 */
   readonly zIndex: number;
+
+  /** 变换信息（位置、旋转、缩放） */
+  readonly transform?: Transform;
 
   /**
    * 渲染对象

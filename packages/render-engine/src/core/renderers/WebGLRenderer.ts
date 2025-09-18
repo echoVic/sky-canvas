@@ -1,5 +1,6 @@
 import { WebGLContext } from '../context/WebGLContext';
 import { IPoint, IRect } from '../interface/IGraphicsContext';
+import { IRenderable } from '../types';
 import { Matrix3x3, Vector2 } from '../../math';
 import { WebGLMemoryManager } from '../../performance/memory/MemoryManager';
 import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../../performance/monitoring/WebGLAnalyzer';
@@ -8,7 +9,7 @@ import { DefaultShaders, WebGLShaderManager } from '../webgl/ShaderManager';
 import { TextureAtlas, WebGLTextureManager } from '../../resources/textures/TextureManager';
 import { BlendMode, Buffer, BufferType } from '../webgl/types';
 import { BaseRenderer } from './BaseRenderer';
-import { Drawable, RenderContext, RendererCapabilities, RenderState, RenderStats } from './types';
+import { RenderContext, RendererCapabilities, RenderState, RenderStats } from './types';
 
 // WebGL渲染上下文
 export interface WebGLRenderContext extends RenderContext {
@@ -276,9 +277,9 @@ export class WebGLRenderer extends BaseRenderer {
     console.log('Performed memory cleanup due to memory pressure');
   }
 
-  private cullAndSortDrawables(viewport: IRect): Drawable[] {
-    const visible = this.drawables.filter(drawable => 
-      drawable.visible && this.isDrawableInViewport(drawable, viewport)
+  private cullAndSortRenderables(viewport: IRect): IRenderable[] {
+    const visible = this.renderables.filter(renderable =>
+      renderable.visible && this.isRenderableInViewport(renderable, viewport)
     );
 
     // 按渲染状态排序以减少状态切换

@@ -1,11 +1,10 @@
 /**
  * 简化的渲染器基类
  */
-import type { IViewport } from '../types';
+import type { IRenderable, IViewport } from '../types';
 import { IRect } from '../interface/IGraphicsContext';
 import { Transform } from '../../math';
 import type {
-  Drawable,
   RenderContext,
   Renderer,
   RendererCapabilities,
@@ -16,7 +15,7 @@ import type {
  * 简化的渲染器基类
  */
 export abstract class BaseRenderer<TContext = any> implements Renderer<TContext> {
-  protected drawables: Drawable[] = [];
+  protected renderables: IRenderable[] = [];
   protected viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
   protected renderState: RenderState;
   protected stateStack: RenderState[] = [];
@@ -36,24 +35,24 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
 
   update(deltaTime: number): void {
     // 基础更新逻辑
-    this.drawables.forEach(drawable => {
-      if (drawable.visible) {
+    this.renderables.forEach(renderable => {
+      if (renderable.visible) {
         // 可以在这里添加动画更新逻辑
       }
     });
   }
 
-  addDrawable(drawable: Drawable): void {
-    this.drawables.push(drawable);
-    this.sortDrawables();
+  addRenderable(renderable: IRenderable): void {
+    this.renderables.push(renderable);
+    this.sortRenderables();
   }
 
-  removeDrawable(id: string): void {
-    this.drawables = this.drawables.filter(d => d.id !== id);
+  removeRenderable(id: string): void {
+    this.renderables = this.renderables.filter(r => r.id !== id);
   }
 
-  getDrawable(id: string): Drawable | undefined {
-    return this.drawables.find(d => d.id === id);
+  getRenderable(id: string): IRenderable | undefined {
+    return this.renderables.find(r => r.id === id);
   }
 
   setViewport(viewport: Partial<IViewport>): void {
@@ -64,9 +63,9 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
     return { ...this.viewport };
   }
 
-  // 添加清空所有可绘制对象的方法
-  clearDrawables(): void {
-    this.drawables = [];
+  // 添加清空所有可渲染对象的方法
+  clearRenderables(): void {
+    this.renderables = [];
   }
 
   // 添加渲染循环管理
@@ -117,8 +116,8 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
     this.renderState = { ...this.renderState, ...state };
   }
 
-  protected sortDrawables(): void {
-    this.drawables.sort((a, b) => a.zIndex - b.zIndex);
+  protected sortRenderables(): void {
+    this.renderables.sort((a, b) => a.zIndex - b.zIndex);
   }
 
   protected boundsIntersect(a: IRect, b: IRect): boolean {
@@ -126,6 +125,17 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
              b.x + b.width < a.x ||
              a.y + a.height < b.y ||
              b.y + b.height < a.y);
+  }
+
+  protected isRenderableInViewport(renderable: IRenderable, viewport: IViewport): boolean {
+    const bounds = renderable.getBounds();
+    const viewportRect = {
+      x: viewport.x,
+      y: viewport.y,
+      width: viewport.width,
+      height: viewport.height
+    };
+    return this.boundsIntersect(bounds, viewportRect);
   }
 
   protected createDefaultRenderState(): RenderState {
@@ -146,7 +156,7 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
   }
 
   dispose(): void {
-    this.drawables = [];
+    this.renderables = [];
     this.stateStack = [];
   }
 }

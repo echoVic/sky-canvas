@@ -4,7 +4,7 @@
  */
 
 import { BaseRenderer } from './renderers/BaseRenderer';
-import { Drawable, RenderContext, RendererCapabilities } from './renderers/types';
+import { RenderContext, RendererCapabilities } from './renderers/types';
 import { CanvasRenderer } from './renderers/CanvasRenderer';
 import { WebGLRenderer } from './renderers/WebGLRenderer';
 import { WebGPURenderer } from './renderers/WebGPURenderer';
@@ -125,9 +125,8 @@ export class RenderEngine {
   addRenderable(renderable: IRenderable): void {
     this.renderables.set(renderable.id, renderable);
 
-    // 转换为 Drawable 格式添加到渲染器
-    const drawable = this.convertToDrawable(renderable);
-    this.renderer.addDrawable(drawable);
+    // 直接添加到渲染器，不需要转换
+    this.renderer.addRenderable(renderable);
 
     if (this.config.debug) {
       console.log(`[RenderEngine] Added renderable: ${renderable.id}`);
@@ -140,7 +139,7 @@ export class RenderEngine {
   removeRenderable(id: string): void {
     const removed = this.renderables.delete(id);
     if (removed) {
-      this.renderer.removeDrawable(id);
+      this.renderer.removeRenderable(id);
 
       if (this.config.debug) {
         console.log(`[RenderEngine] Removed renderable: ${id}`);
@@ -154,7 +153,7 @@ export class RenderEngine {
   clearRenderables(): void {
     const count = this.renderables.size;
     this.renderables.clear();
-    this.renderer.clearDrawables();
+    this.renderer.clearRenderables();
 
     if (this.config.debug) {
       console.log(`[RenderEngine] Cleared ${count} renderables`);
@@ -329,33 +328,6 @@ export class RenderEngine {
     }
   }
 
-  /**
-   * 将 IRenderable 转换为 Drawable 格式
-   */
-  private convertToDrawable(renderable: IRenderable): Drawable {
-    return {
-      id: renderable.id,
-      visible: renderable.visible,
-      zIndex: renderable.zIndex,
-      bounds: renderable.getBounds(),
-      transform: {
-        // 默认变换矩阵
-        matrix: [1, 0, 0, 1, 0, 0],
-        position: { x: 0, y: 0 },
-        rotation: 0,
-        scale: { x: 1, y: 1 }
-      } as any,
-      draw: (context: RenderContext) => {
-        // 现在不需要适配器了，渲染器直接处理自己的上下文类型
-        // 这个方法主要是为了兼容旧的 IRenderable 接口
-        // 实际使用中，应该直接使用渲染器的 render 方法
-        console.warn('Using deprecated convertToDrawable - consider using renderer directly');
-      },
-      hitTest: (point: any) => renderable.hitTest(point),
-      getBounds: () => renderable.getBounds(),
-      setTransform: () => {} // 暂时空实现
-    };
-  }
 
 
   /**

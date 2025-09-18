@@ -2,7 +2,7 @@
  * 渲染器相关类型定义
  */
 import type { IViewport } from '../types';
-import { IGraphicsContext, IPoint, IRect } from '../interface/IGraphicsContext';
+import { IGraphicsContext } from '../interface/IGraphicsContext';
 import { Transform } from '../../math';
 
 // 渲染后端类型
@@ -53,18 +53,6 @@ export interface RenderState {
   shadowOffsetY: number;
 }
 
-// 可绘制对象接口
-export interface Drawable {
-  id: string;
-  bounds: IRect;
-  visible: boolean;
-  zIndex: number;
-  transform: Transform;
-  draw(context: RenderContext): void;
-  hitTest(point: IPoint): boolean;
-  getBounds(): IRect;
-  setTransform(transform: Transform): void;
-}
 
 // 渲染器能力接口
 export interface RendererCapabilities {
