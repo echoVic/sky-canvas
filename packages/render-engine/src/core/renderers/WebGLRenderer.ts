@@ -234,10 +234,10 @@ export class WebGLRenderer extends BaseRenderer {
     this.clear();
 
     // 收集并排序可见对象
-    const visibleDrawables = this.cullAndSortDrawables(context.viewport);
+    const visibleRenderables = this.cullAndSortRenderables(context.viewport);
 
     // 智能批量渲染
-    this.renderDrawablesBatched(visibleDrawables);
+    this.renderRenderablesBatched(visibleRenderables);
 
     // 更新统计
     this.stats.frameTime = performance.now() - startTime;
@@ -277,39 +277,39 @@ export class WebGLRenderer extends BaseRenderer {
     console.log('Performed memory cleanup due to memory pressure');
   }
 
-  private cullAndSortRenderables(viewport: IRect): IRenderable[] {
+  private cullAndSortRenderables(viewport: { x: number; y: number; width: number; height: number }): IRenderable[] {
     const visible = this.renderables.filter(renderable =>
-      renderable.visible && this.isRenderableInViewport(renderable, viewport)
+      renderable.visible && this.isRenderableInViewport(renderable, { ...viewport, zoom: 1 })
     );
 
     // 按渲染状态排序以减少状态切换
     return visible.sort((a, b) => {
       // 首先按纹理排序
-      const aTexture = this.getDrawableTexture(a);
-      const bTexture = this.getDrawableTexture(b);
+      const aTexture = this.getRenderableTexture(a);
+      const bTexture = this.getRenderableTexture(b);
       if (aTexture !== bTexture) {
         return (aTexture || '').localeCompare(bTexture || '');
       }
 
-      // 然后按混合模式排序  
-      const aBlend = this.getDrawableBlendMode(a);
-      const bBlend = this.getDrawableBlendMode(b);
+      // 然后按混合模式排序
+      const aBlend = this.getRenderableBlendMode(a);
+      const bBlend = this.getRenderableBlendMode(b);
       if (aBlend !== bBlend) {
         return Object.values(BlendMode).indexOf(aBlend) - Object.values(BlendMode).indexOf(bBlend);
       }
 
       // 最后按深度排序
-      return (a.transform?.position?.x || 0) - (b.transform?.position?.x || 0);
+      return a.zIndex - b.zIndex;
     });
   }
 
-  private renderDrawablesBatched(drawables: Drawable[]): void {
+  private renderRenderablesBatched(renderables: IRenderable[]): void {
     this.batches.clear();
-    
-    // 将drawables分组到批次中
-    for (const drawable of drawables) {
-      const batchKey = this.generateBatchKey(drawable);
-      this.addDrawableToBatch(drawable, batchKey);
+
+    // 将renderables分组到批次中
+    for (const renderable of renderables) {
+      const batchKey = this.generateBatchKey(renderable);
+      this.addRenderableToBatch(renderable, batchKey);
     }
 
     // 渲染所有批次
@@ -320,19 +320,19 @@ export class WebGLRenderer extends BaseRenderer {
     }
   }
 
-  private generateBatchKey(drawable: Drawable): string {
-    const texture = this.getDrawableTexture(drawable) || 'none';
-    const blendMode = this.getDrawableBlendMode(drawable);
+  private generateBatchKey(renderable: IRenderable): string {
+    const texture = this.getRenderableTexture(renderable) || 'none';
+    const blendMode = this.getRenderableBlendMode(renderable);
     return `${texture}_${blendMode}`;
   }
 
-  private getDrawableTexture(drawable: Drawable): string | null {
-    // 简化实现，实际应该从drawable属性中获取
+  private getRenderableTexture(renderable: IRenderable): string | null {
+    // 简化实现，实际应该从renderable属性中获取
     return null;
   }
 
-  private getDrawableBlendMode(drawable: Drawable): BlendMode {
-    // 简化实现，实际应该从drawable属性中获取
+  private getRenderableBlendMode(renderable: IRenderable): BlendMode {
+    // 简化实现，实际应该从renderable属性中获取
     return BlendMode.NORMAL;
   }
 
@@ -355,13 +355,13 @@ export class WebGLRenderer extends BaseRenderer {
     this.projectionMatrix = Matrix3x3.orthographic(left, right, bottom, top);
   }
 
-  private addDrawableToBatch(drawable: Drawable, batchKey: string): void {
+  private addRenderableToBatch(renderable: IRenderable, batchKey: string): void {
     let batch = this.batches.get(batchKey);
     if (!batch) {
       batch = {
         vertices: [],
         indices: [],
-        blendMode: this.getDrawableBlendMode(drawable),
+        blendMode: this.getRenderableBlendMode(renderable),
         texture: undefined
       };
       this.batches.set(batchKey, batch);
@@ -369,12 +369,12 @@ export class WebGLRenderer extends BaseRenderer {
 
     // 使用预构建的四边形几何
     if (this.quadGeometry) {
-      const bounds = drawable.getBounds();
-      const transform = drawable.transform;
-      
+      const bounds = renderable.getBounds();
+      const transform = renderable.transform;
+
       // 计算变换矩阵
       const matrix = this.calculateTransformMatrix(bounds, transform);
-      
+
       // 添加变换后的顶点
       this.addTransformedQuad(batch, matrix, [1, 1, 1, 1]);
     }
@@ -733,10 +733,6 @@ export class WebGLRenderer extends BaseRenderer {
     return [1, 1, 1, 1]; // 默认白色
   }
 
-  private isDrawableInViewport(drawable: Drawable, viewport: IRect): boolean {
-    const bounds = drawable.getBounds();
-    return this.boundsIntersect(bounds, viewport);
-  }
 
   // 公共访问方法
   

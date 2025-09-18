@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPoint } from '../../interface/IGraphicsContext';
 import { Transform } from '../../../math';
 import { CanvasRenderer } from '../CanvasRenderer';
-import type { CanvasRenderContext, Drawable } from '../types';
+import type { CanvasRenderContext } from '../types';
+import type { IRenderable } from '../../types';
 
 // 模拟 Canvas 2D Context
 const createMockCanvas2DContext = () => ({
@@ -42,17 +43,15 @@ const createMockCanvas2DContext = () => ({
   textBaseline: 'alphabetic' as CanvasTextBaseline
 });
 
-// 模拟 Drawable 对象
-const createMockDrawable = (id: string, visible = true): Drawable => ({
+// 模拟 IRenderable 对象
+const createMockRenderable = (id: string, visible = true): IRenderable => ({
   id,
-  bounds: { x: 10, y: 10, width: 100, height: 100 },
   visible,
   zIndex: 0,
   transform: new Transform(),
-  draw: vi.fn(),
+  render: vi.fn(),
   hitTest: vi.fn().mockReturnValue(false),
-  getBounds: vi.fn().mockReturnValue({ x: 10, y: 10, width: 100, height: 100 }),
-  setTransform: vi.fn()
+  getBounds: vi.fn().mockReturnValue({ x: 10, y: 10, width: 100, height: 100 })
 });
 
 describe('CanvasRenderer', () => {
@@ -102,8 +101,8 @@ describe('CanvasRenderer', () => {
 
   describe('渲染功能', () => {
     it('应该正确处理渲染流程', () => {
-      const drawable = createMockDrawable('test1');
-      renderer.addDrawable(drawable);
+      const renderable = createMockRenderable('test1');
+      renderer.addRenderable(renderable);
       
       renderer.render(renderContext);
       
@@ -113,21 +112,21 @@ describe('CanvasRenderer', () => {
       expect(mockContext2D.scale).toHaveBeenCalledWith(1, 1);
       expect(mockContext2D.translate).toHaveBeenCalledWith(0, 0);
       
-      // 验证 drawable 的 draw 方法被调用
-      expect(drawable.draw).toHaveBeenCalledWith(renderContext);
+      // 验证 renderable 的 render 方法被调用
+      expect(renderable.render).toHaveBeenCalledWith(renderContext.context);
     });
 
-    it('应该跳过不可见的 drawable', () => {
-      const visibleDrawable = createMockDrawable('visible', true);
-      const hiddenDrawable = createMockDrawable('hidden', false);
-      
-      renderer.addDrawable(visibleDrawable);
-      renderer.addDrawable(hiddenDrawable);
-      
+    it('应该跳过不可见的 renderable', () => {
+      const visibleRenderable = createMockRenderable('visible', true);
+      const hiddenRenderable = createMockRenderable('hidden', false);
+
+      renderer.addRenderable(visibleRenderable);
+      renderer.addRenderable(hiddenRenderable);
+
       renderer.render(renderContext);
-      
-      expect(visibleDrawable.draw).toHaveBeenCalled();
-      expect(hiddenDrawable.draw).not.toHaveBeenCalled();
+
+      expect(visibleRenderable.render).toHaveBeenCalled();
+      expect(hiddenRenderable.render).not.toHaveBeenCalled();
     });
 
     it('应该处理无效上下文', () => {
@@ -175,8 +174,8 @@ describe('CanvasRenderer', () => {
 
   describe('更新功能', () => {
     it('应该调用父类的更新方法', () => {
-      const drawable = createMockDrawable('test');
-      renderer.addDrawable(drawable);
+      const renderable = createMockRenderable('test');
+      renderer.addRenderable(renderable);
       
       expect(() => renderer.update(16)).not.toThrow();
     });

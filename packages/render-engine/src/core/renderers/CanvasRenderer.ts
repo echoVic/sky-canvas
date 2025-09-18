@@ -37,7 +37,7 @@ export class CanvasRenderer extends BaseRenderer<CanvasRenderingContext2D> {
         }
 
         // 调用对象的渲染方法
-        renderable.render(canvas2DContext);
+        renderable.render(canvas2DContext as any);
         canvas2DContext.restore();
       }
     }
@@ -193,10 +193,6 @@ export class CanvasRenderer extends BaseRenderer<CanvasRenderingContext2D> {
     }
   }
 
-  private isDrawableInViewport(drawable: Drawable, viewport: { x: number; y: number; width: number; height: number }): boolean {
-    const bounds = drawable.getBounds();
-    return this.boundsIntersect(bounds, viewport);
-  }
 
   dispose(): void {
     this.stopRenderLoop();

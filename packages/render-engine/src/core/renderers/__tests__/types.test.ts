@@ -10,7 +10,6 @@ import {
   type WebGLRenderContext,
   type WebGPURenderContext,
   type RenderState,
-  type Drawable,
   type RendererCapabilities,
   type Renderer
 } from '../types';
@@ -200,64 +199,6 @@ describe('渲染器类型定义', () => {
     });
   });
 
-  describe('Drawable 接口', () => {
-    it('应该具有正确的属性结构', () => {
-      const drawable: Drawable = {
-        id: 'test-drawable',
-        bounds: { x: 10, y: 20, width: 100, height: 50 },
-        visible: true,
-        zIndex: 5,
-        transform: new Transform(),
-        draw: () => {},
-        hitTest: () => false,
-        getBounds: () => ({ x: 10, y: 20, width: 100, height: 50 }),
-        setTransform: () => {}
-      };
-
-      expect(typeof drawable.id).toBe('string');
-      expect(drawable.bounds).toHaveProperty('x');
-      expect(drawable.bounds).toHaveProperty('y');
-      expect(drawable.bounds).toHaveProperty('width');
-      expect(drawable.bounds).toHaveProperty('height');
-      expect(typeof drawable.visible).toBe('boolean');
-      expect(typeof drawable.zIndex).toBe('number');
-      expect(drawable.transform).toBeInstanceOf(Transform);
-      expect(typeof drawable.draw).toBe('function');
-      expect(typeof drawable.hitTest).toBe('function');
-      expect(typeof drawable.getBounds).toBe('function');
-      expect(typeof drawable.setTransform).toBe('function');
-    });
-
-    it('应该能正确执行方法', () => {
-      let drawCalled = false;
-      let hitTestResult = false;
-      let transformSet = false;
-      
-      const drawable: Drawable = {
-        id: 'test',
-        bounds: { x: 0, y: 0, width: 100, height: 100 },
-        visible: true,
-        zIndex: 0,
-        transform: new Transform(),
-        draw: () => { drawCalled = true; },
-        hitTest: () => hitTestResult,
-        getBounds: () => ({ x: 0, y: 0, width: 100, height: 100 }),
-        setTransform: () => { transformSet = true; }
-      };
-
-      drawable.draw({} as RenderContext);
-      expect(drawCalled).toBe(true);
-
-      const hit = drawable.hitTest({ x: 50, y: 50 });
-      expect(hit).toBe(false);
-
-      const bounds = drawable.getBounds();
-      expect(bounds).toEqual({ x: 0, y: 0, width: 100, height: 100 });
-
-      drawable.setTransform(new Transform());
-      expect(transformSet).toBe(true);
-    });
-  });
 
   describe('RendererCapabilities 接口', () => {
     it('应该具有正确的属性结构', () => {

@@ -223,9 +223,9 @@ describe('渲染器模块导出', () => {
         'setViewport',
         'getViewport',
         'getCapabilities',
-        'addDrawable',
-        'removeDrawable',
-        'clearDrawables',
+        'addRenderable',
+        'removeRenderable',
+        'clearRenderables',
         'pushState',
         'popState'
       ];

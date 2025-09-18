@@ -70,9 +70,9 @@ describe('RenderEngine', () => {
       getStats: vi.fn().mockReturnValue({}),
       setViewport: vi.fn(),
       getViewport: vi.fn().mockReturnValue({ x: 0, y: 0, width: 800, height: 600, zoom: 1 }),
-      addDrawable: vi.fn(),
-      removeDrawable: vi.fn(),
-      clearDrawables: vi.fn(),
+      addRenderable: vi.fn(),
+      removeRenderable: vi.fn(),
+      clearRenderables: vi.fn(),
       startRenderLoop: vi.fn(),
       stopRenderLoop: vi.fn(),
       isRunning: vi.fn().mockReturnValue(false)

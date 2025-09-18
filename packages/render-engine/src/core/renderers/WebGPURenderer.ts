@@ -256,10 +256,10 @@ export class WebGPURenderer extends BaseRenderer {
       console.warn('WebGPU render not implemented - requires WebGPUContext');
     }
 
-    // 渲染所有可绘制对象
-    this.drawables.forEach(drawable => {
-      if (drawable.visible) {
-        drawable.draw(context);
+    // 渲染所有可见对象
+    this.renderables.forEach(renderable => {
+      if (renderable.visible) {
+        renderable.render(context.context);
       }
     });
   }

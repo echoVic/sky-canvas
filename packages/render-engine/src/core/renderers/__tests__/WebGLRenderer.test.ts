@@ -5,7 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { IPoint } from '../../interface/IGraphicsContext';
 import { Transform } from '../../../math';
 import { WebGLRenderer } from '../WebGLRenderer';
-import type { Drawable, RenderContext } from '../types';
+import type { IRenderable } from '../../types';
+import type { RenderContext } from '../types';
 
 // Mock WebGL Context
 const createMockWebGLContext = () => ({
@@ -121,17 +122,15 @@ const createMockCanvas = () => {
   return canvas;
 };
 
-// Mock Drawable
-const createMockDrawable = (id: string, visible = true): Drawable => ({
+// Mock Renderable
+const createMockRenderable = (id: string, visible = true): IRenderable => ({
   id,
-  bounds: { x: 0, y: 0, width: 100, height: 100 },
   visible,
   zIndex: 0,
   transform: new Transform(),
-  draw: vi.fn(),
+  render: vi.fn(),
   hitTest: vi.fn().mockReturnValue(false),
-  getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 100, height: 100 }),
-  setTransform: vi.fn()
+  getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 100, height: 100 })
 });
 
 describe('WebGLRenderer', () => {
@@ -217,20 +216,20 @@ describe('WebGLRenderer', () => {
     });
 
     it('应该正确处理渲染流程', () => {
-      const drawable = createMockDrawable('test1');
-      renderer.addDrawable(drawable);
-      
+      const renderable = createMockRenderable('test1');
+      renderer.addRenderable(renderable);
+
       // 渲染应该不抛出错误
       expect(() => renderer.render(renderContext)).not.toThrow();
     });
 
-    it('应该跳过不可见的 drawable', () => {
-      const visibleDrawable = createMockDrawable('visible', true);
-      const hiddenDrawable = createMockDrawable('hidden', false);
-      
-      renderer.addDrawable(visibleDrawable);
-      renderer.addDrawable(hiddenDrawable);
-      
+    it('应该跳过不可见的 renderable', () => {
+      const visibleRenderable = createMockRenderable('visible', true);
+      const hiddenRenderable = createMockRenderable('hidden', false);
+
+      renderer.addRenderable(visibleRenderable);
+      renderer.addRenderable(hiddenRenderable);
+
       // 渲染应该不抛出错误
       expect(() => renderer.render(renderContext)).not.toThrow();
     });
@@ -405,13 +404,13 @@ describe('WebGLRenderer', () => {
       renderer.initialize(mockCanvas);
     });
 
-    it('应该能处理多个 drawable 的批量渲染', () => {
-      const drawables = Array.from({ length: 4 }, (_, i) => 
-        createMockDrawable(`drawable${i}`)
+    it('应该能处理多个 renderable 的批量渲染', () => {
+      const renderables = Array.from({ length: 4 }, (_, i) =>
+        createMockRenderable(`renderable${i}`)
       );
-      
-      drawables.forEach(drawable => renderer.addDrawable(drawable));
-      
+
+      renderables.forEach(renderable => renderer.addRenderable(renderable));
+
       // 渲染应该不抛出错误
       expect(() => renderer.render(renderContext)).not.toThrow();
     });

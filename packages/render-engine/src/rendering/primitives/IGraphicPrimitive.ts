@@ -16,12 +16,12 @@ export type GraphicPrimitiveType = 'rectangle' | 'circle' | 'path' | 'line';
 export interface IGraphicPrimitive extends IRenderable {
   /** 原语类型 */
   readonly type: GraphicPrimitiveType;
-  
+
   /** 位置 */
   position: IPoint;
-  
+
   /** 变换矩阵参数 */
-  transform: {
+  transformParams: {
     rotation: number;
     scaleX: number;
     scaleY: number;
@@ -43,9 +43,9 @@ export interface IGraphicPrimitive extends IRenderable {
   
   /**
    * 设置变换
-   * @param transform 变换参数
+   * @param transformParams 变换参数
    */
-  setTransform(transform: Partial<IGraphicPrimitive['transform']>): void;
+  setTransformParams(transformParams: Partial<IGraphicPrimitive['transformParams']>): void;
   
   /**
    * 设置样式

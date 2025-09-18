@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IRect } from '../../interface/IGraphicsContext';
 import { Transform } from '../../../math';
 import { BaseRenderer } from '../BaseRenderer';
-import type { Drawable, RenderContext, RendererCapabilities } from '../types';
+import type { IRenderable } from '../../types';
+import type { RenderContext, RendererCapabilities } from '../types';
 
 // 创建一个具体的测试渲染器类
 class TestRenderer extends BaseRenderer {
@@ -28,17 +29,15 @@ class TestRenderer extends BaseRenderer {
   }
 }
 
-// 模拟 Drawable 对象
-const createMockDrawable = (id: string, zIndex = 0, visible = true): Drawable => ({
+// 模拟 IRenderable 对象
+const createMockRenderable = (id: string, zIndex = 0, visible = true): IRenderable => ({
   id,
-  bounds: { x: 0, y: 0, width: 100, height: 100 },
   visible,
   zIndex,
   transform: new Transform(),
-  draw: vi.fn(),
+  render: vi.fn(),
   hitTest: vi.fn().mockReturnValue(false),
-  getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 100, height: 100 }),
-  setTransform: vi.fn()
+  getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 100, height: 100 })
 });
 
 describe('BaseRenderer', () => {
@@ -70,47 +69,47 @@ describe('BaseRenderer', () => {
     });
   });
 
-  describe('Drawable 管理', () => {
-    it('应该能添加 drawable', () => {
-      const drawable = createMockDrawable('test1');
-      renderer.addDrawable(drawable);
-      
-      expect(renderer.getDrawable('test1')).toBe(drawable);
+  describe('Renderable 管理', () => {
+    it('应该能添加 renderable', () => {
+      const renderable = createMockRenderable('test1');
+      renderer.addRenderable(renderable);
+
+      expect(renderer.getRenderable('test1')).toBe(renderable);
     });
 
-    it('应该能移除 drawable', () => {
-      const drawable = createMockDrawable('test1');
-      renderer.addDrawable(drawable);
-      renderer.removeDrawable('test1');
-      
-      expect(renderer.getDrawable('test1')).toBeUndefined();
+    it('应该能移除 renderable', () => {
+      const renderable = createMockRenderable('test1');
+      renderer.addRenderable(renderable);
+      renderer.removeRenderable('test1');
+
+      expect(renderer.getRenderable('test1')).toBeUndefined();
     });
 
-    it('应该能清空所有 drawables', () => {
-      renderer.addDrawable(createMockDrawable('test1'));
-      renderer.addDrawable(createMockDrawable('test2'));
-      renderer.clearDrawables();
-      
-      expect(renderer.getDrawable('test1')).toBeUndefined();
-      expect(renderer.getDrawable('test2')).toBeUndefined();
+    it('应该能清空所有 renderables', () => {
+      renderer.addRenderable(createMockRenderable('test1'));
+      renderer.addRenderable(createMockRenderable('test2'));
+      renderer.clearRenderables();
+
+      expect(renderer.getRenderable('test1')).toBeUndefined();
+      expect(renderer.getRenderable('test2')).toBeUndefined();
     });
 
-    it('应该按 zIndex 排序 drawables', () => {
-      const drawable1 = createMockDrawable('test1', 2);
-      const drawable2 = createMockDrawable('test2', 1);
-      const drawable3 = createMockDrawable('test3', 3);
-      
-      renderer.addDrawable(drawable1);
-      renderer.addDrawable(drawable2);
-      renderer.addDrawable(drawable3);
-      
+    it('应该按 zIndex 排序 renderables', () => {
+      const renderable1 = createMockRenderable('test1', 2);
+      const renderable2 = createMockRenderable('test2', 1);
+      const renderable3 = createMockRenderable('test3', 3);
+
+      renderer.addRenderable(renderable1);
+      renderer.addRenderable(renderable2);
+      renderer.addRenderable(renderable3);
+
       // 通过 update 方法间接测试排序
       renderer.update(16);
-      
-      // 验证 drawables 存在
-      expect(renderer.getDrawable('test1')).toBe(drawable1);
-      expect(renderer.getDrawable('test2')).toBe(drawable2);
-      expect(renderer.getDrawable('test3')).toBe(drawable3);
+
+      // 验证 renderables 存在
+      expect(renderer.getRenderable('test1')).toBe(renderable1);
+      expect(renderer.getRenderable('test2')).toBe(renderable2);
+      expect(renderer.getRenderable('test3')).toBe(renderable3);
     });
   });
 
@@ -176,18 +175,18 @@ describe('BaseRenderer', () => {
   });
 
   describe('更新方法', () => {
-    it('应该更新可见的 drawables', () => {
-      const visibleDrawable = createMockDrawable('visible', 0, true);
-      const hiddenDrawable = createMockDrawable('hidden', 0, false);
-      
-      renderer.addDrawable(visibleDrawable);
-      renderer.addDrawable(hiddenDrawable);
-      
+    it('应该更新可见的 renderables', () => {
+      const visibleRenderable = createMockRenderable('visible', 0, true);
+      const hiddenRenderable = createMockRenderable('hidden', 0, false);
+
+      renderer.addRenderable(visibleRenderable);
+      renderer.addRenderable(hiddenRenderable);
+
       renderer.update(16);
-      
-      // 验证方法被调用（通过检查 drawable 是否存在来间接验证）
-      expect(renderer.getDrawable('visible')).toBe(visibleDrawable);
-      expect(renderer.getDrawable('hidden')).toBe(hiddenDrawable);
+
+      // 验证方法被调用（通过检查 renderable 是否存在来间接验证）
+      expect(renderer.getRenderable('visible')).toBe(visibleRenderable);
+      expect(renderer.getRenderable('hidden')).toBe(hiddenRenderable);
     });
   });
 
@@ -207,7 +206,7 @@ describe('BaseRenderer', () => {
 
   describe('资源清理', () => {
     it('应该正确清理资源', () => {
-      renderer.addDrawable(createMockDrawable('test'));
+      renderer.addRenderable(createMockRenderable('test'));
       renderer.startRenderLoop(mockContext);
       
       expect(() => renderer.dispose()).not.toThrow();
