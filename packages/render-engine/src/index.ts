@@ -12,8 +12,8 @@ export * as MathUtils from './math';
 export * from './rendering/primitives';
 
 // 渲染管道 (明确处理冲突)
-export { CommandRenderer, RenderQueue } from './rendering/commands';
 export type { IRenderable } from './core/types';
+export { CommandRenderer, RenderQueue } from './rendering/commands';
 // 批处理系统 (在 commands 后导出避免 RenderBatch 冲突)
 export {
   BasicStrategy, BatchBuffer, BatchManager, BatchOptimizer, EnhancedStrategy,
@@ -30,14 +30,10 @@ export {
 // 空间分割和剔除
 export * from './rendering/culling';
 
-// 功能模块
-export * from './interaction';
+// 功能模块 (通过 features 统一导出)
+export * from './features';
 export * from './interface';
-export * from './particles';
-export * from './paths';
-export * from './physics';
 export * from './plugins';
-export * from './text';
 
 // 资源管理 (明确导出避免冲突)
 export {

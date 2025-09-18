@@ -8,7 +8,7 @@ import {
     HueRotateParameters
 } from '../types/FilterTypes';
 import { PixelProcessor, RGBProcessorFunction } from './PixelProcessor';
-import { rgbToHsl, hslToRgb } from '../../utils/ColorUtils';
+import { rgbToHsl, hslToRgb } from '../../../utils/ColorUtils';
 
 export class HueRotateFilter extends PixelProcessor<HueRotateParameters> {
   readonly type = FilterType.HUE_ROTATE;

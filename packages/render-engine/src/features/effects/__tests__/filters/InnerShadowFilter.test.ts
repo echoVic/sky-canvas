@@ -7,7 +7,7 @@ import { InnerShadowFilter } from '../../filters/InnerShadowFilter';
 import { FilterContext, FilterType, InnerShadowParameters } from '../../types/FilterTypes';
 
 // Mock parseColor 工具函数
-vi.mock('../../utils/ColorUtils', () => ({
+vi.mock('../../../utils/ColorUtils', () => ({
   parseColor: vi.fn((color: string) => {
     if (color === '#000000') return { r: 0, g: 0, b: 0, a: 1 };
     if (color === '#ff0000') return { r: 1, g: 0, b: 0, a: 1 };

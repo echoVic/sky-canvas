@@ -3,7 +3,7 @@
  */
 
 import EventEmitter3 from 'eventemitter3';
-import { Vector2 } from '../../math/Vector2';
+import { Vector2 } from '../../../math/Vector2';
 import { IGestureEvent, IPoint, ITouchEvent, createGestureEvent } from './InputEvents';
 
 /**

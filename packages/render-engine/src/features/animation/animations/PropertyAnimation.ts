@@ -5,7 +5,7 @@
 
 import { BaseAnimation } from '../core/BaseAnimation';
 import { PropertyAnimationConfig } from '../types/AnimationTypes';
-import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils';
+import { getNestedProperty, setNestedProperty } from '../../../utils/ObjectUtils';
 
 export class PropertyAnimation extends BaseAnimation {
   private target: Record<string, any>;

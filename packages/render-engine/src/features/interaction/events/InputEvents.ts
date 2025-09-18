@@ -2,7 +2,7 @@
  * 输入事件系统 - 统一的输入事件处理
  */
 
-import { Vector2 } from "../../math";
+import { Vector2 } from "../../../math";
 
 
 /**

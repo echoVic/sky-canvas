@@ -10,7 +10,7 @@ import {
 } from '../types/FilterTypes';
 import { BaseFilter } from './BaseFilter';
 import { GaussianBlurFilter } from './GaussianBlurFilter';
-import { parseColor } from '../../utils/ColorUtils';
+import { parseColor } from '../../../utils/ColorUtils';
 
 export class DropShadowFilter extends BaseFilter<DropShadowParameters> {
   readonly type = FilterType.DROP_SHADOW;

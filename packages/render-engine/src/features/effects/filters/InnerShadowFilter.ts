@@ -9,7 +9,7 @@ import {
   InnerShadowParameters
 } from '../types/FilterTypes';
 import { BaseFilter } from './BaseFilter';
-import { parseColor } from '../../utils/ColorUtils';
+import { parseColor } from '../../../utils/ColorUtils';
 
 export class InnerShadowFilter extends BaseFilter<InnerShadowParameters> {
   readonly type = FilterType.INNER_SHADOW;

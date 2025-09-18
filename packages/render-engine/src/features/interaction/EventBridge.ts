@@ -3,7 +3,7 @@
  * 提供高效的事件批处理、优先级队列和智能过滤机制
  */
 
-import { IPoint } from '../core/interface/IGraphicsContext';
+import { IPoint } from '../../core/interface/IGraphicsContext';
 import { BridgeEventType, EventPriority, EVENT_CONSTANTS } from './EventTypes';
 
 // 重新导出类型

@@ -5,7 +5,7 @@
 
 import { BaseAnimation } from '../core/BaseAnimation';
 import { MultiPropertyAnimationConfig, AnimationState } from '../types/AnimationTypes';
-import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils';
+import { getNestedProperty, setNestedProperty } from '../../../utils/ObjectUtils';
 
 interface PropertyState {
   property: string;

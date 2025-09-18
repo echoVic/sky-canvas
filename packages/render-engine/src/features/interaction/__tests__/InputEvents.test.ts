@@ -17,7 +17,7 @@ import {
   ITouch
 } from '../events/InputEvents';
 import { InputEventType } from '../EventTypes';
-import { Vector2 } from '../../math/Vector2';
+import { Vector2 } from '../../../math/Vector2';
 
 describe('InputEvents', () => {
   describe('BaseEvent', () => {

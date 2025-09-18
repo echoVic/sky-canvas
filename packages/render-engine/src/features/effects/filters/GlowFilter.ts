@@ -9,7 +9,7 @@ import {
     GlowParameters
 } from '../types/FilterTypes';
 import { BaseFilter } from './BaseFilter';
-import { parseColor } from '../../utils/ColorUtils';
+import { parseColor } from '../../../utils/ColorUtils';
 
 export class GlowFilter extends BaseFilter<GlowParameters> {
   readonly type = FilterType.GLOW;

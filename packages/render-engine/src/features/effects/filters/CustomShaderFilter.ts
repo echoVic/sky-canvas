@@ -10,7 +10,7 @@ import {
 } from '../types/FilterTypes';
 import { WebGLRenderer } from '../webgl/WebGLRenderer';
 import { WebGLShaderManager } from '../webgl/WebGLShaderManager';
-import { DefaultShaders } from '../../core/webgl/ShaderManager';
+import { DefaultShaders } from '../../../core/webgl/ShaderManager';
 import { BaseFilter } from './BaseFilter';
 
 export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
