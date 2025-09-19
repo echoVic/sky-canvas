@@ -65,12 +65,15 @@ export interface RendererCapabilities {
 
 // 基础渲染器接口
 export interface Renderer<TContext = any> {
-  render(context: RenderContext<TContext>): void;
+  initialize(canvas: HTMLCanvasElement, config?: any): boolean | Promise<boolean>;
+  render(): void;
   update(deltaTime: number): void;
   dispose(): void;
   clear(): void;
   setViewport(viewport: Partial<IViewport>): void;
   getViewport(): IViewport;
   getCapabilities(): RendererCapabilities;
+  getCanvas(): HTMLCanvasElement | null;
+  getContext(): TContext | null;
 }
 

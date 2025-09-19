@@ -18,9 +18,5 @@
     "types": ["@webgpu/types", "vitest/globals"]
   },
   "include": ["src/**/*"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

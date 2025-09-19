@@ -12,8 +12,8 @@ import { ILogService, type ILogService as ILogServiceInterface } from '../loggin
 export interface ICanvasRenderingService {
   initialize(canvas: HTMLCanvasElement, config: any): Promise<void>;
   getRenderEngine(): any;
-  addRenderable(renderable: any): void;
-  removeRenderable(id: string): void;
+  addObject(object: any): void;
+  removeObject(id: string): void;
   render(): void;
   start(): void;
   stop(): void;
@@ -33,7 +33,7 @@ export const ICanvasRenderingService = createDecorator<ICanvasRenderingService>(
 export class CanvasRenderingService implements ICanvasRenderingService {
   private renderEngine: any;
   private running = false;
-  private renderables = new Map<string, any>();
+  private objects = new Map<string, any>();
 
   constructor(
     @IEventBusService private eventBus: IEventBusService,
@@ -48,7 +48,7 @@ export class CanvasRenderingService implements ICanvasRenderingService {
 
       // 创建渲染引擎配置
       const engineConfig = {
-        renderer: config.renderEngine || 'auto',
+        renderer: config.renderEngine || 'webgl',
         debug: config.debug || false,
         enableBatching: true,
         targetFPS: config.targetFPS || 60,
@@ -56,12 +56,14 @@ export class CanvasRenderingService implements ICanvasRenderingService {
         alpha: config.alpha !== false
       };
 
-      // 直接使用新的 RenderEngine API
+      // 创建渲染引擎实例
       this.renderEngine = new RenderEngine(canvas, engineConfig);
+
+      // 显式初始化渲染引擎
+      await this.renderEngine.initialize();
 
       this.logger.info('RenderEngine created and initialized:', {
         renderer: this.renderEngine.getRendererType(),
-        config: engineConfig,
         capabilities: this.renderEngine.getCapabilities()
       });
 
@@ -98,51 +100,99 @@ export class CanvasRenderingService implements ICanvasRenderingService {
     return this.renderEngine;
   }
 
-  addRenderable(renderable: any): void {
-    this.logger.info('Adding renderable:', { renderable, renderEngine: !!this.renderEngine });
+  addObject(object: any): void {
+    this.logger.info('=== addObject called ===');
+    this.logger.info('Object to add:', object);
+    this.logger.info('Object type:', typeof object);
+    this.logger.info('Object constructor:', object?.constructor?.name);
+    this.logger.info('Object id:', object?.id);
+    this.logger.info('RenderEngine available:', !!this.renderEngine);
 
     if (!this.renderEngine) {
       this.logger.error('RenderEngine is not initialized!');
       return;
     }
 
-    if (!this.renderEngine.addRenderable) {
-      this.logger.error('RenderEngine.addRenderable method is not available!', {
+    if (!this.renderEngine.addObject) {
+      this.logger.error('RenderEngine.addObject method is not available!', {
         renderEngine: this.renderEngine,
         methods: Object.getOwnPropertyNames(this.renderEngine)
       });
       return;
     }
 
-    if (renderable && renderable.id) {
-      this.renderables.set(renderable.id, renderable);
-      this.renderEngine.addRenderable(renderable);
-      this.logger.debug('Renderable added', renderable.id);
+    if (object && object.id) {
+      this.logger.info('Adding object to local objects map:', object.id);
+      this.objects.set(object.id, object);
+
+      this.logger.info('Calling renderEngine.addObject...');
+      this.renderEngine.addObject(object);
+
+      this.logger.info('After adding - RenderEngine objects count:', this.renderEngine.getObjects?.()?.length || 0);
+      this.logger.info('Local objects count:', this.objects.size);
+
+      // 手动触发一次渲染
+      this.logger.info('Manually triggering render...');
+      this.render();
+
+      this.logger.info('=== addObject completed ===');
     } else {
-      this.logger.warn('Invalid renderable object', renderable);
+      this.logger.warn('Invalid object - missing id or object is null:', { object, hasId: !!object?.id });
     }
   }
 
-  removeRenderable(id: string): void {
-    if (this.renderables.has(id)) {
-      this.renderables.delete(id);
-      this.renderEngine?.removeRenderable(id);
-      this.logger.debug('Renderable removed', id);
+  removeObject(id: string): void {
+    if (this.objects.has(id)) {
+      this.objects.delete(id);
+      this.renderEngine?.removeObject(id);
+      this.logger.debug('Object removed', id);
     }
   }
 
   render(): void {
+    console.log(`[RenderingService] render() called, renderEngine available: ${!!this.renderEngine}`);
+    console.log(`[RenderingService] renderEngine type:`, this.renderEngine?.constructor?.name);
+    console.log(`[RenderingService] renderEngine.render exists:`, typeof this.renderEngine?.render);
+    console.log(`[RenderingService] renderEngine methods:`, Object.getOwnPropertyNames(Object.getPrototypeOf(this.renderEngine)).filter(name => typeof this.renderEngine[name] === 'function'));
     if (this.renderEngine) {
-      this.renderEngine.render();
+      console.log(`[RenderingService] Calling renderEngine.render()`);
+      try {
+        // 在调用前检查 render 方法的源码
+        console.log(`[RenderingService] render method source:`, this.renderEngine.render.toString().substring(0, 200));
+        this.renderEngine.render();
+        console.log(`[RenderingService] renderEngine.render() completed`);
+      } catch (error) {
+        console.error(`[RenderingService] Error calling renderEngine.render():`, error);
+      }
+    } else {
+      console.warn(`[RenderingService] No render engine available!`);
     }
   }
 
   start(): void {
+    this.logger.info('start() called, current running state:', this.running);
+    this.logger.info('renderEngine available:', !!this.renderEngine);
+
     if (!this.running) {
       this.running = true;
-      this.renderEngine?.start();
+
+      if (this.renderEngine) {
+        this.logger.info('Starting render engine...');
+        this.logger.info('RenderEngine isInitialized:', (this.renderEngine as any).isInitialized);
+        this.logger.info('RenderEngine config:', this.renderEngine.getConfig?.());
+
+        this.renderEngine.start();
+
+        this.logger.info('RenderEngine isRunning after start:', this.renderEngine.isRunning?.());
+        this.logger.info('RenderEngine objects count:', this.renderEngine.getObjects?.()?.length || 0);
+      } else {
+        this.logger.error('RenderEngine is null, cannot start!');
+      }
+
       this.eventBus.emit('rendering:started', {});
-      this.logger.debug('Rendering started');
+      this.logger.info('Rendering started successfully');
+    } else {
+      this.logger.info('Rendering already running, skipping start');
     }
   }
 
@@ -162,14 +212,14 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   getStats(): any {
     return {
       running: this.running,
-      renderableCount: this.renderables.size,
+      objectCount: this.objects.size,
       engineStats: this.renderEngine?.getStats() || {}
     };
   }
 
   dispose(): void {
     this.stop();
-    this.renderables.clear();
+    this.objects.clear();
     this.renderEngine?.dispose();
     this.logger.info('Canvas rendering service disposed');
   }

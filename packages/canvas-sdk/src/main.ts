@@ -123,7 +123,7 @@ class CanvasSDKBootstrap {
 
     // 设置默认配置
     this.config = {
-      renderEngine: 'auto', // 改为 auto 以支持自动选择最佳渲染引擎
+      renderEngine: 'webgl', // 默认使用 webgl 渲染
       logLevel: 'info',
       enableHistory: true,
       enableInteraction: true,

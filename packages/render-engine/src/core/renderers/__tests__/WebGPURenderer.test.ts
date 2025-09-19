@@ -32,7 +32,7 @@ describe('WebGPURenderer', () => {
       })
     });
     
-    renderer = new WebGPURenderer(canvas);
+    renderer = new WebGPURenderer();
   });
 
   it('should create WebGPU renderer instance', () => {
@@ -58,9 +58,9 @@ describe('WebGPURenderer', () => {
     expect(typeof result).toBe('boolean');
   });
 
-  it('should handle resize', () => {
+  it('should handle viewport changes', () => {
     expect(() => {
-      renderer.resize(1024, 768);
+      renderer.setViewport({ width: 1024, height: 768 });
     }).not.toThrow();
   });
 

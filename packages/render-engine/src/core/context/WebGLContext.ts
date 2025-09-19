@@ -1,18 +1,18 @@
 /**
  * WebGL图形上下文实现
  */
+import { Matrix3 } from '../../math/Matrix3';
 import {
   BatchManager,
   createBatchManagerWithDefaultStrategies,
   IRenderable,
   type BatchManagerConfig
 } from '../../rendering/batch';
-import { IGraphicsCapabilities, IGraphicsContext, IGraphicsContextFactory, IImageData, IPoint, ITransform } from '../interface/IGraphicsContext';
-import { Matrix3 } from '../../math/Matrix3';
+import { IGraphicsCapabilities, IGraphicsContext, IImageData, IPoint, ITransform } from '../interface/IGraphicsContext';
+import { AdvancedShaderManager } from '../webgl/AdvancedShaderManager';
 import { BufferManager, IBuffer } from '../webgl/BufferManager';
 import { SHADER_LIBRARY } from '../webgl/ShaderLibrary';
-import { ShaderProgram, WebGLShaderManager as ShaderManager } from '../webgl/ShaderManager';
-import { AdvancedShaderManager } from '../webgl/AdvancedShaderManager';
+import { WebGLShaderManager as ShaderManager, ShaderProgram } from '../webgl/ShaderManager';
 import { WebGLOptimizer } from '../webgl/WebGLOptimizer';
 import { GeometryGenerator } from './GeometryGenerator';
 
@@ -529,13 +529,18 @@ export class WebGLContext implements IWebGLContext {
   }
 
   fill(): void {
-    // WebGL中的路径填充需要上层渲染器实现
-    console.log('Path fill operation - requires higher level renderer');
+    if (this.currentPath.length < 3) return; // 需要至少3个点形成可填充区域
+
+    const color = GeometryGenerator.parseColor(this.fillStyle);
+    const renderable = this.createPathRenderable(this.currentPath, color, true);
+    this.batchManager.addRenderable(renderable);
   }
 
   stroke(): void {
-    // WebGL中的路径描边需要上层渲染器实现
-    console.log('Path stroke operation - requires higher level renderer');
+    if (this.currentPath.length < 2) return; // 需要至少2个点形成线条
+
+    const color = GeometryGenerator.parseColor(this.strokeStyle);
+    this.drawPathStroke(this.currentPath, this.strokeStyle, this.lineWidth);
   }
 
   fillRect(x: number, y: number, width: number, height: number): void {
@@ -896,6 +901,119 @@ export class WebGLContext implements IWebGLContext {
       getBlendMode: () => 0,
       getZIndex: () => 0
     };
+  }
+
+  /**
+   * 创建路径可渲染对象
+   */
+  private createPathRenderable(
+    path: { x: number; y: number }[],
+    color: [number, number, number, number],
+    filled: boolean
+  ): IRenderable {
+    if (filled) {
+      // 使用简单的三角扇形方法填充多边形
+      const triangles = this.triangulatePolygon(path);
+      const vertices = new Float32Array(triangles.length * 8); // 每个顶点 8 个值
+
+      for (let i = 0; i < triangles.length; i++) {
+        const offset = i * 8;
+        vertices[offset] = triangles[i].x;
+        vertices[offset + 1] = triangles[i].y;
+        vertices[offset + 2] = color[0];
+        vertices[offset + 3] = color[1];
+        vertices[offset + 4] = color[2];
+        vertices[offset + 5] = color[3];
+        vertices[offset + 6] = 0; // u
+        vertices[offset + 7] = 0; // v
+      }
+
+      const indices = new Uint16Array(triangles.length);
+      for (let i = 0; i < triangles.length; i++) {
+        indices[i] = i;
+      }
+
+      return {
+        getVertices: () => vertices,
+        getIndices: () => indices,
+        getShader: () => 'basic_shape',
+        getBlendMode: () => 0,
+        getZIndex: () => 0
+      };
+    } else {
+      // 描边路径（这里简化实现，实际应该处理连接和端点样式）
+      const vertices: number[] = [];
+      const indices: number[] = [];
+
+      // 为每条边创建线条
+      for (let i = 0; i < path.length - 1; i++) {
+        const start = path[i];
+        const end = path[i + 1];
+
+        const baseIndex = vertices.length / 8;
+
+        // 添加线条的四个顶点
+        vertices.push(
+          start.x, start.y, color[0], color[1], color[2], color[3], 0, 0,
+          end.x, end.y, color[0], color[1], color[2], color[3], 1, 0,
+          end.x, end.y, color[0], color[1], color[2], color[3], 1, 1,
+          start.x, start.y, color[0], color[1], color[2], color[3], 0, 1
+        );
+
+        // 添加索引
+        indices.push(
+          baseIndex, baseIndex + 1, baseIndex + 2,
+          baseIndex, baseIndex + 2, baseIndex + 3
+        );
+      }
+
+      return {
+        getVertices: () => new Float32Array(vertices),
+        getIndices: () => new Uint16Array(indices),
+        getShader: () => 'basic_shape',
+        getBlendMode: () => 0,
+        getZIndex: () => 0
+      };
+    }
+  }
+
+  /**
+   * 绘制路径描边
+   */
+  private drawPathStroke(
+    path: { x: number; y: number }[],
+    strokeStyle: string,
+    lineWidth: number
+  ): void {
+    const color = GeometryGenerator.parseColor(strokeStyle);
+
+    // 为每条边绘制线条
+    for (let i = 0; i < path.length - 1; i++) {
+      const start = path[i];
+      const end = path[i + 1];
+
+      const renderable = this.createLineRenderable(
+        start.x, start.y, end.x, end.y, lineWidth, color
+      );
+      this.batchManager.addRenderable(renderable);
+    }
+  }
+
+  /**
+   * 简单的多边形三角化（耳切法的简化版本）
+   */
+  private triangulatePolygon(path: { x: number; y: number }[]): { x: number; y: number }[] {
+    if (path.length < 3) return [];
+
+    // 简化实现：使用三角扇形
+    const triangles: { x: number; y: number }[] = [];
+    const center = path[0]; // 使用第一个点作为中心
+
+    for (let i = 1; i < path.length - 1; i++) {
+      triangles.push(center, path[i], path[i + 1]);
+    }
+
+    return triangles;
   }
 
   /**

@@ -69,16 +69,22 @@ export class WebGLBuffer implements BufferInterface {
 
   update(data: ArrayBuffer, offset: number = 0): void {
     if (!this.glBuffer) return;
-    
+
     this.gl.bindBuffer(this.glType, this.glBuffer);
-    if (offset === 0 && data.byteLength === this.size) {
+
+    // 核心修复：只在需要时增长缓冲区，永远不缩小
+    if (data.byteLength > this.size) {
+      // 新数据比当前缓冲区大，需要重新分配
       this.gl.bufferData(this.glType, data, this.usage);
+      this.size = data.byteLength;
+      this.data = data;
     } else {
+      // 新数据小于等于当前缓冲区，使用 bufferSubData 部分更新
       this.gl.bufferSubData(this.glType, offset, data);
+      // 不更新 this.size，保持大缓冲区的大小
+      // 但更新 this.data 引用
+      this.data = data;
     }
-    
-    this.data = data;
-    this.size = data.byteLength;
   }
 
   bind(): void {

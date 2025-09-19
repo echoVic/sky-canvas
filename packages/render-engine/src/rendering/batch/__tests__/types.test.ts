@@ -237,7 +237,7 @@ describe('Batch Types', () => {
         primitiveCount: 300
       };
 
-      expect(Object.keys(complexBatch.uniforms)).toHaveLength(16);
+      expect(Object.keys(complexBatch.uniforms)).toHaveLength(18);
       expect(complexBatch.uniforms.uModelMatrix).toBeInstanceOf(Float32Array);
       expect(Array.isArray(complexBatch.uniforms.uMaterialAmbient)).toBe(true);
       expect(typeof complexBatch.uniforms.uMaterialShininess).toBe('number');

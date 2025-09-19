@@ -94,7 +94,7 @@ describe('CanvasRenderer', () => {
     it('应该能获取当前上下文', () => {
       expect(renderer.getContext()).toBeNull();
       
-      renderer.render(renderContext);
+      renderer.render();
       expect(renderer.getContext()).toBe(renderContext);
     });
   });
@@ -104,7 +104,7 @@ describe('CanvasRenderer', () => {
       const renderable = createMockRenderable('test1');
       renderer.addRenderable(renderable);
       
-      renderer.render(renderContext);
+      renderer.render();
       
       // 验证上下文操作
       expect(mockContext2D.save).toHaveBeenCalled();
@@ -123,7 +123,7 @@ describe('CanvasRenderer', () => {
       renderer.addRenderable(visibleRenderable);
       renderer.addRenderable(hiddenRenderable);
 
-      renderer.render(renderContext);
+      renderer.render();
 
       expect(visibleRenderable.render).toHaveBeenCalled();
       expect(hiddenRenderable.render).not.toHaveBeenCalled();
@@ -137,7 +137,7 @@ describe('CanvasRenderer', () => {
       
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       
-      expect(() => renderer.render(invalidContext)).not.toThrow();
+      expect(() => renderer.render()).not.toThrow();
       expect(consoleSpy).toHaveBeenCalledWith('CanvasRenderer requires CanvasRenderingContext2D');
       
       consoleSpy.mockRestore();
@@ -150,7 +150,7 @@ describe('CanvasRenderer', () => {
         devicePixelRatio: 2
       };
       
-      renderer.render(viewportContext);
+      renderer.render();
       
       expect(mockContext2D.scale).toHaveBeenCalledWith(2, 2);
       expect(mockContext2D.translate).toHaveBeenCalledWith(-100, -50);
@@ -159,7 +159,7 @@ describe('CanvasRenderer', () => {
 
   describe('清空功能', () => {
     it('应该正确清空画布', () => {
-      renderer.render(renderContext);
+      renderer.render();
       renderer.clear();
       
       expect(mockContext2D.save).toHaveBeenCalled();
@@ -183,7 +183,7 @@ describe('CanvasRenderer', () => {
 
   describe('绘制基础图形', () => {
     beforeEach(() => {
-      renderer.render(renderContext);
+      renderer.render();
     });
 
     it('应该能绘制线段', () => {
@@ -299,7 +299,7 @@ describe('CanvasRenderer', () => {
 
   describe('资源清理', () => {
     it('应该正确清理资源', () => {
-      renderer.render(renderContext);
+      renderer.render();
       
       expect(() => renderer.dispose()).not.toThrow();
       expect(renderer.getContext()).toBeNull();

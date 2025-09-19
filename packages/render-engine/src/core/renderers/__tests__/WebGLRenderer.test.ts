@@ -2,11 +2,11 @@
  * WebGLRenderer 测试
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { IPoint } from '../../interface/IGraphicsContext';
 import { Transform } from '../../../math';
-import { WebGLRenderer } from '../WebGLRenderer';
+import { IPoint } from '../../interface/IGraphicsContext';
 import type { IRenderable } from '../../types';
 import type { RenderContext } from '../types';
+import { WebGLRenderer } from '../WebGLRenderer';
 
 // Mock WebGL Context
 const createMockWebGLContext = () => ({
@@ -220,7 +220,7 @@ describe('WebGLRenderer', () => {
       renderer.addRenderable(renderable);
 
       // 渲染应该不抛出错误
-      expect(() => renderer.render(renderContext)).not.toThrow();
+      expect(() => renderer.render()).not.toThrow();
     });
 
     it('应该跳过不可见的 renderable', () => {
@@ -231,7 +231,7 @@ describe('WebGLRenderer', () => {
       renderer.addRenderable(hiddenRenderable);
 
       // 渲染应该不抛出错误
-      expect(() => renderer.render(renderContext)).not.toThrow();
+      expect(() => renderer.render()).not.toThrow();
     });
 
     it('应该处理无效上下文', () => {
@@ -240,7 +240,7 @@ describe('WebGLRenderer', () => {
         context: null as any
       };
       
-      expect(() => renderer.render(invalidContext)).not.toThrow();
+      expect(() => renderer.render()).not.toThrow();
     });
   });
 
@@ -365,7 +365,7 @@ describe('WebGLRenderer', () => {
     it('应该处理未初始化的渲染调用', () => {
       const uninitializedRenderer = new WebGLRenderer();
       
-      expect(() => uninitializedRenderer.render(renderContext)).not.toThrow();
+      expect(() => uninitializedRenderer.render()).not.toThrow();
       expect(() => uninitializedRenderer.clear()).not.toThrow();
       
       uninitializedRenderer.dispose();
@@ -412,7 +412,7 @@ describe('WebGLRenderer', () => {
       renderables.forEach(renderable => renderer.addRenderable(renderable));
 
       // 渲染应该不抛出错误
-      expect(() => renderer.render(renderContext)).not.toThrow();
+      expect(() => renderer.render()).not.toThrow();
     });
   });
 });

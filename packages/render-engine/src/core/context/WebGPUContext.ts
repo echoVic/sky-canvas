@@ -1,10 +1,12 @@
 /**
- * WebGPU 上下文适配器实现（占位符实现）
- * 提供 WebGPU 上下文管理和配置的接口定义
+ * WebGPU 上下文适配器实现
+ * 提供基于 WebGPU 的高性能图形渲染上下文
  */
 
+import { Matrix3 } from '../../math/Matrix3';
+import { Rectangle } from '../../math/Rectangle';
+import { Vector2 } from '../../math/Vector2';
 import {
-  IColor,
   IGraphicsCapabilities,
   IGraphicsContext,
   IGraphicsState,
@@ -14,10 +16,9 @@ import {
   ITextStyle,
   ITransform
 } from '../interface/IGraphicsContext';
-import { Rectangle } from '../../math/Rectangle';
 
 /**
- * WebGPU 设备信息（占位符）
+ * WebGPU 设备信息
  */
 export interface WebGPUDeviceInfo {
   name: string;
@@ -28,7 +29,7 @@ export interface WebGPUDeviceInfo {
 }
 
 /**
- * WebGPU 上下文配置（占位符）
+ * WebGPU 上下文配置
  */
 export interface WebGPUContextConfig {
   powerPreference?: 'low-power' | 'high-performance';
@@ -41,641 +42,892 @@ export interface WebGPUContextConfig {
 }
 
 /**
- * WebGPU 渲染状态（占位符）
+ * WebGPU 渲染状态
  */
 export interface WebGPURenderState {
   viewport: Rectangle;
   scissorTest: boolean;
   scissorRect?: Rectangle;
   blendMode: string;
+  cullMode: 'none' | 'front' | 'back';
   depthTest: boolean;
-  cullFace: boolean;
 }
 
 /**
- * WebGPU 上下文类（占位符实现）
+ * WebGPU 缓冲区管理器
  */
-export class WebGPUContext implements IGraphicsContext {
-  private canvas: HTMLCanvasElement;
-  private config: WebGPUContextConfig;
-  private deviceInfo: WebGPUDeviceInfo;
-  private renderState: WebGPURenderState;
-  private isInitialized: boolean = false;
-  private stateStack: IGraphicsState[] = [];
-  private currentState: IGraphicsState;
+export class WebGPUBufferManager {
+  private device: GPUDevice;
+  private buffers: Map<string, GPUBuffer> = new Map();
 
-  // IGraphicsContext required properties
-  readonly width: number;
-  readonly height: number;
-  readonly devicePixelRatio: number = window.devicePixelRatio || 1;
-
-  constructor(canvas: HTMLCanvasElement, config: WebGPUContextConfig = {}) {
-    this.width = canvas.width;
-    this.height = canvas.height;
-    this.canvas = canvas;
-    this.config = {
-      powerPreference: 'high-performance',
-      forceFallbackAdapter: false,
-      antialias: true,
-      alpha: true,
-      premultipliedAlpha: true,
-      preserveDrawingBuffer: false,
-      desynchronized: false,
-      ...config
-    };
-
-    this.deviceInfo = {
-      name: 'WebGPU Device (Placeholder)',
-      vendor: 'Unknown',
-      architecture: 'Unknown',
-      maxTextureSize: 4096,
-      maxBufferSize: 268435456 // 256MB
-    };
-
-    this.renderState = {
-       viewport: new Rectangle(0, 0, canvas.width, canvas.height),
-       scissorTest: false,
-       blendMode: 'normal',
-       depthTest: false,
-       cullFace: false
-     };
-
-     // Initialize default graphics state
-     this.currentState = {
-       transform: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 },
-       style: {
-         fillColor: { r: 0, g: 0, b: 0, a: 1 },
-         strokeColor: { r: 0, g: 0, b: 0, a: 1 },
-         lineWidth: 1,
-         opacity: 1
-       }
-     };
+  constructor(device: GPUDevice) {
+    this.device = device;
   }
 
-  // WebGPU资源（使用any类型避免TypeScript错误）
-  private adapter: any = null;
-  private device: any = null;
-  private context: any = null;
-  private format: string = 'bgra8unorm';
+  createBuffer(
+    id: string,
+    size: number,
+    usage: GPUBufferUsageFlags,
+    data?: ArrayBuffer | ArrayBufferView
+  ): GPUBuffer {
+    const buffer = this.device.createBuffer({
+      size,
+      usage,
+      mappedAtCreation: !!data
+    });
 
-  /**
-   * 初始化 WebGPU 上下文
-   */
-  async initialize(): Promise<boolean> {
-    try {
-      // 检查WebGPU支持
-      if (!(navigator as any).gpu) {
-        console.warn('WebGPU not supported');
-        return false;
+    if (data) {
+      const mappedBuffer = buffer.getMappedRange();
+      if (data instanceof ArrayBuffer) {
+        new Uint8Array(mappedBuffer).set(new Uint8Array(data));
+      } else {
+        new Uint8Array(mappedBuffer).set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
       }
+      buffer.unmap();
+    }
 
-      // 获取适配器
-      this.adapter = await (navigator as any).gpu.requestAdapter({
-        powerPreference: this.config.powerPreference,
-        forceFallbackAdapter: this.config.forceFallbackAdapter
-      });
+    this.buffers.set(id, buffer);
+    return buffer;
+  }
 
-      if (!this.adapter) {
-        console.warn('No WebGPU adapter found');
-        return false;
-      }
+  getBuffer(id: string): GPUBuffer | undefined {
+    return this.buffers.get(id);
+  }
 
-      // 获取设备
-      this.device = await this.adapter.requestDevice();
-
-      // 配置Canvas上下文
-      this.context = this.canvas.getContext('webgpu') as any;
-      if (!this.context) {
-        console.warn('Failed to get WebGPU canvas context');
-        return false;
-      }
-
-      this.format = (navigator as any).gpu.getPreferredCanvasFormat();
-      this.context.configure({
-        device: this.device,
-        format: this.format,
-        alphaMode: this.config.premultipliedAlpha ? 'premultiplied' : 'opaque'
-      });
-
-      this.isInitialized = true;
-      console.log('WebGPU context initialized successfully');
-      return true;
-    } catch (error) {
-      console.error('Failed to initialize WebGPU context:', error);
-      return false;
+  destroyBuffer(id: string): void {
+    const buffer = this.buffers.get(id);
+    if (buffer) {
+      buffer.destroy();
+      this.buffers.delete(id);
     }
   }
 
-  /**
-   * 检查是否已初始化
-   */
-  isContextInitialized(): boolean {
-    return this.isInitialized;
-  }
-
-  /**
-   * 获取画布元素
-   */
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
-  }
-
-  /**
-   * 获取上下文配置
-   */
-  getConfig(): WebGPUContextConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * 获取设备信息
-   */
-  getDeviceInfo(): WebGPUDeviceInfo {
-    return { ...this.deviceInfo };
-  }
-
-  /**
-   * 调整画布大小
-   */
-  resize(width: number, height: number): void {
-    this.canvas.width = width;
-    this.canvas.height = height;
-    this.renderState.viewport = new Rectangle(0, 0, width, height);
-    
-    // 占位符实现
-    console.warn('WebGPU context resize not implemented');
-  }
-
-  /**
-   * 设置视口
-   */
-  setViewport(x: number, y: number, width: number, height: number): void {
-    this.renderState.viewport = new Rectangle(x, y, width, height);
-    // 占位符实现
-  }
-
-  /**
-   * 获取当前视口
-   */
-  getViewport(): Rectangle {
-    return this.renderState.viewport;
-  }
-
-  /**
-   * 设置剪裁测试
-   */
-  setScissorTest(enabled: boolean, rect?: Rectangle): void {
-    this.renderState.scissorTest = enabled;
-    if (rect) {
-      this.renderState.scissorRect = rect;
-    }
-    // 占位符实现
-  }
-
-  /**
-   * 设置混合模式
-   */
-  setBlendMode(mode: string): void {
-    this.renderState.blendMode = mode;
-    // 占位符实现
-  }
-
-  /**
-   * 设置深度测试
-   */
-  setDepthTest(enabled: boolean): void {
-    this.renderState.depthTest = enabled;
-    // 占位符实现
-  }
-
-  /**
-   * 设置面剔除
-   */
-  setCullFace(enabled: boolean): void {
-    this.renderState.cullFace = enabled;
-    // 占位符实现
-  }
-
-  // IGraphicsContext state management methods
-   save(): void {
-     this.stateStack.push(JSON.parse(JSON.stringify(this.currentState)));
-   }
-
-   restore(): void {
-     if (this.stateStack.length > 0) {
-       this.currentState = this.stateStack.pop()!;
-     }
-   }
-
-   getState(): IGraphicsState {
-     return JSON.parse(JSON.stringify(this.currentState));
-   }
-
-   setState(state: Partial<IGraphicsState>): void {
-     this.currentState = { ...this.currentState, ...state };
-   }
-
-   // Transform methods
-   setTransform(transform: ITransform): void {
-     this.currentState.transform = { ...transform };
-   }
-
-   transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
-     const t = this.currentState.transform;
-     this.currentState.transform = {
-       a: t.a * a + t.c * b,
-       b: t.b * a + t.d * b,
-       c: t.a * c + t.c * d,
-       d: t.b * c + t.d * d,
-       e: t.a * e + t.c * f + t.e,
-       f: t.b * e + t.d * f + t.f
-     };
-   }
-
-   translate(x: number, y: number): void {
-     this.transform(1, 0, 0, 1, x, y);
-   }
-
-   rotate(angle: number): void {
-     const cos = Math.cos(angle);
-     const sin = Math.sin(angle);
-     this.transform(cos, sin, -sin, cos, 0, 0);
-   }
-
-   scale(x: number, y: number): void {
-     this.transform(x, 0, 0, y, 0, 0);
-   }
-
-   resetTransform(): void {
-     this.currentState.transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
-   }
-
-   // Style methods
-   setStyle(style: Partial<IGraphicsStyle>): void {
-     this.currentState.style = { ...this.currentState.style, ...style };
-   }
-
-   setFillColor(color: IColor | string): void {
-     this.currentState.style.fillColor = color;
-   }
-
-   setStrokeColor(color: IColor | string): void {
-     this.currentState.style.strokeColor = color;
-   }
-
-   setLineWidth(width: number): void {
-     this.currentState.style.lineWidth = width;
-   }
-
-   setOpacity(opacity: number): void {
-     this.currentState.style.opacity = opacity;
-   }
-
-   // 渲染通道
-   private currentCommandEncoder: any = null;
-   private currentRenderPass: any = null;
-
-   // Rendering methods
-   clear(): void {
-     if (!this.device || !this.context) {
-       console.warn('WebGPU not initialized');
-       return;
-     }
-
-     // 开始新的渲染通道
-     this.beginRenderPass();
-
-     // 清除操作在renderPass配置中的clearValue完成
-     this.endRenderPass();
-   }
-
-   clearRect(x: number, y: number, width: number, height: number): void {
-     console.warn('WebGPU clearRect not fully implemented - clearing entire surface');
-     this.clear();
-   }
-
-   present(): void {
-     if (!this.device) {
-       console.warn('WebGPU not initialized');
-       return;
-     }
-
-     // 提交所有排队的渲染命令
-     this.endRenderPass();
-   }
-
-   /**
-    * 开始渲染通道
-    */
-   private beginRenderPass(): void {
-     if (!this.device || !this.context) return;
-
-     // 创建命令编码器
-     this.currentCommandEncoder = this.device.createCommandEncoder({
-       label: 'Main Command Encoder'
-     });
-
-     // 获取当前纹理视图
-     const textureView = this.context.getCurrentTexture().createView();
-
-     // 创建渲染通道
-     this.currentRenderPass = this.currentCommandEncoder.beginRenderPass({
-       label: 'Main Render Pass',
-       colorAttachments: [
-         {
-           view: textureView,
-           clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }, // 透明背景
-           loadOp: 'clear',
-           storeOp: 'store',
-         },
-       ],
-     });
-   }
-
-   /**
-    * 结束渲染通道
-    */
-   private endRenderPass(): void {
-     if (!this.device || !this.currentCommandEncoder) return;
-
-     if (this.currentRenderPass) {
-       this.currentRenderPass.end();
-       this.currentRenderPass = null;
-     }
-
-     // 提交命令
-     const commands = this.currentCommandEncoder.finish();
-     this.device.queue.submit([commands]);
-     this.currentCommandEncoder = null;
-   }
-
-   // Path methods
-   beginPath(): void {
-     console.warn('WebGPU beginPath not implemented');
-   }
-
-   closePath(): void {
-     console.warn('WebGPU closePath not implemented');
-   }
-
-   moveTo(x: number, y: number): void {
-     console.warn('WebGPU moveTo not implemented');
-   }
-
-   lineTo(x: number, y: number): void {
-     console.warn('WebGPU lineTo not implemented');
-   }
-
-   quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void {
-     console.warn('WebGPU quadraticCurveTo not implemented');
-   }
-
-   bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
-     console.warn('WebGPU bezierCurveTo not implemented');
-   }
-
-   arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void {
-     console.warn('WebGPU arc not implemented');
-   }
-
-   rect(x: number, y: number, width: number, height: number): void {
-     console.warn('WebGPU rect not implemented');
-   }
-
-   // Fill and stroke methods
-   fill(): void {
-     console.warn('WebGPU fill not implemented');
-   }
-
-   stroke(): void {
-     console.warn('WebGPU stroke not implemented');
-   }
-
-   fillRect(x: number, y: number, width: number, height: number): void {
-     if (!this.device || !this.context) {
-       console.warn('WebGPU not initialized');
-       return;
-     }
-
-     // 简化实现：创建一个基本的矩形渲染
-     // 这是一个最小化的实现，实际项目需要更完善的着色器和几何处理
-     this.renderBasicRect(x, y, width, height, this.currentState.style.fillColor);
-   }
-
-   strokeRect(x: number, y: number, width: number, height: number): void {
-     console.warn('WebGPU strokeRect not fully implemented');
-     // 基本实现：使用填充色绘制描边
-     if (this.currentState.style.strokeColor) {
-       this.renderBasicRect(x, y, width, height, this.currentState.style.strokeColor);
-     }
-   }
-
-   /**
-    * 渲染基础矩形（简化实现）
-    */
-   private renderBasicRect(x: number, y: number, width: number, height: number, color: any): void {
-     if (!this.device || !this.context) return;
-
-     // 这是一个极简的实现，实际应用需要：
-     // 1. 着色器程序
-     // 2. 顶点缓冲区
-     // 3. 渲染管线状态
-     // 4. 几何数据处理
-
-     console.log(`WebGPU rendering rect at (${x}, ${y}) size (${width}x${height}) with color:`, color);
-
-     // 开始渲染通道（如果还没开始）
-     if (!this.currentRenderPass) {
-       this.beginRenderPass();
-     }
-
-     // 这里应该有实际的渲染逻辑
-     // 当前只是占位符，表明渲染系统已就位
-   }
-
-   fillCircle(x: number, y: number, radius: number): void {
-     console.warn('WebGPU fillCircle not implemented');
-   }
-
-   strokeCircle(x: number, y: number, radius: number): void {
-     console.warn('WebGPU strokeCircle not implemented');
-   }
-
-   // Text methods
-   fillText(text: string, x: number, y: number, style?: ITextStyle): void {
-     console.warn('WebGPU fillText not implemented');
-   }
-
-   strokeText(text: string, x: number, y: number, style?: ITextStyle): void {
-     console.warn('WebGPU strokeText not implemented');
-   }
-
-   measureText(text: string, style?: ITextStyle): { width: number; height: number } {
-     console.warn('WebGPU measureText not implemented');
-     return { width: 0, height: 0 };
-   }
-
-   // Image methods
-   drawImage(imageData: IImageData, dx: number, dy: number, dw?: number, dh?: number): void {
-     console.warn('WebGPU drawImage not implemented');
-   }
-
-   getImageData(x: number, y: number, width: number, height: number): IImageData {
-     console.warn('WebGPU getImageData not implemented');
-     return {
-       width,
-       height,
-       data: new Uint8ClampedArray(width * height * 4)
-     };
-   }
-
-   putImageData(imageData: IImageData, x: number, y: number): void {
-     console.warn('WebGPU putImageData not implemented');
-   }
-
-   // Clipping methods
-   clip(): void {
-     console.warn('WebGPU clip not implemented');
-   }
-
-   clipRect(x: number, y: number, width: number, height: number): void {
-     console.warn('WebGPU clipRect not implemented');
-   }
-
-   // Coordinate transformation
-   screenToWorld(point: IPoint): IPoint {
-     return { ...point };
-   }
-
-   worldToScreen(point: IPoint): IPoint {
-     return { ...point };
-   }
-
-   // 缺少的IGraphicsContext接口方法
-   setFillStyle(color: IColor | string): void {
-     this.setFillColor(color);
-   }
-
-   setStrokeStyle(color: IColor | string): void {
-     this.setStrokeColor(color);
-   }
-
-   setGlobalAlpha(alpha: number): void {
-     this.setOpacity(alpha);
-   }
-
-   setLineDash(segments: number[]): void {
-     console.warn('WebGPU setLineDash not implemented');
-   }
-
-   setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
-     console.warn('WebGPU setTextAlign not implemented');
-   }
-
-   setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
-     console.warn('WebGPU setTextBaseline not implemented');
-   }
-
-   setFont(font: string): void {
-     console.warn('WebGPU setFont not implemented');
-   }
-
-   drawLine(x1: number, y1: number, x2: number, y2: number): void {
-     console.warn('WebGPU drawLine not implemented');
-   }
-
-   drawRect(rect: IPoint & { width: number; height: number }, fill?: boolean, stroke?: boolean): void {
-     console.warn('WebGPU drawRect not implemented');
-   }
-
-   drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
-     console.warn('WebGPU drawCircle not implemented');
-   }
-
-  /**
-   * 开始渲染帧
-   */
-  beginFrame(): void {
-    // 占位符实现
-  }
-
-  /**
-   * 结束渲染帧
-   */
-  endFrame(): void {
-    // 占位符实现
-  }
-
-  /**
-   * 获取图形能力
-   */
-  getCapabilities(): IGraphicsCapabilities {
-    return {
-      supportsHardwareAcceleration: false, // 占位符实现暂不支持
-      supportsTransforms: true,
-      supportsFilters: true,
-      supportsBlending: true,
-      maxTextureSize: this.deviceInfo.maxTextureSize,
-      supportedFormats: ['rgba8unorm', 'bgra8unorm', 'rgba16float']
-    };
-  }
-
-  /**
-   * 获取渲染统计信息
-   */
-  getStats(): {
-    drawCalls: number;
-    triangles: number;
-    vertices: number;
-    textureMemory: number;
-    bufferMemory: number;
-  } {
-    return {
-      drawCalls: 0,
-      triangles: 0,
-      vertices: 0,
-      textureMemory: 0,
-      bufferMemory: 0
-    };
-  }
-
-  /**
-   * 检查 WebGPU 支持
-   */
-  static isSupported(): boolean {
-    return 'gpu' in navigator && typeof (navigator as any).gpu?.requestAdapter === 'function';
-  }
-
-  /**
-   * 获取可用的 WebGPU 适配器信息
-   */
-  static async getAvailableAdapters(): Promise<WebGPUDeviceInfo[]> {
-    // 占位符实现
-    console.warn('WebGPU adapter enumeration not implemented');
-    return [];
-  }
-
-  /**
-   * 创建 WebGPU 上下文
-   */
-  static async create(canvas: HTMLCanvasElement, config?: WebGPUContextConfig): Promise<WebGPUContext | null> {
-    try {
-      const context = new WebGPUContext(canvas, config);
-      const success = await context.initialize();
-      return success ? context : null;
-    } catch (error) {
-      console.error('Failed to create WebGPU context:', error);
-      return null;
-    }
-  }
-
-  /**
-   * 销毁上下文
-   */
   dispose(): void {
-    this.isInitialized = false;
-    console.log('WebGPU context disposed');
+    for (const buffer of this.buffers.values()) {
+      buffer.destroy();
+    }
+    this.buffers.clear();
   }
 }
 
+/**
+ * WebGPU 着色器管理器
+ */
+export class WebGPUShaderManager {
+  private device: GPUDevice;
+  private shaders: Map<string, GPUShaderModule> = new Map();
+  private pipelines: Map<string, GPURenderPipeline> = new Map();
 
+  constructor(device: GPUDevice) {
+    this.device = device;
+  }
+
+  createShader(id: string, code: string): GPUShaderModule {
+    const shader = this.device.createShaderModule({ code });
+    this.shaders.set(id, shader);
+    return shader;
+  }
+
+  createRenderPipeline(
+    id: string,
+    vertexShader: string,
+    fragmentShader: string,
+    vertexLayout: GPUVertexBufferLayout[]
+  ): GPURenderPipeline {
+    const pipeline = this.device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: this.getShader(vertexShader)!,
+        entryPoint: 'vs_main',
+        buffers: vertexLayout
+      },
+      fragment: {
+        module: this.getShader(fragmentShader)!,
+        entryPoint: 'fs_main',
+        targets: [{
+          format: 'bgra8unorm' as GPUTextureFormat,
+          blend: {
+            color: {
+              srcFactor: 'src-alpha' as GPUBlendFactor,
+              dstFactor: 'one-minus-src-alpha' as GPUBlendFactor,
+              operation: 'add' as GPUBlendOperation
+            },
+            alpha: {
+              srcFactor: 'one' as GPUBlendFactor,
+              dstFactor: 'one-minus-src-alpha' as GPUBlendFactor,
+              operation: 'add' as GPUBlendOperation
+            }
+          }
+        }]
+      },
+      primitive: {
+        topology: 'triangle-list'
+      }
+    });
+
+    this.pipelines.set(id, pipeline);
+    return pipeline;
+  }
+
+  getShader(id: string): GPUShaderModule | undefined {
+    return this.shaders.get(id);
+  }
+
+  getPipeline(id: string): GPURenderPipeline | undefined {
+    return this.pipelines.get(id);
+  }
+
+  dispose(): void {
+    this.shaders.clear();
+    this.pipelines.clear();
+  }
+}
+
+/**
+ * WebGPU 上下文实现
+ */
+export class WebGPUContext implements IGraphicsContext {
+  public readonly width: number;
+  public readonly height: number;
+  public readonly devicePixelRatio: number = window.devicePixelRatio || 1;
+
+  private adapter: GPUAdapter;
+  private device: GPUDevice;
+  private canvas: HTMLCanvasElement;
+  private context: GPUCanvasContext;
+  private format: GPUTextureFormat = 'bgra8unorm';
+
+  // 管理器
+  private bufferManager: WebGPUBufferManager;
+  private shaderManager: WebGPUShaderManager;
+
+  // 渲染状态
+  private commandEncoder: GPUCommandEncoder | null = null;
+  private renderPass: GPURenderPassEncoder | null = null;
+
+  // 变换和状态管理
+  private transformStack: Matrix3[] = [];
+  private currentTransform: Matrix3;
+  private stateStack: Array<{
+    transform: Matrix3;
+    fillStyle: string;
+    strokeStyle: string;
+    lineWidth: number;
+    globalAlpha: number;
+  }> = [];
+
+  // 当前样式状态
+  private fillStyle: string = '#000000';
+  private strokeStyle: string = '#000000';
+  private lineWidth: number = 1;
+  private globalAlpha: number = 1;
+
+  // 路径状态
+  private currentPath: { x: number; y: number }[] = [];
+  private pathStarted: boolean = false;
+
+  constructor(
+    adapter: GPUAdapter,
+    device: GPUDevice,
+    canvas: HTMLCanvasElement
+  ) {
+    this.adapter = adapter;
+    this.device = device;
+    this.canvas = canvas;
+    this.width = canvas.width;
+    this.height = canvas.height;
+
+    // 获取 WebGPU canvas context
+    this.context = canvas.getContext('webgpu') as GPUCanvasContext;
+    if (!this.context) {
+      throw new Error('Failed to get WebGPU context');
+    }
+
+    // 配置 canvas
+    this.context.configure({
+      device: this.device,
+      format: this.format,
+      alphaMode: 'premultiplied'
+    });
+
+    // 初始化管理器
+    this.bufferManager = new WebGPUBufferManager(device);
+    this.shaderManager = new WebGPUShaderManager(device);
+
+    // 初始化变换矩阵
+    this.currentTransform = Matrix3.identity();
+
+    // 创建基础着色器
+    this.initializeShaders();
+  }
+
+  private initializeShaders(): void {
+    // 基础顶点着色器
+    const vertexShaderCode = `
+      struct VertexInput {
+        @location(0) position: vec2<f32>,
+        @location(1) color: vec4<f32>,
+        @location(2) uv: vec2<f32>,
+      }
+
+      struct VertexOutput {
+        @builtin(position) position: vec4<f32>,
+        @location(0) color: vec4<f32>,
+        @location(1) uv: vec2<f32>,
+      }
+
+      struct Uniforms {
+        transform: mat3x3<f32>,
+        projection: mat3x3<f32>,
+      }
+
+      @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+      @vertex
+      fn vs_main(input: VertexInput) -> VertexOutput {
+        var output: VertexOutput;
+
+        // 应用变换矩阵
+        let pos = vec3<f32>(input.position, 1.0);
+        let transformed = uniforms.transform * pos;
+        let projected = uniforms.projection * transformed;
+
+        output.position = vec4<f32>(projected.xy, 0.0, 1.0);
+        output.color = input.color;
+        output.uv = input.uv;
+
+        return output;
+      }
+    `;
+
+    // 基础片段着色器
+    const fragmentShaderCode = `
+      struct VertexOutput {
+        @builtin(position) position: vec4<f32>,
+        @location(0) color: vec4<f32>,
+        @location(1) uv: vec2<f32>,
+      }
+
+      @fragment
+      fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
+        return input.color;
+      }
+    `;
+
+    this.shaderManager.createShader('basic_vertex', vertexShaderCode);
+    this.shaderManager.createShader('basic_fragment', fragmentShaderCode);
+
+    // 创建基础渲染管线
+    const vertexLayout: GPUVertexBufferLayout[] = [{
+      arrayStride: 32, // 2 floats (position) + 4 floats (color) + 2 floats (uv)
+      attributes: [
+        {
+          shaderLocation: 0,
+          offset: 0,
+          format: 'float32x2' // position
+        },
+        {
+          shaderLocation: 1,
+          offset: 8,
+          format: 'float32x4' // color
+        },
+        {
+          shaderLocation: 2,
+          offset: 24,
+          format: 'float32x2' // uv
+        }
+      ]
+    }];
+
+    this.shaderManager.createRenderPipeline(
+      'basic',
+      'basic_vertex',
+      'basic_fragment',
+      vertexLayout
+    );
+  }
+
+  // IGraphicsContext 实现
+
+  // 状态管理
+  save(): void {
+    this.stateStack.push({
+      transform: this.currentTransform.clone(),
+      fillStyle: this.fillStyle,
+      strokeStyle: this.strokeStyle,
+      lineWidth: this.lineWidth,
+      globalAlpha: this.globalAlpha
+    });
+    this.transformStack.push(this.currentTransform.clone());
+  }
+
+  restore(): void {
+    const state = this.stateStack.pop();
+    if (state) {
+      this.currentTransform = state.transform;
+      this.fillStyle = state.fillStyle;
+      this.strokeStyle = state.strokeStyle;
+      this.lineWidth = state.lineWidth;
+      this.globalAlpha = state.globalAlpha;
+    }
+
+    const transform = this.transformStack.pop();
+    if (transform) {
+      this.currentTransform = transform;
+    }
+  }
+
+  getState(): IGraphicsState {
+    const e = this.currentTransform.elements;
+    return {
+      transform: {
+        a: e[0],
+        b: e[1],
+        c: e[3],
+        d: e[4],
+        e: e[6],
+        f: e[7]
+      },
+      style: {
+        fillColor: this.fillStyle,
+        strokeColor: this.strokeStyle,
+        lineWidth: this.lineWidth,
+        opacity: this.globalAlpha
+      }
+    };
+  }
+
+  setState(state: Partial<IGraphicsState>): void {
+    if (state.transform) {
+      this.setTransform(state.transform);
+    }
+    if (state.style) {
+      this.setStyle(state.style);
+    }
+  }
+
+  // 变换操作
+  setTransform(transform: ITransform): void {
+    this.currentTransform.set(
+      transform.a, transform.c, transform.e,
+      transform.b, transform.d, transform.f,
+      0, 0, 1
+    );
+  }
+
+  transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
+    const matrix = new Matrix3(
+      a, c, e,
+      b, d, f,
+      0, 0, 1
+    );
+    this.currentTransform.multiply(matrix);
+  }
+
+  translate(x: number, y: number): void {
+    this.currentTransform.translate(x, y);
+  }
+
+  rotate(angle: number): void {
+    this.currentTransform.rotate(angle);
+  }
+
+  scale(x: number, y: number): void {
+    this.currentTransform.scale(x, y);
+  }
+
+  resetTransform(): void {
+    this.currentTransform = Matrix3.identity();
+  }
+
+  // 样式设置
+  setStyle(style: Partial<IGraphicsStyle>): void {
+    if (style.fillColor) {
+      this.setFillColor(style.fillColor as string);
+    }
+    if (style.strokeColor) {
+      this.setStrokeColor(style.strokeColor as string);
+    }
+    if (style.lineWidth) {
+      this.setLineWidth(style.lineWidth);
+    }
+    if (style.opacity !== undefined) {
+      this.setOpacity(style.opacity);
+    }
+  }
+
+  setFillColor(color: string): void {
+    this.fillStyle = color;
+  }
+
+  setStrokeColor(color: string): void {
+    this.strokeStyle = color;
+  }
+
+  setFillStyle(color: string): void {
+    this.setFillColor(color);
+  }
+
+  setStrokeStyle(color: string): void {
+    this.setStrokeColor(color);
+  }
+
+  setLineWidth(width: number): void {
+    this.lineWidth = width;
+  }
+
+  setOpacity(opacity: number): void {
+    this.setGlobalAlpha(opacity);
+  }
+
+  setGlobalAlpha(alpha: number): void {
+    this.globalAlpha = Math.max(0, Math.min(1, alpha));
+  }
+
+  setLineDash(segments: number[]): void {
+    // WebGPU 中的线条破折号需要在着色器中实现
+    console.log('WebGPU setLineDash not fully implemented');
+  }
+
+  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+    // 文本对齐在 WebGPU 中需要特殊处理
+    console.log('WebGPU setTextAlign not fully implemented');
+  }
+
+  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+    // 文本基线在 WebGPU 中需要特殊处理
+    console.log('WebGPU setTextBaseline not fully implemented');
+  }
+
+  setFont(font: string): void {
+    // 字体设置在 WebGPU 中需要文本渲染系统
+    console.log('WebGPU setFont not fully implemented');
+  }
+
+  // 清除和渲染
+  clear(): void {
+    this.beginRenderPass();
+    // 渲染通道会自动清除
+  }
+
+  clearRect(x: number, y: number, width: number, height: number): void {
+    // WebGPU 中部分清除需要特殊实现
+    console.log('WebGPU clearRect not fully implemented - clearing entire surface');
+    this.clear();
+  }
+
+  present(): void {
+    this.endRenderPass();
+    this.submitCommands();
+  }
+
+  // 路径绘制
+  beginPath(): void {
+    this.currentPath = [];
+    this.pathStarted = true;
+  }
+
+  closePath(): void {
+    if (this.currentPath.length > 0) {
+      const firstPoint = this.currentPath[0];
+      this.currentPath.push({ x: firstPoint.x, y: firstPoint.y });
+    }
+  }
+
+  moveTo(x: number, y: number): void {
+    this.currentPath.push({ x, y });
+    this.pathStarted = true;
+  }
+
+  lineTo(x: number, y: number): void {
+    if (!this.pathStarted) {
+      this.moveTo(x, y);
+    } else {
+      this.currentPath.push({ x, y });
+    }
+  }
+
+  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void {
+    // 将二次贝塞尔曲线转换为多条线段
+    const segments = 16;
+    const currentPoint = this.currentPath[this.currentPath.length - 1] || { x: 0, y: 0 };
+
+    for (let i = 1; i <= segments; i++) {
+      const t = i / segments;
+      const t2 = t * t;
+      const mt = 1 - t;
+      const mt2 = mt * mt;
+
+      const px = mt2 * currentPoint.x + 2 * mt * t * cpx + t2 * x;
+      const py = mt2 * currentPoint.y + 2 * mt * t * cpy + t2 * y;
+
+      this.lineTo(px, py);
+    }
+  }
+
+  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
+    // 将三次贝塞尔曲线转换为多条线段
+    const segments = 16;
+    const currentPoint = this.currentPath[this.currentPath.length - 1] || { x: 0, y: 0 };
+
+    for (let i = 1; i <= segments; i++) {
+      const t = i / segments;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const mt = 1 - t;
+      const mt2 = mt * mt;
+      const mt3 = mt2 * mt;
+
+      const px = mt3 * currentPoint.x + 3 * mt2 * t * cp1x + 3 * mt * t2 * cp2x + t3 * x;
+      const py = mt3 * currentPoint.y + 3 * mt2 * t * cp1y + 3 * mt * t2 * cp2y + t3 * y;
+
+      this.lineTo(px, py);
+    }
+  }
+
+  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void {
+    const segments = Math.max(16, Math.ceil(Math.abs(endAngle - startAngle) * 32 / (2 * Math.PI)));
+    const angleStep = (endAngle - startAngle) / segments * (counterclockwise ? -1 : 1);
+
+    for (let i = 0; i <= segments; i++) {
+      const angle = startAngle + angleStep * i;
+      const pointX = x + Math.cos(angle) * radius;
+      const pointY = y + Math.sin(angle) * radius;
+
+      if (i === 0 && !this.pathStarted) {
+        this.moveTo(pointX, pointY);
+      } else {
+        this.lineTo(pointX, pointY);
+      }
+    }
+  }
+
+  rect(x: number, y: number, width: number, height: number): void {
+    this.moveTo(x, y);
+    this.lineTo(x + width, y);
+    this.lineTo(x + width, y + height);
+    this.lineTo(x, y + height);
+    this.closePath();
+  }
+
+  // 绘制方法
+  fill(): void {
+    if (this.currentPath.length < 3) return;
+
+    const triangles = this.triangulatePolygon(this.currentPath);
+    if (triangles.length === 0) return;
+
+    this.renderTriangles(triangles, this.parseColor(this.fillStyle));
+  }
+
+  stroke(): void {
+    if (this.currentPath.length < 2) return;
+
+    this.renderPathStroke(this.currentPath, this.parseColor(this.strokeStyle), this.lineWidth);
+  }
+
+  fillRect(x: number, y: number, width: number, height: number): void {
+    const vertices = [
+      { x, y },
+      { x: x + width, y },
+      { x: x + width, y: y + height },
+      { x, y: y + height }
+    ];
+
+    this.renderTriangles(vertices, this.parseColor(this.fillStyle));
+  }
+
+  strokeRect(x: number, y: number, width: number, height: number): void {
+    const path = [
+      { x, y },
+      { x: x + width, y },
+      { x: x + width, y: y + height },
+      { x, y: y + height },
+      { x, y } // 闭合路径
+    ];
+
+    this.renderPathStroke(path, this.parseColor(this.strokeStyle), this.lineWidth);
+  }
+
+  drawLine(x1: number, y1: number, x2: number, y2: number): void {
+    const path = [{ x: x1, y: y1 }, { x: x2, y: y2 }];
+    this.renderPathStroke(path, this.parseColor(this.strokeStyle), this.lineWidth);
+  }
+
+  drawRect(rect: { x: number; y: number; width: number; height: number }, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillRect(rect.x, rect.y, rect.width, rect.height);
+    }
+    if (stroke) {
+      this.strokeRect(rect.x, rect.y, rect.width, rect.height);
+    }
+  }
+
+  // 圆形绘制
+  fillCircle(x: number, y: number, radius: number): void {
+    const segments = Math.max(16, Math.ceil(radius));
+    const vertices: { x: number; y: number }[] = [];
+
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      vertices.push({
+        x: x + Math.cos(angle) * radius,
+        y: y + Math.sin(angle) * radius
+      });
+    }
+
+    this.renderTriangles(vertices, this.parseColor(this.fillStyle));
+  }
+
+  strokeCircle(x: number, y: number, radius: number): void {
+    const segments = Math.max(16, Math.ceil(radius));
+    const vertices: { x: number; y: number }[] = [];
+
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      vertices.push({
+        x: x + Math.cos(angle) * radius,
+        y: y + Math.sin(angle) * radius
+      });
+    }
+
+    this.renderPathStroke(vertices, this.parseColor(this.strokeStyle), this.lineWidth);
+  }
+
+  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+    if (fill) {
+      this.fillCircle(center.x, center.y, radius);
+    }
+    if (stroke) {
+      this.strokeCircle(center.x, center.y, radius);
+    }
+  }
+
+  // 文本绘制（简化实现）
+  fillText(text: string, x: number, y: number, style?: ITextStyle): void {
+    console.log('WebGPU fillText not fully implemented');
+  }
+
+  strokeText(text: string, x: number, y: number, style?: ITextStyle): void {
+    console.log('WebGPU strokeText not fully implemented');
+  }
+
+  measureText(text: string, style?: ITextStyle): { width: number; height: number } {
+    console.log('WebGPU measureText not fully implemented');
+    return { width: text.length * 8, height: 16 }; // 近似值
+  }
+
+  // 图像操作（简化实现）
+  drawImage(imageData: IImageData, dx: number, dy: number): void;
+  drawImage(imageData: IImageData, dx: number, dy: number, dw: number, dh: number): void;
+  drawImage(imageData: IImageData, dx: number, dy: number, dw?: number, dh?: number): void {
+    console.log('WebGPU drawImage not fully implemented');
+  }
+
+  getImageData(x: number, y: number, width: number, height: number): IImageData {
+    console.log('WebGPU getImageData not fully implemented');
+    const data = new Uint8ClampedArray(width * height * 4);
+    return { width, height, data };
+  }
+
+  putImageData(imageData: IImageData, x: number, y: number): void {
+    console.log('WebGPU putImageData not fully implemented');
+  }
+
+  // 裁剪（简化实现）
+  clip(): void {
+    console.log('WebGPU clip not fully implemented');
+  }
+
+  clipRect(x: number, y: number, width: number, height: number): void {
+    console.log('WebGPU clipRect not fully implemented');
+  }
+
+  // 坐标转换
+  screenToWorld(point: IPoint): IPoint {
+    const inverse = this.currentTransform.clone().inverse();
+    if (!inverse) {
+      // 如果矩阵不可逆，返回原点
+      return { x: point.x, y: point.y };
+    }
+    const result = inverse.transformPoint(new Vector2(point.x, point.y));
+    return { x: result.x, y: result.y };
+  }
+
+  worldToScreen(point: IPoint): IPoint {
+    const result = this.currentTransform.transformPoint(new Vector2(point.x, point.y));
+    return { x: result.x, y: result.y };
+  }
+
+  // 资源管理
+  dispose(): void {
+    this.bufferManager.dispose();
+    this.shaderManager.dispose();
+  }
+
+  // 私有辅助方法
+
+  private beginRenderPass(): void {
+    if (!this.commandEncoder) {
+      this.commandEncoder = this.device.createCommandEncoder();
+    }
+
+    const textureView = this.context.getCurrentTexture().createView();
+
+    this.renderPass = this.commandEncoder.beginRenderPass({
+      colorAttachments: [{
+        view: textureView,
+        clearValue: { r: 1, g: 1, b: 1, a: 1 },
+        loadOp: 'clear',
+        storeOp: 'store'
+      }]
+    });
+  }
+
+  private endRenderPass(): void {
+    if (this.renderPass) {
+      this.renderPass.end();
+      this.renderPass = null;
+    }
+  }
+
+  private submitCommands(): void {
+    if (this.commandEncoder) {
+      this.device.queue.submit([this.commandEncoder.finish()]);
+      this.commandEncoder = null;
+    }
+  }
+
+  private parseColor(color: string): [number, number, number, number] {
+    // 简化的颜色解析，实际应该更完善
+    if (color.startsWith('#')) {
+      const hex = color.slice(1);
+      const r = parseInt(hex.slice(0, 2), 16) / 255;
+      const g = parseInt(hex.slice(2, 4), 16) / 255;
+      const b = parseInt(hex.slice(4, 6), 16) / 255;
+      return [r, g, b, this.globalAlpha];
+    }
+    return [0, 0, 0, this.globalAlpha];
+  }
+
+  private triangulatePolygon(path: { x: number; y: number }[]): { x: number; y: number }[] {
+    if (path.length < 3) return [];
+
+    // 简化的三角扇形实现
+    const triangles: { x: number; y: number }[] = [];
+    const center = path[0];
+
+    for (let i = 1; i < path.length - 1; i++) {
+      triangles.push(center, path[i], path[i + 1]);
+    }
+
+    return triangles;
+  }
+
+  private renderTriangles(vertices: { x: number; y: number }[], color: [number, number, number, number]): void {
+    if (!this.renderPass || vertices.length === 0) return;
+
+    // 创建顶点数据
+    const vertexData = new Float32Array(vertices.length * 8); // 每个顶点 8 个值
+    for (let i = 0; i < vertices.length; i++) {
+      const offset = i * 8;
+      vertexData[offset] = vertices[i].x;
+      vertexData[offset + 1] = vertices[i].y;
+      vertexData[offset + 2] = color[0];
+      vertexData[offset + 3] = color[1];
+      vertexData[offset + 4] = color[2];
+      vertexData[offset + 5] = color[3];
+      vertexData[offset + 6] = 0; // u
+      vertexData[offset + 7] = 0; // v
+    }
+
+    // 创建并绑定顶点缓冲区
+    const vertexBuffer = this.bufferManager.createBuffer(
+      `vertices_${Date.now()}`,
+      vertexData.byteLength,
+      GPUBufferUsage.VERTEX,
+      vertexData
+    );
+
+    // 设置渲染管线
+    const pipeline = this.shaderManager.getPipeline('basic');
+    if (pipeline) {
+      this.renderPass.setPipeline(pipeline);
+      this.renderPass.setVertexBuffer(0, vertexBuffer);
+      this.renderPass.draw(vertices.length);
+    }
+  }
+
+  private renderPathStroke(
+    path: { x: number; y: number }[],
+    color: [number, number, number, number],
+    lineWidth: number
+  ): void {
+    if (!this.renderPass || path.length < 2) return;
+
+    // 为每条边生成线条几何体
+    const vertices: { x: number; y: number }[] = [];
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const start = path[i];
+      const end = path[i + 1];
+
+      // 计算线条方向和垂直向量
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      if (length === 0) continue;
+
+      const nx = -dy / length;
+      const ny = dx / length;
+      const halfWidth = lineWidth / 2;
+
+      // 创建线条的四边形顶点
+      vertices.push(
+        { x: start.x + nx * halfWidth, y: start.y + ny * halfWidth },
+        { x: end.x + nx * halfWidth, y: end.y + ny * halfWidth },
+        { x: end.x - nx * halfWidth, y: end.y - ny * halfWidth },
+        { x: start.x - nx * halfWidth, y: start.y - ny * halfWidth }
+      );
+    }
+
+    this.renderTriangles(vertices, color);
+  }
+}
+
+// 静态方法用于创建和检查支持
+export namespace WebGPUContext {
+  export async function create(canvas: HTMLCanvasElement): Promise<WebGPUContext> {
+    if (!navigator.gpu) {
+      throw new Error('WebGPU not supported');
+    }
+
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      throw new Error('Failed to get WebGPU adapter');
+    }
+
+    const device = await adapter.requestDevice();
+    if (!device) {
+      throw new Error('Failed to get WebGPU device');
+    }
+
+    return new WebGPUContext(adapter, device, canvas);
+  }
+
+  export function isSupported(): boolean {
+    return !!navigator.gpu;
+  }
+
+  export function getCapabilities(): IGraphicsCapabilities {
+    return {
+      supportsHardwareAcceleration: true,
+      supportsTransforms: true,
+      supportsFilters: true,
+      supportsBlending: true,
+      maxTextureSize: 8192,
+      supportedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'dds', 'ktx2']
+    };
+  }
+}

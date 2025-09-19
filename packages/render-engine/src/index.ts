@@ -8,8 +8,8 @@ export * from './core';
 // 数学库 (使用命名空间导出避免冲突)
 export * as MathUtils from './math';
 
-// 核心模块 (通过 core 导出，避免重复)
-export * from './rendering/primitives';
+// Shapes 系统 (Konva.js 风格的图形系统)
+export * from './shapes';
 
 // 渲染管道 (明确处理冲突)
 export type { IRenderable } from './core/types';
@@ -31,8 +31,8 @@ export {
 export * from './rendering/culling';
 
 // 功能模块 (通过 features 统一导出)
-export * from './features';
 export * from './core/interface';
+export * from './features';
 export * from './features/plugins';
 
 // 资源管理 (明确导出避免冲突)

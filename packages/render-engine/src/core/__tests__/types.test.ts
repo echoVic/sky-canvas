@@ -17,12 +17,12 @@ import { IGraphicsContext, IPoint, IRect } from '../interface/IGraphicsContext';
 describe('Engine Types', () => {
   describe('RenderEngineType', () => {
     it('should support all renderer types', () => {
-      const types: RenderEngineType[] = ['webgl', 'canvas2d', 'webgpu', 'auto'];
-      expect(types).toHaveLength(4);
+      const types: RenderEngineType[] = ['webgl', 'canvas2d', 'webgpu'];
+      expect(types).toHaveLength(3);
       expect(types).toContain('webgl');
       expect(types).toContain('canvas2d');
       expect(types).toContain('webgpu');
-      expect(types).toContain('auto');
+      expect(types).toContain('webgpu');
     });
   });
 
@@ -456,11 +456,11 @@ describe('Engine Types', () => {
         { renderer: 'webgl' },
         { renderer: 'canvas2d' },
         { renderer: 'webgpu' },
-        { renderer: 'auto' }
+        { renderer: 'webgl' }
       ];
 
       configs.forEach(config => {
-        expect(['webgl', 'canvas2d', 'webgpu', 'auto']).toContain(config.renderer);
+        expect(['webgl', 'canvas2d', 'webgpu']).toContain(config.renderer);
       });
     });
 

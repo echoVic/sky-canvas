@@ -10,7 +10,12 @@ import type { RenderContext, RendererCapabilities } from '../types';
 
 // 创建一个具体的测试渲染器类
 class TestRenderer extends BaseRenderer {
-  render(context: RenderContext): void {
+  initialize(canvas: HTMLCanvasElement): boolean {
+    this.canvas = canvas;
+    return true;
+  }
+
+  render(): void {
     // 测试实现
   }
 
@@ -135,7 +140,7 @@ describe('BaseRenderer', () => {
         return 1;
       });
       
-      renderer.startRenderLoop(mockContext);
+      renderer.startRenderLoop();
       expect(renderer.isRunning()).toBe(true);
       
       spy.mockRestore();
@@ -144,7 +149,7 @@ describe('BaseRenderer', () => {
     it('应该能停止渲染循环', () => {
       const spy = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
       
-      renderer.startRenderLoop(mockContext);
+      renderer.startRenderLoop();
       renderer.stopRenderLoop();
       
       expect(renderer.isRunning()).toBe(false);
@@ -207,7 +212,7 @@ describe('BaseRenderer', () => {
   describe('资源清理', () => {
     it('应该正确清理资源', () => {
       renderer.addRenderable(createMockRenderable('test'));
-      renderer.startRenderLoop(mockContext);
+      renderer.startRenderLoop();
       
       expect(() => renderer.dispose()).not.toThrow();
       expect(renderer.isRunning()).toBe(false);
@@ -216,7 +221,7 @@ describe('BaseRenderer', () => {
 
   describe('抽象方法', () => {
     it('应该实现所有抽象方法', () => {
-      expect(() => renderer.render(mockContext)).not.toThrow();
+      expect(() => renderer.render()).not.toThrow();
       expect(() => renderer.clear()).not.toThrow();
       expect(renderer.getCapabilities()).toBeDefined();
     });

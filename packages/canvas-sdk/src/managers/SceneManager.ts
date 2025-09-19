@@ -280,12 +280,12 @@ export class SceneManager implements ISceneManager {
   // === 渲染控制 ===
 
   render(): void {
-    const renderables = this.getRenderablesInLayerOrder();
+    const objects = this.getObjectsInLayerOrder();
     // 假设渲染服务有批量渲染方法
-    renderables.forEach(renderable => {
-      this.renderingService.addRenderable(renderable);
+    objects.forEach(object => {
+      this.renderingService.addObject(object);
     });
-    this.eventBus.emit('scene:rendered', { renderableCount: renderables.length });
+    this.eventBus.emit('scene:rendered', { objectCount: objects.length });
   }
 
   refreshScene(): void {
@@ -312,31 +312,31 @@ export class SceneManager implements ISceneManager {
     });
   }
 
-  private getRenderablesInLayerOrder(): IRenderable[] {
-    const allRenderables = this.canvasManager.getRenderables();
-    const renderableMap = new Map<string, IRenderable>();
-    
-    // 创建 ID 到 Renderable 的映射
-    allRenderables.forEach(renderable => {
-      renderableMap.set((renderable as any).id, renderable);
+  private getObjectsInLayerOrder(): IRenderable[] {
+    const allObjects = this.canvasManager.getObjects();
+    const objectMap = new Map<string, IRenderable>();
+
+    // 创建 ID 到对象的映射
+    allObjects.forEach(object => {
+      objectMap.set((object as any).id, object);
     });
 
     // 按图层顺序排列
-    const orderedRenderables: IRenderable[] = [];
+    const orderedObjects: IRenderable[] = [];
     const sortedLayers = this.getAllLayers(); // 已按 zIndex 排序
-    
+
     for (const layer of sortedLayers) {
       if (!layer.visible) continue;
-      
+
       for (const shapeId of layer.shapes) {
-        const renderable = renderableMap.get(shapeId);
-        if (renderable) {
-          orderedRenderables.push(renderable);
+        const object = objectMap.get(shapeId);
+        if (object) {
+          orderedObjects.push(object);
         }
       }
     }
 
-    return orderedRenderables;
+    return orderedObjects;
   }
 
   // === 状态查询 ===

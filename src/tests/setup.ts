@@ -127,7 +127,7 @@ global.HTMLCanvasElement = class MockHTMLCanvasElement {
   width = 100;
   height = 100;
   getContext = vi.fn(() => new (global.CanvasRenderingContext2D as any)());
-};
+} as any;
 
 // Mock CanvasRenderingContext2D constructor for instanceof checks
 global.CanvasRenderingContext2D = class MockCanvasRenderingContext2D {
@@ -167,4 +167,4 @@ global.CanvasRenderingContext2D = class MockCanvasRenderingContext2D {
   globalCompositeOperation = 'source-over';
   globalAlpha = 1;
   fillStyle = '#000000';
-};
+} as any;

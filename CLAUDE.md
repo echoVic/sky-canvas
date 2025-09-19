@@ -85,7 +85,8 @@ pnpm --filter @sky-canvas/canvas-sdk build
 
 ### Render Engine (`packages/render-engine/`)
 - Framework-agnostic graphics rendering
-- Supports Canvas2D, WebGL, and WebGPU (in development)
+- Supports Canvas2D, WebGL, and WebGPU
+- Defaults to WebGL renderer (best performance/compatibility balance)
 - Modern rendering pipeline with batch processing
 - Spatial partitioning for performance optimization
 - Command-based rendering architecture
@@ -160,6 +161,54 @@ const shape = createShape('rectangle', startPoint, endPoint);
 - React.memo and useCallback for component optimization
 - Canvas size auto-adaptation
 - Only render visible shapes
+
+## Renderer Configuration
+
+### Supported Renderers
+- **WebGL** (default): Best performance/compatibility balance
+- **Canvas2D**: Maximum compatibility, good for debugging
+- **WebGPU**: Cutting-edge performance (requires modern browsers)
+
+### Configuration Example
+```typescript
+// Canvas SDK configuration
+const config = {
+  renderEngine: 'webgl', // 'webgl' | 'canvas2d' | 'webgpu'
+  enableInteraction: true,
+  debug: false
+};
+
+// Render Engine direct usage
+const engine = new RenderEngine(canvas, {
+  renderer: 'webgl',
+  antialias: true,
+  debug: false
+});
+```
+
+### Renderer Selection Guidelines
+- Use **WebGL** for production (default choice)
+- Use **Canvas2D** for debugging or maximum compatibility
+- Use **WebGPU** only when you need cutting-edge features and can ensure browser support
+
+### Automatic Fallback
+The system automatically falls back to a supported renderer if the requested one is not available:
+
+1. **WebGPU** → **WebGL** (if WebGPU not supported)
+2. **WebGL** → **Canvas2D** (if WebGL not supported)
+3. **Canvas2D** is always supported (final fallback)
+
+```typescript
+// Example: Request WebGPU but may fallback to WebGL/Canvas2D
+const engine = new RenderEngine(canvas, { renderer: 'webgpu' });
+
+// Check what renderer is actually being used
+const info = engine.getRendererInfo();
+console.log(`Requested: ${info.requested}, Actual: ${info.actual}`);
+if (info.fallback) {
+  console.log('Fallback occurred due to browser limitations');
+}
+```
 
 ## Development Workflow
 

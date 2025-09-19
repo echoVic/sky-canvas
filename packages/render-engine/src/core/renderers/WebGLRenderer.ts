@@ -86,12 +86,19 @@ export class WebGLRenderer extends BaseRenderer {
     enablePerformanceMonitoring?: boolean;
     enableMemoryOptimization?: boolean;
   }): boolean {
-    // 获取WebGL上下文
+    this.canvas = canvas;
+
+    // 获取原生WebGL上下文
     this.gl = canvas.getContext('webgl') as WebGLRenderingContext || canvas.getContext('experimental-webgl') as WebGLRenderingContext;
     if (!this.gl) {
-      console.error('WebGL not supported');
+      console.error('WebGL not supported. Canvas:', canvas, 'Canvas tagName:', canvas?.tagName, 'Available contexts:',
+        canvas ? Object.getOwnPropertyNames(canvas.getContext ? canvas.getContext('2d') || {} : {}) : 'no canvas');
       return false;
     }
+
+    // 创建 WebGLContext 包装器实例
+    this.webglContext = new WebGLContext(this.gl, canvas);
+    this.context = this.webglContext as any; // 设置 BaseRenderer 的 context
 
     // 设置选项
     this.enablePerformanceMonitoring = options?.enablePerformanceMonitoring ?? false;
@@ -161,11 +168,13 @@ export class WebGLRenderer extends BaseRenderer {
     if (!this.resourceManager) return;
 
     // 创建更大的顶点缓冲区 (position + color + texCoord = 8 floats)
-    const vertexData = new ArrayBuffer(this.maxBatchSize * 8 * 4);
+    // maxBatchSize 是顶点数，每个对象需要4个顶点，所以最大对象数是 maxBatchSize / 4
+    const maxObjects = Math.floor(this.maxBatchSize / 4);
+    const vertexData = new ArrayBuffer(this.maxBatchSize * 8 * 4); // 实际是按顶点数计算的
     this.vertexBuffer = this.resourceManager.createBuffer(BufferType.VERTEX, vertexData);
 
-    // 创建索引缓冲区
-    const indexData = new ArrayBuffer(this.maxBatchSize * 6 * 2);
+    // 创建索引缓冲区 - 每个对象需要6个索引（2个三角形）
+    const indexData = new ArrayBuffer(maxObjects * 6 * 2); // 每个索引2字节（Uint16）
     this.indexBuffer = this.resourceManager.createBuffer(BufferType.INDEX, indexData);
 
     // 创建实例缓冲区（如果支持）
@@ -194,50 +203,57 @@ export class WebGLRenderer extends BaseRenderer {
     this.geometryCache.set('quad', this.quadGeometry);
   }
 
-  render(context: RenderContext): void {
-    // 优先使用统一的图形上下文
-    if (context.context instanceof WebGLContext) {
-      this.webglContext = context.context;
-      this.gl = this.webglContext.gl; // 获取原生 WebGL 上下文用于兼容
-    } else if (!this.gl) {
-      console.error('WebGLRenderer requires WebGLContext or WebGL context');
+  render(): void {
+    console.log(`[WebGLRenderer-${this.constructor.name}] render() called, children count: ${this.children.length}`);
+    console.log(`[WebGLRenderer-${this.constructor.name}] webglContext exists: ${!!this.webglContext}`);
+    console.log(`[WebGLRenderer-${this.constructor.name}] gl exists: ${!!this.gl}`);
+    console.log(`[WebGLRenderer-${this.constructor.name}] shaderManager exists: ${!!this.shaderManager}`);
+
+    if (!this.webglContext || !this.gl) {
+      console.error('[WebGLRenderer] Not initialized - webglContext or gl missing');
       return;
     }
 
-    if (!this.gl || !this.shaderManager) return;
+    if (!this.gl || !this.shaderManager) {
+      console.error('[WebGLRenderer] Not initialized - gl or shaderManager missing');
+      return;
+    }
+
+    console.log(`[WebGLRenderer] All checks passed, continuing with render...`);
 
     // 开始性能分析
     if (this.performanceAnalyzer) {
       this.performanceAnalyzer.beginFrame();
     }
 
-    this.currentContext = context as WebGLRenderContext;
     const startTime = performance.now();
 
     // 重置统计
     this.resetStats();
 
-    // 使用统一接口或原生接口设置视口
-    if (this.webglContext) {
-      // 使用 WebGLContext 的高级方法
-      this.webglContext.save();
-      // 可以使用 webglContext 的其他方法...
-    } else {
-      // 兼容模式：直接使用原生 WebGL
-      this.gl.viewport(0, 0, context.canvas.width, context.canvas.height);
-    }
+    // 设置视口
+    this.gl.viewport(0, 0, this.canvas!.width, this.canvas!.height);
+
+    // 使用 WebGLContext 的高级方法
+    this.webglContext.save();
 
     // 更新投影矩阵
-    this.updateProjectionMatrix(context.viewport);
+    console.log(`[WebGLRenderer] Updating projection matrix for viewport:`, this.viewport);
+    this.updateProjectionMatrix(this.viewport);
 
     // 清空画布
+    console.log(`[WebGLRenderer] Clearing canvas`);
     this.clear();
 
     // 收集并排序可见对象
-    const visibleRenderables = this.cullAndSortRenderables(context.viewport);
+    console.log(`[WebGLRenderer] Culling and sorting renderables from ${this.children.length} children`);
+    const visibleRenderables = this.cullAndSortRenderables(this.viewport);
+    console.log(`[WebGLRenderer] Found ${visibleRenderables.length} visible renderables`);
 
     // 智能批量渲染
+    console.log(`[WebGLRenderer] Starting batched rendering`);
     this.renderRenderablesBatched(visibleRenderables);
+    console.log(`[WebGLRenderer] Batched rendering completed`);
 
     // 更新统计
     this.stats.frameTime = performance.now() - startTime;
@@ -278,9 +294,16 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   private cullAndSortRenderables(viewport: { x: number; y: number; width: number; height: number }): IRenderable[] {
-    const visible = this.renderables.filter(renderable =>
-      renderable.visible && this.isRenderableInViewport(renderable, { ...viewport, zoom: 1 })
-    );
+    console.log(`[WebGLRenderer] cullAndSortRenderables: ${this.children.length} children, viewport:`, viewport);
+
+    const visible = this.children.filter(renderable => {
+      const isVisible = renderable.visible;
+      const inViewport = this.isChildInViewport(renderable, { ...viewport, zoom: 1 });
+      console.log(`[WebGLRenderer] Child ${renderable.id}: visible=${isVisible}, inViewport=${inViewport}, bounds=`, renderable.getBounds());
+      return isVisible && inViewport;
+    });
+
+    console.log(`[WebGLRenderer] After culling: ${visible.length} visible objects`);
 
     // 按渲染状态排序以减少状态切换
     return visible.sort((a, b) => {
@@ -304,18 +327,25 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   private renderRenderablesBatched(renderables: IRenderable[]): void {
+    console.log(`[WebGLRenderer] renderRenderablesBatched: ${renderables.length} renderables to process`);
     this.batches.clear();
 
     // 将renderables分组到批次中
     for (const renderable of renderables) {
       const batchKey = this.generateBatchKey(renderable);
+      console.log(`[WebGLRenderer] Adding renderable ${renderable.id} to batch ${batchKey}`);
       this.addRenderableToBatch(renderable, batchKey);
     }
+
+    console.log(`[WebGLRenderer] Created ${this.batches.size} batches`);
 
     // 渲染所有批次
     for (const [key, batch] of this.batches) {
       if (batch.vertices.length > 0) {
+        console.log(`[WebGLRenderer] Rendering batch ${key} with ${batch.vertices.length} vertices, ${batch.indices.length} indices`);
         this.renderBatch(batch);
+      } else {
+        console.log(`[WebGLRenderer] Skipping empty batch ${key}`);
       }
     }
   }
@@ -365,6 +395,20 @@ export class WebGLRenderer extends BaseRenderer {
         texture: undefined
       };
       this.batches.set(batchKey, batch);
+    }
+
+    // 检查批次大小限制 - 每个四边形需要4个顶点，确保不超过缓冲区容量
+    const maxObjectsPerBatch = Math.floor(this.maxBatchSize / 4); // 65536 / 4 = 16384 个对象
+    if (batch.vertices.length >= maxObjectsPerBatch * 4) {
+      // 当前批次已满，创建新的批次
+      const newBatchKey = `${batchKey}_${Date.now()}`;
+      batch = {
+        vertices: [],
+        indices: [],
+        blendMode: this.getRenderableBlendMode(renderable),
+        texture: undefined
+      };
+      this.batches.set(newBatchKey, batch);
     }
 
     // 使用预构建的四边形几何
@@ -437,14 +481,22 @@ export class WebGLRenderer extends BaseRenderer {
     if (!this.gl || !this.shaderManager || !this.vertexBuffer || !this.indexBuffer) return;
     if (batch.vertices.length === 0) return;
 
+    console.log(`[WebGLRenderer] renderBatch: vertices=${batch.vertices.length}, indices=${batch.indices.length}`);
+
     // 选择适当的着色器
     const shaderName = batch.texture ? 'textured' : 'basic';
+    console.log(`[WebGLRenderer] Using shader: ${shaderName}`);
     this.shaderManager.useProgram(shaderName);
     this.stats.shaderSwitches++;
 
     // 设置uniform
+    console.log(`[WebGLRenderer] Projection matrix:`, this.projectionMatrix.elements);
     this.shaderManager.setUniform('u_projection', this.projectionMatrix.elements);
     this.shaderManager.setUniform('u_transform', Matrix3x3.identity().elements);
+
+    // 调试颜色和顶点数据
+    console.log(`[WebGLRenderer] First vertex data:`, batch.vertices.slice(0, 2));
+    console.log(`[WebGLRenderer] Vertex colors:`, batch.vertices.map(v => v.color));
 
     // 绑定纹理（如果有）
     if (batch.texture) {
@@ -472,8 +524,21 @@ export class WebGLRenderer extends BaseRenderer {
     // 设置顶点属性
     this.setupOptimizedVertexAttributes();
 
+    // 检查 WebGL 错误
+    let error = this.gl.getError();
+    if (error !== this.gl.NO_ERROR) {
+      console.error(`[WebGLRenderer] WebGL error before draw: ${error}`);
+    }
+
     // 绘制
+    console.log(`[WebGLRenderer] Drawing ${batch.indices.length} indices`);
     this.gl.drawElements(this.gl.TRIANGLES, batch.indices.length, this.gl.UNSIGNED_SHORT, 0);
+
+    // 检查绘制后的错误
+    error = this.gl.getError();
+    if (error !== this.gl.NO_ERROR) {
+      console.error(`[WebGLRenderer] WebGL error after draw: ${error}`);
+    }
 
     // 更新统计
     this.stats.drawCalls++;
@@ -523,7 +588,8 @@ export class WebGLRenderer extends BaseRenderer {
       buffer[offset + 7] = vertex.texCoord?.y || 0;
     }
 
-    return buffer.buffer;
+    // 返回实际数据大小的 ArrayBuffer，而不是整个底层缓冲区
+    return buffer.buffer.slice(0, buffer.byteLength);
   }
 
   private setupOptimizedVertexAttributes(): void {
@@ -558,10 +624,12 @@ export class WebGLRenderer extends BaseRenderer {
 
   private prepareIndexData(indices: number[]): ArrayBuffer {
     const buffer = new Uint16Array(indices);
-    return buffer.buffer;
+    // 返回实际数据大小的 ArrayBuffer，而不是整个底层缓冲区
+    return buffer.buffer.slice(0, buffer.byteLength);
   }
 
   clear(): void {
+    console.log(`[WebGLRenderer] Clearing canvas with color: transparent (0,0,0,0)`);
     // 使用统一接口或原生接口
     if (this.webglContext) {
       this.webglContext.clear();

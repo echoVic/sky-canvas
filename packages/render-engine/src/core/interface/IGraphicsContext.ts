@@ -180,14 +180,6 @@ export interface IGraphicsContext {
   dispose(): void;
 }
 
-/**
- * 图形上下文工厂接口
- */
-export interface IGraphicsContextFactory<TCanvas = unknown> {
-  createContext(canvas: TCanvas): Promise<IGraphicsContext>;
-  isSupported(): boolean;
-  getCapabilities(): IGraphicsCapabilities;
-}
 
 /**
  * 图形能力接口

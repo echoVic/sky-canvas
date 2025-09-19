@@ -27,7 +27,7 @@ export interface ICanvasManager {
   addShape(entity: ShapeEntity): void;
   removeShape(id: string): void;
   updateShape(id: string, updates: Partial<ShapeEntity>): void;
-  getRenderables(): IRenderable[];
+  getObjects(): IRenderable[];
   hitTest(x: number, y: number): string | null;
   
   // 选择管理
@@ -106,7 +106,7 @@ export class CanvasManager implements ICanvasManager {
 
     // 添加到渲染服务
     this.logService.info('Adding to rendering service...');
-    this.renderingService.addRenderable(view);
+    this.renderingService.addObject(view);
 
     // 记录到历史
     this.historyService.execute({
@@ -127,7 +127,7 @@ export class CanvasManager implements ICanvasManager {
     if (!entity) return;
 
     // 从渲染服务中移除
-    this.renderingService.removeRenderable(id);
+    this.renderingService.removeObject(id);
 
     this.shapeService.removeShape(id);
 
@@ -169,8 +169,8 @@ export class CanvasManager implements ICanvasManager {
   /**
    * 获取所有可渲染对象
    */
-  getRenderables(): IRenderable[] {
-    return this.shapeService.getRenderables();
+  getObjects(): IRenderable[] {
+    return this.shapeService.getObjects();
   }
 
   /**

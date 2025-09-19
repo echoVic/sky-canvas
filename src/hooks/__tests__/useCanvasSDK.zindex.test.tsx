@@ -23,7 +23,7 @@ describe('useCanvasSDK Z轴管理', () => {
 
     // 创建模拟的CanvasManager
     mockCanvasManager = {
-      getRenderables: vi.fn(() => []),
+      getObjects: vi.fn(() => []),
       getSelectedShapes: vi.fn(() => [
         { id: 'shape1', type: 'rectangle' },
         { id: 'shape2', type: 'circle' }

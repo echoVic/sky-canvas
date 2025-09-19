@@ -114,7 +114,7 @@ describe('渲染器模块导出', () => {
 
     it('应该能够实例化 WebGPURenderer', () => {
       const canvas = document.createElement('canvas');
-      const renderer = new WebGPURenderer(canvas);
+      const renderer = new WebGPURenderer();
       expect(renderer).toBeInstanceOf(WebGPURenderer);
       expect(renderer).toBeInstanceOf(BaseRenderer);
     });
@@ -125,7 +125,7 @@ describe('渲染器模块导出', () => {
       const canvas = document.createElement('canvas');
       const canvasRenderer = new CanvasRenderer();
       const webglRenderer = new WebGLRenderer();
-      const webgpuRenderer = new WebGPURenderer(canvas);
+      const webgpuRenderer = new WebGPURenderer();
 
       expect(canvasRenderer).toBeInstanceOf(BaseRenderer);
       expect(webglRenderer).toBeInstanceOf(BaseRenderer);
@@ -137,7 +137,7 @@ describe('渲染器模块导出', () => {
       const renderers = [
         new CanvasRenderer(),
         new WebGLRenderer(),
-        new WebGPURenderer(canvas)
+        new WebGPURenderer()
       ];
 
       renderers.forEach(renderer => {
@@ -194,7 +194,7 @@ describe('渲染器模块导出', () => {
         [RendererType.CANVAS_2D]: () => new CanvasRenderer(),
         [RendererType.WEBGL]: () => new WebGLRenderer(),
         [RendererType.WEBGL2]: () => new WebGLRenderer(),
-        [RendererType.WEBGPU]: () => new WebGPURenderer(canvas)
+        [RendererType.WEBGPU]: () => new WebGPURenderer()
       };
 
       Object.entries(rendererFactories).forEach(([type, factory]) => {
@@ -212,7 +212,7 @@ describe('渲染器模块导出', () => {
       const renderers = [
         new CanvasRenderer(),
         new WebGLRenderer(),
-        new WebGPURenderer(canvas)
+        new WebGPURenderer()
       ];
 
       const expectedMethods = [
@@ -242,7 +242,7 @@ describe('渲染器模块导出', () => {
       const renderers = [
         new CanvasRenderer(),
         new WebGLRenderer(),
-        new WebGPURenderer(canvas)
+        new WebGPURenderer()
       ];
 
       renderers.forEach(renderer => {
@@ -261,7 +261,7 @@ describe('渲染器模块导出', () => {
       const renderers = [
         new CanvasRenderer(),
         new WebGLRenderer(),
-        new WebGPURenderer(canvas)
+        new WebGPURenderer()
       ];
 
       renderers.forEach(renderer => {

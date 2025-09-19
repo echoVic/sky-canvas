@@ -1,342 +1,370 @@
 /**
- * WebGPU 渲染器实现（占位符实现）
- * 提供基于 WebGPU 的高性能渲染能力的接口定义
+ * WebGPU 渲染器实现
+ * 提供基于 WebGPU 的高性能渲染能力
  */
 
 import { WebGPUContext } from '../context/WebGPUContext';
 import { IPoint } from '../interface/IGraphicsContext';
-import { Rectangle } from '../../math/Rectangle';
 import { BaseRenderer } from './BaseRenderer';
-import { RenderContext, RendererCapabilities } from './types';
+import { RenderContext, RendererCapabilities, RenderState } from './types';
 
 /**
- * WebGPU 渲染上下文（占位符）
+ * WebGPU 渲染上下文
  */
-export interface WebGPURenderContext {
+export interface WebGPURenderContext extends RenderContext {
+  context: WebGPUContext;
   canvas: HTMLCanvasElement;
-  width: number;
-  height: number;
+  adapter?: GPUAdapter;
+  device?: GPUDevice;
 }
 
 /**
- * WebGPU 着色器定义（占位符）
+ * WebGPU 渲染器实现
  */
-export const WebGPUShaders = {
-  basic: {
-    vertex: `
-      // 基础顶点着色器占位符
-      // 实际实现需要 WebGPU 支持
-    `,
-    fragment: `
-      // 基础片段着色器占位符
-      // 实际实现需要 WebGPU 支持
-    `
-  },
-  textured: {
-    vertex: `
-      // 纹理顶点着色器占位符
-      // 实际实现需要 WebGPU 支持
-    `,
-    fragment: `
-      // 纹理片段着色器占位符
-      // 实际实现需要 WebGPU 支持
-    `
-  }
-};
+export class WebGPURenderer extends BaseRenderer<WebGPUContext> {
+  private webgpuContext: WebGPUContext | null = null;
 
-/**
- * WebGPU 缓冲区类（占位符）
- */
-export class WebGPUBuffer {
-  private size: number;
-  private usage: string;
+  async initialize(canvas: HTMLCanvasElement, config?: any): Promise<boolean> {
+    try {
+      this.canvas = canvas;
 
-  constructor(size: number, usage: string) {
-    this.size = size;
-    this.usage = usage;
+      // 创建 WebGPUContext 实例
+      this.webgpuContext = await WebGPUContext.create(canvas);
+      this.context = this.webgpuContext;
+
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize WebGPU renderer:', error);
+      return false;
+    }
   }
 
-  write(data: ArrayBuffer | ArrayBufferView): void {
-    // 占位符实现
-    console.warn('WebGPU buffer write not implemented');
-  }
-
-  destroy(): void {
-    // 占位符实现
-  }
-
-  getSize(): number {
-    return this.size;
-  }
-
-  getUsage(): string {
-    return this.usage;
-  }
-}
-
-/**
- * WebGPU 纹理类（占位符）
- */
-export class WebGPUTexture {
-  private width: number;
-  private height: number;
-  private format: string;
-
-  constructor(width: number, height: number, format: string = 'rgba8unorm') {
-    this.width = width;
-    this.height = height;
-    this.format = format;
-  }
-
-  updateData(data: ImageData | HTMLImageElement | HTMLCanvasElement): void {
-    // 占位符实现
-    console.warn('WebGPU texture update not implemented');
-  }
-
-  destroy(): void {
-    // 占位符实现
-  }
-
-  getWidth(): number {
-    return this.width;
-  }
-
-  getHeight(): number {
-    return this.height;
-  }
-
-  getFormat(): string {
-    return this.format;
-  }
-}
-
-/**
- * WebGPU 渲染器类（占位符实现）
- */
-export class WebGPURenderer extends BaseRenderer {
-  private canvas: HTMLCanvasElement;
-  private webgpuContext: WebGPUContext | null = null; // 使用统一的 WebGPUContext
-  private context: WebGPURenderContext; // 保留以兼容现有代码
-  private buffers: Map<string, WebGPUBuffer> = new Map();
-  private textures: Map<string, WebGPUTexture> = new Map();
-  private initialized = false;
-
-  constructor(canvas: HTMLCanvasElement) {
-    super();
-    this.canvas = canvas;
-    this.context = {
-      canvas,
-      width: canvas.width,
-      height: canvas.height
-    };
-    // 设置初始视口
-    this.setViewport({ x: 0, y: 0, width: canvas.width, height: canvas.height });
-  }
-
-  /**
-   * 初始化渲染器
-   */
-  async initialize(canvas: HTMLCanvasElement): Promise<boolean> {
-    // 占位符实现
-    console.warn('WebGPU renderer initialization not implemented', canvas);
-    this.initialized = true;
-    return true;
-  }
-
-  /**
-   * 调整画布大小
-   */
-  resize(width: number, height: number): void {
-    this.canvas.width = width;
-    this.canvas.height = height;
-    this.context.width = width;
-    this.context.height = height;
-    this.setViewport({ x: 0, y: 0, width, height });
-  }
-
-  /**
-   * 清除画布
-   */
-  clear(color: { r: number; g: number; b: number; a: number } = { r: 1, g: 1, b: 1, a: 1 }): void {
-    // 占位符实现
-    console.warn('WebGPU clear not implemented');
-  }
-
-  /**
-   * 开始渲染帧
-   */
-  beginFrame(): void {
-    // 占位符实现
-  }
-
-  /**
-   * 结束渲染帧
-   */
-  endFrame(): void {
-    // 占位符实现
-  }
-
-  /**
-   * 绘制矩形
-   */
-  drawRect(rect: Rectangle, color: { r: number; g: number; b: number; a: number }): void {
-    // 占位符实现
-    console.warn('WebGPU drawRect not implemented');
-  }
-
-  /**
-   * 绘制圆形
-   */
-  drawCircle(center: IPoint, radius: number, color: { r: number; g: number; b: number; a: number }): void {
-    // 占位符实现
-    console.warn('WebGPU drawCircle not implemented');
-  }
-
-  /**
-   * 绘制线条
-   */
-  drawLine(start: IPoint, end: IPoint, color: { r: number; g: number; b: number; a: number }, width: number = 1): void {
-    // 占位符实现
-    console.warn('WebGPU drawLine not implemented');
-  }
-
-  /**
-   * 绘制纹理
-   */
-  drawTexture(texture: WebGPUTexture, position: IPoint, size?: { width: number; height: number }): void {
-    // 占位符实现
-    console.warn('WebGPU drawTexture not implemented');
-  }
-
-  /**
-   * 创建缓冲区
-   */
-  createBuffer(size: number, usage: string): WebGPUBuffer {
-    const buffer = new WebGPUBuffer(size, usage);
-    return buffer;
-  }
-
-  /**
-   * 创建纹理
-   */
-  createTexture(width: number, height: number, format: string = 'rgba8unorm'): WebGPUTexture {
-    const texture = new WebGPUTexture(width, height, format);
-    return texture;
-  }
-
-  /**
-   * 设置视口
-   */
-  // setViewport 继承自 BaseRenderer，不需要重写
-
-  // 保留原有的四参数方法作为便利方法
-  setViewportBounds(x: number, y: number, width: number, height: number): void {
-    this.setViewport({ x, y, width, height });
-  }
-
-  /**
-   * 设置变换矩阵
-   */
-  setTransform(matrix: number[]): void {
-    // 占位符实现
-  }
-
-  /**
-   * 渲染场景
-   */
-  render(context: RenderContext): void {
-    // 优先使用统一的图形上下文
-    if (context.context instanceof WebGPUContext) {
-      this.webgpuContext = context.context;
-      // 使用 WebGPUContext 的高级 API
-      this.webgpuContext.clear();
-      // 可以调用其他 WebGPUContext 方法...
-    } else {
-      // 占位符实现
-      console.warn('WebGPU render not implemented - requires WebGPUContext');
+  async render(): Promise<void> {
+    if (!this.webgpuContext || !this.canvas) {
+      console.error('WebGPURenderer not initialized');
+      return;
     }
 
+    // 开始渲染通道
+    this.webgpuContext.clear();
+
+    // 应用全局渲染状态
+    this.applyRenderState(this.renderState);
+
     // 渲染所有可见对象
-    this.renderables.forEach(renderable => {
-      if (renderable.visible) {
-        renderable.render(context.context);
+    for (const renderable of this.children) {
+      if (renderable.visible && this.isChildInViewport(renderable, this.viewport)) {
+        // 保存当前状态
+        this.webgpuContext.save();
+
+        // 应用对象变换（如果有）
+        if (renderable.transform) {
+          this.applyTransform(renderable.transform);
+        }
+
+        // 调用对象的渲染方法
+        renderable.render(this.webgpuContext);
+
+        // 恢复状态
+        this.webgpuContext.restore();
       }
-    });
+    }
+
+    // 提交渲染命令
+    this.webgpuContext.present();
   }
 
-  /**
-   * 获取渲染器能力
-   */
+  clear(): void {
+    if (this.webgpuContext) {
+      this.webgpuContext.clear();
+    }
+  }
+
   getCapabilities(): RendererCapabilities {
     return {
       supportsTransforms: true,
       supportsFilters: true,
       supportsBlending: true,
       maxTextureSize: 8192,
-      supportedFormats: ['rgba8unorm', 'bgra8unorm']
+      supportedFormats: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'dds', 'ktx2']
     };
   }
 
-  /**
-   * 获取渲染统计信息
-   */
-  getStats(): {
-    drawCalls: number;
-    triangles: number;
-    vertices: number;
-  } {
-    return {
-      drawCalls: 0,
-      triangles: 0,
-      vertices: 0
-    };
+
+  // WebGPURenderer 特有的性能更新
+  override update(deltaTime: number): void {
+    super.update(deltaTime);
+    // 可以在这里添加 WebGPU 特定的更新逻辑
   }
 
-  /**
-   * 检查是否已初始化
-   */
-  isInitialized(): boolean {
-    return this.initialized;
+  // 绘制基础图形
+  drawLine(start: IPoint, end: IPoint, style?: Partial<RenderState>): void {
+    if (!this.webgpuContext) return;
+
+    this.webgpuContext.save();
+
+    if (style) {
+      this.applyRenderStateToContext(style);
+    }
+
+    this.webgpuContext.drawLine(start.x, start.y, end.x, end.y);
+
+    this.webgpuContext.restore();
   }
 
-  /**
-   * 检查 WebGPU 支持
-   */
+  drawRect(x: number, y: number, width: number, height: number, filled = false, style?: Partial<RenderState>): void {
+    if (!this.webgpuContext) return;
+
+    this.webgpuContext.save();
+
+    if (style) {
+      this.applyRenderStateToContext(style);
+    }
+
+    const rect = { x, y, width, height };
+    this.webgpuContext.drawRect(rect, filled, !filled);
+
+    this.webgpuContext.restore();
+  }
+
+  drawCircle(center: IPoint, radius: number, filled = false, style?: Partial<RenderState>): void {
+    if (!this.webgpuContext) return;
+
+    this.webgpuContext.save();
+
+    if (style) {
+      this.applyRenderStateToContext(style);
+    }
+
+    this.webgpuContext.drawCircle(center, radius, filled, !filled);
+
+    this.webgpuContext.restore();
+  }
+
+  drawText(
+    text: string,
+    position: IPoint,
+    style?: Partial<RenderState> & {
+      font?: string;
+      textAlign?: string;
+      textBaseline?: string
+    }
+  ): void {
+    if (!this.webgpuContext) return;
+
+    this.webgpuContext.save();
+
+    if (style) {
+      this.applyRenderStateToContext(style);
+      if (style.font) {
+        this.webgpuContext.setFont(style.font);
+      }
+    }
+
+    this.webgpuContext.fillText(text, position.x, position.y);
+
+    this.webgpuContext.restore();
+  }
+
+  // 批处理渲染方法
+  batchRender(renderables: Array<{
+    renderable: any;
+    transform?: any;
+    style?: Partial<RenderState>
+  }>): void {
+    if (!this.webgpuContext) return;
+
+    // WebGPU 批处理渲染 - 在一个渲染通道中渲染多个对象
+    this.webgpuContext.clear();
+
+    for (const item of renderables) {
+      this.webgpuContext.save();
+
+      if (item.transform) {
+        this.applyTransform(item.transform);
+      }
+
+      if (item.style) {
+        this.applyRenderStateToContext(item.style);
+      }
+
+      item.renderable.render(this.webgpuContext);
+
+      this.webgpuContext.restore();
+    }
+
+    this.webgpuContext.present();
+  }
+
+  // 异步初始化 WebGPU 渲染器
+  static async create(canvas: HTMLCanvasElement): Promise<WebGPURenderer> {
+    const renderer = new WebGPURenderer();
+
+    try {
+      const success = await renderer.initialize(canvas);
+      if (!success) {
+        throw new Error('Failed to initialize WebGPU renderer');
+      }
+      return renderer;
+    } catch (error) {
+      console.error('Failed to create WebGPURenderer:', error);
+      throw error;
+    }
+  }
+
+  // 检查 WebGPU 支持
   static isSupported(): boolean {
-    // 占位符实现，暂时返回 false
-    return false;
+    return !!navigator.gpu;
   }
 
-  /**
-   * 获取 WebGPU 能力信息
-   */
-  static getCapabilities(): {
-    maxTextureSize: number;
-    maxBufferSize: number;
-    supportedFormats: string[];
-  } {
-    return {
-      maxTextureSize: 4096,
-      maxBufferSize: 268435456, // 256MB
-      supportedFormats: ['rgba8unorm', 'bgra8unorm']
-    };
+  // 获取 WebGPU 适配器信息
+  static async getAdapterInfo(): Promise<{
+    vendor: string;
+    architecture: string;
+    device: string;
+    description: string;
+  } | null> {
+    if (!navigator.gpu) return null;
+
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) return null;
+
+      // WebGPU adapter info is not widely available yet
+      try {
+        const info = (adapter as any).requestAdapterInfo?.();
+        if (info) {
+          const adapterInfo = await info;
+          return {
+            vendor: adapterInfo.vendor || 'Unknown',
+            architecture: adapterInfo.architecture || 'Unknown',
+            device: adapterInfo.device || 'Unknown',
+            description: adapterInfo.description || 'Unknown'
+          };
+        }
+      } catch (e) {
+        // Fallback to basic info
+      }
+
+      return {
+        vendor: 'Unknown',
+        architecture: 'Unknown',
+        device: 'Unknown',
+        description: 'WebGPU Adapter'
+      };
+    } catch (error) {
+      console.warn('Failed to get WebGPU adapter info:', error);
+      return null;
+    }
   }
 
-  /**
-   * 销毁渲染器
-   */
+  // 性能分析方法
+  async getPerformanceInfo(): Promise<{
+    memoryUsage?: number;
+    renderTime?: number;
+    triangleCount?: number;
+  }> {
+    const info: any = {};
+
+    if (this.webgpuContext) {
+      // 这里可以添加性能统计逻辑
+      info.renderTime = performance.now();
+    }
+
+    return info;
+  }
+
+  // 私有辅助方法
+  private applyRenderState(state: RenderState): void {
+    if (!this.webgpuContext) return;
+
+    if (state.fillStyle) {
+      this.webgpuContext.setFillStyle(this.convertStyleToString(state.fillStyle));
+    }
+    if (state.strokeStyle) {
+      this.webgpuContext.setStrokeStyle(this.convertStyleToString(state.strokeStyle));
+    }
+    if (state.lineWidth) {
+      this.webgpuContext.setLineWidth(state.lineWidth);
+    }
+    if (state.globalAlpha !== undefined) {
+      this.webgpuContext.setGlobalAlpha(state.globalAlpha);
+    }
+  }
+
+  private applyRenderStateToContext(style: Partial<RenderState>): void {
+    if (!this.webgpuContext) return;
+
+    if (style.fillStyle) {
+      this.webgpuContext.setFillStyle(this.convertStyleToString(style.fillStyle));
+    }
+    if (style.strokeStyle) {
+      this.webgpuContext.setStrokeStyle(this.convertStyleToString(style.strokeStyle));
+    }
+    if (style.lineWidth) {
+      this.webgpuContext.setLineWidth(style.lineWidth);
+    }
+    if (style.globalAlpha !== undefined) {
+      this.webgpuContext.setGlobalAlpha(style.globalAlpha);
+    }
+  }
+
+  private convertStyleToString(style: string | CanvasGradient | CanvasPattern): string {
+    if (typeof style === 'string') {
+      return style;
+    }
+    // 对于 gradient 和 pattern，我们暂时返回默认颜色
+    // 实际应用中需要更复杂的处理逻辑
+    return '#000000';
+  }
+
+  private applyTransform(transform: any): void {
+    if (!this.webgpuContext || !transform) return;
+
+    // 应用变换矩阵
+    if (transform.translate) {
+      this.webgpuContext.translate(transform.translate.x, transform.translate.y);
+    }
+    if (transform.rotate) {
+      this.webgpuContext.rotate(transform.rotate);
+    }
+    if (transform.scale) {
+      this.webgpuContext.scale(transform.scale.x, transform.scale.y);
+    }
+  }
+
+  // 清理资源
   dispose(): void {
-    // 清理所有缓冲区
-    this.buffers.forEach(buffer => buffer.destroy());
-    this.buffers.clear();
-
-    // 清理所有纹理
-    this.textures.forEach(texture => texture.destroy());
-    this.textures.clear();
-
+    if (this.webgpuContext) {
+      this.webgpuContext.dispose();
+      this.webgpuContext = null;
+    }
     super.dispose();
-    this.initialized = false;
-    console.log('WebGPU renderer disposed');
   }
 }
 
+/**
+ * 创建 WebGPU 渲染器的便捷函数
+ */
+export async function createWebGPURenderer(canvas: HTMLCanvasElement): Promise<WebGPURenderer> {
+  return WebGPURenderer.create(canvas);
+}
+
+/**
+ * 检查 WebGPU 支持并提供回退方案
+ */
+export function checkWebGPUSupport(): {
+  supported: boolean;
+  reason?: string;
+  fallback?: string;
+} {
+  if (!navigator.gpu) {
+    return {
+      supported: false,
+      reason: 'WebGPU API not available',
+      fallback: 'Use WebGL or Canvas2D renderer'
+    };
+  }
+
+  return { supported: true };
+}

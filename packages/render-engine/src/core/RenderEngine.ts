@@ -4,8 +4,8 @@
  */
 
 import { BaseRenderer } from './renderers/BaseRenderer';
-import { RenderContext, RendererCapabilities } from './renderers/types';
 import { CanvasRenderer } from './renderers/CanvasRenderer';
+import { RendererCapabilities } from './renderers/types';
 import { WebGLRenderer } from './renderers/WebGLRenderer';
 import { WebGPURenderer } from './renderers/WebGPURenderer';
 import type { IRenderable, IViewport, RenderEngineConfig } from './types';
@@ -19,13 +19,13 @@ export class RenderEngine {
   private renderer: BaseRenderer;
   private canvas: HTMLCanvasElement;
   private config: RenderEngineConfig;
-  private renderables: Map<string, IRenderable> = new Map();
+  private objects: Map<string, IRenderable> = new Map();
   private isInitialized = false;
 
   constructor(canvas: HTMLCanvasElement, config: RenderEngineConfig = {}) {
     this.canvas = canvas;
     this.config = {
-      renderer: 'auto',
+      renderer: 'webgl',
       antialias: true,
       alpha: true,
       preserveDrawingBuffer: false,
@@ -36,142 +36,177 @@ export class RenderEngine {
     };
 
     this.renderer = this.createRenderer();
-    this.initialize();
+    // 移除自动初始化，改为外部显式调用
   }
 
   /**
-   * 根据配置创建渲染器
+   * 根据配置创建渲染器，如果不支持则降级
    */
   private createRenderer(): BaseRenderer {
-    const type = this.config.renderer!;
+    const requestedType = this.config.renderer!;
+    let actualType = requestedType;
 
-    if (type === 'auto') {
-      return this.autoSelectRenderer();
+    // 检查浏览器支持并进行降级处理
+    if (requestedType === 'webgpu' && !('gpu' in navigator)) {
+      actualType = 'webgl';
+      if (this.config.debug) {
+        console.warn('[RenderEngine] WebGPU not supported, falling back to WebGL');
+      }
     }
 
-    switch (type) {
+    if (actualType === 'webgl' && !this.isWebGLSupported()) {
+      actualType = 'canvas2d';
+      if (this.config.debug) {
+        console.warn('[RenderEngine] WebGL not supported, falling back to Canvas2D');
+      }
+    }
+
+    // 如果最终降级的类型与请求的不同，更新配置
+    if (actualType !== requestedType) {
+      this.config.renderer = actualType;
+    }
+
+    switch (actualType) {
       case 'webgl':
         return new WebGLRenderer();
       case 'canvas2d':
         return new CanvasRenderer();
       case 'webgpu':
-        return new WebGPURenderer(this.canvas);
+        return new WebGPURenderer();
       default:
-        throw new Error(`Unknown renderer type: ${type}`);
+        throw new Error(`Unknown renderer type: ${actualType}. Supported types: 'webgl', 'canvas2d', 'webgpu'`);
     }
   }
 
-  /**
-   * 自动选择最佳渲染器
-   */
-  private autoSelectRenderer(): BaseRenderer {
-    if (this.isWebGPUSupported()) {
-      if (this.config.debug) {
-        console.log('[RenderEngine] Auto-selected WebGPU renderer');
-      }
-      return new WebGPURenderer(this.canvas);
-    }
-
-    if (this.isWebGLSupported()) {
-      if (this.config.debug) {
-        console.log('[RenderEngine] Auto-selected WebGL renderer');
-      }
-      return new WebGLRenderer();
-    }
-
-    if (this.config.debug) {
-      console.log('[RenderEngine] Auto-selected Canvas2D renderer');
-    }
-    return new CanvasRenderer();
-  }
 
   /**
    * 初始化渲染引擎
    */
-  private async initialize(): Promise<void> {
+  async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
+    const originalRenderer = this.config.renderer;
+    let initSuccess = false;
+
     try {
-      if (this.renderer.initialize) {
-        const result = this.renderer.initialize(this.canvas, this.config);
-
-        // 处理异步初始化
-        if (result instanceof Promise) {
-          const success = await result;
-          if (!success) {
-            throw new Error('Renderer initialization failed');
-          }
-        } else if (result === false) {
-          throw new Error('Renderer initialization failed');
-        }
-      }
-
-      this.isInitialized = true;
-
-      if (this.config.debug) {
-        console.log(`[RenderEngine] Initialized with ${this.getRendererType()} renderer`);
-      }
+      initSuccess = await this.tryInitializeRenderer();
     } catch (error) {
-      console.error('[RenderEngine] Initialization failed:', error);
-      throw error;
+      if (this.config.debug) {
+        console.warn(`[RenderEngine] ${this.config.renderer} initialization failed:`, error);
+      }
+      initSuccess = false;
     }
+
+    // 如果初始化失败，尝试降级
+    if (!initSuccess) {
+      initSuccess = await this.tryFallbackRenderers();
+    }
+
+    if (!initSuccess) {
+      throw new Error(`Failed to initialize any renderer. Tried: ${originalRenderer} -> canvas2d`);
+    }
+
+    this.isInitialized = true;
+
+    if (this.config.debug) {
+      console.log(`[RenderEngine] Initialized with ${this.getRendererType()} renderer`);
+    }
+  }
+
+  private async tryInitializeRenderer(): Promise<boolean> {
+    if (this.renderer.initialize) {
+      const result = this.renderer.initialize(this.canvas, this.config);
+
+      // 处理异步初始化
+      if (result instanceof Promise) {
+        return await result;
+      } else {
+        return result !== false;
+      }
+    }
+    return true;
+  }
+
+  private async tryFallbackRenderers(): Promise<boolean> {
+    const currentType = this.config.renderer;
+
+    // 降级路径：webgpu -> webgl -> canvas2d
+    if (currentType === 'webgpu' || currentType === 'webgl') {
+      if (this.config.debug) {
+        console.warn(`[RenderEngine] ${currentType} failed, falling back to Canvas2D`);
+      }
+
+      this.config.renderer = 'canvas2d';
+      this.renderer = this.createRenderer();
+
+      try {
+        return await this.tryInitializeRenderer();
+      } catch (error) {
+        if (this.config.debug) {
+          console.error('[RenderEngine] Canvas2D fallback also failed:', error);
+        }
+        return false;
+      }
+    }
+
+    return false;
   }
 
   // ===== 公共 API =====
 
   /**
-   * 添加可渲染对象
+   * 添加渲染对象
    */
-  addRenderable(renderable: IRenderable): void {
-    this.renderables.set(renderable.id, renderable);
+  addObject(renderable: IRenderable): void {
+    this.objects.set(renderable.id, renderable);
 
     // 直接添加到渲染器，不需要转换
     this.renderer.addRenderable(renderable);
 
     if (this.config.debug) {
-      console.log(`[RenderEngine] Added renderable: ${renderable.id}`);
+      console.log(`[RenderEngine] Added object: ${renderable.id}`);
     }
   }
 
   /**
-   * 移除可渲染对象
+   * 移除渲染对象
    */
-  removeRenderable(id: string): void {
-    const removed = this.renderables.delete(id);
+  removeObject(id: string): void {
+    const removed = this.objects.delete(id);
     if (removed) {
       this.renderer.removeRenderable(id);
 
       if (this.config.debug) {
-        console.log(`[RenderEngine] Removed renderable: ${id}`);
+        console.log(`[RenderEngine] Removed object: ${id}`);
       }
     }
   }
 
   /**
-   * 清空所有可渲染对象
+   * 清空所有渲染对象
    */
-  clearRenderables(): void {
-    const count = this.renderables.size;
-    this.renderables.clear();
+  clearObjects(): void {
+    const count = this.objects.size;
+    this.objects.clear();
     this.renderer.clearRenderables();
 
     if (this.config.debug) {
-      console.log(`[RenderEngine] Cleared ${count} renderables`);
+      console.log(`[RenderEngine] Cleared ${count} objects`);
     }
   }
 
   /**
-   * 获取可渲染对象
+   * 获取渲染对象
    */
-  getRenderable(id: string): IRenderable | undefined {
-    return this.renderables.get(id);
+  getObject(id: string): IRenderable | undefined {
+    return this.objects.get(id);
   }
 
   /**
-   * 获取所有可渲染对象
+   * 获取所有渲染对象
    */
-  getRenderables(): IRenderable[] {
-    return Array.from(this.renderables.values());
+  getObjects(): IRenderable[] {
+    return Array.from(this.objects.values());
   }
 
   /**
@@ -183,8 +218,7 @@ export class RenderEngine {
       return;
     }
 
-    const context = this.createRenderContext();
-    this.renderer.startRenderLoop(context);
+    this.renderer.startRenderLoop();
 
     if (this.config.debug) {
       console.log('[RenderEngine] Render loop started');
@@ -206,13 +240,14 @@ export class RenderEngine {
    * 手动渲染一帧
    */
   render(): void {
+    console.log(`[RenderEngine] render() called, isInitialized: ${this.isInitialized}`);
     if (!this.isInitialized) {
       console.warn('[RenderEngine] Engine not initialized, cannot render');
       return;
     }
 
-    const context = this.createRenderContext();
-    this.renderer.render(context);
+    console.log(`[RenderEngine] Calling renderer.render()`);
+    this.renderer.render();
   }
 
   /**
@@ -258,6 +293,7 @@ export class RenderEngine {
     return 'unknown';
   }
 
+
   /**
    * 获取画布元素
    */
@@ -284,7 +320,7 @@ export class RenderEngine {
    */
   dispose(): void {
     this.stop();
-    this.clearRenderables();
+    this.clearObjects();
     this.renderer.dispose?.();
     this.isInitialized = false;
 
@@ -296,56 +332,79 @@ export class RenderEngine {
   // ===== 私有辅助方法 =====
 
   /**
-   * 创建渲染上下文
-   */
-  private createRenderContext(): RenderContext {
-    const context = this.getContext();
-    return {
-      canvas: this.canvas,
-      context,
-      viewport: this.renderer.getViewport(),
-      devicePixelRatio: window.devicePixelRatio || 1
-    };
-  }
-
-  /**
-   * 根据渲染器类型获取正确的上下文
-   */
-  private getContext(): any {
-    if (this.renderer instanceof WebGLRenderer) {
-      return this.canvas.getContext('webgl', {
-        antialias: this.config.antialias,
-        alpha: this.config.alpha,
-        preserveDrawingBuffer: this.config.preserveDrawingBuffer
-      }) || this.canvas.getContext('experimental-webgl');
-    } else if (this.renderer instanceof CanvasRenderer) {
-      return this.canvas.getContext('2d', {
-        alpha: this.config.alpha
-      });
-    } else {
-      // WebGPU
-      return this.canvas.getContext('webgpu');
-    }
-  }
-
-
-
-  /**
    * 检测 WebGL 支持
    */
   private isWebGLSupported(): boolean {
     try {
       const canvas = document.createElement('canvas');
-      return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+      const contextOptions = {
+        alpha: true,
+        antialias: true,
+        stencil: true,
+        failIfMajorPerformanceCaveat: false
+      };
+
+      let gl = canvas.getContext('webgl', contextOptions) as WebGLRenderingContext ||
+               canvas.getContext('experimental-webgl', contextOptions) as WebGLRenderingContext;
+
+      if (!gl) {
+        return false;
+      }
+
+      // 检查上下文属性是否正确获取
+      const contextAttributes = gl.getContextAttributes();
+      if (!contextAttributes) {
+        return false;
+      }
+
+      // 检查是否支持必要的扩展
+      const requiredExtensions = ['OES_standard_derivatives'];
+      for (const ext of requiredExtensions) {
+        if (!gl.getExtension(ext)) {
+          if (this.config.debug) {
+            console.warn(`[RenderEngine] WebGL extension ${ext} not supported`);
+          }
+        }
+      }
+
+      // 清理上下文以避免内存泄漏
+      const loseContext = gl.getExtension('WEBGL_lose_context');
+      if (loseContext) {
+        loseContext.loseContext();
+      }
+
+      gl = null as any;
+      return true;
     } catch (e) {
       return false;
     }
   }
 
   /**
-   * 检测 WebGPU 支持
+   * 检测 WebGPU 支持（异步检测）
    */
-  private isWebGPUSupported(): boolean {
-    return 'gpu' in navigator;
+  private async isWebGPUSupported(): Promise<boolean> {
+    if (!('gpu' in navigator) || typeof navigator.gpu?.requestAdapter !== 'function') {
+      return false;
+    }
+
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        return false;
+      }
+
+      // 尝试请求设备以确保真正可用
+      const device = await adapter.requestDevice();
+      if (!device) {
+        return false;
+      }
+
+      // 清理设备资源
+      device.destroy();
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 }

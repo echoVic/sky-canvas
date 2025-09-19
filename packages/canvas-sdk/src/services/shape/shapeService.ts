@@ -21,7 +21,7 @@ export interface IShapeService {
   getShapeView(id: string): RenderableShapeView | undefined;
   getAllShapeEntities(): ShapeEntity[];
   getAllShapeViews(): RenderableShapeView[];
-  getRenderables(): IRenderable[];
+  getObjects(): IRenderable[];
   
   // 碰撞检测
   hitTest(x: number, y: number): string | null;
@@ -125,7 +125,7 @@ export class ShapeService implements IShapeService {
   /**
    * 获取可渲染对象数组
    */
-  getRenderables(): IRenderable[] {
+  getObjects(): IRenderable[] {
     return Array.from(this.views.values());
   }
 

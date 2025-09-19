@@ -167,18 +167,25 @@ export class Buffer implements IBuffer {
       gl.bufferData(this.type, data, this.usage);
       this._size = data.byteLength;
     } else {
-      // 部分上传
-      gl.bufferSubData(this.type, offset, data);
+      // 部分上传 - 改为重新分配整个缓冲区以避免溢出
+      gl.bufferData(this.type, data, this.usage);
+      this._size = data.byteLength;
     }
   }
   
   updateData(gl: WebGLRenderingContext, data: ArrayBufferView, offset: number): void {
-    if (offset + data.byteLength > this._size) {
-      throw new Error('Buffer update out of bounds');
-    }
-    
     this.bind(gl);
-    gl.bufferSubData(this.type, offset, data);
+
+    // 核心修复：只在需要时增长缓冲区，永远不缩小
+    if (data.byteLength > this._size) {
+      // 新数据比当前缓冲区大，需要重新分配
+      gl.bufferData(this.type, data, this.usage);
+      this._size = data.byteLength;
+    } else {
+      // 新数据小于等于当前缓冲区，使用 bufferSubData 部分更新
+      gl.bufferSubData(this.type, offset, data);
+      // 不更新 this._size，保持大缓冲区的大小
+    }
   }
   
   dispose(gl: WebGLRenderingContext): void {

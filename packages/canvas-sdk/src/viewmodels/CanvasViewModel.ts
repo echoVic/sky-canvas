@@ -5,9 +5,9 @@
 
 import { proxy, snapshot } from 'valtio';
 import { ICanvasManager } from '../managers/CanvasManager';
+import { ShapeEntity } from '../models/entities/Shape';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
-import { ShapeEntity } from '../models/entities/Shape';
 
 /**
  * Canvas 状态
@@ -145,9 +145,9 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   selectAll(): void {
     // 获取所有形状并选择它们
-    const renderables = this.canvasManager.getRenderables();
-    renderables.forEach(renderable => {
-      const id = (renderable as any).id;
+    const objects = this.canvasManager.getObjects();
+    objects.forEach(object => {
+      const id = (object as any).id;
       if (id) this.canvasManager.selectShape(id);
     });
   }

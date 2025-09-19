@@ -1,9 +1,9 @@
 /**
  * 简化的渲染器基类
  */
-import type { IRenderable, IViewport } from '../types';
-import { IRect } from '../interface/IGraphicsContext';
 import { Transform } from '../../math';
+import { IRect } from '../interface/IGraphicsContext';
+import type { IRenderable, IViewport } from '../types';
 import type {
   RenderContext,
   Renderer,
@@ -15,44 +15,56 @@ import type {
  * 简化的渲染器基类
  */
 export abstract class BaseRenderer<TContext = any> implements Renderer<TContext> {
-  protected renderables: IRenderable[] = [];
+  protected children: IRenderable[] = [];
   protected viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
   protected renderState: RenderState;
   protected stateStack: RenderState[] = [];
   private _isRunning = false;
   protected animationId: number | null = null;
 
+  // 每个渲染器管理自己的 context 和 canvas
+  protected canvas: HTMLCanvasElement | null = null;
+  protected context: TContext | null = null;
+
   constructor() {
     this.renderState = this.createDefaultRenderState();
   }
 
-  abstract render(context: RenderContext<TContext>): void;
+  // 现在 render 方法不需要外部传入 context
+  abstract render(): void;
   abstract clear(): void;
   abstract getCapabilities(): RendererCapabilities;
 
-  // 可选的初始化方法
-  initialize?(canvas: HTMLCanvasElement, config?: any): boolean | Promise<boolean>;
+  // 必须实现的初始化方法，负责创建 context
+  abstract initialize(canvas: HTMLCanvasElement, config?: any): boolean | Promise<boolean>;
 
   update(deltaTime: number): void {
     // 基础更新逻辑
-    this.renderables.forEach(renderable => {
-      if (renderable.visible) {
+    this.children.forEach(child => {
+      if (child.visible) {
         // 可以在这里添加动画更新逻辑
       }
     });
   }
 
   addRenderable(renderable: IRenderable): void {
-    this.renderables.push(renderable);
-    this.sortRenderables();
+    console.log(`[BaseRenderer] addRenderable: ${renderable.id}, children count before: ${this.children.length}`);
+    console.trace(`[BaseRenderer] addRenderable stack trace`);
+    this.children.push(renderable);
+    this.sortChildren();
+    console.log(`[BaseRenderer] addRenderable completed, children count after: ${this.children.length}`);
   }
 
   removeRenderable(id: string): void {
-    this.renderables = this.renderables.filter(r => r.id !== id);
+    const beforeCount = this.children.length;
+    console.log(`[BaseRenderer] removeRenderable: ${id}, children count before: ${beforeCount}`);
+    console.trace(`[BaseRenderer] removeRenderable stack trace`);
+    this.children = this.children.filter(r => r.id !== id);
+    console.log(`[BaseRenderer] removeRenderable completed, children count after: ${this.children.length}`);
   }
 
   getRenderable(id: string): IRenderable | undefined {
-    return this.renderables.find(r => r.id === id);
+    return this.children.find(r => r.id === id);
   }
 
   setViewport(viewport: Partial<IViewport>): void {
@@ -63,19 +75,22 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
     return { ...this.viewport };
   }
 
-  // 添加清空所有可渲染对象的方法
+  // 添加清空所有子对象的方法
   clearRenderables(): void {
-    this.renderables = [];
+    console.log(`[BaseRenderer] clearRenderables called, children count before: ${this.children.length}`);
+    console.trace(`[BaseRenderer] clearRenderables stack trace`);
+    this.children = [];
+    console.log(`[BaseRenderer] clearRenderables completed, children count after: ${this.children.length}`);
   }
 
   // 添加渲染循环管理
-  startRenderLoop(context: RenderContext<TContext>): void {
+  startRenderLoop(): void {
     if (this._isRunning) return;
     this._isRunning = true;
 
     const loop = () => {
       if (!this._isRunning) return;
-      this.render(context);
+      this.render();
       this.animationId = requestAnimationFrame(loop);
     };
 
@@ -116,8 +131,8 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
     this.renderState = { ...this.renderState, ...state };
   }
 
-  protected sortRenderables(): void {
-    this.renderables.sort((a, b) => a.zIndex - b.zIndex);
+  protected sortChildren(): void {
+    this.children.sort((a: IRenderable, b: IRenderable) => a.zIndex - b.zIndex);
   }
 
   protected boundsIntersect(a: IRect, b: IRect): boolean {
@@ -127,15 +142,17 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
              b.y + b.height < a.y);
   }
 
-  protected isRenderableInViewport(renderable: IRenderable, viewport: IViewport): boolean {
-    const bounds = renderable.getBounds();
+  protected isChildInViewport(child: IRenderable, viewport: IViewport): boolean {
+    const bounds = child.getBounds();
     const viewportRect = {
       x: viewport.x,
       y: viewport.y,
       width: viewport.width,
       height: viewport.height
     };
-    return this.boundsIntersect(bounds, viewportRect);
+    const intersects = this.boundsIntersect(bounds, viewportRect);
+    console.log(`[BaseRenderer] Viewport check: child=${child.id}, bounds=`, bounds, 'viewport=', viewportRect, 'intersects=', intersects);
+    return intersects;
   }
 
   protected createDefaultRenderState(): RenderState {
@@ -155,8 +172,20 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
     };
   }
 
+  // 获取 canvas 和 context 的方法
+  getCanvas(): HTMLCanvasElement | null {
+    return this.canvas;
+  }
+
+  getContext(): TContext | null {
+    return this.context;
+  }
+
   dispose(): void {
-    this.renderables = [];
+    this.stopRenderLoop();
+    this.children = [];
     this.stateStack = [];
+    this.canvas = null;
+    this.context = null;
   }
 }

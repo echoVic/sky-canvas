@@ -11,6 +11,3 @@ export * from './commands';
 
 // 剔除优化
 export * from './culling';
-
-// 图形原语
-export * from './primitives';

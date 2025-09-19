@@ -112,7 +112,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     setState((prev: typeof state) => ({
       ...prev,
       sdk,
-      shapes: manager.getRenderables() || [],
+      shapes: manager.getObjects() || [],
       selectedShapes: manager.getSelectedShapes() || [],
       canUndo: false, // TODO: 从CanvasManager获取实际状态
       canRedo: false, // TODO: 从CanvasManager获取实际状态

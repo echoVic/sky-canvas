@@ -12,7 +12,7 @@ const { mockCanvasManager, mockToolManager, mockSDK } = vi.hoisted(() => {
     selectShape: vi.fn(),
     deselectShape: vi.fn(),
     clearSelection: vi.fn(),
-    getRenderables: vi.fn(() => [] as any[]),
+    getObjects: vi.fn(() => [] as any[]),
     getSelectedShapes: vi.fn(() => [] as any[]),
     undo: vi.fn(),
     redo: vi.fn(),

@@ -4,10 +4,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RenderEngine } from '../RenderEngine';
 import { CanvasRenderer } from '../renderers/CanvasRenderer';
 import { WebGLRenderer } from '../renderers/WebGLRenderer';
 import { WebGPURenderer } from '../renderers/WebGPURenderer';
-import { RenderEngine } from '../RenderEngine';
 import type { IRenderable, RenderEngineConfig } from '../types';
 
 // Mock dependencies
@@ -53,7 +53,7 @@ describe('RenderEngine', () => {
     const getContextSpy = vi.spyOn(canvas, 'getContext');
     getContextSpy.mockImplementation(((contextType: any) => {
       if (contextType === 'webgpu') {
-        return {} as GPUCanvasContext;
+        return {} as any; // Mock WebGPU context
       }
       if (contextType === 'webgl' || contextType === 'experimental-webgl') {
         return null; // No WebGL support by default
@@ -96,7 +96,7 @@ describe('RenderEngine', () => {
       it('Then it should initialize with Canvas2D renderer by default', () => {
         // Arrange
         const expectedConfig = {
-          renderer: 'auto',
+          renderer: 'webgl',
           antialias: true,
           alpha: true,
           preserveDrawingBuffer: false,
@@ -156,12 +156,12 @@ describe('RenderEngine', () => {
         };
 
         // Act
-        renderEngine.addRenderable(mockRenderable);
+        renderEngine.addObject(mockRenderable);
 
         // Assert
-        const retrievedRenderable = renderEngine.getRenderable('test-renderable');
+        const retrievedRenderable = renderEngine.getObject('test-renderable');
         expect(retrievedRenderable).toBe(mockRenderable);
-        expect(renderEngine.getRenderables()).toHaveLength(1);
+        expect(renderEngine.getObjects()).toHaveLength(1);
       });
 
       it('Then it should replace existing renderable with same ID', () => {
@@ -186,14 +186,14 @@ describe('RenderEngine', () => {
         };
 
         // Act
-        renderEngine.addRenderable(renderable1);
-        renderEngine.addRenderable(renderable2);
+        renderEngine.addObject(renderable1);
+        renderEngine.addObject(renderable2);
 
         // Assert
-        const retrieved = renderEngine.getRenderable('same-id');
+        const retrieved = renderEngine.getObject('same-id');
         expect(retrieved).toBe(renderable2);
         expect(retrieved?.zIndex).toBe(1);
-        expect(renderEngine.getRenderables()).toHaveLength(1);
+        expect(renderEngine.getObjects()).toHaveLength(1);
       });
     });
 
@@ -209,14 +209,14 @@ describe('RenderEngine', () => {
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 }),
           dispose: vi.fn()
         };
-        renderEngine.addRenderable(mockRenderable);
+        renderEngine.addObject(mockRenderable);
 
         // Act
-        renderEngine.removeRenderable('to-remove');
+        renderEngine.removeObject('to-remove');
 
         // Assert
-        expect(renderEngine.getRenderable('to-remove')).toBeUndefined();
-        expect(renderEngine.getRenderables()).toHaveLength(0);
+        expect(renderEngine.getObject('to-remove')).toBeUndefined();
+        expect(renderEngine.getObjects()).toHaveLength(0);
       });
 
       it('Then it should handle removing non-existent renderable gracefully', () => {
@@ -225,7 +225,7 @@ describe('RenderEngine', () => {
 
         // Act & Assert
         expect(() => {
-          renderEngine.removeRenderable('non-existent');
+          renderEngine.removeObject('non-existent');
         }).not.toThrow();
       });
     });
@@ -251,16 +251,16 @@ describe('RenderEngine', () => {
           getBounds: vi.fn().mockReturnValue({ x: 10, y: 10, width: 30, height: 30 }),
           dispose: vi.fn()
         };
-        renderEngine.addRenderable(renderable1);
-        renderEngine.addRenderable(renderable2);
+        renderEngine.addObject(renderable1);
+        renderEngine.addObject(renderable2);
 
         // Act
-        renderEngine.clearRenderables();
+        renderEngine.clearObjects();
 
         // Assert
-        expect(renderEngine.getRenderables()).toHaveLength(0);
-        expect(renderEngine.getRenderable('renderable-1')).toBeUndefined();
-        expect(renderEngine.getRenderable('renderable-2')).toBeUndefined();
+        expect(renderEngine.getObjects()).toHaveLength(0);
+        expect(renderEngine.getObject('renderable-1')).toBeUndefined();
+        expect(renderEngine.getObject('renderable-2')).toBeUndefined();
       });
     });
   });
@@ -314,7 +314,7 @@ describe('RenderEngine', () => {
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 }),
           dispose: vi.fn()
         };
-        renderEngine.addRenderable(mockRenderable);
+        renderEngine.addObject(mockRenderable);
 
         // Act
         renderEngine.render();
@@ -336,7 +336,7 @@ describe('RenderEngine', () => {
         // Assert
         expect(renderEngine.isRunning()).toBe(false);
         expect(mockRenderer.dispose).toHaveBeenCalled();
-        expect(renderEngine.getRenderables()).toHaveLength(0);
+        expect(renderEngine.getObjects()).toHaveLength(0);
       });
     });
   });
@@ -362,7 +362,7 @@ describe('RenderEngine', () => {
     describe('When getting viewport', () => {
       it('Then it should return current viewport', () => {
         // Arrange
-        const expectedViewport = { x: 0, y: 0, width: 800, height: 600 };
+        const expectedViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
 
         // Act
         const viewport = renderEngine.getViewport();
@@ -455,7 +455,7 @@ describe('RenderEngine', () => {
           configurable: true
         });
         const config: RenderEngineConfig = {
-          renderer: 'auto',
+          renderer: 'webgpu',
           debug: true
         };
 
@@ -487,7 +487,7 @@ describe('RenderEngine', () => {
           return null;
         });
         const config: RenderEngineConfig = {
-          renderer: 'auto',
+          renderer: 'webgl',
           debug: true
         };
 
@@ -518,7 +518,7 @@ describe('RenderEngine', () => {
           return null;
         });
         const config: RenderEngineConfig = {
-          renderer: 'auto',
+          renderer: 'canvas2d',
           debug: true
         };
 
@@ -687,10 +687,10 @@ describe('RenderEngine', () => {
         };
 
         // Act
-        renderEngine.addRenderable(mockRenderable);
+        renderEngine.addObject(mockRenderable);
 
         // Assert
-        expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Added renderable: debug-test');
+        expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Added object: debug-test');
       });
     });
 
@@ -705,14 +705,14 @@ describe('RenderEngine', () => {
           hitTest: vi.fn(),
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 })
         };
-        renderEngine.addRenderable(mockRenderable);
+        renderEngine.addObject(mockRenderable);
         consoleLogSpy.mockClear();
 
         // Act
-        renderEngine.removeRenderable('debug-remove');
+        renderEngine.removeObject('debug-remove');
 
         // Assert
-        expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Removed renderable: debug-remove');
+        expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Removed object: debug-remove');
       });
     });
 
@@ -735,15 +735,15 @@ describe('RenderEngine', () => {
           hitTest: vi.fn(),
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 })
         };
-        renderEngine.addRenderable(renderable1);
-        renderEngine.addRenderable(renderable2);
+        renderEngine.addObject(renderable1);
+        renderEngine.addObject(renderable2);
         consoleLogSpy.mockClear();
 
         // Act
-        renderEngine.clearRenderables();
+        renderEngine.clearObjects();
 
         // Assert
-        expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Cleared 2 renderables');
+        expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Cleared 2 objects');
       });
     });
 

@@ -7,13 +7,13 @@ import { Transform } from '../math/Transform';
 /**
  * 支持的渲染引擎类型
  */
-export type RenderEngineType = 'webgl' | 'canvas2d' | 'webgpu' | 'auto';
+export type RenderEngineType = 'webgl' | 'canvas2d' | 'webgpu';
 
 /**
  * 渲染引擎配置接口
  */
 export interface RenderEngineConfig {
-  /** 渲染器类型，auto表示自动选择 */
+  /** 渲染器类型，默认为 webgl */
   renderer?: RenderEngineType;
 
   /** 是否启用调试模式 */

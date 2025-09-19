@@ -246,6 +246,7 @@ describe('渲染器类型定义', () => {
   describe('Renderer 接口', () => {
     it('应该定义所有必需的方法', () => {
       const mockRenderer: Renderer = {
+        initialize: () => true,
         render: () => {},
         update: () => {},
         dispose: () => {},
@@ -258,7 +259,9 @@ describe('渲染器类型定义', () => {
           supportsBlending: true,
           maxTextureSize: 2048,
           supportedFormats: ['rgba']
-        })
+        }),
+        getCanvas: () => null,
+        getContext: () => null
       };
 
       expect(typeof mockRenderer.render).toBe('function');
@@ -278,6 +281,7 @@ describe('渲染器类型定义', () => {
       let viewportSet = false;
 
       const mockRenderer: Renderer = {
+        initialize: () => true,
         render: () => { renderCalled = true; },
         update: () => { updateCalled = true; },
         dispose: () => { disposeCalled = true; },
@@ -290,10 +294,12 @@ describe('渲染器类型定义', () => {
           supportsBlending: true,
           maxTextureSize: 2048,
           supportedFormats: ['rgba']
-        })
+        }),
+        getCanvas: () => null,
+        getContext: () => null
       };
 
-      mockRenderer.render({} as RenderContext);
+      mockRenderer.render();
       expect(renderCalled).toBe(true);
 
       mockRenderer.update(16);
