@@ -39,6 +39,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:packages": "tsc && pnpm -r build",
     "preview": "vite preview",
     "test": "vitest run", 
     "test:watch": "vitest",
