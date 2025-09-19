@@ -56,7 +56,7 @@ const Canvas: React.FC = () => {
     }
 
     initializeCanvas()
-  }, [sdkState.isInitialized]) // 移除sdkActions依赖，避免循环
+  }, [sdkState.isInitialized, sdkActions.initialize]) // 添加稳定的initialize依赖
 
   // 渲染由SDK内部自动处理，不需要手动启动
 
@@ -82,13 +82,7 @@ const Canvas: React.FC = () => {
     return () => resizeObserver.disconnect()
   }, [sdkState.isInitialized, sdkState.sdk]) // 移除sdkActions依赖避免循环
 
-  // 清理资源 - 只在组件卸载时清理
-  useEffect(() => {
-    return () => {
-      // 只在组件真正卸载时清理
-      sdkActions.dispose()
-    }
-  }, []) // 空依赖数组，只在组件卸载时调用
+  // 清理逻辑已移除 - 由 useCanvasSDK hook 内部管理生命周期
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-white dark:bg-gray-900">

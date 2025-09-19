@@ -31,6 +31,13 @@ const createMockWebGLContext = () => ({
         TIME_ELAPSED_EXT: 0x88BF
       };
     }
+    if (name === 'OES_vertex_array_object') {
+      return {
+        createVertexArrayOES: vi.fn().mockReturnValue({}),
+        deleteVertexArrayOES: vi.fn(),
+        bindVertexArrayOES: vi.fn()
+      };
+    }
     return null;
   }),
   createShader: vi.fn().mockReturnValue({}),
@@ -43,7 +50,6 @@ const createMockWebGLContext = () => ({
   getShaderInfoLog: vi.fn().mockReturnValue(''),
   attachShader: vi.fn(),
   linkProgram: vi.fn(),
-  getProgramParameter: vi.fn().mockReturnValue(true),
   getProgramInfoLog: vi.fn().mockReturnValue(''),
   useProgram: vi.fn(),
   getAttribLocation: vi.fn().mockReturnValue(0),
@@ -68,9 +74,13 @@ const createMockWebGLContext = () => ({
   drawArrays: vi.fn(),
   drawElements: vi.fn(),
   uniform1f: vi.fn(),
+  uniform1fv: vi.fn(),
   uniform2f: vi.fn(),
+  uniform2fv: vi.fn(),
   uniform3f: vi.fn(),
+  uniform3fv: vi.fn(),
   uniform4f: vi.fn(),
+  uniform4fv: vi.fn(),
   uniform1i: vi.fn(),
   uniformMatrix3fv: vi.fn(),
   uniformMatrix4fv: vi.fn(),
@@ -83,9 +93,39 @@ const createMockWebGLContext = () => ({
       case 0x0D33: return 16384; // MAX_TEXTURE_SIZE
       case 0x8869: return 16; // MAX_VERTEX_ATTRIBS
       case 0x8B4D: return 1024; // MAX_FRAGMENT_UNIFORM_VECTORS
+      case 0x1F01: return 'ANGLE (Apple, Apple M1 Pro, OpenGL 4.1)'; // RENDERER
+      case 0x1F00: return 'Apple'; // VENDOR
+      case 0x1F02: return '4.1'; // VERSION
+      case 0x8B8C: return 'OpenGL ES GLSL ES 1.00'; // SHADING_LANGUAGE_VERSION
+      case 0x0BA2: return [0, 0, 800, 600]; // VIEWPORT
+      case 0x8B8D: return {}; // CURRENT_PROGRAM
       default: return 0;
     }
   }),
+  getProgramParameter: vi.fn().mockImplementation((program, pname) => {
+    switch (pname) {
+      case 0x8B81: return true; // LINK_STATUS
+      case 0x8B84: return 2; // ACTIVE_UNIFORMS
+      case 0x8B89: return 3; // ACTIVE_ATTRIBUTES
+      default: return 0;
+    }
+  }),
+  getActiveUniform: vi.fn().mockImplementation((program, index) => {
+    const uniforms = [
+      { name: 'u_projection', type: 0x8B5B, size: 1 }, // FLOAT_MAT3
+      { name: 'u_transform', type: 0x8B5B, size: 1 }   // FLOAT_MAT3
+    ];
+    return uniforms[index] || null;
+  }),
+  getActiveAttrib: vi.fn().mockImplementation((program, index) => {
+    const attributes = [
+      { name: 'a_position', type: 0x8B50, size: 1 }, // FLOAT_VEC2
+      { name: 'a_color', type: 0x8B52, size: 1 },    // FLOAT_VEC4
+      { name: 'a_texCoord', type: 0x8B50, size: 1 }  // FLOAT_VEC2
+    ];
+    return attributes[index] || null;
+  }),
+  getError: vi.fn().mockReturnValue(0), // NO_ERROR
   // WebGL 常量
   VERTEX_SHADER: 0x8B31,
   FRAGMENT_SHADER: 0x8B30,
@@ -110,7 +150,23 @@ const createMockWebGLContext = () => ({
   FUNC_ADD: 0x8006,
   MAX_TEXTURE_SIZE: 0x0D33,
   MAX_VERTEX_ATTRIBS: 0x8869,
-  MAX_FRAGMENT_UNIFORM_VECTORS: 0x8B4D
+  MAX_FRAGMENT_UNIFORM_VECTORS: 0x8B4D,
+  NO_ERROR: 0,
+  INVALID_ENUM: 0x0500,
+  INVALID_VALUE: 0x0501,
+  INVALID_OPERATION: 0x0502,
+  INVALID_FRAMEBUFFER_OPERATION: 0x0506,
+  OUT_OF_MEMORY: 0x0505,
+  CONTEXT_LOST_WEBGL: 0x9242,
+  DEPTH_TEST: 0x0B71,
+  CLAMP_TO_EDGE: 0x812F,
+  TEXTURE_WRAP_S: 0x2802,
+  TEXTURE_WRAP_T: 0x2803,
+  TEXTURE0: 0x84C0,
+  COMPILE_STATUS: 0x8B81,
+  LINK_STATUS: 0x8B82,
+  ACTIVE_UNIFORMS: 0x8B86,
+  ACTIVE_ATTRIBUTES: 0x8B89
 });
 
 // Mock Canvas

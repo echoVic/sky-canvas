@@ -86,7 +86,7 @@ export function useCanvasInteraction(
 
   useEffect(() => {
     syncToolToSDK();
-  }, [currentTool, sdkState.isInitialized, syncToolToSDK]);
+  }, [currentTool, sdkState.isInitialized]); // 移除syncToolToSDK依赖，因为useMemoizedFn已保证稳定性
 
   return {
     interactionState,

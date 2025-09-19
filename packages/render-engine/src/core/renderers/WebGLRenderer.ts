@@ -1,13 +1,14 @@
-import { WebGLContext } from '../context/WebGLContext';
-import { IPoint, IRect } from '../interface/IGraphicsContext';
-import { IRenderable } from '../types';
 import { Matrix3x3, Vector2 } from '../../math';
 import { WebGLMemoryManager } from '../../performance/memory/MemoryManager';
 import { WebGLPerformanceAnalyzer, WebGLPerformanceMonitor } from '../../performance/monitoring/WebGLAnalyzer';
 import { WebGLResourceManager } from '../../resources/ResourceManager';
-import { DefaultShaders, WebGLShaderManager } from '../webgl/ShaderManager';
 import { TextureAtlas, WebGLTextureManager } from '../../resources/textures/TextureManager';
-import { BlendMode, Buffer, BufferType } from '../webgl/types';
+import { WebGLContext } from '../context/WebGLContext';
+import { IPoint, IRect } from '../interface/IGraphicsContext';
+import { IRenderable } from '../types';
+import { DefaultShaders, WebGLShaderManager } from '../webgl/ShaderManager';
+import type { Buffer as BufferInterface } from '../webgl/types';
+import { BlendMode, BufferType } from '../webgl/types';
 import { BaseRenderer } from './BaseRenderer';
 import { RenderContext, RendererCapabilities, RenderState, RenderStats } from './types';
 
@@ -50,7 +51,7 @@ export class WebGLRenderer extends BaseRenderer {
   
   // 实例渲染支持
   private instancedArrays: ANGLE_instanced_arrays | null = null;
-  private instanceBuffer: Buffer | null = null;
+  private instanceBuffer: BufferInterface | null = null;
   private maxInstances = 1000;
   
   // 动态几何缓存
@@ -79,8 +80,8 @@ export class WebGLRenderer extends BaseRenderer {
   private projectionMatrix = Matrix3x3.identity();
   
   // 缓冲区
-  private vertexBuffer: Buffer | null = null;
-  private indexBuffer: Buffer | null = null;
+  private vertexBuffer: BufferInterface | null = null;
+  private indexBuffer: BufferInterface | null = null;
 
   initialize(canvas: HTMLCanvasElement, options?: {
     enablePerformanceMonitoring?: boolean;
@@ -231,8 +232,22 @@ export class WebGLRenderer extends BaseRenderer {
     // 重置统计
     this.resetStats();
 
+    // 获取实际的canvas尺寸
+    const canvasWidth = this.canvas!.width;
+    const canvasHeight = this.canvas!.height;
+
+    // 同步viewport与实际canvas尺寸
+    this.viewport = {
+      ...this.viewport,
+      width: canvasWidth,
+      height: canvasHeight
+    };
+
+    console.log(`[WebGLRenderer] Canvas actual size: ${canvasWidth}x${canvasHeight}`);
+    console.log(`[WebGLRenderer] Updated viewport:`, this.viewport);
+
     // 设置视口
-    this.gl.viewport(0, 0, this.canvas!.width, this.canvas!.height);
+    this.gl.viewport(0, 0, canvasWidth, canvasHeight);
 
     // 使用 WebGLContext 的高级方法
     this.webglContext.save();
@@ -376,13 +391,17 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   private updateProjectionMatrix(viewport: IRect): void {
-    // 创建正交投影矩阵
-    const left = viewport.x;
-    const right = viewport.x + viewport.width;
-    const bottom = viewport.y + viewport.height;
-    const top = viewport.y;
+    // 创建正交投影矩阵，将屏幕坐标映射到 NDC (-1 到 1)
+    const left = 0;
+    const right = viewport.width;
+    const bottom = 0;  // 修复：bottom应该是0，top是height
+    const top = viewport.height;
 
     this.projectionMatrix = Matrix3x3.orthographic(left, right, bottom, top);
+
+    console.log(`[WebGLRenderer] Updated projection matrix for viewport (${viewport.width}x${viewport.height})`);
+    console.log(`[WebGLRenderer] Orthographic parameters: left=${left}, right=${right}, bottom=${bottom}, top=${top}`);
+    console.log(`[WebGLRenderer] Projection matrix elements:`, this.projectionMatrix.elements);
   }
 
   private addRenderableToBatch(renderable: IRenderable, batchKey: string): void {
@@ -498,6 +517,22 @@ export class WebGLRenderer extends BaseRenderer {
     console.log(`[WebGLRenderer] First vertex data:`, batch.vertices.slice(0, 2));
     console.log(`[WebGLRenderer] Vertex colors:`, batch.vertices.map(v => v.color));
 
+    // 验证坐标变换：计算变换后的NDC坐标
+    if (batch.vertices.length > 0) {
+      const firstVertex = batch.vertices[0];
+      // 应用投影矩阵变换：[x', y', 1] = M * [x, y, 1]
+      const transformedX = this.projectionMatrix.elements[0] * firstVertex.position.x +
+                          this.projectionMatrix.elements[1] * firstVertex.position.y +
+                          this.projectionMatrix.elements[2];
+      const transformedY = this.projectionMatrix.elements[3] * firstVertex.position.x +
+                          this.projectionMatrix.elements[4] * firstVertex.position.y +
+                          this.projectionMatrix.elements[5];
+
+      console.log(`[WebGLRenderer] First vertex screen coords: (${firstVertex.position.x}, ${firstVertex.position.y})`);
+      console.log(`[WebGLRenderer] First vertex NDC coords: (${transformedX.toFixed(3)}, ${transformedY.toFixed(3)})`);
+      console.log(`[WebGLRenderer] NDC coords in range [-1,1]? X: ${Math.abs(transformedX) <= 1}, Y: ${Math.abs(transformedY) <= 1}`);
+    }
+
     // 绑定纹理（如果有）
     if (batch.texture) {
       this.gl.activeTexture(this.gl.TEXTURE0);
@@ -527,8 +562,14 @@ export class WebGLRenderer extends BaseRenderer {
     // 检查 WebGL 错误
     let error = this.gl.getError();
     if (error !== this.gl.NO_ERROR) {
-      console.error(`[WebGLRenderer] WebGL error before draw: ${error}`);
+      console.error(`[WebGLRenderer] WebGL error before draw: ${this.getWebGLErrorString(error)}`);
+      return; // 如果有错误，不继续绘制
     }
+
+    // 验证绘制状态
+    console.log(`[WebGLRenderer] About to draw: vertices=${batch.vertices.length}, indices=${batch.indices.length}`);
+    console.log(`[WebGLRenderer] Active program:`, this.gl.getParameter(this.gl.CURRENT_PROGRAM));
+    console.log(`[WebGLRenderer] Viewport:`, this.gl.getParameter(this.gl.VIEWPORT));
 
     // 绘制
     console.log(`[WebGLRenderer] Drawing ${batch.indices.length} indices`);
@@ -537,7 +578,9 @@ export class WebGLRenderer extends BaseRenderer {
     // 检查绘制后的错误
     error = this.gl.getError();
     if (error !== this.gl.NO_ERROR) {
-      console.error(`[WebGLRenderer] WebGL error after draw: ${error}`);
+      console.error(`[WebGLRenderer] WebGL error after draw: ${this.getWebGLErrorString(error)}`);
+    } else {
+      console.log(`[WebGLRenderer] Draw call successful`);
     }
 
     // 更新统计
@@ -572,23 +615,30 @@ export class WebGLRenderer extends BaseRenderer {
     for (let i = 0; i < vertices.length; i++) {
       const vertex = vertices[i];
       const offset = i * 8;
-      
+
       // 位置
       buffer[offset] = vertex.position.x;
       buffer[offset + 1] = vertex.position.y;
-      
+
       // 颜色
       buffer[offset + 2] = vertex.color[0];
       buffer[offset + 3] = vertex.color[1];
       buffer[offset + 4] = vertex.color[2];
       buffer[offset + 5] = vertex.color[3];
-      
+
       // 纹理坐标
       buffer[offset + 6] = vertex.texCoord?.x || 0;
       buffer[offset + 7] = vertex.texCoord?.y || 0;
     }
 
-    // 返回实际数据大小的 ArrayBuffer，而不是整个底层缓冲区
+    console.log(`[WebGLRenderer] Prepared vertex data: ${vertices.length} vertices, ${buffer.byteLength} bytes`);
+    console.log(`[WebGLRenderer] First vertex:`, {
+      position: [buffer[0], buffer[1]],
+      color: [buffer[2], buffer[3], buffer[4], buffer[5]],
+      texCoord: [buffer[6], buffer[7]]
+    });
+
+    // 确保返回正确大小的 ArrayBuffer
     return buffer.buffer.slice(0, buffer.byteLength);
   }
 
@@ -624,6 +674,8 @@ export class WebGLRenderer extends BaseRenderer {
 
   private prepareIndexData(indices: number[]): ArrayBuffer {
     const buffer = new Uint16Array(indices);
+    console.log(`[WebGLRenderer] Prepared index data: ${indices.length} indices, ${buffer.byteLength} bytes`);
+    console.log(`[WebGLRenderer] First few indices:`, indices.slice(0, 6));
     // 返回实际数据大小的 ArrayBuffer，而不是整个底层缓冲区
     return buffer.buffer.slice(0, buffer.byteLength);
   }
@@ -799,6 +851,29 @@ export class WebGLRenderer extends BaseRenderer {
       return [r, g, b, 1];
     }
     return [1, 1, 1, 1]; // 默认白色
+  }
+
+  private getWebGLErrorString(error: number): string {
+    if (!this.gl) return `Unknown error: ${error}`;
+
+    switch (error) {
+      case this.gl.NO_ERROR:
+        return 'NO_ERROR';
+      case this.gl.INVALID_ENUM:
+        return 'INVALID_ENUM';
+      case this.gl.INVALID_VALUE:
+        return 'INVALID_VALUE';
+      case this.gl.INVALID_OPERATION:
+        return 'INVALID_OPERATION';
+      case this.gl.INVALID_FRAMEBUFFER_OPERATION:
+        return 'INVALID_FRAMEBUFFER_OPERATION';
+      case this.gl.OUT_OF_MEMORY:
+        return 'OUT_OF_MEMORY';
+      case this.gl.CONTEXT_LOST_WEBGL:
+        return 'CONTEXT_LOST_WEBGL';
+      default:
+        return `Unknown error: ${error}`;
+    }
   }
 
 

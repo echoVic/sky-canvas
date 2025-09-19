@@ -211,33 +211,42 @@ export class WebGLShaderManager implements IShaderManager {
 
   setUniform(name: string, value: number | number[] | Float32Array): void {
     if (!this.currentProgram) return;
-    
+
     const program = this.shaders.get(this.currentProgram);
     if (!program) return;
 
     const location = program.uniforms.get(name);
-    if (!location) return;
+    if (!location) {
+      console.warn(`[ShaderManager] Uniform "${name}" not found in program "${this.currentProgram}"`);
+      return;
+    }
 
     // 根据值类型设置uniform
     if (typeof value === 'number') {
       this.gl.uniform1f(location, value);
-    } else if (Array.isArray(value)) {
-      switch (value.length) {
+    } else if (Array.isArray(value) || value instanceof Float32Array) {
+      const floatArray = value instanceof Float32Array ? value : new Float32Array(value);
+      switch (floatArray.length) {
+        case 1:
+          this.gl.uniform1fv(location, floatArray);
+          break;
         case 2:
-          this.gl.uniform2fv(location, value);
+          this.gl.uniform2fv(location, floatArray);
           break;
         case 3:
-          this.gl.uniform3fv(location, value);
+          this.gl.uniform3fv(location, floatArray);
           break;
         case 4:
-          this.gl.uniform4fv(location, value);
+          this.gl.uniform4fv(location, floatArray);
           break;
         case 9:
-          this.gl.uniformMatrix3fv(location, false, value);
+          this.gl.uniformMatrix3fv(location, false, floatArray);
           break;
         case 16:
-          this.gl.uniformMatrix4fv(location, false, value);
+          this.gl.uniformMatrix4fv(location, false, floatArray);
           break;
+        default:
+          console.warn(`[ShaderManager] Unsupported uniform array length: ${floatArray.length} for "${name}"`);
       }
     }
   }

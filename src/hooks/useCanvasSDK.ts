@@ -127,10 +127,10 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     config: ICanvasSDKConfig = {}
   ) => {
     console.log('Initialize called, current SDK:', sdkRef.current, 'isInitialized:', state.isInitialized);
-    
+
     if (sdkRef.current) {
-      console.log('SDK already initialized, throwing error');
-      throw new Error('SDK already initialized');
+      console.log('SDK already initialized, skipping re-initialization');
+      return; // 改为直接返回，而不是抛出错误
     }
 
     // 创建SDK实例，需要传入canvas和配置
@@ -441,7 +441,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     };
   }, []); // 空依赖数组，只在组件卸载时运行
 
-  // 使用useMemo来稳定actions对象，避免无限循环
+  // 使用useMemo来稳定actions对象，空依赖数组因为useMemoizedFn已经保证了函数稳定性
   const actions = useMemo(() => ({
     initialize,
     getCanvasManager,
@@ -467,12 +467,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     setZIndex,
     getShapesByZOrder,
     dispose,
-  }), [
-    initialize, getCanvasManager, getToolManager, addShape, removeShape, updateShape,
-    selectShape, deselectShape, clearSelection, hitTest, undo, redo, clearShapes,
-    setTool, on, off, bringToFront, sendToBack, bringForward, sendBackward,
-    setZIndex, getShapesByZOrder, dispose
-  ]);
+  }), []); // 空依赖数组，因为所有函数都已用useMemoizedFn稳定化
 
   return [state, actions];
 }
