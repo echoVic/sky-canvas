@@ -4,18 +4,18 @@
  */
 
 import { proxy, snapshot } from 'valtio';
+import { Shape } from '@sky-canvas/render-engine';
 import { ICanvasManager } from '../managers/CanvasManager';
-import { ShapeEntity } from '../models/entities/Shape';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewModel } from './interfaces/IViewModel';
+import { IViewModel } from './types/IViewModel';
 
 /**
  * Canvas 状态
  */
 export interface ICanvasState {
   // 形状管理
-  shapes: ShapeEntity[];
-  selectedShapes: ShapeEntity[];
+  shapes: Shape[];
+  selectedShapes: Shape[];
   
   // 画布状态
   isDrawing: boolean;
@@ -42,9 +42,9 @@ export interface ICanvasViewModel extends IViewModel {
   state: ICanvasState;
   
   // 形状操作
-  addShape(shape: ShapeEntity): void;
+  addShape(shape: Shape): void;
   removeShape(id: string): void;
-  updateShape(id: string, updates: Partial<ShapeEntity>): void;
+  updateShape(id: string, updates: Partial<Shape>): void;
   
   // 选择操作
   selectShape(id: string): void;
@@ -65,7 +65,7 @@ export interface ICanvasViewModel extends IViewModel {
   hitTest(x: number, y: number): string | null;
   
   // 状态查询
-  getSelectedShapes(): ShapeEntity[];
+  getSelectedShapes(): Shape[];
   canPerformAction(action: string): boolean;
 }
 
@@ -116,7 +116,7 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   // === 形状操作 ===
 
-  addShape(shape: ShapeEntity): void {
+  addShape(shape: Shape): void {
     this.canvasManager.addShape(shape);
     // 状态会通过事件监听器自动更新
   }
@@ -125,7 +125,7 @@ export class CanvasViewModel implements ICanvasViewModel {
     this.canvasManager.removeShape(id);
   }
 
-  updateShape(id: string, updates: Partial<ShapeEntity>): void {
+  updateShape(id: string, updates: Partial<Shape>): void {
     this.canvasManager.updateShape(id, updates);
   }
 
@@ -182,7 +182,7 @@ export class CanvasViewModel implements ICanvasViewModel {
     return this.canvasManager.hitTest(x, y);
   }
 
-  getSelectedShapes(): ShapeEntity[] {
+  getSelectedShapes(): Shape[] {
     return this.canvasManager.getSelectedShapes();
   }
 

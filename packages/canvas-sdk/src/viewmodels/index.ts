@@ -3,12 +3,12 @@
  */
 
 // ViewModel 接口
-export * from './interfaces/IViewModel';
+export type * from './types/IViewModel';
 
 // ViewModel 实现
-export * from './SceneViewModel';
-export * from './ViewportViewModel';
-export * from './SelectionViewModel';
+export { SceneViewModel } from './SceneViewModel';
+export { ViewportViewModel } from './ViewportViewModel';
+export { SelectionViewModel } from './SelectionViewModel';
 
 // 简单 ViewModels（直接使用 Services）
 export * from './ThemeViewModel';
@@ -18,8 +18,8 @@ export * from './ZoomViewModel';
 export * from './CanvasViewModel';
 export * from './ToolViewModel';
 
-// 工具 ViewModels
-export * from './tools';
+// 形状 ViewModels
+export * from './shapes';
 
 // 其他视图模型（扩展时添加）
 // export * from './shapes/ShapeViewModel';

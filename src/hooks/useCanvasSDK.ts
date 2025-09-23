@@ -1,9 +1,9 @@
 import {
   createCanvasSDK,
   type CanvasSDK,
-  type ICanvasSDKConfig,
-  type ShapeEntity
+  type ICanvasSDKConfig
 } from '@sky-canvas/canvas-sdk';
+import { Shape } from '@sky-canvas/render-engine';
 import { useMemoizedFn } from 'ahooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -16,9 +16,9 @@ export interface CanvasSDKState {
   /** 是否已初始化 */
   isInitialized: boolean;
   /** 所有形状 */
-  shapes: ShapeEntity[];
+  shapes: Shape[];
   /** 选中的形状 */
-  selectedShapes: ShapeEntity[];
+  selectedShapes: Shape[];
   /** 是否可撤销 */
   canUndo: boolean;
   /** 是否可重做 */
@@ -36,11 +36,11 @@ export interface CanvasSDKActions {
   /** 获取Tool管理器 */
   getToolManager: () => any;
   /** 添加形状 */
-  addShape: (entity: ShapeEntity) => void;
+  addShape: (entity: Shape) => void;
   /** 移除形状 */
   removeShape: (id: string) => void;
   /** 更新形状 */
-  updateShape: (id: string, updates: Partial<ShapeEntity>) => void;
+  updateShape: (id: string, updates: Partial<Shape>) => void;
   /** 选择形状 */
   selectShape: (id: string) => void;
   /** 取消选择形状 */
@@ -72,7 +72,7 @@ export interface CanvasSDKActions {
   /** 设置zIndex */
   setZIndex: (shapeIds: string[], zIndex: number) => void;
   /** 按Z轴顺序获取形状 */
-  getShapesByZOrder: () => ShapeEntity[];
+  getShapesByZOrder: () => Shape[];
   /** 销毁SDK */
   dispose: () => void;
 }
@@ -196,7 +196,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   /**
    * 添加形状
    */
-  const addShape = useMemoizedFn((entity: ShapeEntity) => {
+  const addShape = useMemoizedFn((entity: Shape) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
@@ -218,7 +218,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   /**
    * 更新形状
    */
-  const updateShape = useMemoizedFn((id: string, updates: Partial<ShapeEntity>) => {
+  const updateShape = useMemoizedFn((id: string, updates: Partial<Shape>) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }

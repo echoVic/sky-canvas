@@ -13,7 +13,6 @@ export type { LogLevel } from './logging/logService';
 export { ClipboardService, IClipboardService } from './clipboard/clipboardService';
 export { HistoryService, IHistoryService } from './history/historyService';
 export { ISelectionService, SelectionService } from './selection/selectionService';
-export { IShapeService, ShapeService } from './shape/shapeService';
 
 // 交互服务
 export { IInteractionService, InteractionService } from './interaction/interactionService';

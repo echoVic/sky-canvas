@@ -33,7 +33,7 @@ export class Circle extends Shape {
     this._radius = Math.max(0, value);
   }
 
-  // Konva.js 风格的半径方法
+  // 半径方法
   setRadius(value: number): this {
     this._radius = Math.max(0, value);
     return this;

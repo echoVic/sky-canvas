@@ -5,7 +5,9 @@
 
 import { createDecorator } from '../di';
 import { IEventBusService, IHistoryService, ILogService, IShortcutService } from '../services';
-import { IRectangleToolViewModel, ISelectToolViewModel } from '../viewmodels/tools';
+import { ISelectionViewModel } from '../viewmodels/interaction/SelectionViewModel';
+import { ICircleViewModel } from '../viewmodels/shapes/CircleViewModel';
+import { IRectangleViewModel } from '../viewmodels/shapes/RectangleViewModel';
 import { ICanvasManager } from './CanvasManager';
 
 /**
@@ -44,8 +46,9 @@ export class ToolManager implements IToolManager {
 
   constructor(
     @ICanvasManager private canvasManager: ICanvasManager,
-    @ISelectToolViewModel private selectToolViewModel: ISelectToolViewModel,
-    @IRectangleToolViewModel private rectangleToolViewModel: IRectangleToolViewModel,
+    @ISelectionViewModel private selectionViewModel: ISelectionViewModel,
+    @IRectangleViewModel private rectangleViewModel: IRectangleViewModel,
+    @ICircleViewModel private circleViewModel: ICircleViewModel,
     @IShortcutService private shortcutService: IShortcutService,
     @IHistoryService private historyService: IHistoryService,
     @IEventBusService private eventBus: IEventBusService,
@@ -61,11 +64,12 @@ export class ToolManager implements IToolManager {
    */
   private initializeToolViewModels(): void {
     // 注册工具 ViewModels
-    this.toolViewModels.set('select', this.selectToolViewModel);
-    this.toolViewModels.set('rectangle', this.rectangleToolViewModel);
-    
+    this.toolViewModels.set('select', this.selectionViewModel);
+    this.toolViewModels.set('rectangle', this.rectangleViewModel);
+    this.toolViewModels.set('circle', this.circleViewModel);
+
     // 注册占位符工具 - 暂时未实现的工具
-    const placeholderTools = ['diamond', 'circle', 'arrow', 'line', 'draw', 'text', 'image', 'sticky', 'link', 'frame', 'hand'];
+    const placeholderTools = ['diamond', 'arrow', 'line', 'draw', 'text', 'image', 'sticky', 'link', 'frame', 'hand'];
     placeholderTools.forEach(toolName => {
       this.toolViewModels.set(toolName, this.createPlaceholderTool(toolName));
     });

@@ -3,7 +3,7 @@
  * MVVM架构中的Model层 - 图层数据实体
  */
 
-// import { ShapeEntity } from './Shape'; // 暂时不需要导入
+// import { Shape } from './Shape'; // 暂时不需要导入
 
 /**
  * 图层类型

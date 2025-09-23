@@ -11,8 +11,3 @@ export { createCanvasSDK } from './main';
 export type { CanvasSDK, ICanvasSDKConfig } from './CanvasSDK';
 export type { SDKConfig } from './main';
 
-// 形状实体类型
-export type {
-  ICircleEntity,
-  IPathEntity, IRectangleEntity, ITextEntity, ShapeEntity
-} from './models/entities/Shape';

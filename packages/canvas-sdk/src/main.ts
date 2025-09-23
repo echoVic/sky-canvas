@@ -14,8 +14,9 @@ import { CanvasManager, ICanvasManager } from './managers/CanvasManager';
 import { IToolManager, ToolManager } from './managers/ToolManager';
 
 // ViewModels
-import { IRectangleToolViewModel, RectangleToolViewModel } from './viewmodels/tools/RectangleToolViewModel';
-import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
+import { ISelectionViewModel, SelectionViewModel } from './viewmodels/interaction/SelectionViewModel';
+import { CircleViewModel, ICircleViewModel } from './viewmodels/shapes/CircleViewModel';
+import { IRectangleViewModel, RectangleViewModel } from './viewmodels/shapes/RectangleViewModel';
 
 // 服务
 import { RenderEngineType } from '@sky-canvas/render-engine';
@@ -35,12 +36,10 @@ import {
   ILogService,
   InteractionService,
   ISelectionService,
-  IShapeService,
   IShortcutService,
   IZIndexService,
   LogService,
   SelectionService,
-  ShapeService,
   ShortcutService,
   ZIndexService,
   type LogLevel
@@ -292,9 +291,6 @@ class CanvasSDKBootstrap {
     // 选择服务
     services.set(ISelectionService, new SyncDescriptor(SelectionService));
 
-    // 形状服务
-    services.set(IShapeService, new SyncDescriptor(ShapeService));
-
     // Z-Index服务
     services.set(IZIndexService, new SyncDescriptor(ZIndexService));
 
@@ -302,8 +298,9 @@ class CanvasSDKBootstrap {
     services.set(IClipboardService, new SyncDescriptor(ClipboardService));
 
     // ViewModels
-    services.set(ISelectToolViewModel, new SyncDescriptor(SelectToolViewModel));
-    services.set(IRectangleToolViewModel, new SyncDescriptor(RectangleToolViewModel));
+    services.set(ISelectionViewModel, new SyncDescriptor(SelectionViewModel));
+    services.set(IRectangleViewModel, new SyncDescriptor(RectangleViewModel));
+    services.set(ICircleViewModel, new SyncDescriptor(CircleViewModel));
 
     // 工具管理器
     services.set(IToolManager, new SyncDescriptor(ToolManager));

@@ -4,7 +4,7 @@
  */
 
 import { ILayerEntity, LayerManager } from '../models/entities/Layer';
-import { ShapeEntity } from '../models/entities/Shape';
+import { Shape } from '@sky-canvas/render-engine';
 
 export interface ILayerViewConfig {
   itemHeight?: number;
@@ -56,7 +56,7 @@ export class LayerView {
   /**
    * 渲染图层列表
    */
-  render(layerManager: LayerManager, shapes: ShapeEntity[]): void {
+  render(layerManager: LayerManager, shapes: Shape[]): void {
     if (!this.container) return;
 
     // 构建图层项目树
@@ -75,7 +75,7 @@ export class LayerView {
   /**
    * 构建图层项目树
    */
-  private buildLayerItems(layerManager: LayerManager, shapes: ShapeEntity[]): void {
+  private buildLayerItems(layerManager: LayerManager, shapes: Shape[]): void {
     const layers = layerManager.getLayersByRenderOrder();
     this.layerItems = [];
 
@@ -90,7 +90,7 @@ export class LayerView {
   /**
    * 递归添加图层项目
    */
-  private addLayerItem(layer: ILayerEntity, level: number, layerManager: LayerManager, shapes: ShapeEntity[]): void {
+  private addLayerItem(layer: ILayerEntity, level: number, layerManager: LayerManager, shapes: Shape[]): void {
     const shapeCount = this.getShapeCountInLayer(layer, layerManager, shapes);
     
     const item: ILayerViewItem = {
@@ -118,7 +118,7 @@ export class LayerView {
   /**
    * 获取图层中的形状数量
    */
-  private getShapeCountInLayer(layer: ILayerEntity, layerManager: LayerManager, shapes: ShapeEntity[]): number {
+  private getShapeCountInLayer(layer: ILayerEntity, layerManager: LayerManager, shapes: Shape[]): number {
     if (layer.isGroup) {
       // 递归计算组中的形状数量
       let count = 0;

@@ -53,7 +53,7 @@ export interface ShapeConfig {
 
 /**
  * Shape 基类
- * 提供 Konva.js 风格的 API，内部使用 Transform 进行变换管理
+ * 提供用户友好的图形操作 API，内部使用 Transform 进行变换管理
  */
 export abstract class Shape implements IRenderable {
   private _id: string;
@@ -97,7 +97,7 @@ export abstract class Shape implements IRenderable {
     return this._transform;
   }
 
-  // Konva.js 风格的属性访问器
+  // 用户友好的属性访问器
   get x(): number {
     return this._transform.position.x;
   }
@@ -170,7 +170,7 @@ export abstract class Shape implements IRenderable {
     this._style.strokeWidth = Math.max(0, value);
   }
 
-  // Konva.js 风格的方法
+  // 用户友好的方法
   setVisible(value: boolean): this {
     this._visible = value;
     return this;

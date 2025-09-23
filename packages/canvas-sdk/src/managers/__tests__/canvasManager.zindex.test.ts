@@ -2,24 +2,23 @@
  * CanvasManager Z轴管理功能测试
  */
 
+import { Rectangle, Shape } from '@sky-canvas/render-engine';
 import { vi } from 'vitest';
 import { CanvasManager } from '../CanvasManager';
-import { ShapeEntityFactory, IShapeEntity } from '../../models/entities/Shape';
 
 describe('CanvasManager Z轴管理', () => {
   let canvasManager: CanvasManager;
   let mockEventBus: any;
   let mockLogService: any;
-  let mockShapeService: any;
   let mockSelectionService: any;
   let mockZIndexService: any;
-  let testShapes: IShapeEntity[];
+  let testShapes: Shape[];
 
   beforeEach(() => {
     testShapes = [
-      ShapeEntityFactory.createRectangle({ x: 0, y: 0 }),
-      ShapeEntityFactory.createCircle({ x: 100, y: 100 }),
-      ShapeEntityFactory.createRectangle({ x: 200, y: 200 })
+      new Rectangle({ x: 0, y: 0, width: 50, height: 50 }),
+      new Rectangle({ x: 100, y: 100, width: 50, height: 50 }),
+      new Rectangle({ x: 200, y: 200, width: 50, height: 50 })
     ];
 
     mockEventBus = {
@@ -29,14 +28,6 @@ describe('CanvasManager Z轴管理', () => {
     mockLogService = {
       info: vi.fn(),
       debug: vi.fn()
-    };
-
-    mockShapeService = {
-      getShapeEntity: vi.fn((id: string) =>
-        testShapes.find(shape => shape.id === id) || null
-      ),
-      getAllShapeEntities: vi.fn(() => testShapes),
-      updateShapeEntity: vi.fn()
     };
 
     mockSelectionService = {
@@ -55,13 +46,15 @@ describe('CanvasManager Z轴管理', () => {
     canvasManager = new CanvasManager(
       mockEventBus,
       mockLogService,
-      mockShapeService,
       mockSelectionService,
       null as any, // clipboardService
       null as any, // historyService
       mockZIndexService,
       null as any  // renderingService
     );
+
+    // 手动设置 shapes 数据
+    (canvasManager as any).shapes = new Map(testShapes.map(shape => [shape.id, shape]));
   });
 
   describe('bringToFront', () => {
@@ -69,7 +62,6 @@ describe('CanvasManager Z轴管理', () => {
       const shapeIds = [testShapes[0].id];
       canvasManager.bringToFront(shapeIds);
 
-      expect(mockShapeService.getShapeEntity).toHaveBeenCalledWith(testShapes[0].id);
       expect(mockZIndexService.bringToFront).toHaveBeenCalledWith(
         [testShapes[0]],
         testShapes
@@ -99,7 +91,6 @@ describe('CanvasManager Z轴管理', () => {
       const shapeIds = [testShapes[1].id];
       canvasManager.sendToBack(shapeIds);
 
-      expect(mockShapeService.getShapeEntity).toHaveBeenCalledWith(testShapes[1].id);
       expect(mockZIndexService.sendToBack).toHaveBeenCalledWith(
         [testShapes[1]],
         testShapes
@@ -157,18 +148,17 @@ describe('CanvasManager Z轴管理', () => {
       });
     });
 
-    it('应该批量更新形状实体', () => {
-      const updatedShapes = [
-        { ...testShapes[0], zIndex: 5 }
-      ];
+    it('zIndexService已经直接修改Shape对象', () => {
+      const updatedShapes = testShapes.slice(0, 1);
       mockZIndexService.setZIndex.mockReturnValue(updatedShapes);
 
       const shapeIds = [testShapes[0].id];
       canvasManager.setZIndex(shapeIds, 5);
 
-      expect(mockShapeService.updateShapeEntity).toHaveBeenCalledWith(
-        testShapes[0].id,
-        updatedShapes[0]
+      // zIndexService 已经直接修改了 Shape 对象，无需额外更新
+      expect(mockZIndexService.setZIndex).toHaveBeenCalledWith(
+        [testShapes[0]],
+        5
       );
     });
   });
@@ -185,25 +175,17 @@ describe('CanvasManager Z轴管理', () => {
     });
   });
 
-  describe('批量更新', () => {
-    it('batchUpdateShapes应该更新所有提供的形状', () => {
-      const updatedShapes = [
-        { ...testShapes[0], zIndex: 10 },
-        { ...testShapes[1], zIndex: 11 }
-      ];
-
-      // 通过置顶操作触发批量更新
+  describe('zIndex操作不再需要批量更新', () => {
+    it('zIndexService直接修改Shape对象', () => {
+      const updatedShapes = testShapes.slice(0, 2);
       mockZIndexService.bringToFront.mockReturnValue(updatedShapes);
+
       canvasManager.bringToFront([testShapes[0].id, testShapes[1].id]);
 
-      expect(mockShapeService.updateShapeEntity).toHaveBeenCalledTimes(2);
-      expect(mockShapeService.updateShapeEntity).toHaveBeenCalledWith(
-        testShapes[0].id,
-        updatedShapes[0]
-      );
-      expect(mockShapeService.updateShapeEntity).toHaveBeenCalledWith(
-        testShapes[1].id,
-        updatedShapes[1]
+      // 只验证调用了zIndexService，不验证批量更新
+      expect(mockZIndexService.bringToFront).toHaveBeenCalledWith(
+        [testShapes[0], testShapes[1]],
+        testShapes
       );
     });
   });

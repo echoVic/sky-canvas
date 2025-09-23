@@ -1,35 +1,34 @@
 /**
- * 矩形工具 ViewModel
- * 使用 CanvasManager 进行形状管理 - 需要 Manager 协调的工具 ViewModel
+ * 矩形 ViewModel
+ * 管理矩形的创建和交互逻辑
  */
 
 import { proxy } from 'valtio';
 
-import { IPoint } from '@sky-canvas/render-engine';
+import { IPoint, Rectangle } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
 import { ICanvasManager } from '../../managers/CanvasManager';
-import { IRectangleEntity, ShapeEntityFactory } from '../../models/entities/Shape';
 import { IEventBusService } from '../../services/eventBus/eventBusService';
-import { IViewModel } from '../interfaces/IViewModel';
+import { IViewModel } from '../types/IViewModel';
 
 /**
- * 矩形工具状态
+ * 矩形状态
  */
-export interface IRectangleToolState {
+export interface IRectangleState {
   isDrawing: boolean;
   startPoint: IPoint | null;
-  currentShape: IRectangleEntity | null;
+  currentShape: Rectangle | null;
   cursor: string;
   enabled: boolean;
 }
 
 /**
- * 矩形工具 ViewModel 接口
+ * 矩形 ViewModel 接口
  */
-export interface IRectangleToolViewModel extends IViewModel {
-  state: IRectangleToolState;
-  
-  // 工具控制
+export interface IRectangleViewModel extends IViewModel {
+  state: IRectangleState;
+
+  // 形状控制
   activate(): void;
   deactivate(): void;
   
@@ -40,25 +39,25 @@ export interface IRectangleToolViewModel extends IViewModel {
   
   // 状态查询
   isCurrentlyDrawing(): boolean;
-  getCurrentShape(): IRectangleEntity | null;
+  getCurrentShape(): Rectangle | null;
 }
 
 /**
- * 矩形工具 ViewModel 服务标识符
+ * 矩形 ViewModel 服务标识符
  */
-export const IRectangleToolViewModel = createDecorator<IRectangleToolViewModel>('RectangleToolViewModel');
+export const IRectangleViewModel = createDecorator<IRectangleViewModel>('RectangleViewModel');
 
 /**
- * 矩形工具 ViewModel 实现
+ * 矩形 ViewModel 实现
  */
-export class RectangleToolViewModel implements IRectangleToolViewModel {
-  private readonly _state: IRectangleToolState;
+export class RectangleViewModel implements IRectangleViewModel {
+  private readonly _state: IRectangleState;
 
   constructor(
     @ICanvasManager private canvasManager: ICanvasManager,
     @IEventBusService private eventBus: IEventBusService
   ) {
-    this._state = proxy<IRectangleToolState>({
+    this._state = proxy<IRectangleState>({
       isDrawing: false,
       startPoint: null,
       currentShape: null,
@@ -67,7 +66,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     });
   }
 
-  get state(): IRectangleToolState {
+  get state(): IRectangleState {
     return this._state;
   }
 
@@ -105,17 +104,18 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     this._state.isDrawing = true;
     this._state.startPoint = { x, y };
     
-    // 创建临时形状
-    this._state.currentShape = ShapeEntityFactory.createRectangle(
-      { x, y },
-      { width: 0, height: 0 },
-      {
-        fillColor: '#3b82f6',
-        strokeColor: '#1e40af',
+    // 使用 render-engine 的 Rectangle 类
+    this._state.currentShape = new Rectangle({
+      x, y,
+      width: 0,
+      height: 0,
+      style: {
+        fill: '#3b82f6',
+        stroke: '#1e40af',
         strokeWidth: 2,
         opacity: 1
       }
-    );
+    });
     
     this.eventBus.emit('tool:drawingStarted', {});
   }
@@ -131,15 +131,11 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
       y: Math.min(this._state.startPoint.y, y)
     };
 
-    // 更新形状
-    this._state.currentShape = {
-      ...this._state.currentShape,
-      transform: {
-        ...this._state.currentShape.transform,
-        position
-      },
-      size: { width, height }
-    };
+    // 直接更新 Rectangle 对象的属性
+    this._state.currentShape.x = position.x;
+    this._state.currentShape.y = position.y;
+    this._state.currentShape.width = width;
+    this._state.currentShape.height = height;
   }
 
   handleMouseUp(x: number, y: number, event?: MouseEvent): void {
@@ -148,7 +144,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     this._state.isDrawing = false;
     
     // 检查形状大小
-    if (this._state.currentShape.size.width < 5 || this._state.currentShape.size.height < 5) {
+    if (this._state.currentShape.width < 5 || this._state.currentShape.height < 5) {
       this.reset();
       return;
     }
@@ -166,7 +162,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     return this._state.isDrawing;
   }
 
-  getCurrentShape(): IRectangleEntity | null {
+  getCurrentShape(): Rectangle | null {
     return this._state.currentShape;
   }
 

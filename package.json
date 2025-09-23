@@ -38,6 +38,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:full": "pnpm build:packages && pnpm dev",
     "build": "tsc && vite build",
     "build:packages": "tsc && pnpm -r build",
     "preview": "vite preview",

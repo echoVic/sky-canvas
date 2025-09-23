@@ -5,11 +5,36 @@
 
 import { proxy, snapshot } from 'valtio';
 // ViewModel不需要DI装饰器，使用构造函数注入
-import { ShapeEntity } from '../models/entities/Shape';
+import { Shape } from '@sky-canvas/render-engine';
 import { IConfigurationService } from '../services/configuration/configurationService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IZoomService } from '../services/zoom/zoomService';
-import { IViewportState, IViewportViewModel } from './interfaces/IViewModel';
+import { IViewModel } from './types/IViewModel';
+
+/**
+ * 视口状态接口
+ */
+export interface IViewportState {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  zoom: number;
+}
+
+/**
+ * 视口 ViewModel 接口
+ */
+export interface IViewportViewModel extends IViewModel {
+  state: IViewportState;
+  setViewport(viewport: Partial<IViewportState>): void;
+  pan(deltaX: number, deltaY: number): void;
+  zoom(factor: number, centerX?: number, centerY?: number): void;
+  fitToContent(shapes: Shape[]): void;
+  reset(): void;
+  screenToWorld(x: number, y: number): { x: number; y: number };
+  worldToScreen(x: number, y: number): { x: number; y: number };
+}
 
 export class ViewportViewModel implements IViewportViewModel {
   private readonly _state: IViewportState;
@@ -154,7 +179,7 @@ export class ViewportViewModel implements IViewportViewModel {
     }
   }
 
-  fitToContent(shapes: ShapeEntity[]): void {
+  fitToContent(shapes: Shape[]): void {
     if (shapes.length === 0) {
       this.reset();
       return;
@@ -231,39 +256,28 @@ export class ViewportViewModel implements IViewportViewModel {
   /**
    * 获取形状边界
    */
-  private getShapeBounds(shape: ShapeEntity): { x: number; y: number; width: number; height: number } {
-    const { position } = shape.transform;
-    
-    switch (shape.type) {
+  private getShapeBounds(shape: Shape): { x: number; y: number; width: number; height: number } {
+    // 使用 render-engine 的 Shape 对象属性
+    switch (shape.constructor.name.toLowerCase()) {
       case 'rectangle':
         return {
-          x: position.x,
-          y: position.y,
-          width: (shape as any).size.width,
-          height: (shape as any).size.height
+          x: shape.x || 0,
+          y: shape.y || 0,
+          width: (shape as any).width || 100,
+          height: (shape as any).height || 100
         };
       case 'circle':
-        const radius = (shape as any).radius;
+        const radius = (shape as any).radius || 50;
         return {
-          x: position.x - radius,
-          y: position.y - radius,
+          x: (shape.x || 0) - radius,
+          y: (shape.y || 0) - radius,
           width: radius * 2,
           height: radius * 2
         };
-      case 'text':
-        // 简单估算文本边界
-        const fontSize = (shape as any).fontSize || 16;
-        const content = (shape as any).content || '';
-        return {
-          x: position.x,
-          y: position.y,
-          width: content.length * fontSize * 0.6,
-          height: fontSize
-        };
       default:
         return {
-          x: position.x,
-          y: position.y,
+          x: shape.x || 0,
+          y: shape.y || 0,
           width: 100,
           height: 100
         };

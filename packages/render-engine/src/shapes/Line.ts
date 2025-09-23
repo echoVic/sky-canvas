@@ -1,9 +1,9 @@
 /**
- * Line 线条图形 - Konva.js 风格
+ * Line 线条图形
  */
-import { Shape, ShapeConfig } from './Shape';
 import { IGraphicsContext, IPoint, IRect } from '../core/interface/IGraphicsContext';
 import { Vector2 } from '../math/Vector2';
+import { Shape, ShapeConfig } from './Shape';
 
 /**
  * 线条配置接口
@@ -75,7 +75,6 @@ export class Line extends Shape {
     this._points[len - 1] = value.y;
   }
 
-  // Konva.js 风格的方法
   setPoints(points: number[]): this {
     if (points.length >= 4 && points.length % 2 === 0) {
       this._points = [...points];

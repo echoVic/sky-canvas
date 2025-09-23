@@ -3,15 +3,15 @@
  */
 
 // 导入服务不需要DI注册，作为工具类使用
+import { Circle, Rectangle, Shape } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
-import { ShapeEntity, ShapeEntityFactory } from '../../models/entities/Shape';
 
 /**
  * 导入结果接口
  */
 export interface IImportResult {
   success: boolean;
-  shapes: ShapeEntity[];
+  shapes: Shape[];
   errors: string[];
   metadata?: {
     version?: string;
@@ -74,7 +74,7 @@ export class ImportService implements IImportService {
         };
       }
       
-      const shapes: ShapeEntity[] = [];
+      const shapes: Shape[] = [];
       const errors: string[] = [];
       
       data.shapes.forEach((shapeData: any, index: number) => {
@@ -172,7 +172,7 @@ export class ImportService implements IImportService {
         };
       }
       
-      const shapes: ShapeEntity[] = [];
+      const shapes: Shape[] = [];
       const errors: string[] = [];
       
       // 解析基本形状
@@ -235,20 +235,18 @@ export class ImportService implements IImportService {
       const imageUrl = URL.createObjectURL(file);
       
       // 创建一个表示图片的形状（可以扩展为专门的图片形状类型）
-      const shape = ShapeEntityFactory.createRectangle(
-        { x: 0, y: 0 },
-        { width: 400, height: 300 }, // 默认尺寸，实际使用时应该获取图片尺寸
-        {
-          fillColor: 'transparent'
+      const shape = new Rectangle({
+        x: 0,
+        y: 0,
+        width: 400,
+        height: 300,
+        style: {
+          fill: 'transparent'
         }
-      );
+      });
       
-      // 添加图片数据到 metadata 中
-      shape.metadata = {
-        ...shape.metadata,
-        imageUrl: imageUrl,
-        fileName: file.name
-      };
+      // render-engine 的 Shape 类型不支持 metadata 属性
+      // 图片信息暂时无法保存到形状中
       
       return {
         success: true,
@@ -292,38 +290,53 @@ export class ImportService implements IImportService {
   /**
    * 从数据创建形状
    */
-  private createShapeFromData(data: any): ShapeEntity | null {
+  private createShapeFromData(data: any): Shape | null {
     if (!data.type || !data.id) return null;
     
     try {
       switch (data.type) {
         case 'rectangle':
-          return ShapeEntityFactory.createRectangle(
-            data.transform?.position || { x: 0, y: 0 },
-            data.size || { width: 100, height: 100 },
-            data.style || {}
-          );
-          
+          const pos = data.transform?.position || { x: 0, y: 0 };
+          const size = data.size || { width: 100, height: 100 };
+          return new Rectangle({
+            x: pos.x,
+            y: pos.y,
+            width: size.width,
+            height: size.height,
+            style: data.style || {}
+          });
+
         case 'circle':
-          return ShapeEntityFactory.createCircle(
-            data.transform?.position || { x: 0, y: 0 },
-            data.radius || 50,
-            data.style || {}
-          );
-          
+          const circlePos = data.transform?.position || { x: 0, y: 0 };
+          const radius = data.radius || 50;
+          return new Circle({
+            x: circlePos.x + radius,
+            y: circlePos.y + radius,
+            radius: radius,
+            style: data.style || {}
+          });
+
         case 'path':
-          return ShapeEntityFactory.createPath(
-            data.pathData || 'M 0 0',
-            data.transform?.position || { x: 0, y: 0 },
-            data.style || {}
-          );
-          
+          // Path 类型暂不支持，返回占位Rectangle
+          const pathPos = data.transform?.position || { x: 0, y: 0 };
+          return new Rectangle({
+            x: pathPos.x,
+            y: pathPos.y,
+            width: 100,
+            height: 100,
+            style: data.style || {}
+          });
+
         case 'text':
-          return ShapeEntityFactory.createText(
-            data.content || '',
-            data.transform?.position || { x: 0, y: 0 },
-            data.style || {}
-          );
+          // Text 类型暂不支持，返回占位Rectangle
+          const textPos = data.transform?.position || { x: 0, y: 0 };
+          return new Rectangle({
+            x: textPos.x,
+            y: textPos.y,
+            width: 100,
+            height: 50,
+            style: data.style || {}
+          });
           
         default:
           return null;
@@ -337,7 +350,7 @@ export class ImportService implements IImportService {
   /**
    * 从SVG矩形创建形状
    */
-  private createRectangleFromSVG(rect: SVGRectElement): ShapeEntity | null {
+  private createRectangleFromSVG(rect: SVGRectElement): Shape | null {
     const x = parseFloat(rect.getAttribute('x') || '0');
     const y = parseFloat(rect.getAttribute('y') || '0');
     const width = parseFloat(rect.getAttribute('width') || '100');
@@ -346,21 +359,23 @@ export class ImportService implements IImportService {
     const stroke = rect.getAttribute('stroke') || 'none';
     const strokeWidth = parseFloat(rect.getAttribute('stroke-width') || '0');
     
-    return ShapeEntityFactory.createRectangle(
-      { x, y },
-      { width, height },
-      {
-        fillColor: fill,
-        strokeColor: stroke,
+    return new Rectangle({
+      x,
+      y,
+      width,
+      height,
+      style: {
+        fill: fill,
+        stroke: stroke,
         strokeWidth
       }
-    );
+    });
   }
 
   /**
    * 从SVG圆形创建形状
    */
-  private createCircleFromSVG(circle: SVGCircleElement): ShapeEntity | null {
+  private createCircleFromSVG(circle: SVGCircleElement): Shape | null {
     const cx = parseFloat(circle.getAttribute('cx') || '0');
     const cy = parseFloat(circle.getAttribute('cy') || '0');
     const r = parseFloat(circle.getAttribute('r') || '50');
@@ -368,35 +383,39 @@ export class ImportService implements IImportService {
     const stroke = circle.getAttribute('stroke') || 'none';
     const strokeWidth = parseFloat(circle.getAttribute('stroke-width') || '0');
     
-    return ShapeEntityFactory.createCircle(
-      { x: cx - r, y: cy - r },
-      r,
-      {
-        fillColor: fill,
-        strokeColor: stroke,
+    return new Circle({
+      x: cx,
+      y: cy,
+      radius: r,
+      style: {
+        fill: fill,
+        stroke: stroke,
         strokeWidth
       }
-    );
+    });
   }
 
   /**
    * 从SVG路径创建形状
    */
-  private createPathFromSVG(path: SVGPathElement): ShapeEntity | null {
+  private createPathFromSVG(path: SVGPathElement): Shape | null {
     const pathData = path.getAttribute('d') || 'M 0 0';
     const fill = path.getAttribute('fill') || 'none';
     const stroke = path.getAttribute('stroke') || 'black';
     const strokeWidth = parseFloat(path.getAttribute('stroke-width') || '1');
     
-    return ShapeEntityFactory.createPath(
-      pathData,
-      { x: 0, y: 0 },
-      {
-        fillColor: fill,
-        strokeColor: stroke,
+    // Path 暂不支持，返回占位Rectangle
+    return new Rectangle({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      style: {
+        fill: fill,
+        stroke: stroke,
         strokeWidth
       }
-    );
+    });
   }
 
   /**

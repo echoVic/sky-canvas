@@ -3,8 +3,8 @@
  * 功能单一：只负责形状的复制、剪切、粘贴
  */
 
+import { Circle, Rectangle, Shape } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
-import { IShapeEntity } from '../../models/entities/Shape';
 
 /**
  * 剪贴板操作类型
@@ -18,7 +18,7 @@ export enum ClipboardOperation {
  * 剪贴板数据
  */
 export interface IClipboardData {
-  shapes: IShapeEntity[];
+  shapes: Shape[];
   operation: ClipboardOperation;
   timestamp: number;
 }
@@ -28,9 +28,9 @@ export interface IClipboardData {
  */
 export interface IClipboardService {
   readonly _serviceBrand: undefined;
-  copy(shapes: IShapeEntity[]): void;
-  cut(shapes: IShapeEntity[]): void;
-  paste(): IShapeEntity[] | null;
+  copy(shapes: Shape[]): void;
+  cut(shapes: Shape[]): void;
+  paste(): Shape[] | null;
   clear(): void;
   hasData(): boolean;
   getClipboardData(): IClipboardData | null;
@@ -48,7 +48,7 @@ export class ClipboardService implements IClipboardService {
   readonly _serviceBrand: undefined;
   private clipboardData: IClipboardData | null = null;
 
-  copy(shapes: IShapeEntity[]): void {
+  copy(shapes: Shape[]): void {
     this.clipboardData = {
       shapes: this.deepCloneShapes(shapes),
       operation: ClipboardOperation.COPY,
@@ -56,7 +56,7 @@ export class ClipboardService implements IClipboardService {
     };
   }
 
-  cut(shapes: IShapeEntity[]): void {
+  cut(shapes: Shape[]): void {
     this.clipboardData = {
       shapes: this.deepCloneShapes(shapes),
       operation: ClipboardOperation.CUT,
@@ -64,23 +64,19 @@ export class ClipboardService implements IClipboardService {
     };
   }
 
-  paste(): IShapeEntity[] | null {
+  paste(): Shape[] | null {
     if (!this.clipboardData) return null;
 
-    // 生成新的 ID 和稍微偏移的位置
-    return this.clipboardData.shapes.map(shape => ({
-      ...this.deepCloneShape(shape),
-      id: this.generateId(),
-      transform: {
-        ...shape.transform,
-        position: {
-          x: shape.transform.position.x + 20,
-          y: shape.transform.position.y + 20
-        }
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }));
+    // 创建新的 Shape 实例，而不是普通对象
+    return this.clipboardData.shapes.map(shape => {
+      const clonedShape = this.createShapeFromOriginal(shape);
+
+      // 偏移位置
+      clonedShape.x += 20;
+      clonedShape.y += 20;
+
+      return clonedShape;
+    });
   }
 
   clear(): void {
@@ -98,15 +94,45 @@ export class ClipboardService implements IClipboardService {
   /**
    * 深拷贝形状数组
    */
-  private deepCloneShapes(shapes: IShapeEntity[]): IShapeEntity[] {
+  private deepCloneShapes(shapes: Shape[]): Shape[] {
     return shapes.map(shape => this.deepCloneShape(shape));
   }
 
   /**
    * 深拷贝单个形状
    */
-  private deepCloneShape(shape: IShapeEntity): IShapeEntity {
+  private deepCloneShape(shape: Shape): Shape {
     return JSON.parse(JSON.stringify(shape));
+  }
+
+  /**
+   * 从原始形状创建新的 Shape 实例
+   */
+  private createShapeFromOriginal(originalShape: Shape): Shape {
+    const style = originalShape.style();
+
+    // 根据形状类型创建相应的实例
+    if (originalShape instanceof Rectangle) {
+      const bounds = originalShape.getBounds();
+      return new Rectangle({
+        x: originalShape.x,
+        y: originalShape.y,
+        width: bounds.width,
+        height: bounds.height,
+        style: { ...style }
+      });
+    } else if (originalShape instanceof Circle) {
+      const bounds = originalShape.getBounds();
+      return new Circle({
+        x: originalShape.x,
+        y: originalShape.y,
+        radius: bounds.width / 2,
+        style: { ...style }
+      });
+    }
+
+    // 默认情况，如果是其他类型的 Shape
+    throw new Error(`Unsupported shape type for cloning: ${originalShape.constructor.name}`);
   }
 
   /**

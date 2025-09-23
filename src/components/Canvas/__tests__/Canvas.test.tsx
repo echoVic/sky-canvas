@@ -5,6 +5,7 @@ import React, { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCanvasInteraction, useCanvasSDK } from '../../../hooks';
 import { useCanvasStore } from '../../../store/canvasStore';
+import { Shape } from '@sky-canvas/render-engine';
 import Canvas from '../Canvas';
 
 // Mock dependencies
@@ -88,81 +89,76 @@ const mockCanvasStore = {
   sidebarOpen: false,
 };
 
-// 创建mock形状的辅助函数
+// 创建符合Shape类结构的mock形状
 const createMockShape = (overrides = {}) => {
   const defaultBounds = { x: 10, y: 10, width: 50, height: 30 };
-  
-  // 创建完整的对象，包含所有必需属性
+
+  // 创建符合Shape类接口的mock对象
   const shape = {
-    id: 'shape-1',
-    type: 'rectangle' as const,
-    transform: {
-      position: { x: 10, y: 10 },
-      rotation: 0,
-      scale: { x: 1, y: 1 }
+    // Shape基类的属性（模拟私有属性）
+    _id: 'shape-1',
+    _visible: true,
+    _zIndex: 0,
+    _transform: {
+      transformPoint: vi.fn(),
+      inverseTransformPoint: vi.fn(),
+      getMatrix: vi.fn(),
     },
-    style: {
-      fillColor: '#ffffff',
-      strokeColor: '#000000',
-      strokeWidth: 1,
-      opacity: 1
-    },
-    visible: true,
-    zIndex: 0,
-    locked: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    // 兼容旧属性
-    position: { x: 10, y: 10 },
-    size: { width: 50, height: 30 },
-    selected: false,
-    bounds: defaultBounds,
+    _style: {},
+
+    // Shape基类的公共属性getter/setter
+    get id() { return this._id; },
+    set id(value) { this._id = value; },
+    get visible() { return this._visible; },
+    set visible(value) { this._visible = value; },
+    get zIndex() { return this._zIndex; },
+    set zIndex(value) { this._zIndex = value; },
+    get x() { return 10; },
+    set x(value) {},
+    get y() { return 10; },
+    set y(value) {},
+    get rotation() { return 0; },
+    set rotation(value) {},
+    get scaleX() { return 1; },
+    set scaleX(value) {},
+    get scaleY() { return 1; },
+    set scaleY(value) {},
+    get transform(): any { return this._transform; },
+    get fill() { return '#ffffff'; },
+    get stroke() { return '#000000'; },
+    get strokeWidth() { return 1; },
+    get opacity() { return 1; },
+    set opacity(value) {},
+    get position() { return { x: 10, y: 10 }; },
+    set position(value) {},
+    get scale() { return { x: 1, y: 1 }; },
+    set scale(value) {},
+
+    // Shape基类的方法
+    style: vi.fn(() => ({})),
+    setZIndex: vi.fn(),
+    setVisible: vi.fn(),
+    move: vi.fn(),
+    moveTo: vi.fn(),
+    rotate: vi.fn(),
+    rotateTo: vi.fn(),
+    scaleBy: vi.fn(),
+    scaleTo: vi.fn(),
     render: vi.fn(),
     getBounds: vi.fn(() => defaultBounds),
     hitTest: vi.fn(() => true),
     clone: vi.fn(),
-    update: vi.fn(),
-    serialize: vi.fn(() => ({
-      id: 'shape-1',
-      type: 'rectangle' as const,
-      transform: {
-        position: { x: 10, y: 10 },
-        rotation: 0,
-        scale: { x: 1, y: 1 }
-      },
-      style: {
-        fillColor: '#ffffff',
-        strokeColor: '#000000',
-        strokeWidth: 1,
-        opacity: 1
-      },
-      visible: true,
-      zIndex: 0,
-      locked: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })),
-    deserialize: vi.fn(),
     dispose: vi.fn(),
+    generateId: vi.fn(() => 'shape-1'),
+    saveAndRestore: vi.fn(),
+    applyTransform: vi.fn(),
+    applyStyle: vi.fn(),
+    fillAndStroke: vi.fn(),
+
     ...overrides,
   };
-  
-  // 确保 serialize 方法返回正确的数据
-  if (overrides && Object.keys(overrides).length > 0) {
-    shape.serialize = vi.fn(() => ({
-      id: shape.id,
-      type: shape.type,
-      transform: shape.transform,
-      style: shape.style,
-      visible: shape.visible,
-      zIndex: shape.zIndex,
-      locked: shape.locked,
-      createdAt: shape.createdAt,
-      updatedAt: shape.updatedAt
-    }));
-  }
-  
-  return shape;
+
+  return shape as unknown as Shape;
 }
 
 describe('Canvas', () => {
@@ -308,7 +304,7 @@ describe('Canvas', () => {
       
       // 手动调用形状的render方法，因为SDK的渲染循环在测试环境中可能不会自动调用
       act(() => {
-        mockShape.render();
+        mockShape.render({} as any); // 传入mock context
       });
       
       // 验证形状是否被渲染
@@ -334,7 +330,7 @@ describe('Canvas', () => {
       
       // 手动调用形状的render方法，因为SDK的渲染循环在测试环境中可能不会自动调用
       act(() => {
-        mockShape.render();
+        mockShape.render({} as any); // 传入mock context
       });
       
       // 验证形状是否被渲染

@@ -2,15 +2,15 @@
  * Z轴管理服务测试
  */
 
+import { Rectangle, Shape } from '@sky-canvas/render-engine';
 import { vi } from 'vitest';
-import { ZIndexService, IZIndexService } from '../zIndexService';
-import { IShapeEntity, ShapeEntityFactory } from '../../../models/entities/Shape';
+import { IZIndexService, ZIndexService } from '../zIndexService';
 
 describe('ZIndexService', () => {
   let zIndexService: IZIndexService;
   let mockEventBus: any;
   let mockLogService: any;
-  let testShapes: IShapeEntity[];
+  let testShapes: Shape[];
 
   beforeEach(() => {
     mockEventBus = {
@@ -24,10 +24,10 @@ describe('ZIndexService', () => {
 
     // 创建测试用的形状数据
     testShapes = [
-      { ...ShapeEntityFactory.createRectangle({ x: 0, y: 0 }), zIndex: 0 },
-      { ...ShapeEntityFactory.createCircle({ x: 100, y: 100 }), zIndex: 1 },
-      { ...ShapeEntityFactory.createRectangle({ x: 200, y: 200 }), zIndex: 2 },
-      { ...ShapeEntityFactory.createCircle({ x: 300, y: 300 }), zIndex: 3 }
+      new Rectangle({ x: 0, y: 0, width: 50, height: 50, zIndex: 0 }),
+      new Rectangle({ x: 100, y: 100, width: 50, height: 50, zIndex: 1 }),
+      new Rectangle({ x: 200, y: 200, width: 50, height: 50, zIndex: 2 }),
+      new Rectangle({ x: 300, y: 300, width: 50, height: 50, zIndex: 3 })
     ];
   });
 
@@ -164,10 +164,10 @@ describe('ZIndexService', () => {
     it('应该重新分配连续的zIndex', () => {
       // 创建不连续的zIndex
       const messyShapes = [
-        { ...testShapes[0], zIndex: -5 },
-        { ...testShapes[1], zIndex: 10 },
-        { ...testShapes[2], zIndex: 100 },
-        { ...testShapes[3], zIndex: 1000 }
+        new Rectangle({ x: 0, y: 0, width: 50, height: 50, zIndex: -5 }),
+        new Rectangle({ x: 100, y: 100, width: 50, height: 50, zIndex: 10 }),
+        new Rectangle({ x: 200, y: 200, width: 50, height: 50, zIndex: 100 }),
+        new Rectangle({ x: 300, y: 300, width: 50, height: 50, zIndex: 1000 })
       ];
 
       const result = zIndexService.normalizeZIndices(messyShapes);
@@ -186,7 +186,7 @@ describe('ZIndexService', () => {
     });
 
     it('如果形状不存在应该返回-1', () => {
-      const nonExistentShape = ShapeEntityFactory.createRectangle();
+      const nonExistentShape = new Rectangle({ x: 999, y: 999, width: 50, height: 50 });
       const position = zIndexService.getRelativePosition(nonExistentShape, testShapes);
       expect(position).toBe(-1);
     });

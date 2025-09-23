@@ -3,9 +3,8 @@
  * 通过构造函数注入使用依赖服务
  */
 
-import { IRenderable } from '@sky-canvas/render-engine';
+import { IRenderable, Shape } from '@sky-canvas/render-engine';
 import { createDecorator } from '../di';
-import { ShapeEntity } from '../models/entities/Shape';
 import {
   ICanvasRenderingService,
   IClipboardService,
@@ -13,7 +12,6 @@ import {
   IHistoryService,
   ILogService,
   ISelectionService,
-  IShapeService,
   IZIndexService
 } from '../services';
 
@@ -24,9 +22,9 @@ export interface ICanvasManager {
   readonly _serviceBrand: undefined;
   
   // 形状管理
-  addShape(entity: ShapeEntity): void;
+  addShape(shape: Shape): void;
   removeShape(id: string): void;
-  updateShape(id: string, updates: Partial<ShapeEntity>): void;
+  updateShape(id: string, updates: Partial<Shape>): void;
   getObjects(): IRenderable[];
   hitTest(x: number, y: number): string | null;
   
@@ -34,13 +32,13 @@ export interface ICanvasManager {
   selectShape(id: string): void;
   deselectShape(id: string): void;
   clearSelection(): void;
-  getSelectedShapes(): ShapeEntity[];
+  getSelectedShapes(): Shape[];
   isShapeSelected(id: string): boolean;
   
   // 剪贴板操作
   copySelectedShapes(): void;
   cutSelectedShapes(): void;
-  paste(): ShapeEntity[];
+  paste(): Shape[];
   
   // 历史操作
   undo(): void;
@@ -52,7 +50,7 @@ export interface ICanvasManager {
   bringForward(shapeIds: string[]): void;
   sendBackward(shapeIds: string[]): void;
   setZIndex(shapeIds: string[], zIndex: number): void;
-  getShapesByZOrder(): ShapeEntity[];
+  getShapesByZOrder(): Shape[];
 
   // 状态查询
   getStats(): any;
@@ -71,11 +69,11 @@ export const ICanvasManager = createDecorator<ICanvasManager>('CanvasManager');
  */
 export class CanvasManager implements ICanvasManager {
   readonly _serviceBrand: undefined;
+  private shapes = new Map<string, Shape>();
 
   constructor(
     @IEventBusService private eventBus: any,
     @ILogService private logService: any,
-    @IShapeService private shapeService: any,
     @ISelectionService private selectionService: any,
     @IClipboardService private clipboardService: any,
     @IHistoryService private historyService: any,
@@ -98,43 +96,43 @@ export class CanvasManager implements ICanvasManager {
   /**
    * 添加形状
    */
-  addShape(entity: ShapeEntity): void {
-    this.logService.info('CanvasManager.addShape called:', entity);
+  addShape(shape: Shape): void {
+    this.logService.info('CanvasManager.addShape called:', shape.id);
 
-    const view = this.shapeService.addShape(entity);
-    this.logService.info('Shape view created:', view);
+    // 存储形状
+    this.shapes.set(shape.id, shape);
 
-    // 添加到渲染服务
-    this.logService.info('Adding to rendering service...');
-    this.renderingService.addObject(view);
+    // 直接添加到渲染服务 - Shape 本身就是 IRenderable
+    this.renderingService.addObject(shape);
 
     // 记录到历史
     this.historyService.execute({
       execute: () => {}, // 已经执行了，不需要重复
-      undo: () => this.shapeService.removeShape(entity.id)
+      undo: () => this.removeShape(shape.id)
     });
 
     // 发布事件
-    this.eventBus.emit('canvas:shapeAdded', { entity, view });
-    this.logService.debug(`Shape added: ${entity.id}`);
+    this.eventBus.emit('canvas:shapeAdded', { shape });
+    this.logService.debug(`Shape added: ${shape.id}`);
   }
 
   /**
    * 移除形状
    */
   removeShape(id: string): void {
-    const entity = this.shapeService.getShapeEntity(id);
-    if (!entity) return;
+    const shape = this.shapes.get(id);
+    if (!shape) return;
 
     // 从渲染服务中移除
     this.renderingService.removeObject(id);
 
-    this.shapeService.removeShape(id);
+    // 从内存中移除
+    this.shapes.delete(id);
 
     // 记录到历史
     this.historyService.execute({
       execute: () => {},  // 已经执行了，不需要重复
-      undo: () => this.shapeService.addShape(entity)
+      undo: () => this.addShape(shape)
     });
 
     // 发布事件
@@ -145,22 +143,30 @@ export class CanvasManager implements ICanvasManager {
   /**
    * 更新形状
    */
-  updateShape(id: string, updates: Partial<ShapeEntity>): void {
-    const oldEntity = this.shapeService.getShapeEntity(id);
-    if (!oldEntity) return;
-    
-    this.shapeService.updateShape(id, updates);
-    
-    // 记录到历史 - 保存旧值用于撤销
-    const oldValues = { 
-      transform: { ...oldEntity.transform }, 
-      style: { ...oldEntity.style }
+  updateShape(id: string, updates: Partial<Shape>): void {
+    const shape = this.shapes.get(id);
+    if (!shape) return;
+
+    // 保存旧值用于撤销
+    const oldValues = {
+      x: shape.x,
+      y: shape.y,
+      rotation: shape.rotation,
+      scaleX: shape.scaleX,
+      scaleY: shape.scaleY,
+      visible: shape.visible,
+      zIndex: shape.zIndex
     };
+
+    // 直接更新 Shape 对象的属性
+    Object.assign(shape, updates);
+
+    // 记录到历史
     this.historyService.execute({
       execute: () => {},  // 已经执行了，不需要重复
-      undo: () => this.shapeService.updateShape(id, oldValues)
+      undo: () => Object.assign(shape, oldValues)
     });
-    
+
     // 发布事件
     this.eventBus.emit('canvas:shapeUpdated', { id, updates });
     this.logService.debug(`Shape updated: ${id}`);
@@ -170,14 +176,24 @@ export class CanvasManager implements ICanvasManager {
    * 获取所有可渲染对象
    */
   getObjects(): IRenderable[] {
-    return this.shapeService.getObjects();
+    return Array.from(this.shapes.values());
   }
 
   /**
    * 点击测试
    */
   hitTest(x: number, y: number): string | null {
-    return this.shapeService.hitTest(x, y);
+    // 按 z-index 从高到低检测
+    const sortedShapes = Array.from(this.shapes.values())
+      .sort((a, b) => b.zIndex - a.zIndex);
+
+    for (const shape of sortedShapes) {
+      if (shape.visible && shape.hitTest({ x, y })) {
+        return shape.id;
+      }
+    }
+
+    return null;
   }
 
   // === 选择管理 ===
@@ -186,18 +202,14 @@ export class CanvasManager implements ICanvasManager {
    * 选择形状
    */
   selectShape(id: string): void {
-    const entity = this.shapeService.getShapeEntity(id);
-    if (!entity) return;
-    
+    const shape = this.shapes.get(id);
+    if (!shape) return;
+
     // 使用 SelectionService 管理选择状态
-    this.selectionService.select([entity]);
-    
-    // TODO: 通过 ShapeService 更新视觉状态
-    // const view = this.shapeService.getShapeView(id);
-    // if (view) view.setSelected(true);
-    
+    this.selectionService.select([shape]);
+
     // 发布事件
-    this.eventBus.emit('canvas:shapeSelected', { id, entity });
+    this.eventBus.emit('canvas:shapeSelected', { id, shape });
     this.logService.debug(`Shape selected: ${id}`);
   }
 
@@ -205,18 +217,14 @@ export class CanvasManager implements ICanvasManager {
    * 取消选择形状
    */
   deselectShape(id: string): void {
-    const entity = this.shapeService.getShapeEntity(id);
-    if (!entity) return;
-    
+    const shape = this.shapes.get(id);
+    if (!shape) return;
+
     // 使用 SelectionService 管理选择状态
-    this.selectionService.deselect([entity]);
-    
-    // TODO: 通过 ShapeService 更新视觉状态
-    // const view = this.shapeService.getShapeView(id);
-    // if (view) view.setSelected(false);
-    
+    this.selectionService.deselect([shape]);
+
     // 发布事件
-    this.eventBus.emit('canvas:shapeDeselected', { id, entity });
+    this.eventBus.emit('canvas:shapeDeselected', { id, shape });
     this.logService.debug(`Shape deselected: ${id}`);
   }
 
@@ -227,9 +235,7 @@ export class CanvasManager implements ICanvasManager {
     // 清空 SelectionService 的状态
     this.selectionService.clearSelection();
     
-    // TODO: 通过 ShapeService 清空视觉状态
-    // const views = this.shapeService.getAllShapeViews();
-    // views.forEach(view => view.setSelected(false));
+    // 选择状态由 SelectionService 管理，无需额外清理
     
     // 发布事件
     this.eventBus.emit('canvas:selectionCleared', {});
@@ -239,16 +245,16 @@ export class CanvasManager implements ICanvasManager {
   /**
    * 获取选中的形状
    */
-  getSelectedShapes(): ShapeEntity[] {
-    return this.selectionService.getSelectedShapes() as ShapeEntity[];
+  getSelectedShapes(): Shape[] {
+    return this.selectionService.getSelectedShapes() as Shape[];
   }
 
   /**
    * 检查是否选中
    */
   isShapeSelected(id: string): boolean {
-    const entity = this.shapeService.getShapeEntity(id);
-    return entity ? this.selectionService.isSelected(entity) : false;
+    const shape = this.shapes.get(id);
+    return shape ? this.selectionService.isSelected(shape) : false;
   }
 
   // === 剪贴板操作 ===
@@ -287,25 +293,25 @@ export class CanvasManager implements ICanvasManager {
   /**
    * 粘贴形状
    */
-  paste(): ShapeEntity[] {
+  paste(): Shape[] {
     const pastedShapes = this.clipboardService.paste();
     if (!pastedShapes || pastedShapes.length === 0) return [];
-    
+
     // 添加粘贴的形状
     pastedShapes.forEach((shape: any) => {
-      this.addShape(shape as ShapeEntity);
+      this.addShape(shape as Shape);
     });
-    
+
     // 选中粘贴的形状
     this.clearSelection();
     pastedShapes.forEach((shape: any) => {
       this.selectShape(shape.id);
     });
-    
+
     this.eventBus.emit('canvas:shapesPasted', { count: pastedShapes.length });
     this.logService.debug(`Pasted ${pastedShapes.length} shapes`);
-    
-    return pastedShapes as ShapeEntity[];
+
+    return pastedShapes as Shape[];
   }
 
   // === 历史操作 ===
@@ -335,10 +341,20 @@ export class CanvasManager implements ICanvasManager {
     shapes: { totalShapes: number; selectedShapes: number; visibleShapes: number; shapesByType: Record<string, number> };
     history: { canUndo: boolean; canRedo: boolean };
   } {
-    const shapeStats = this.shapeService.getStats();
+    const shapes = Array.from(this.shapes.values());
+    const shapesByType: Record<string, number> = {};
+
+    // 统计每种类型的形状数量
+    for (const shape of shapes) {
+      const type = (shape as any).constructor.name.toLowerCase(); // Circle -> circle
+      shapesByType[type] = (shapesByType[type] || 0) + 1;
+    }
+
     return {
       shapes: {
-        ...shapeStats,
+        totalShapes: shapes.length,
+        visibleShapes: shapes.filter(s => s.visible).length,
+        shapesByType,
         selectedShapes: this.selectionService.getSelectionCount()
       },
       history: {
@@ -352,10 +368,11 @@ export class CanvasManager implements ICanvasManager {
    * 清空画布
    */
   clear(): void {
-    this.shapeService.clear();
+    // 清空所有形状
+    this.shapes.clear();
     this.selectionService.clearSelection();
     this.historyService.clear();
-    
+
     this.eventBus.emit('canvas:cleared', {});
     this.logService.info('Canvas cleared');
   }
@@ -369,16 +386,13 @@ export class CanvasManager implements ICanvasManager {
     if (shapeIds.length === 0) return;
 
     const shapesToMove = shapeIds
-      .map(id => this.shapeService.getShapeEntity(id))
-      .filter(shape => shape !== null) as ShapeEntity[];
+      .map(id => this.shapes.get(id))
+      .filter(shape => shape !== undefined) as Shape[];
 
     if (shapesToMove.length === 0) return;
 
-    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const allShapes = Array.from(this.shapes.values());
     const updatedShapes = this.zIndexService.bringToFront(shapesToMove, allShapes);
-
-    // 批量更新形状
-    this.batchUpdateShapes(updatedShapes);
 
     this.eventBus.emit('canvas:shapesBroughtToFront', { shapeIds });
     this.logService.debug(`Brought ${shapeIds.length} shapes to front`);
@@ -391,15 +405,13 @@ export class CanvasManager implements ICanvasManager {
     if (shapeIds.length === 0) return;
 
     const shapesToMove = shapeIds
-      .map(id => this.shapeService.getShapeEntity(id))
-      .filter(shape => shape !== null) as ShapeEntity[];
+      .map(id => this.shapes.get(id))
+      .filter(shape => shape !== undefined) as Shape[];
 
     if (shapesToMove.length === 0) return;
 
-    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const allShapes = Array.from(this.shapes.values());
     const updatedShapes = this.zIndexService.sendToBack(shapesToMove, allShapes);
-
-    this.batchUpdateShapes(updatedShapes);
 
     this.eventBus.emit('canvas:shapesSentToBack', { shapeIds });
     this.logService.debug(`Sent ${shapeIds.length} shapes to back`);
@@ -412,15 +424,13 @@ export class CanvasManager implements ICanvasManager {
     if (shapeIds.length === 0) return;
 
     const shapesToMove = shapeIds
-      .map(id => this.shapeService.getShapeEntity(id))
-      .filter(shape => shape !== null) as ShapeEntity[];
+      .map(id => this.shapes.get(id))
+      .filter(shape => shape !== undefined) as Shape[];
 
     if (shapesToMove.length === 0) return;
 
-    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const allShapes = Array.from(this.shapes.values());
     const updatedShapes = this.zIndexService.bringForward(shapesToMove, allShapes);
-
-    this.batchUpdateShapes(updatedShapes);
 
     this.eventBus.emit('canvas:shapesBroughtForward', { shapeIds });
     this.logService.debug(`Brought ${shapeIds.length} shapes forward`);
@@ -433,15 +443,13 @@ export class CanvasManager implements ICanvasManager {
     if (shapeIds.length === 0) return;
 
     const shapesToMove = shapeIds
-      .map(id => this.shapeService.getShapeEntity(id))
-      .filter(shape => shape !== null) as ShapeEntity[];
+      .map(id => this.shapes.get(id))
+      .filter(shape => shape !== undefined) as Shape[];
 
     if (shapesToMove.length === 0) return;
 
-    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+    const allShapes = Array.from(this.shapes.values());
     const updatedShapes = this.zIndexService.sendBackward(shapesToMove, allShapes);
-
-    this.batchUpdateShapes(updatedShapes);
 
     this.eventBus.emit('canvas:shapesSentBackward', { shapeIds });
     this.logService.debug(`Sent ${shapeIds.length} shapes backward`);
@@ -454,16 +462,12 @@ export class CanvasManager implements ICanvasManager {
     if (shapeIds.length === 0) return;
 
     const shapesToUpdate = shapeIds
-      .map(id => this.shapeService.getShapeEntity(id))
-      .filter(shape => shape !== null) as ShapeEntity[];
+      .map(id => this.shapes.get(id))
+      .filter(shape => shape !== undefined) as Shape[];
 
     if (shapesToUpdate.length === 0) return;
 
     const updatedShapes = this.zIndexService.setZIndex(shapesToUpdate, zIndex);
-
-    updatedShapes.forEach((shape: ShapeEntity) => {
-      this.shapeService.updateShapeEntity(shape.id, shape);
-    });
 
     this.eventBus.emit('canvas:shapesZIndexSet', { shapeIds, zIndex });
     this.logService.debug(`Set zIndex to ${zIndex} for ${shapeIds.length} shapes`);
@@ -472,25 +476,17 @@ export class CanvasManager implements ICanvasManager {
   /**
    * 获取按Z轴顺序排序的形状列表
    */
-  getShapesByZOrder(): ShapeEntity[] {
-    const allShapes = this.shapeService.getAllShapeEntities() as ShapeEntity[];
+  getShapesByZOrder(): Shape[] {
+    const allShapes = Array.from(this.shapes.values());
     return this.zIndexService.getSortedShapes(allShapes);
   }
 
-  /**
-   * 批量更新形状实体
-   */
-  private batchUpdateShapes(shapes: ShapeEntity[]): void {
-    shapes.forEach((shape: ShapeEntity) => {
-      this.shapeService.updateShapeEntity(shape.id, shape);
-    });
-  }
 
   /**
    * 销毁管理器
    */
   dispose(): void {
-    this.shapeService.clear();
+    this.shapes.clear();
     this.logService.info('CanvasManager disposed');
   }
 }

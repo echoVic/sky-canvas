@@ -1,7 +1,87 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Shape } from '@sky-canvas/render-engine';
 import { useCanvasSDK } from '../useCanvasSDK';
-import { createMockCanvas, createMockShape } from './test-utils';
+
+// 创建mock canvas元素的辅助函数
+const createMockCanvas = () => {
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  return canvas;
+};
+
+// 创建符合Shape类结构的mock形状
+const createMockShape = (overrides = {}) => {
+  const defaultBounds = { x: 10, y: 10, width: 50, height: 30 };
+
+  // 创建符合Shape类接口的mock对象
+  const shape = {
+    // Shape基类的属性（模拟私有属性）
+    _id: 'shape-1',
+    _visible: true,
+    _zIndex: 0,
+    _transform: {
+      transformPoint: vi.fn(),
+      inverseTransformPoint: vi.fn(),
+      getMatrix: vi.fn(),
+    },
+    _style: {},
+
+    // Shape基类的公共属性getter/setter
+    get id() { return this._id; },
+    set id(value) { this._id = value; },
+    get visible() { return this._visible; },
+    set visible(value) { this._visible = value; },
+    get zIndex() { return this._zIndex; },
+    set zIndex(value) { this._zIndex = value; },
+    get x() { return 10; },
+    set x(value) {},
+    get y() { return 10; },
+    set y(value) {},
+    get rotation() { return 0; },
+    set rotation(value) {},
+    get scaleX() { return 1; },
+    set scaleX(value) {},
+    get scaleY() { return 1; },
+    set scaleY(value) {},
+    get transform(): any { return this._transform; },
+    get fill() { return '#ffffff'; },
+    get stroke() { return '#000000'; },
+    get strokeWidth() { return 1; },
+    get opacity() { return 1; },
+    set opacity(value) {},
+    get position() { return { x: 10, y: 10 }; },
+    set position(value) {},
+    get scale() { return { x: 1, y: 1 }; },
+    set scale(value) {},
+
+    // Shape基类的方法
+    style: vi.fn(() => ({})),
+    setZIndex: vi.fn(),
+    setVisible: vi.fn(),
+    move: vi.fn(),
+    moveTo: vi.fn(),
+    rotate: vi.fn(),
+    rotateTo: vi.fn(),
+    scaleBy: vi.fn(),
+    scaleTo: vi.fn(),
+    render: vi.fn(),
+    getBounds: vi.fn(() => defaultBounds),
+    hitTest: vi.fn(() => true),
+    clone: vi.fn(),
+    dispose: vi.fn(),
+    generateId: vi.fn(() => 'shape-1'),
+    saveAndRestore: vi.fn(),
+    applyTransform: vi.fn(),
+    applyStyle: vi.fn(),
+    fillAndStroke: vi.fn(),
+
+    ...overrides,
+  };
+
+  return shape as unknown as Shape;
+};
 
 // Use vi.hoisted to ensure proper variable hoisting
 const { mockCanvasManager, mockToolManager, mockSDK } = vi.hoisted(() => {

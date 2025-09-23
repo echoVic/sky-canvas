@@ -1,21 +1,20 @@
 /**
- * 选择工具 ViewModel
- * 直接使用 SelectionService - 简单的工具 ViewModel
+ * 选择交互 ViewModel
+ * 管理形状选择和拖拽交互逻辑
  */
 
 import { proxy } from 'valtio';
 
-import { IPoint } from '@sky-canvas/render-engine';
-import { ShapeEntity } from '../../models/entities/Shape';
+import { IPoint, Shape } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
 import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { ISelectionService } from '../../services/selection/selectionService';
-import { IViewModel } from '../interfaces/IViewModel';
+import { IViewModel } from '../types/IViewModel';
 
 /**
- * 选择工具状态
+ * 选择状态
  */
-export interface ISelectToolState {
+export interface ISelectionState {
   isSelecting: boolean;
   startPoint: IPoint | null;
   cursor: string;
@@ -23,12 +22,12 @@ export interface ISelectToolState {
 }
 
 /**
- * 选择工具 ViewModel 接口
+ * 选择 ViewModel 接口
  */
-export interface ISelectToolViewModel extends IViewModel {
-  state: ISelectToolState;
-  
-  // 工具控制
+export interface ISelectionViewModel extends IViewModel {
+  state: ISelectionState;
+
+  // 交互控制
   activate(): void;
   deactivate(): void;
   
@@ -41,26 +40,26 @@ export interface ISelectToolViewModel extends IViewModel {
   handleKeyDown(event: KeyboardEvent): void;
   
   // 状态查询
-  getSelectedShapes(): ShapeEntity[];
+  getSelectedShapes(): Shape[];
   getSelectionCount(): number;
 }
 
 /**
- * 选择工具 ViewModel 服务标识符
+ * 选择 ViewModel 服务标识符
  */
-export const ISelectToolViewModel = createDecorator<ISelectToolViewModel>('SelectToolViewModel');
+export const ISelectionViewModel = createDecorator<ISelectionViewModel>('SelectionViewModel');
 
 /**
- * 选择工具 ViewModel 实现
+ * 选择 ViewModel 实现
  */
-export class SelectToolViewModel implements ISelectToolViewModel {
-  private readonly _state: ISelectToolState;
+export class SelectionViewModel implements ISelectionViewModel {
+  private readonly _state: ISelectionState;
 
   constructor(
     @ISelectionService private selectionService: ISelectionService,
     @IEventBusService private eventBus: IEventBusService
   ) {
-    this._state = proxy<ISelectToolState>({
+    this._state = proxy<ISelectionState>({
       isSelecting: false,
       startPoint: null,
       cursor: 'default',
@@ -68,7 +67,7 @@ export class SelectToolViewModel implements ISelectToolViewModel {
     });
   }
 
-  get state(): ISelectToolState {
+  get state(): ISelectionState {
     return this._state;
   }
 
@@ -164,7 +163,7 @@ export class SelectToolViewModel implements ISelectToolViewModel {
 
   // === 状态查询 ===
 
-  getSelectedShapes(): ShapeEntity[] {
+  getSelectedShapes(): Shape[] {
     // TODO: 通过 CanvasManager 获取选中形状
     return [];
   }

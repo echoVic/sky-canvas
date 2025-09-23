@@ -49,7 +49,13 @@
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_snapshot",
       "Bash(pnpm build:packages:*)",
-      "Bash(pnpm dev:full:*)"
+      "Bash(pnpm dev:full:*)",
+      "Bash(tsc --noEmit)",
+      "Bash(pnpm -w run dev:full)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk exec tsc --noEmit)",
+      "Bash(pnpm --filter @sky-canvas/render-engine exec tsc --noEmit)",
+      "Bash(pnpm -r run test)"
     ],
     "deny": [],
     "ask": []

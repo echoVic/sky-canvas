@@ -8,7 +8,7 @@ export * from './core';
 // 数学库 (使用命名空间导出避免冲突)
 export * as MathUtils from './math';
 
-// Shapes 系统 (Konva.js 风格的图形系统)
+// Shapes 系统
 export * from './shapes';
 
 // 渲染管道 (明确处理冲突)

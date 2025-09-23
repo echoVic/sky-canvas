@@ -1,9 +1,9 @@
 /**
- * Rectangle 矩形图形 - Konva.js 风格
+ * Rectangle 矩形图形
  */
-import { Shape, ShapeConfig } from './Shape';
 import { IGraphicsContext, IPoint, IRect } from '../core/interface/IGraphicsContext';
 import { Vector2 } from '../math/Vector2';
+import { Shape, ShapeConfig } from './Shape';
 
 /**
  * 矩形配置接口
@@ -57,7 +57,6 @@ export class Rectangle extends Shape {
     this._cornerRadius = Math.max(0, value);
   }
 
-  // Konva.js 风格的方法
   size(): { width: number; height: number };
   size(width: number, height: number): this;
   size(width?: number, height?: number): { width: number; height: number } | this {

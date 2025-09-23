@@ -6,7 +6,7 @@
 import { proxy, snapshot } from 'valtio';
 import { IThemeService, ThemeType, IThemeConfig } from '../services/theme/themeService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewModel } from './interfaces/IViewModel';
+import { IViewModel } from './types/IViewModel';
 
 /**
  * 主题状态

@@ -3,7 +3,7 @@
  */
 
 import { createDecorator } from '../../di';
-import { IShapeEntity } from '../../models/entities/Shape';
+import { Shape } from '@sky-canvas/render-engine';
 
 /**
  * 选择模式
@@ -18,11 +18,11 @@ export enum SelectionMode {
  */
 export interface ISelectionService {
   readonly _serviceBrand: undefined;
-  select(shapes: IShapeEntity | IShapeEntity[], mode?: SelectionMode): void;
-  deselect(shapes: IShapeEntity | IShapeEntity[]): void;
+  select(shapes: Shape | Shape[], mode?: SelectionMode): void;
+  deselect(shapes: Shape | Shape[]): void;
   clearSelection(): void;
-  getSelectedShapes(): IShapeEntity[];
-  isSelected(shape: IShapeEntity): boolean;
+  getSelectedShapes(): Shape[];
+  isSelected(shape: Shape): boolean;
   getSelectionCount(): number;
   setSelectionMode(mode: SelectionMode): void;
 }
@@ -37,10 +37,10 @@ export const ISelectionService = createDecorator<ISelectionService>('SelectionSe
  */
 export class SelectionService implements ISelectionService {
   readonly _serviceBrand: undefined;
-  private selectedShapes = new Set<IShapeEntity>();
+  private selectedShapes = new Set<Shape>();
   private mode: SelectionMode = SelectionMode.SINGLE;
 
-  select(shapes: IShapeEntity | IShapeEntity[], mode?: SelectionMode): void {
+  select(shapes: Shape | Shape[], mode?: SelectionMode): void {
     const shapesToSelect = Array.isArray(shapes) ? shapes : [shapes];
     const currentMode = mode || this.mode;
 
@@ -56,7 +56,7 @@ export class SelectionService implements ISelectionService {
     }
   }
 
-  deselect(shapes: IShapeEntity | IShapeEntity[]): void {
+  deselect(shapes: Shape | Shape[]): void {
     const shapesToDeselect = Array.isArray(shapes) ? shapes : [shapes];
     
     for (const shape of shapesToDeselect) {
@@ -68,11 +68,11 @@ export class SelectionService implements ISelectionService {
     this.selectedShapes.clear();
   }
 
-  getSelectedShapes(): IShapeEntity[] {
+  getSelectedShapes(): Shape[] {
     return Array.from(this.selectedShapes);
   }
 
-  isSelected(shape: IShapeEntity): boolean {
+  isSelected(shape: Shape): boolean {
     return this.selectedShapes.has(shape);
   }
 

@@ -3,8 +3,7 @@
  * MVVM架构中的ViewModel层 - 连接View和Model，管理状态和业务逻辑
  */
 
-import { ShapeEntity } from '../../models/entities/Shape';
-import { IRepositoryEvent, IShapeRepository } from '../../models/repositories/IShapeRepository';
+import { Shape } from '@sky-canvas/render-engine';
 
 export interface IViewportState {
   x: number;
@@ -15,7 +14,7 @@ export interface IViewportState {
 }
 
 export interface ICanvasState {
-  shapes: ShapeEntity[];
+  shapes: Shape[];
   selectedShapes: string[];
   viewport: IViewportState;
   currentTool: string;
@@ -28,7 +27,7 @@ export interface ICanvasState {
 
 export interface ICanvasViewModelEvents {
   'state:changed': { state: ICanvasState; changes: Partial<ICanvasState> };
-  'shapes:changed': { shapes: ShapeEntity[] };
+  'shapes:changed': { shapes: Shape[] };
   'selection:changed': { selectedIds: string[] };
   'viewport:changed': { viewport: IViewportState };
   'tool:changed': { tool: string };
@@ -39,15 +38,11 @@ export interface ICanvasViewModelEvents {
  */
 export class CanvasViewModel {
   private state: ICanvasState;
-  private shapeRepository: IShapeRepository;
   private eventListeners = new Map<string, Set<Function>>();
-  private repositoryUnsubscribe?: () => void;
 
   constructor(
-    shapeRepository: IShapeRepository,
     initialViewport: IViewportState = { x: 0, y: 0, width: 800, height: 600, zoom: 1 }
   ) {
-    this.shapeRepository = shapeRepository;
     this.state = {
       shapes: [],
       selectedShapes: [],
@@ -59,37 +54,6 @@ export class CanvasViewModel {
       snapToGrid: false,
       gridSize: 20
     };
-
-    this.initializeRepository();
-  }
-
-  private async initializeRepository(): Promise<void> {
-    // 加载现有形状
-    const shapes = await this.shapeRepository.getAll();
-    this.updateState({ shapes });
-
-    // 订阅仓储变化
-    this.repositoryUnsubscribe = this.shapeRepository.subscribe((event) => {
-      this.handleRepositoryEvent(event);
-    });
-  }
-
-  private handleRepositoryEvent(event: IRepositoryEvent): void {
-    switch (event.type) {
-      case 'added':
-      case 'updated':
-      case 'removed':
-      case 'cleared':
-        // 重新加载所有形状以保持同步
-        this.refreshShapes();
-        break;
-    }
-  }
-
-  private async refreshShapes(): Promise<void> {
-    const shapes = await this.shapeRepository.getAll();
-    this.updateState({ shapes });
-    this.emit('shapes:changed', { shapes });
   }
 
   /**
@@ -105,10 +69,10 @@ export class CanvasViewModel {
   private updateState(changes: Partial<ICanvasState>): void {
     const previousState = { ...this.state };
     this.state = { ...this.state, ...changes };
-    
-    this.emit('state:changed', { 
-      state: this.getState(), 
-      changes 
+
+    this.emit('state:changed', {
+      state: this.getState(),
+      changes
     });
 
     // 发出特定变化事件
@@ -121,29 +85,46 @@ export class CanvasViewModel {
     if (changes.currentTool) {
       this.emit('tool:changed', { tool: changes.currentTool });
     }
+    if (changes.shapes) {
+      this.emit('shapes:changed', { shapes: changes.shapes });
+    }
   }
 
   /**
-   * 形状管理
+   * 形状管理 - 直接操作内存中的形状数组
    */
-  async addShape(shape: ShapeEntity): Promise<void> {
-    await this.shapeRepository.add(shape);
+  addShape(shape: Shape): void {
+    const newShapes = [...this.state.shapes, shape];
+    this.updateState({ shapes: newShapes });
   }
 
-  async addShapes(shapes: ShapeEntity[]): Promise<void> {
-    await this.shapeRepository.addBatch(shapes);
+  addShapes(shapes: Shape[]): void {
+    const newShapes = [...this.state.shapes, ...shapes];
+    this.updateState({ shapes: newShapes });
   }
 
-  async updateShape(id: string, updates: Partial<ShapeEntity>): Promise<void> {
-    await this.shapeRepository.update(id, updates);
+  updateShape(id: string, updates: Partial<Shape>): void {
+    const newShapes = this.state.shapes.map(shape =>
+      shape.id === id ? Object.assign(shape, updates) : shape
+    );
+    this.updateState({ shapes: newShapes });
   }
 
-  async updateShapes(updates: Array<{ id: string; updates: Partial<ShapeEntity> }>): Promise<void> {
-    await this.shapeRepository.updateBatch(updates);
+  updateShapes(updates: Array<{ id: string; updates: Partial<Shape> }>): void {
+    let newShapes = [...this.state.shapes];
+    updates.forEach(({ id, updates }) => {
+      const index = newShapes.findIndex(shape => shape.id === id);
+      if (index !== -1) {
+        newShapes[index] = Object.assign(newShapes[index], updates);
+      }
+    });
+    this.updateState({ shapes: newShapes });
   }
 
-  async removeShape(id: string): Promise<void> {
-    await this.shapeRepository.remove(id);
+  removeShape(id: string): void {
+    const newShapes = this.state.shapes.filter(shape => shape.id !== id);
+    this.updateState({ shapes: newShapes });
+
     // 如果删除的形状被选中，从选择中移除
     if (this.state.selectedShapes.includes(id)) {
       this.updateState({
@@ -152,8 +133,10 @@ export class CanvasViewModel {
     }
   }
 
-  async removeShapes(ids: string[]): Promise<void> {
-    await this.shapeRepository.removeBatch(ids);
+  removeShapes(ids: string[]): void {
+    const newShapes = this.state.shapes.filter(shape => !ids.includes(shape.id));
+    this.updateState({ shapes: newShapes });
+
     // 从选择中移除被删除的形状
     const remainingSelected = this.state.selectedShapes.filter(id => !ids.includes(id));
     if (remainingSelected.length !== this.state.selectedShapes.length) {
@@ -161,9 +144,8 @@ export class CanvasViewModel {
     }
   }
 
-  async clearShapes(): Promise<void> {
-    await this.shapeRepository.clear();
-    this.updateState({ selectedShapes: [] });
+  clearShapes(): void {
+    this.updateState({ shapes: [], selectedShapes: [] });
   }
 
   /**
@@ -283,8 +265,8 @@ export class CanvasViewModel {
   /**
    * 获取选中的形状
    */
-  getSelectedShapes(): ShapeEntity[] {
-    return this.state.shapes.filter(shape => 
+  getSelectedShapes(): Shape[] {
+    return this.state.shapes.filter(shape =>
       this.state.selectedShapes.includes(shape.id)
     );
   }
@@ -292,7 +274,7 @@ export class CanvasViewModel {
   /**
    * 获取可见形状
    */
-  getVisibleShapes(): ShapeEntity[] {
+  getVisibleShapes(): Shape[] {
     return this.state.shapes.filter(shape => shape.visible);
   }
 
@@ -300,23 +282,23 @@ export class CanvasViewModel {
    * 事件系统
    */
   on<K extends keyof ICanvasViewModelEvents>(
-    event: K, 
+    event: K,
     listener: (data: ICanvasViewModelEvents[K]) => void
   ): () => void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    
+
     const listeners = this.eventListeners.get(event)!;
     listeners.add(listener);
-    
+
     return () => {
       listeners.delete(listener);
     };
   }
 
   private emit<K extends keyof ICanvasViewModelEvents>(
-    event: K, 
+    event: K,
     data: ICanvasViewModelEvents[K]
   ): void {
     const listeners = this.eventListeners.get(event);
@@ -335,9 +317,6 @@ export class CanvasViewModel {
    * 销毁
    */
   dispose(): void {
-    if (this.repositoryUnsubscribe) {
-      this.repositoryUnsubscribe();
-    }
     this.eventListeners.clear();
   }
 }

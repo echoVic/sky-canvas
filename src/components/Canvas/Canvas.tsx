@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { useCanvasSDK } from '../../hooks'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
 import { useCanvasStore } from '../../store/canvasStore'
+import { Rectangle, Circle } from '@sky-canvas/render-engine'
 
 const Canvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -92,26 +93,19 @@ const Canvas: React.FC = () => {
         <div className="absolute bottom-2 right-2 space-y-2">
           <button
             onClick={() => {
-              const rect = {
-                id: `test_rect_${Date.now()}`,
-                type: 'rectangle' as const,
-                transform: {
-                  position: { x: Math.random() * 400 + 50, y: Math.random() * 300 + 50 },
-                  rotation: 0,
-                  scale: { x: 1, y: 1 }
-                },
-                size: { width: 100, height: 60 },
+              const rect = new Rectangle({
+                x: Math.random() * 400 + 50,
+                y: Math.random() * 300 + 50,
+                width: 100,
+                height: 60,
                 style: {
-                  fillColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                  strokeColor: '#333',
+                  fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                  stroke: '#333',
                   strokeWidth: 2
                 },
                 visible: true,
-                zIndex: 1,
-                locked: false,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              };
+                zIndex: 1
+              });
               console.log('=== Frontend: About to call addShape ===', rect);
               sdkActions.addShape(rect);
               console.log('=== Frontend: addShape call completed ===');
@@ -122,26 +116,18 @@ const Canvas: React.FC = () => {
           </button>
           <button
             onClick={() => {
-              const circle = {
-                id: `test_circle_${Date.now()}`,
-                type: 'circle' as const,
-                transform: {
-                  position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-                  rotation: 0,
-                  scale: { x: 1, y: 1 }
-                },
+              const circle = new Circle({
+                x: Math.random() * 400 + 100,
+                y: Math.random() * 300 + 100,
                 radius: 40,
                 style: {
-                  fillColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                  strokeColor: '#333',
+                  fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                  stroke: '#333',
                   strokeWidth: 2
                 },
                 visible: true,
-                zIndex: 1,
-                locked: false,
-                createdAt: new Date(),
-                updatedAt: new Date()
-              };
+                zIndex: 1
+              });
               sdkActions.addShape(circle);
             }}
             className="block px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"

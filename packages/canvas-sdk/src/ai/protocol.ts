@@ -6,7 +6,7 @@
 /*
 import { EventEmitter } from 'eventemitter3';
 import { CanvasSDK } from '../CanvasSDK';
-import { IShapeEntity } from '../models/entities/Shape';
+import { Shape } from '@sky-canvas/render-engine';
 import {
   AI_PROTOCOL_VERSION,
   AICapability,
@@ -20,7 +20,7 @@ import {
   IAIResponse,
   IAIResponsePayload,
   ICanvasContext,
-  IShapeData,
+  ShapeData,
   MessagePriority,
   OperationStatus,
   ShapeType
