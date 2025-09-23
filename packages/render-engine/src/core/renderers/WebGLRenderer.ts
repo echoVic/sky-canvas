@@ -41,7 +41,7 @@ export class WebGLRenderer extends BaseRenderer {
   private memoryManager: WebGLMemoryManager | null = null;
   private performanceAnalyzer: WebGLPerformanceAnalyzer | null = null;
   private performanceMonitor: WebGLPerformanceMonitor | null = null;
-  private currentContext: WebGLRenderContext | null = null;
+
   
   // 高级批量渲染系统
   private batches = new Map<string, BatchData>();
@@ -64,6 +64,7 @@ export class WebGLRenderer extends BaseRenderer {
   // 优化标志
   private enablePerformanceMonitoring = false;
   private enableMemoryOptimization = true;
+  private enableDebugLogs = false; // 添加调试日志开关
   
   // 渲染统计
   private stats: RenderStats = {
@@ -86,6 +87,11 @@ export class WebGLRenderer extends BaseRenderer {
   initialize(canvas: HTMLCanvasElement, options?: {
     enablePerformanceMonitoring?: boolean;
     enableMemoryOptimization?: boolean;
+    enableDebugLogs?: boolean;
+    debug?: boolean;
+    antialias?: boolean;
+    alpha?: boolean;
+    [key: string]: any;
   }): boolean {
     this.canvas = canvas;
 
@@ -104,10 +110,11 @@ export class WebGLRenderer extends BaseRenderer {
     // 设置选项
     this.enablePerformanceMonitoring = options?.enablePerformanceMonitoring ?? false;
     this.enableMemoryOptimization = options?.enableMemoryOptimization ?? true;
+    this.enableDebugLogs = options?.enableDebugLogs ?? false;
 
     // 获取WebGL扩展
     this.instancedArrays = this.gl.getExtension('ANGLE_instanced_arrays');
-    if (this.instancedArrays) {
+    if (this.instancedArrays && this.enableDebugLogs) {
       console.log('Instanced rendering supported');
     }
 
@@ -140,12 +147,25 @@ export class WebGLRenderer extends BaseRenderer {
     // 创建纹理图集
     this.mainAtlas = this.textureManager!.createAtlas('main', 2048);
 
-    console.log('WebGL Renderer initialized with advanced features');
+    if (this.enableDebugLogs) {
+      console.log('WebGL Renderer initialized with advanced features');
+    }
     return true;
   }
 
   private setupWebGLState(): void {
-    if (!this.gl) return;
+    if (!this.gl || !this.canvas) return;
+
+    // 设置viewport
+    const width = this.canvas.clientWidth;
+    const height = this.canvas.clientHeight;
+
+    // 设置canvas实际像素尺寸
+    this.canvas.width = width;
+    this.canvas.height = height;
+
+    // 设置WebGL视口
+    this.gl.viewport(0, 0, width, height);
 
     // 启用混合
     this.gl.enable(this.gl.BLEND);
@@ -156,6 +176,9 @@ export class WebGLRenderer extends BaseRenderer {
 
     // 禁用深度测试（2D渲染）
     this.gl.disable(this.gl.DEPTH_TEST);
+
+    // 更新投影矩阵
+    this.updateProjectionMatrix({ x: 0, y: 0, width, height });
   }
 
   private async loadDefaultShaders(): Promise<void> {
@@ -205,10 +228,12 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   render(): void {
-    console.log(`[WebGLRenderer-${this.constructor.name}] render() called, children count: ${this.children.length}`);
-    console.log(`[WebGLRenderer-${this.constructor.name}] webglContext exists: ${!!this.webglContext}`);
-    console.log(`[WebGLRenderer-${this.constructor.name}] gl exists: ${!!this.gl}`);
-    console.log(`[WebGLRenderer-${this.constructor.name}] shaderManager exists: ${!!this.shaderManager}`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer-${this.constructor.name}] render() called, children count: ${this.children.length}`);
+      console.log(`[WebGLRenderer-${this.constructor.name}] webglContext exists: ${!!this.webglContext}`);
+      console.log(`[WebGLRenderer-${this.constructor.name}] gl exists: ${!!this.gl}`);
+      console.log(`[WebGLRenderer-${this.constructor.name}] shaderManager exists: ${!!this.shaderManager}`);
+    }
 
     if (!this.webglContext || !this.gl) {
       console.error('[WebGLRenderer] Not initialized - webglContext or gl missing');
@@ -220,7 +245,9 @@ export class WebGLRenderer extends BaseRenderer {
       return;
     }
 
-    console.log(`[WebGLRenderer] All checks passed, continuing with render...`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] All checks passed, continuing with render...`);
+    }
 
     // 开始性能分析
     if (this.performanceAnalyzer) {
@@ -243,8 +270,10 @@ export class WebGLRenderer extends BaseRenderer {
       height: canvasHeight
     };
 
-    console.log(`[WebGLRenderer] Canvas actual size: ${canvasWidth}x${canvasHeight}`);
-    console.log(`[WebGLRenderer] Updated viewport:`, this.viewport);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Canvas actual size: ${canvasWidth}x${canvasHeight}`);
+      console.log(`[WebGLRenderer] Updated viewport:`, this.viewport);
+    }
 
     // 设置视口
     this.gl.viewport(0, 0, canvasWidth, canvasHeight);
@@ -253,22 +282,34 @@ export class WebGLRenderer extends BaseRenderer {
     this.webglContext.save();
 
     // 更新投影矩阵
-    console.log(`[WebGLRenderer] Updating projection matrix for viewport:`, this.viewport);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Updating projection matrix for viewport:`, this.viewport);
+    }
     this.updateProjectionMatrix(this.viewport);
 
     // 清空画布
-    console.log(`[WebGLRenderer] Clearing canvas`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Clearing canvas`);
+    }
     this.clear();
 
     // 收集并排序可见对象
-    console.log(`[WebGLRenderer] Culling and sorting renderables from ${this.children.length} children`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Culling and sorting renderables from ${this.children.length} children`);
+    }
     const visibleRenderables = this.cullAndSortRenderables(this.viewport);
-    console.log(`[WebGLRenderer] Found ${visibleRenderables.length} visible renderables`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Found ${visibleRenderables.length} visible renderables`);
+    }
 
     // 智能批量渲染
-    console.log(`[WebGLRenderer] Starting batched rendering`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Starting batched rendering`);
+    }
     this.renderRenderablesBatched(visibleRenderables);
-    console.log(`[WebGLRenderer] Batched rendering completed`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Batched rendering completed`);
+    }
 
     // 更新统计
     this.stats.frameTime = performance.now() - startTime;
@@ -305,20 +346,28 @@ export class WebGLRenderer extends BaseRenderer {
     // 执行垃圾回收
     this.memoryManager?.garbageCollect();
     
-    console.log('Performed memory cleanup due to memory pressure');
+    if (this.enableDebugLogs) {
+      console.log('Performed memory cleanup due to memory pressure');
+    }
   }
 
   private cullAndSortRenderables(viewport: { x: number; y: number; width: number; height: number }): IRenderable[] {
-    console.log(`[WebGLRenderer] cullAndSortRenderables: ${this.children.length} children, viewport:`, viewport);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] cullAndSortRenderables: ${this.children.length} children, viewport:`, viewport);
+    }
 
     const visible = this.children.filter(renderable => {
       const isVisible = renderable.visible;
       const inViewport = this.isChildInViewport(renderable, { ...viewport, zoom: 1 });
-      console.log(`[WebGLRenderer] Child ${renderable.id}: visible=${isVisible}, inViewport=${inViewport}, bounds=`, renderable.getBounds());
+      if (this.enableDebugLogs) {
+        console.log(`[WebGLRenderer] Child ${renderable.id}: visible=${isVisible}, inViewport=${inViewport}, bounds=`, renderable.getBounds());
+      }
       return isVisible && inViewport;
     });
 
-    console.log(`[WebGLRenderer] After culling: ${visible.length} visible objects`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] After culling: ${visible.length} visible objects`);
+    }
 
     // 按渲染状态排序以减少状态切换
     return visible.sort((a, b) => {
@@ -342,26 +391,32 @@ export class WebGLRenderer extends BaseRenderer {
   }
 
   private renderRenderablesBatched(renderables: IRenderable[]): void {
-    console.log(`[WebGLRenderer] renderRenderablesBatched: ${renderables.length} renderables to process`);
-    this.batches.clear();
-
-    // 将renderables分组到批次中
-    for (const renderable of renderables) {
-      const batchKey = this.generateBatchKey(renderable);
-      console.log(`[WebGLRenderer] Adding renderable ${renderable.id} to batch ${batchKey}`);
-      this.addRenderableToBatch(renderable, batchKey);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] renderRenderablesBatched: ${renderables.length} renderables to process`);
     }
 
-    console.log(`[WebGLRenderer] Created ${this.batches.size} batches`);
+    // 清空之前的批次
+    this.batches.clear();
+
+    // 为每个 renderable 生成批次数据
+    for (const renderable of renderables) {
+      if (this.enableDebugLogs) {
+        console.log(`[WebGLRenderer] Processing ${renderable.id} for batching`);
+      }
+      try {
+        const batchKey = this.generateBatchKey(renderable);
+        this.addRenderableToBatch(renderable, batchKey);
+      } catch (error) {
+        console.error(`[WebGLRenderer] Error processing ${renderable.id} for batching:`, error);
+      }
+    }
 
     // 渲染所有批次
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Rendering ${this.batches.size} batches`);
+    }
     for (const [key, batch] of this.batches) {
-      if (batch.vertices.length > 0) {
-        console.log(`[WebGLRenderer] Rendering batch ${key} with ${batch.vertices.length} vertices, ${batch.indices.length} indices`);
-        this.renderBatch(batch);
-      } else {
-        console.log(`[WebGLRenderer] Skipping empty batch ${key}`);
-      }
+      this.renderBatch(batch);
     }
   }
 
@@ -379,6 +434,50 @@ export class WebGLRenderer extends BaseRenderer {
   private getRenderableBlendMode(renderable: IRenderable): BlendMode {
     // 简化实现，实际应该从renderable属性中获取
     return BlendMode.NORMAL;
+  }
+
+  private getRenderableColor(renderable: IRenderable): [number, number, number, number] {
+    // 尝试从 renderable 获取颜色信息
+    // 如果是 Shape 类型，应该有 fill 属性
+    if ('fill' in renderable && renderable.fill) {
+      return this.parseColor(renderable.fill as string);
+    }
+
+    // 默认颜色：蓝色
+    return [0.2, 0.4, 0.8, 1.0];
+  }
+
+  private addRenderableGeometry(
+    batch: BatchData,
+    renderable: IRenderable,
+    bounds: IRect,
+    color: [number, number, number, number]
+  ): void {
+    // 大多数图形都可以用四边形来渲染（矩形、圆形可以用纹理实现）
+    // 这里简化为矩形处理
+    this.addQuadGeometry(batch, bounds, color);
+  }
+
+  private addQuadGeometry(
+    batch: BatchData,
+    bounds: IRect,
+    color: [number, number, number, number]
+  ): void {
+    const baseIndex = batch.vertices.length;
+
+    // 添加四个顶点（左下、右下、右上、左上）
+    batch.vertices.push(
+      { position: new Vector2(bounds.x, bounds.y), color, texCoord: new Vector2(0, 0) },
+      { position: new Vector2(bounds.x + bounds.width, bounds.y), color, texCoord: new Vector2(1, 0) },
+      { position: new Vector2(bounds.x + bounds.width, bounds.y + bounds.height), color, texCoord: new Vector2(1, 1) },
+      { position: new Vector2(bounds.x, bounds.y + bounds.height), color, texCoord: new Vector2(0, 1) }
+    );
+
+    // 添加两个三角形的索引（0,1,2 和 0,2,3）
+    batch.indices.push(
+      baseIndex, baseIndex + 1, baseIndex + 2,
+      baseIndex, baseIndex + 2, baseIndex + 3
+    );
   }
 
   private resetStats(): void {
@@ -399,9 +498,11 @@ export class WebGLRenderer extends BaseRenderer {
 
     this.projectionMatrix = Matrix3x3.orthographic(left, right, bottom, top);
 
-    console.log(`[WebGLRenderer] Updated projection matrix for viewport (${viewport.width}x${viewport.height})`);
-    console.log(`[WebGLRenderer] Orthographic parameters: left=${left}, right=${right}, bottom=${bottom}, top=${top}`);
-    console.log(`[WebGLRenderer] Projection matrix elements:`, this.projectionMatrix.elements);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Updated projection matrix for viewport (${viewport.width}x${viewport.height})`);
+      console.log(`[WebGLRenderer] Orthographic parameters: left=${left}, right=${right}, bottom=${bottom}, top=${top}`);
+      console.log(`[WebGLRenderer] Projection matrix elements:`, this.projectionMatrix.elements);
+    }
   }
 
   private addRenderableToBatch(renderable: IRenderable, batchKey: string): void {
@@ -430,17 +531,17 @@ export class WebGLRenderer extends BaseRenderer {
       this.batches.set(newBatchKey, batch);
     }
 
-    // 使用预构建的四边形几何
-    if (this.quadGeometry) {
-      const bounds = renderable.getBounds();
-      const transform = renderable.transform;
-
-      // 计算变换矩阵
-      const matrix = this.calculateTransformMatrix(bounds, transform);
-
-      // 添加变换后的顶点
-      this.addTransformedQuad(batch, matrix, [1, 1, 1, 1]);
+    // 获取 renderable 的几何数据和样式
+    const bounds = renderable.getBounds();
+    if (bounds.width <= 0 || bounds.height <= 0) {
+      return; // 跳过无效大小的对象
     }
+
+    // 获取颜色信息（需要从 renderable 的 style 中获取）
+    const color = this.getRenderableColor(renderable);
+
+    // 根据图形类型生成几何数据
+    this.addRenderableGeometry(batch, renderable, bounds, color);
   }
 
   private calculateTransformMatrix(bounds: IRect, transform?: any): Matrix3x3 {
@@ -500,22 +601,30 @@ export class WebGLRenderer extends BaseRenderer {
     if (!this.gl || !this.shaderManager || !this.vertexBuffer || !this.indexBuffer) return;
     if (batch.vertices.length === 0) return;
 
-    console.log(`[WebGLRenderer] renderBatch: vertices=${batch.vertices.length}, indices=${batch.indices.length}`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] renderBatch: vertices=${batch.vertices.length}, indices=${batch.indices.length}`);
+    }
 
     // 选择适当的着色器
     const shaderName = batch.texture ? 'textured' : 'basic';
-    console.log(`[WebGLRenderer] Using shader: ${shaderName}`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Using shader: ${shaderName}`);
+    }
     this.shaderManager.useProgram(shaderName);
     this.stats.shaderSwitches++;
 
     // 设置uniform
-    console.log(`[WebGLRenderer] Projection matrix:`, this.projectionMatrix.elements);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Projection matrix:`, this.projectionMatrix.elements);
+    }
     this.shaderManager.setUniform('u_projection', this.projectionMatrix.elements);
     this.shaderManager.setUniform('u_transform', Matrix3x3.identity().elements);
 
     // 调试颜色和顶点数据
-    console.log(`[WebGLRenderer] First vertex data:`, batch.vertices.slice(0, 2));
-    console.log(`[WebGLRenderer] Vertex colors:`, batch.vertices.map(v => v.color));
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] First vertex data:`, batch.vertices.slice(0, 2));
+      console.log(`[WebGLRenderer] Vertex colors:`, batch.vertices.map(v => v.color));
+    }
 
     // 验证坐标变换：计算变换后的NDC坐标
     if (batch.vertices.length > 0) {
@@ -528,9 +637,11 @@ export class WebGLRenderer extends BaseRenderer {
                           this.projectionMatrix.elements[4] * firstVertex.position.y +
                           this.projectionMatrix.elements[5];
 
-      console.log(`[WebGLRenderer] First vertex screen coords: (${firstVertex.position.x}, ${firstVertex.position.y})`);
-      console.log(`[WebGLRenderer] First vertex NDC coords: (${transformedX.toFixed(3)}, ${transformedY.toFixed(3)})`);
-      console.log(`[WebGLRenderer] NDC coords in range [-1,1]? X: ${Math.abs(transformedX) <= 1}, Y: ${Math.abs(transformedY) <= 1}`);
+      if (this.enableDebugLogs) {
+        console.log(`[WebGLRenderer] First vertex screen coords: (${firstVertex.position.x}, ${firstVertex.position.y})`);
+        console.log(`[WebGLRenderer] First vertex NDC coords: (${transformedX.toFixed(3)}, ${transformedY.toFixed(3)})`);
+        console.log(`[WebGLRenderer] NDC coords in range [-1,1]? X: ${Math.abs(transformedX) <= 1}, Y: ${Math.abs(transformedY) <= 1}`);
+      }
     }
 
     // 绑定纹理（如果有）
@@ -567,12 +678,16 @@ export class WebGLRenderer extends BaseRenderer {
     }
 
     // 验证绘制状态
-    console.log(`[WebGLRenderer] About to draw: vertices=${batch.vertices.length}, indices=${batch.indices.length}`);
-    console.log(`[WebGLRenderer] Active program:`, this.gl.getParameter(this.gl.CURRENT_PROGRAM));
-    console.log(`[WebGLRenderer] Viewport:`, this.gl.getParameter(this.gl.VIEWPORT));
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] About to draw: vertices=${batch.vertices.length}, indices=${batch.indices.length}`);
+      console.log(`[WebGLRenderer] Active program:`, this.gl.getParameter(this.gl.CURRENT_PROGRAM));
+      console.log(`[WebGLRenderer] Viewport:`, this.gl.getParameter(this.gl.VIEWPORT));
+    }
 
     // 绘制
-    console.log(`[WebGLRenderer] Drawing ${batch.indices.length} indices`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Drawing ${batch.indices.length} indices`);
+    }
     this.gl.drawElements(this.gl.TRIANGLES, batch.indices.length, this.gl.UNSIGNED_SHORT, 0);
 
     // 检查绘制后的错误
@@ -580,7 +695,9 @@ export class WebGLRenderer extends BaseRenderer {
     if (error !== this.gl.NO_ERROR) {
       console.error(`[WebGLRenderer] WebGL error after draw: ${this.getWebGLErrorString(error)}`);
     } else {
-      console.log(`[WebGLRenderer] Draw call successful`);
+      if (this.enableDebugLogs) {
+        console.log(`[WebGLRenderer] Draw call successful`);
+      }
     }
 
     // 更新统计
@@ -631,12 +748,14 @@ export class WebGLRenderer extends BaseRenderer {
       buffer[offset + 7] = vertex.texCoord?.y || 0;
     }
 
-    console.log(`[WebGLRenderer] Prepared vertex data: ${vertices.length} vertices, ${buffer.byteLength} bytes`);
-    console.log(`[WebGLRenderer] First vertex:`, {
-      position: [buffer[0], buffer[1]],
-      color: [buffer[2], buffer[3], buffer[4], buffer[5]],
-      texCoord: [buffer[6], buffer[7]]
-    });
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Prepared vertex data: ${vertices.length} vertices, ${buffer.byteLength} bytes`);
+      console.log(`[WebGLRenderer] First vertex:`, {
+        position: [buffer[0], buffer[1]],
+        color: [buffer[2], buffer[3], buffer[4], buffer[5]],
+        texCoord: [buffer[6], buffer[7]]
+      });
+    }
 
     // 确保返回正确大小的 ArrayBuffer
     return buffer.buffer.slice(0, buffer.byteLength);
@@ -674,14 +793,18 @@ export class WebGLRenderer extends BaseRenderer {
 
   private prepareIndexData(indices: number[]): ArrayBuffer {
     const buffer = new Uint16Array(indices);
-    console.log(`[WebGLRenderer] Prepared index data: ${indices.length} indices, ${buffer.byteLength} bytes`);
-    console.log(`[WebGLRenderer] First few indices:`, indices.slice(0, 6));
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Prepared index data: ${indices.length} indices, ${buffer.byteLength} bytes`);
+      console.log(`[WebGLRenderer] First few indices:`, indices.slice(0, 6));
+    }
     // 返回实际数据大小的 ArrayBuffer，而不是整个底层缓冲区
     return buffer.buffer.slice(0, buffer.byteLength);
   }
 
   clear(): void {
-    console.log(`[WebGLRenderer] Clearing canvas with color: transparent (0,0,0,0)`);
+    if (this.enableDebugLogs) {
+      console.log(`[WebGLRenderer] Clearing canvas with color: transparent (0,0,0,0)`);
+    }
     // 使用统一接口或原生接口
     if (this.webglContext) {
       this.webglContext.clear();
@@ -976,9 +1099,10 @@ export class WebGLRenderer extends BaseRenderer {
     this.geometryCache.clear();
     
     this.gl = null;
-    this.currentContext = null;
     super.dispose();
 
-    console.log('WebGL Renderer disposed');
+    if (this.enableDebugLogs) {
+      console.log('WebGL Renderer disposed');
+    }
   }
 }

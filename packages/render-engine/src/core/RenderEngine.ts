@@ -18,12 +18,29 @@ import type { IRenderable, IViewport, RenderEngineConfig } from './types';
 export class RenderEngine {
   private renderer: BaseRenderer;
   private canvas: HTMLCanvasElement;
+  private container: HTMLElement;
   private config: RenderEngineConfig;
   private objects: Map<string, IRenderable> = new Map();
   private isInitialized = false;
 
-  constructor(canvas: HTMLCanvasElement, config: RenderEngineConfig = {}) {
-    this.canvas = canvas;
+  constructor(container: HTMLElement, config: RenderEngineConfig = {}) {
+    this.container = container;
+
+    // 创建canvas元素
+    this.canvas = document.createElement('canvas');
+    this.canvas.style.position = 'absolute';
+    this.canvas.style.top = '0';
+    this.canvas.style.left = '0';
+    this.canvas.style.width = '100%';
+    this.canvas.style.height = '100%';
+
+    // 确保容器是相对定位的
+    if (getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative';
+    }
+
+    // 将canvas添加到容器中
+    container.appendChild(this.canvas);
     this.config = {
       renderer: 'webgl',
       antialias: true,

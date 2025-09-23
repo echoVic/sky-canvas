@@ -5,7 +5,6 @@ import { Transform } from '../../math';
 import { IRect } from '../interface/IGraphicsContext';
 import type { IRenderable, IViewport } from '../types';
 import type {
-  RenderContext,
   Renderer,
   RendererCapabilities,
   RenderState
@@ -48,19 +47,12 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
   }
 
   addRenderable(renderable: IRenderable): void {
-    console.log(`[BaseRenderer] addRenderable: ${renderable.id}, children count before: ${this.children.length}`);
-    console.trace(`[BaseRenderer] addRenderable stack trace`);
     this.children.push(renderable);
     this.sortChildren();
-    console.log(`[BaseRenderer] addRenderable completed, children count after: ${this.children.length}`);
   }
 
   removeRenderable(id: string): void {
-    const beforeCount = this.children.length;
-    console.log(`[BaseRenderer] removeRenderable: ${id}, children count before: ${beforeCount}`);
-    console.trace(`[BaseRenderer] removeRenderable stack trace`);
     this.children = this.children.filter(r => r.id !== id);
-    console.log(`[BaseRenderer] removeRenderable completed, children count after: ${this.children.length}`);
   }
 
   getRenderable(id: string): IRenderable | undefined {
@@ -77,10 +69,7 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
 
   // 添加清空所有子对象的方法
   clearRenderables(): void {
-    console.log(`[BaseRenderer] clearRenderables called, children count before: ${this.children.length}`);
-    console.trace(`[BaseRenderer] clearRenderables stack trace`);
     this.children = [];
-    console.log(`[BaseRenderer] clearRenderables completed, children count after: ${this.children.length}`);
   }
 
   // 添加渲染循环管理
@@ -150,9 +139,7 @@ export abstract class BaseRenderer<TContext = any> implements Renderer<TContext>
       width: viewport.width,
       height: viewport.height
     };
-    const intersects = this.boundsIntersect(bounds, viewportRect);
-    console.log(`[BaseRenderer] Viewport check: child=${child.id}, bounds=`, bounds, 'viewport=', viewportRect, 'intersects=', intersects);
-    return intersects;
+    return this.boundsIntersect(bounds, viewportRect);
   }
 
   protected createDefaultRenderState(): RenderState {

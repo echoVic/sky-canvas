@@ -51,7 +51,7 @@ import {
  * SDK 配置接口
  */
 export interface SDKConfig {
-  canvas: HTMLCanvasElement;
+  container: HTMLElement;
   renderEngine?: RenderEngineType;
   logLevel?: LogLevel;
   enableHistory?: boolean;
@@ -117,8 +117,8 @@ class CanvasSDKBootstrap {
     console.log('Canvas SDK Bootstrap: Preparing...');
 
     // 验证必要配置
-    if (!this.config.canvas) {
-      throw new Error('Canvas element is required');
+    if (!this.config.container) {
+      throw new Error('Container element is required');
     }
 
     // 设置默认配置
@@ -189,7 +189,7 @@ class CanvasSDKBootstrap {
     );
 
     // 初始化Canvas和核心服务连接
-    if (this.config.canvas) {
+    if (this.config.container) {
       await this.initializeCanvasServices();
     }
 
@@ -200,21 +200,25 @@ class CanvasSDKBootstrap {
    * 初始化Canvas相关服务并建立连接
    */
   private async initializeCanvasServices(): Promise<void> {
-    if (!this.config.canvas || !this.instantiationService) return;
+    if (!this.config.container || !this.instantiationService) return;
 
     // 初始化渲染服务
     const renderingService = this.instantiationService.invokeFunction(accessor =>
       accessor.get(ICanvasRenderingService)
     );
-    await renderingService.initialize(this.config.canvas, {
-      renderEngine: this.config.renderEngine || 'webgl'
+    await renderingService.initialize(this.config.container, {
+      renderEngine: this.config.renderEngine || 'webgl',
     });
 
     // 启动渲染服务
     renderingService.start();
 
+    // 获取render engine创建的canvas用于交互服务
+    const renderEngine = renderingService.getRenderEngine();
+    const canvas = renderEngine?.getCanvas();
+
     // 初始化交互服务
-    if (this.config.enableInteraction) {
+    if (this.config.enableInteraction && canvas) {
       const interactionService = this.instantiationService.invokeFunction(accessor =>
         accessor.get(IInteractionService)
       );
@@ -223,7 +227,7 @@ class CanvasSDKBootstrap {
       );
 
       // 初始化交互服务
-      interactionService.initialize(this.config.canvas);
+      interactionService.initialize(canvas);
 
       // 连接InteractionService和ToolManager
       interactionService.setToolManager(toolManager);
@@ -316,13 +320,12 @@ class CanvasSDKBootstrap {
       services.set(IHistoryService, new SyncDescriptor(HistoryService));
     }
 
-    if (this.config.enableInteraction && this.config.canvas) {
+    if (this.config.enableInteraction) {
       services.set(IInteractionService, new SyncDescriptor(InteractionService));
     }
 
-    if (this.config.canvas) {
-      services.set(ICanvasRenderingService, new SyncDescriptor(CanvasRenderingService));
-    }
+    // 总是注册渲染服务，因为我们会创建canvas
+    services.set(ICanvasRenderingService, new SyncDescriptor(CanvasRenderingService));
   }
 }
 

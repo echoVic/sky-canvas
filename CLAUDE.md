@@ -36,8 +36,12 @@ Sky Canvas is a high-performance graphics rendering engine and infinite canvas d
 # Install dependencies
 pnpm install
 
-# Start development server
-pnpm dev
+# IMPORTANT: Must build packages BEFORE starting dev server
+pnpm build:packages      # Build all packages first (REQUIRED)
+pnpm dev                 # Then start development server
+
+# OR use the unified command (RECOMMENDED):
+pnpm dev:full            # Automatically builds packages then starts dev server
 
 # Build the project
 pnpm build
@@ -65,9 +69,15 @@ pnpm test:math:ts
 pnpm --filter @sky-canvas/render-engine test
 pnpm --filter @sky-canvas/canvas-sdk test
 
-# Build individual packages  
+# Build individual packages
 pnpm --filter @sky-canvas/render-engine build
 pnpm --filter @sky-canvas/canvas-sdk build
+
+# CRITICAL: After modifying any package code, ALWAYS rebuild before testing
+# 修改包代码后必须重新构建：
+pnpm build:packages      # Rebuild all packages
+# OR rebuild specific package:
+pnpm --filter @sky-canvas/render-engine build
 ```
 
 ## Architecture Principles

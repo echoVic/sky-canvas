@@ -42,7 +42,14 @@
       "Bash(curl:*)",
       "Bash(npx vitest run:*)",
       "Bash(pnpm --filter @sky-canvas/render-engine test src/performance/)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(lsof:*)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "Bash(pnpm build:packages:*)",
+      "Bash(pnpm dev:full:*)"
     ],
     "deny": [],
     "ask": []

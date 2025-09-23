@@ -30,7 +30,7 @@ export interface CanvasSDKState {
  */
 export interface CanvasSDKActions {
   /** 初始化SDK */
-  initialize: (canvas: HTMLCanvasElement, config?: ICanvasSDKConfig) => Promise<void>;
+  initialize: (container: HTMLElement, config?: ICanvasSDKConfig) => Promise<void>;
   /** 获取Canvas管理器 */
   getCanvasManager: () => any;
   /** 获取Tool管理器 */
@@ -123,7 +123,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
    * 初始化SDK
    */
   const initialize = useMemoizedFn(async (
-    canvas: HTMLCanvasElement,
+    container: HTMLElement,
     config: ICanvasSDKConfig = {}
   ) => {
     console.log('Initialize called, current SDK:', sdkRef.current, 'isInitialized:', state.isInitialized);
@@ -133,10 +133,10 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       return; // 改为直接返回，而不是抛出错误
     }
 
-    // 创建SDK实例，需要传入canvas和配置
-    const sdk = await createCanvasSDK({ 
-      canvas,
-      ...config 
+    // 创建SDK实例，需要传入container和配置
+    const sdk = await createCanvasSDK({
+      container,
+      ...config
     });
     
     try {
