@@ -48,13 +48,8 @@ const Toolbar: React.FC = () => {
             onPress={() => {
               // 先更新UI状态
               setSelectedTool(tool.id)
-              // 然后同步到SDK
-              if (sdkState.isInitialized) {
-                const toolManager = sdkActions.getToolManager()
-                if (toolManager) {
-                  toolManager.activateTool(tool.id)
-                }
-              }
+              // TODO: 将来可能需要通过Action系统同步到SDK
+              // 当前工具选择主要由前端状态管理
             }}
             title={tool.name}
           >

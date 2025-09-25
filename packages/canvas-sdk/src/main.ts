@@ -3,7 +3,7 @@
  * 类似 VSCode 的 main.ts，控制整个启动流程和服务装转
  */
 
-import type { CanvasSDK } from './CanvasSDK';
+import { CanvasSDK, ICanvasSDK } from './CanvasSDK';
 import { InstantiationService } from './di/InstantiationService';
 import { ServiceCollection } from './di/ServiceCollection';
 import { SyncDescriptor } from './di/descriptors';
@@ -63,7 +63,7 @@ export interface SDKConfig {
  * @param config - SDK 的配置选项。
  * @returns 一个 Promise，它解析为完全初始化的 CanvasSDK 实例。
  */
-export async function createCanvasSDK(config: SDKConfig): Promise<CanvasSDK> {
+export async function createCanvasSDK(config: SDKConfig): Promise<ICanvasSDK> {
   const bootstrap = new CanvasSDKBootstrap(config);
   const sdk = await bootstrap.startup();
   return sdk;
@@ -84,7 +84,7 @@ class CanvasSDKBootstrap {
   /**
    * 启动引导程序
    */
-  async startup(): Promise<CanvasSDK> {
+  async startup(): Promise<ICanvasSDK> {
     console.log('=== CANVAS SDK BOOTSTRAP STARTUP ===');
 
     // 1. 应用准备阶段
@@ -99,9 +99,15 @@ class CanvasSDKBootstrap {
     // 4. 启动核心功能
     await this.startCore();
 
-    // 5. 创建 CanvasSDK 实例 - 在 DI 容器中创建
-    const { CanvasSDK } = await import('./CanvasSDK');
-    const canvasSDK = this.instantiationService!.createInstance(CanvasSDK);
+    // 5. 通过DI容器创建CanvasSDK实例
+    if (!this.instantiationService) {
+      throw new Error('InstantiationService not initialized');
+    }
+
+    // 使用标准DI方式获取CanvasSDK实例
+    const canvasSDK = this.instantiationService.invokeFunction(accessor =>
+      accessor.get(ICanvasSDK)
+    );
 
     this.isInitialized = true;
     console.log('=== CANVAS SDK BOOTSTRAP STARTUP COMPLETE ===');
@@ -307,6 +313,9 @@ class CanvasSDKBootstrap {
 
     // Canvas 管理器
     services.set(ICanvasManager, new SyncDescriptor(CanvasManager));
+
+    // Canvas SDK
+    services.set(ICanvasSDK, new SyncDescriptor(CanvasSDK, [this.config]));
   }
 
   /**

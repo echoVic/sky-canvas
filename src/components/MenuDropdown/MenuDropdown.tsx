@@ -62,23 +62,21 @@ const MenuDropdown: React.FC = () => {
       case 'test-shape':
         // 添加测试形状
         if (sdkState.isInitialized && sdkState.sdk) {
-          const canvasManager = sdkActions.getCanvasManager()
-          if (canvasManager) {
-            const testShape = {
-              id: `test-rect-${Date.now()}`,
-              type: 'rectangle',
+          try {
+            sdkActions.addRectangle({
               x: 100,
               y: 100,
               width: 100,
               height: 80,
-              fill: '#ff6b6b',
-              stroke: '#333',
-              strokeWidth: 2,
-              visible: true,
-              zIndex: 1
-            }
-            console.log('Adding test shape:', testShape)
-            canvasManager.addShape(testShape)
+              style: {
+                fill: '#ff6b6b',
+                stroke: '#333',
+                strokeWidth: 2
+              }
+            })
+            console.log('Test rectangle added via Action system')
+          } catch (error) {
+            console.error('Failed to add test rectangle:', error)
           }
         }
         break

@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react'
 import { useCanvasSDK } from '../../hooks'
 import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
 import { useCanvasStore } from '../../store/canvasStore'
-import { Rectangle, Circle } from '@sky-canvas/render-engine'
 
 const Canvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -82,7 +81,7 @@ const Canvas: React.FC = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute p-2 text-xs text-white bg-black bg-opacity-50 rounded top-2 right-2">
           <div>形状数量: {sdkState.shapes.length}</div>
-          <div>选中: {sdkState.selectedShapes.length}</div>
+          <div>选中: {sdkState.selectedShapeIds.length}</div>
           <div>初始化: {sdkState.isInitialized ? '是' : '否'}</div>
           <div>SDK状态: {sdkState.sdk ? 'Ready' : 'Not Ready'}</div>
         </div>
@@ -92,43 +91,47 @@ const Canvas: React.FC = () => {
       {process.env.NODE_ENV === 'development' && sdkState.isInitialized && (
         <div className="absolute bottom-2 right-2 space-y-2">
           <button
-            onClick={() => {
-              const rect = new Rectangle({
-                x: Math.random() * 400 + 50,
-                y: Math.random() * 300 + 50,
-                width: 100,
-                height: 60,
-                style: {
-                  fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                  stroke: '#333',
-                  strokeWidth: 2
-                },
-                visible: true,
-                zIndex: 1
-              });
-              console.log('=== Frontend: About to call addShape ===', rect);
-              sdkActions.addShape(rect);
-              console.log('=== Frontend: addShape call completed ===');
+            onClick={async () => {
+              try {
+                console.log('=== Frontend: About to add rectangle via Action ===');
+                await sdkActions.addRectangle({
+                  x: Math.random() * 400 + 50,
+                  y: Math.random() * 300 + 50,
+                  width: 100,
+                  height: 60,
+                  style: {
+                    fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    stroke: '#333',
+                    strokeWidth: 2
+                  }
+                });
+                console.log('=== Frontend: Rectangle added successfully ===');
+              } catch (error) {
+                console.error('Failed to add rectangle:', error);
+              }
             }}
             className="block px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             添加矩形测试
           </button>
           <button
-            onClick={() => {
-              const circle = new Circle({
-                x: Math.random() * 400 + 100,
-                y: Math.random() * 300 + 100,
-                radius: 40,
-                style: {
-                  fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                  stroke: '#333',
-                  strokeWidth: 2
-                },
-                visible: true,
-                zIndex: 1
-              });
-              sdkActions.addShape(circle);
+            onClick={async () => {
+              try {
+                console.log('=== Frontend: About to add circle via Action ===');
+                await sdkActions.addCircle({
+                  x: Math.random() * 400 + 100,
+                  y: Math.random() * 300 + 100,
+                  radius: 40,
+                  style: {
+                    fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    stroke: '#333',
+                    strokeWidth: 2
+                  }
+                });
+                console.log('=== Frontend: Circle added successfully ===');
+              } catch (error) {
+                console.error('Failed to add circle:', error);
+              }
             }}
             className="block px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
           >

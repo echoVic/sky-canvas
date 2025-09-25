@@ -1,11 +1,13 @@
 import {
   createCanvasSDK,
+  type Action,
   type CanvasSDK,
-  type ICanvasSDKConfig
+  type ICanvasSDKConfig,
+  type SDKChangeEvent
 } from '@sky-canvas/canvas-sdk';
-import { Shape } from '@sky-canvas/render-engine';
 import { useMemoizedFn } from 'ahooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnyShapeData } from '../types';
 
 /**
  * Canvas SDK状态接口
@@ -16,9 +18,9 @@ export interface CanvasSDKState {
   /** 是否已初始化 */
   isInitialized: boolean;
   /** 所有形状 */
-  shapes: Shape[];
-  /** 选中的形状 */
-  selectedShapes: Shape[];
+  shapes: AnyShapeData[];
+  /** 选中的形状ID列表 */
+  selectedShapeIds: string[];
   /** 是否可撤销 */
   canUndo: boolean;
   /** 是否可重做 */
@@ -31,48 +33,64 @@ export interface CanvasSDKState {
 export interface CanvasSDKActions {
   /** 初始化SDK */
   initialize: (container: HTMLElement, config?: ICanvasSDKConfig) => Promise<void>;
-  /** 获取Canvas管理器 */
-  getCanvasManager: () => any;
-  /** 获取Tool管理器 */
-  getToolManager: () => any;
-  /** 添加形状 */
-  addShape: (entity: Shape) => void;
-  /** 移除形状 */
-  removeShape: (id: string) => void;
+  /** 分发Action */
+  dispatch: (action: Action) => Promise<void>;
+  /** 添加矩形 */
+  addRectangle: (params: { x: number; y: number; width: number; height: number; style?: any }) => Promise<void>;
+  /** 添加圆形 */
+  addCircle: (params: { x: number; y: number; radius: number; style?: any }) => Promise<void>;
+  /** 添加文本 */
+  addText: (params: { x: number; y: number; text: string; style?: any }) => Promise<void>;
+  /** 删除形状 */
+  deleteShape: (shapeId: string) => Promise<void>;
+  /** 删除选中形状 */
+  deleteSelected: () => Promise<void>;
   /** 更新形状 */
-  updateShape: (id: string, updates: Partial<Shape>) => void;
+  updateShape: (shapeId: string, updates: any) => Promise<void>;
   /** 选择形状 */
-  selectShape: (id: string) => void;
+  selectShapes: (shapeIds: string[], addToSelection?: boolean) => Promise<void>;
   /** 取消选择形状 */
-  deselectShape: (id: string) => void;
+  deselectShape: (shapeId: string) => Promise<void>;
   /** 清空选择 */
-  clearSelection: () => void;
-  /** 点击测试 */
-  hitTest: (point: { x: number; y: number }) => string | null;
-  /** 撤销 */
-  undo: () => void;
-  /** 重做 */
-  redo: () => void;
-  /** 清空所有形状 */
-  clearShapes: () => void;
-  /** 设置工具 */
-  setTool: (toolName: string) => boolean;
-  /** 事件监听 */
-  on: (eventName: string, callback: Function) => void;
-  /** 移除事件监听 */
-  off: (eventName: string, callback?: Function) => void;
+  clearSelection: () => Promise<void>;
+  /** 全选 */
+  selectAll: () => Promise<void>;
+  /** 反选 */
+  invertSelection: () => Promise<void>;
   /** 置顶 */
-  bringToFront: () => void;
+  bringToFront: (shapeIds?: string[]) => Promise<void>;
   /** 置底 */
-  sendToBack: () => void;
+  sendToBack: (shapeIds?: string[]) => Promise<void>;
   /** 上移一层 */
-  bringForward: () => void;
+  bringForward: (shapeIds?: string[]) => Promise<void>;
   /** 下移一层 */
-  sendBackward: () => void;
-  /** 设置zIndex */
-  setZIndex: (shapeIds: string[], zIndex: number) => void;
-  /** 按Z轴顺序获取形状 */
-  getShapesByZOrder: () => Shape[];
+  sendBackward: (shapeIds?: string[]) => Promise<void>;
+  /** 设置Z-index */
+  setZIndex: (shapeIds: string[], zIndex: number) => Promise<void>;
+  /** 设置工具 */
+  setTool: (toolType: string, previousTool?: string) => Promise<void>;
+  /** 撤销 */
+  undo: () => Promise<void>;
+  /** 重做 */
+  redo: () => Promise<void>;
+  /** 清空历史记录 */
+  clearHistory: () => void;
+  /** 批量操作 */
+  batchActions: (actions: Action[], transactional?: boolean) => Promise<void>;
+  /** 导入文件 */
+  importFile: (params: { file?: File; url?: string; format?: string; replaceExisting?: boolean; position?: { x: number; y: number } }) => Promise<void>;
+  /** 导出文件 */
+  exportFile: (params: { filename?: string; format: string; quality?: number; includeOnlySelected?: boolean; bounds?: any }) => Promise<void>;
+  /** 自动保存 */
+  enableAutoSave: (params: { target: string; key?: string; url?: string; interval?: number; enableCompression?: boolean }) => Promise<void>;
+  /** 插件管理 */
+  registerPlugin: (plugin: any) => Promise<void>;
+  unregisterPlugin: (pluginId: string) => Promise<void>;
+  activatePlugin: (pluginId: string) => Promise<void>;
+  deactivatePlugin: (pluginId: string) => Promise<void>;
+  getPlugins: () => any[];
+  getActivePlugins: () => any[];
+  isPluginActive: (pluginId: string) => boolean;
   /** 销毁SDK */
   dispose: () => void;
 }
@@ -94,10 +112,12 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     sdk: null,
     isInitialized: false,
     shapes: [],
-    selectedShapes: [],
+    selectedShapeIds: [],
     canUndo: false,
     canRedo: false,
   });
+
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   /**
    * 更新状态
@@ -106,16 +126,17 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     const sdk = sdkRef.current;
     if (!sdk) return;
 
-    const manager = sdk.getCanvasManager();
-    if (!manager) return;
+    const shapes = sdk.getShapeData();
+    const selectedShapeIds = sdk.getSelection();
+    const historyStats = sdk.getHistoryStats();
 
     setState((prev: typeof state) => ({
       ...prev,
       sdk,
-      shapes: manager.getObjects() || [],
-      selectedShapes: manager.getSelectedShapes() || [],
-      canUndo: false, // TODO: 从CanvasManager获取实际状态
-      canRedo: false, // TODO: 从CanvasManager获取实际状态
+      shapes: shapes || [],
+      selectedShapeIds: selectedShapeIds || [],
+      canUndo: historyStats.canUndo,
+      canRedo: historyStats.canRedo,
     }));
   });
 
@@ -138,22 +159,23 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       container,
       ...config
     });
-    
-    try {
-      // 设置事件监听器
-      const eventHandlers = {
-        'shape:added': () => updateState(),
-        'shape:removed': () => updateState(),
-        'shape:updated': () => updateState(),
-        'shape:selected': () => updateState(),
-        'shape:deselected': () => updateState(),
-        'selection:cleared': () => updateState(),
-      };
 
-      // 注册所有事件监听器
-      Object.keys(eventHandlers).forEach(eventName => {
-        sdk.on(eventName, eventHandlers[eventName as keyof typeof eventHandlers]);
+    try {
+      // 使用新的订阅接口监听SDK事件
+      const unsubscribe = sdk.subscribe((event: SDKChangeEvent) => {
+        switch (event.type) {
+          case 'shapes-changed':
+          case 'selection-changed':
+          case 'history-changed':
+            updateState();
+            break;
+          case 'render-completed':
+            // 可选：处理渲染完成事件
+            break;
+        }
       });
+
+      unsubscribeRef.current = unsubscribe;
 
       sdkRef.current = sdk;
       console.log('SDK reference set:', sdkRef.current);
@@ -167,251 +189,448 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         isInitialized: true,
       }));
 
+      console.log('SDK initialized successfully with new Action system');
+
     } catch (error) {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
       sdk.dispose();
       throw error;
     }
   });
 
   /**
-   * 获取Canvas管理器
+   * 分发Action
    */
-  const getCanvasManager = useMemoizedFn(() => {
+  const dispatch = useMemoizedFn(async (action: Action) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
-    return sdkRef.current.getCanvasManager();
+    await sdkRef.current.dispatch(action);
   });
 
   /**
-   * 获取Tool管理器
+   * 添加矩形
    */
-  const getToolManager = useMemoizedFn(() => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    return (sdkRef.current as any).getToolManager();
+  const addRectangle = useMemoizedFn(async (params: { x: number; y: number; width: number; height: number; style?: any }) => {
+    await dispatch({
+      type: 'ADD_RECTANGLE',
+      payload: params,
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
-   * 添加形状
+   * 添加圆形
    */
-  const addShape = useMemoizedFn((entity: Shape) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.addShape(entity);
+  const addCircle = useMemoizedFn(async (params: { x: number; y: number; radius: number; style?: any }) => {
+    await dispatch({
+      type: 'ADD_CIRCLE',
+      payload: params,
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
-   * 移除形状
+   * 添加文本
    */
-  const removeShape = useMemoizedFn((id: string) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.removeShape(id);
+  const addText = useMemoizedFn(async (params: { x: number; y: number; text: string; style?: any }) => {
+    await dispatch({
+      type: 'ADD_TEXT',
+      payload: params,
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
+  });
+
+  /**
+   * 删除形状
+   */
+  const deleteShape = useMemoizedFn(async (shapeId: string) => {
+    await dispatch({
+      type: 'DELETE_SHAPE',
+      payload: { shapeId },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
+  });
+
+  /**
+   * 删除选中形状
+   */
+  const deleteSelected = useMemoizedFn(async () => {
+    await dispatch({
+      type: 'DELETE_SELECTED',
+      payload: {},
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 更新形状
    */
-  const updateShape = useMemoizedFn((id: string, updates: Partial<Shape>) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.updateShape(id, updates);
+  const updateShape = useMemoizedFn(async (shapeId: string, updates: any) => {
+    await dispatch({
+      type: 'UPDATE_SHAPE',
+      payload: { shapeId, updates },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 选择形状
    */
-  const selectShape = useMemoizedFn((id: string) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.selectShape(id);
+  const selectShapes = useMemoizedFn(async (shapeIds: string[], addToSelection = false) => {
+    await dispatch({
+      type: 'SELECT_SHAPES',
+      payload: { shapeIds, addToSelection },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 取消选择形状
    */
-  const deselectShape = useMemoizedFn((id: string) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.deselectShape(id);
+  const deselectShape = useMemoizedFn(async (shapeId: string) => {
+    await dispatch({
+      type: 'DESELECT_SHAPE',
+      payload: { shapeId },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 清空选择
    */
-  const clearSelection = useMemoizedFn(() => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.clearSelection();
+  const clearSelection = useMemoizedFn(async () => {
+    await dispatch({
+      type: 'CLEAR_SELECTION',
+      payload: {},
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
-   * 点击测试
+   * 全选
    */
-  const hitTest = useMemoizedFn((point: { x: number; y: number }) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    return manager.hitTest(point.x, point.y);
+  const selectAll = useMemoizedFn(async () => {
+    await dispatch({
+      type: 'SELECT_ALL',
+      payload: {},
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
+  });
+
+  /**
+   * 反选
+   */
+  const invertSelection = useMemoizedFn(async () => {
+    await dispatch({
+      type: 'INVERT_SELECTION',
+      payload: {},
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 撤销操作
    */
-  const undo = useMemoizedFn(() => {
+  const undo = useMemoizedFn(async () => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.undo();
+    await sdkRef.current.undo();
   });
 
   /**
    * 重做操作
    */
-  const redo = useMemoizedFn(() => {
+  const redo = useMemoizedFn(async () => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.redo();
+    await sdkRef.current.redo();
   });
 
   /**
-   * 清空所有形状
+   * 清空历史记录
    */
-  const clearShapes = useMemoizedFn(() => {
+  const clearHistory = useMemoizedFn(() => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.clear();
+    sdkRef.current.clearHistory();
   });
 
   /**
-   * 设置工具
+   * 置顶 - 将选中的形状或指定形状移到最前面
    */
-  const setTool = useMemoizedFn((toolName: string): boolean => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const toolManager = (sdkRef.current as any).getToolManager();
-    return toolManager.activateTool(toolName);
+  const bringToFront = useMemoizedFn(async (shapeIds?: string[]) => {
+    const targetIds = shapeIds || state.selectedShapeIds;
+    if (targetIds.length === 0) return;
+
+    await dispatch({
+      type: 'BRING_TO_FRONT',
+      payload: { shapeIds: targetIds },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
-   * 事件监听
+   * 置底 - 将选中的形状或指定形状移到最后面
    */
-  const on = useMemoizedFn((eventName: any, callback: Function) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    sdkRef.current.on(eventName, callback);
-  });
+  const sendToBack = useMemoizedFn(async (shapeIds?: string[]) => {
+    const targetIds = shapeIds || state.selectedShapeIds;
+    if (targetIds.length === 0) return;
 
-  /**
-   * 移除事件监听
-   */
-  const off = useMemoizedFn((eventName: any, callback?: Function) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    sdkRef.current.off(eventName, callback);
-  });
-
-  // === Z轴管理方法 ===
-
-  /**
-   * 置顶 - 将选中的形状移到最前面
-   */
-  const bringToFront = useMemoizedFn(() => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
-    if (selectedIds.length > 0) {
-      manager.bringToFront(selectedIds);
-    }
-  });
-
-  /**
-   * 置底 - 将选中的形状移到最后面
-   */
-  const sendToBack = useMemoizedFn(() => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
-    if (selectedIds.length > 0) {
-      manager.sendToBack(selectedIds);
-    }
+    await dispatch({
+      type: 'SEND_TO_BACK',
+      payload: { shapeIds: targetIds },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 上移一层
    */
-  const bringForward = useMemoizedFn(() => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
-    if (selectedIds.length > 0) {
-      manager.bringForward(selectedIds);
-    }
+  const bringForward = useMemoizedFn(async (shapeIds?: string[]) => {
+    const targetIds = shapeIds || state.selectedShapeIds;
+    if (targetIds.length === 0) return;
+
+    await dispatch({
+      type: 'BRING_FORWARD',
+      payload: { shapeIds: targetIds },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
    * 下移一层
    */
-  const sendBackward = useMemoizedFn(() => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id);
-    if (selectedIds.length > 0) {
-      manager.sendBackward(selectedIds);
-    }
+  const sendBackward = useMemoizedFn(async (shapeIds?: string[]) => {
+    const targetIds = shapeIds || state.selectedShapeIds;
+    if (targetIds.length === 0) return;
+
+    await dispatch({
+      type: 'SEND_BACKWARD',
+      payload: { shapeIds: targetIds },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
-   * 设置指定形状的zIndex
+   * 设置指定形状的z-index
    */
-  const setZIndex = useMemoizedFn((shapeIds: string[], zIndex: number) => {
-    if (!sdkRef.current) {
-      throw new Error('SDK not initialized');
-    }
-    const manager = sdkRef.current.getCanvasManager();
-    manager.setZIndex(shapeIds, zIndex);
+  const setZIndex = useMemoizedFn(async (shapeIds: string[], zIndex: number) => {
+    if (shapeIds.length === 0) return;
+
+    await dispatch({
+      type: 'SET_Z_INDEX',
+      payload: { shapeIds, zIndex },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
   });
 
   /**
-   * 获取按Z轴顺序排序的形状
+   * 设置工具
    */
-  const getShapesByZOrder = useMemoizedFn(() => {
+  const setTool = useMemoizedFn(async (toolType: string, previousTool?: string) => {
+    await dispatch({
+      type: 'SET_TOOL',
+      payload: { toolType, previousTool },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
+  });
+
+  /**
+   * 批量操作
+   */
+  const batchActions = useMemoizedFn(async (actions: Action[], transactional = true) => {
+    await dispatch({
+      type: 'BATCH',
+      payload: {
+        actions,
+        transactional,
+        description: `Batch operation with ${actions.length} actions`
+      },
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user'
+      }
+    });
+  });
+
+  /**
+   * 导入文件
+   */
+  const importFile = useMemoizedFn(async (params: {
+    file?: File;
+    url?: string;
+    format?: string;
+    replaceExisting?: boolean;
+    position?: { x: number; y: number }
+  }) => {
+    await dispatch({
+      type: 'IMPORT_FILE',
+      payload: params,
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user',
+        async: true
+      }
+    });
+  });
+
+  /**
+   * 导出文件
+   */
+  const exportFile = useMemoizedFn(async (params: {
+    filename?: string;
+    format: string;
+    quality?: number;
+    includeOnlySelected?: boolean;
+    bounds?: any
+  }) => {
+    await dispatch({
+      type: 'EXPORT_FILE',
+      payload: params,
+      metadata: {
+        timestamp: Date.now(),
+        source: 'user',
+        async: true
+      }
+    });
+  });
+
+  /**
+   * 启用自动保存
+   */
+  const enableAutoSave = useMemoizedFn(async (params: {
+    target: string;
+    key?: string;
+    url?: string;
+    interval?: number;
+    enableCompression?: boolean
+  }) => {
+    await dispatch({
+      type: 'AUTO_SAVE',
+      payload: params,
+      metadata: {
+        timestamp: Date.now(),
+        source: 'system',
+        async: true
+      }
+    });
+  });
+
+  /**
+   * 插件管理API
+   */
+  const registerPlugin = useMemoizedFn(async (plugin: any) => {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized');
     }
-    const manager = sdkRef.current.getCanvasManager();
-    return manager.getShapesByZOrder();
+    // await sdkRef.current.registerPlugin(plugin); // 暂时禁用
+    console.log('registerPlugin 暂时禁用');
+  });
+
+  const unregisterPlugin = useMemoizedFn(async (pluginId: string) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    // await sdkRef.current.unregisterPlugin(pluginId); // 暂时禁用
+    console.log('unregisterPlugin 暂时禁用');
+  });
+
+  const activatePlugin = useMemoizedFn(async (pluginId: string) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    // await sdkRef.current.activatePlugin(pluginId); // 暂时禁用
+    console.log('activatePlugin 暂时禁用');
+  });
+
+  const deactivatePlugin = useMemoizedFn(async (pluginId: string) => {
+    if (!sdkRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    // await sdkRef.current.deactivatePlugin(pluginId); // 暂时禁用
+    console.log('deactivatePlugin 暂时禁用');
+  });
+
+  const getPlugins = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      return [];
+    }
+    // return sdkRef.current.getPlugins(); // 暂时禁用
+    return [];
+  });
+
+  const getActivePlugins = useMemoizedFn(() => {
+    if (!sdkRef.current) {
+      return [];
+    }
+    // return sdkRef.current.getActivePlugins(); // 暂时禁用
+    return [];
+  });
+
+  const isPluginActive = useMemoizedFn((pluginId: string) => {
+    if (!sdkRef.current) {
+      return false;
+    }
+    // return sdkRef.current.isPluginActive(pluginId); // 暂时禁用
+    return false;
   });
 
   /**
@@ -419,6 +638,14 @@ export function useCanvasSDK(): UseCanvasSDKResult {
    */
   const dispose = useMemoizedFn(() => {
     console.log('dispose called, current SDK:', sdkRef.current);
+
+    // 清理事件订阅
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
+    // 销毁SDK实例
     if (sdkRef.current) {
       sdkRef.current.dispose();
       sdkRef.current = null;
@@ -426,7 +653,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         sdk: null,
         isInitialized: false,
         shapes: [],
-        selectedShapes: [],
+        selectedShapeIds: [],
         canUndo: false,
         canRedo: false,
       });
@@ -444,28 +671,38 @@ export function useCanvasSDK(): UseCanvasSDKResult {
   // 使用useMemo来稳定actions对象，空依赖数组因为useMemoizedFn已经保证了函数稳定性
   const actions = useMemo(() => ({
     initialize,
-    getCanvasManager,
-    getToolManager,
-    addShape,
-    removeShape,
+    dispatch,
+    addRectangle,
+    addCircle,
+    addText,
+    deleteShape,
+    deleteSelected,
     updateShape,
-    selectShape,
+    selectShapes,
     deselectShape,
     clearSelection,
-    hitTest,
-    undo,
-    redo,
-    clearShapes,
-    setTool,
-    on,
-    off,
-    // Z轴管理方法
+    selectAll,
+    invertSelection,
     bringToFront,
     sendToBack,
     bringForward,
     sendBackward,
     setZIndex,
-    getShapesByZOrder,
+    setTool,
+    batchActions,
+    importFile,
+    exportFile,
+    enableAutoSave,
+    registerPlugin,
+    unregisterPlugin,
+    activatePlugin,
+    deactivatePlugin,
+    getPlugins,
+    getActivePlugins,
+    isPluginActive,
+    undo,
+    redo,
+    clearHistory,
     dispose,
   }), []); // 空依赖数组，因为所有函数都已用useMemoizedFn稳定化
 

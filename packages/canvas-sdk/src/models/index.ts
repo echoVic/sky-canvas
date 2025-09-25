@@ -1,6 +1,7 @@
 /**
- * MVVM架构 - Model层导出
+ * 模型系统导出
  */
 
-// 实体类型
-export * from './entities/Layer';
+export { CanvasModel } from './CanvasModel';
+export type { ModelListener } from './CanvasModel';
+export type { ChangeDescription as ModelChangeDescription } from './CanvasModel';

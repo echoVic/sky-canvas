@@ -70,14 +70,12 @@ export function useCanvasInteraction(
   }, [currentTool, getCursorForTool]);
 
   // 同步工具选择到SDK
-  const syncToolToSDK = useMemoizedFn(() => {
+  const syncToolToSDK = useMemoizedFn(async () => {
     if (sdkState.isInitialized) {
       try {
         const toolName = getToolName(currentTool);
-        const success = sdkActions.setTool(toolName);
-        if (!success) {
-          console.log('Failed to set tool, SDK may not be ready yet');
-        }
+        await sdkActions.setTool(toolName);
+        console.log(`Tool synced to SDK: ${toolName}`);
       } catch (error) {
         console.log('Error setting tool:', error);
       }
