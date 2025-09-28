@@ -5,7 +5,7 @@
 
 import { Action } from '../actions/types';
 import { Command } from '../commands/base';
-import { CanvasModel } from '../models/CanvasModel';
+import { ICanvasModel } from '../models/CanvasModel';
 
 /**
  * 插件基础信息
@@ -75,7 +75,7 @@ export interface CommandContribution extends PluginContribution {
     /** 对应的Action类型 */
     actionType: string;
     /** Command创建器 */
-    creator: (model: CanvasModel, action: Action) => Command;
+    creator: (model: ICanvasModel, action: Action) => Command;
     /** 优先级（用于覆盖默认实现） */
     priority?: number;
   };
@@ -123,7 +123,7 @@ export interface ToolHandler {
  */
 export interface ToolContext {
   /** Canvas模型 */
-  model: CanvasModel;
+  model: ICanvasModel;
   /** 分发Action */
   dispatch: (action: Action) => Promise<void>;
   /** 当前选择 */
@@ -158,7 +158,7 @@ export interface UIContribution extends PluginContribution {
  */
 export interface UIContext {
   /** Canvas模型 */
-  model: CanvasModel;
+  model: ICanvasModel;
   /** 分发Action */
   dispatch: (action: Action) => Promise<void>;
   /** SDK状态 */
@@ -185,7 +185,7 @@ export interface EventContribution extends PluginContribution {
  */
 export interface EventContext {
   /** Canvas模型 */
-  model: CanvasModel;
+  model: ICanvasModel;
   /** 分发Action */
   dispatch: (action: Action) => Promise<void>;
   /** 事件源 */
@@ -222,7 +222,7 @@ export interface PluginLifecycle {
  */
 export interface PluginContext {
   /** Canvas模型 */
-  model: CanvasModel;
+  model: ICanvasModel;
   /** 分发Action */
   dispatch: (action: Action) => Promise<void>;
   /** 扩展点注册器 */

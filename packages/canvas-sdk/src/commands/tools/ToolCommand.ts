@@ -4,7 +4,7 @@
  */
 
 import { BaseCommand } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 
 /**
  * 工具类型定义
@@ -28,7 +28,7 @@ export interface ToolCommandParams {
 export class ToolCommand extends BaseCommand {
   private params: ToolCommandParams;
 
-  constructor(model: CanvasModel, params: ToolCommandParams) {
+  constructor(model: ICanvasModel, params: ToolCommandParams) {
     super(model, `Tool change to ${params.toolType}`);
     this.params = params;
   }

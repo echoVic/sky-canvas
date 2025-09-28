@@ -13,8 +13,8 @@ import {
   ExtensionPoint
 } from './types';
 import { Action } from '../actions/types';
-import { CanvasModel } from '../models/CanvasModel';
-import { commandRegistry } from '../commands/registry';
+import { ICanvasModel } from '../models/CanvasModel';
+import { ICommandRegistry } from '../commands/services';
 
 /**
  * 扩展点注册器实现
@@ -75,17 +75,20 @@ export class PluginManagerImpl implements PluginManager {
   private plugins = new Map<string, Plugin>();
   private activePlugins = new Set<string>();
   private extensionRegistry = new ExtensionRegistryImpl();
-  private model: CanvasModel;
+  private model: ICanvasModel;
   private dispatch: (action: Action) => Promise<void>;
   private config: PluginConfig;
+  private commandRegistry: ICommandRegistry;
 
   constructor(
-    model: CanvasModel,
+    model: ICanvasModel,
     dispatch: (action: Action) => Promise<void>,
+    commandRegistry: ICommandRegistry,
     config: PluginConfig = {}
   ) {
     this.model = model;
     this.dispatch = dispatch;
+    this.commandRegistry = commandRegistry;
     this.config = {
       enabled: true,
       autoActivate: [],
@@ -312,7 +315,7 @@ export class PluginManagerImpl implements PluginManager {
 
     for (const contribution of commandContributions) {
       const { actionType, creator } = contribution.content;
-      commandRegistry.register(actionType, creator);
+      this.commandRegistry.register(actionType, { factory: creator });
     }
   }
 
@@ -326,7 +329,7 @@ export class PluginManagerImpl implements PluginManager {
 
     for (const contribution of commandContributions) {
       const { actionType } = contribution.content;
-      commandRegistry.unregister(actionType);
+      this.commandRegistry.unregister(actionType);
     }
   }
 

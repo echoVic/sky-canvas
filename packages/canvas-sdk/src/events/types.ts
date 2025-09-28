@@ -7,16 +7,16 @@
  * SDK 变化事件接口
  */
 export interface SDKChangeEvent {
-  type: 'shapes-changed' | 'selection-changed' | 'history-changed' | 'render-completed' | 'action-error' | 'system-error';
+  type: 'graphics-changed' | 'selection-changed' | 'history-changed' | 'render-completed' | 'action-error' | 'system-error';
   data?: any;
   timestamp?: number;
   error?: Error;
 }
 
 /**
- * 形状变化事件数据
+ * 图形变化事件数据
  */
-export interface ShapesChangedEventData {
+export interface GraphicsChangedEventData {
   added?: string[];
   removed?: string[];
   updated?: string[];
@@ -45,7 +45,7 @@ export interface HistoryChangedEventData {
  */
 export interface RenderCompletedEventData {
   frameTime: number;
-  objectsRendered: number;
+  graphicsRendered: number;
 }
 
 /**

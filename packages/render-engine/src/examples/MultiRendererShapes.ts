@@ -7,7 +7,7 @@ import { WebGLContext } from '../core/context/WebGLContext';
 import { WebGPUContext } from '../core/context/WebGPUContext';
 import { CanvasRenderer } from '../core/renderers/CanvasRenderer';
 import { checkWebGPUSupport } from '../core/renderers/WebGPURenderer';
-import { Circle, Line, Rectangle, Shape } from '../shapes';
+import { Circle, Line, Rectangle, Shape } from '../renderables';
 
 /**
  * 多渲染器示例类

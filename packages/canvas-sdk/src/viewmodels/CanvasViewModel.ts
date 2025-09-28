@@ -145,9 +145,9 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   selectAll(): void {
     // 获取所有形状并选择它们
-    const objects = this.canvasManager.getObjects();
-    objects.forEach(object => {
-      const id = (object as any).id;
+    const graphics = this.canvasManager.getGraphics();
+    graphics.forEach(graphic => {
+      const id = (graphic as any).id;
       if (id) this.canvasManager.selectShape(id);
     });
   }

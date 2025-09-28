@@ -1,7 +1,7 @@
 import {
   createCanvasSDK,
   type Action,
-  type CanvasSDK,
+  type ICanvasSDK,
   type ICanvasSDKConfig,
   type SDKChangeEvent
 } from '@sky-canvas/canvas-sdk';
@@ -14,7 +14,7 @@ import { AnyShapeData } from '../types';
  */
 export interface CanvasSDKState {
   /** SDK实例 */
-  sdk: CanvasSDK | null;
+  sdk: ICanvasSDK | null;
   /** 是否已初始化 */
   isInitialized: boolean;
   /** 所有形状 */
@@ -106,7 +106,7 @@ export type UseCanvasSDKResult = [CanvasSDKState, CanvasSDKActions];
  * 提供Canvas SDK的React集成，管理SDK实例的生命周期和状态同步
  */
 export function useCanvasSDK(): UseCanvasSDKResult {
-  const sdkRef = useRef<CanvasSDK | null>(null);
+  const sdkRef = useRef<ICanvasSDK | null>(null);
   
   const [state, setState] = useState<CanvasSDKState>({
     sdk: null,
@@ -164,7 +164,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       // 使用新的订阅接口监听SDK事件
       const unsubscribe = sdk.subscribe((event: SDKChangeEvent) => {
         switch (event.type) {
-          case 'shapes-changed':
+          case 'graphics-changed':
           case 'selection-changed':
           case 'history-changed':
             updateState();

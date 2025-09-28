@@ -24,6 +24,10 @@ export class Circle extends Shape {
     this._radius = config.radius ?? 10;
   }
 
+  get type(): string {
+    return 'circle';
+  }
+
   // 半径属性
   get radius(): number {
     return this._radius;

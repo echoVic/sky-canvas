@@ -7,18 +7,17 @@
 import {
   Action,
   ActionMetadata,
-  ShapeData,
-  TransformData,
-  AddShapeAction,
-  UpdateShapeAction,
-  DeleteShapeAction,
-  SelectShapeAction,
+  AddGraphicAction,
+  BatchAction,
+  DeleteGraphicAction,
+  ExportFileAction,
+  GraphicData,
+  ImportFileAction,
   MoveShapeAction,
   ResizeShapeAction,
-  ZIndexAction,
-  BatchAction,
-  ImportFileAction,
-  ExportFileAction
+  SelectShapeAction,
+  UpdateGraphicAction,
+  ZIndexAction
 } from './types';
 
 /**
@@ -44,8 +43,8 @@ export const ShapeActions = {
     y: number,
     width: number,
     height: number,
-    style?: ShapeData['style']
-  ): AddShapeAction => ({
+    style?: GraphicData['style']
+  ): AddGraphicAction => ({
     type: 'ADD_RECTANGLE',
     payload: {
       type: 'rectangle',
@@ -70,8 +69,8 @@ export const ShapeActions = {
     x: number,
     y: number,
     radius: number,
-    style?: ShapeData['style']
-  ): AddShapeAction => ({
+    style?: GraphicData['style']
+  ): AddGraphicAction => ({
     type: 'ADD_CIRCLE',
     payload: {
       type: 'circle',
@@ -88,32 +87,6 @@ export const ShapeActions = {
     metadata: createMetadata()
   }),
 
-  /**
-   * 创建添加钻石 Action
-   */
-  addDiamond: (
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style?: ShapeData['style']
-  ): AddShapeAction => ({
-    type: 'ADD_DIAMOND',
-    payload: {
-      type: 'diamond',
-      x,
-      y,
-      width,
-      height,
-      style: {
-        fill: '#f59e0b',
-        stroke: '#d97706',
-        strokeWidth: 2,
-        ...style
-      }
-    },
-    metadata: createMetadata()
-  }),
 
   /**
    * 创建添加文本 Action
@@ -122,8 +95,8 @@ export const ShapeActions = {
     x: number,
     y: number,
     text: string,
-    style?: ShapeData['style']
-  ): AddShapeAction => ({
+    style?: GraphicData['style']
+  ): AddGraphicAction => ({
     type: 'ADD_TEXT',
     payload: {
       type: 'text',
@@ -139,13 +112,39 @@ export const ShapeActions = {
   }),
 
   /**
+   * 创建添加线条 Action
+   */
+  addLine: (
+    x: number,
+    y: number,
+    x2: number,
+    y2: number,
+    style?: GraphicData['style']
+  ): AddGraphicAction => ({
+    type: 'ADD_LINE',
+    payload: {
+      type: 'line',
+      x,
+      y,
+      x2,
+      y2,
+      style: {
+        stroke: '#374151',
+        strokeWidth: 2,
+        ...style
+      }
+    },
+    metadata: createMetadata()
+  }),
+
+  /**
    * 创建更新形状 Action
    */
   updateShape: (
     id: string,
-    updates: Partial<ShapeData>
-  ): UpdateShapeAction => ({
-    type: 'UPDATE_SHAPE',
+    updates: Partial<GraphicData>
+  ): UpdateGraphicAction => ({
+    type: 'UPDATE_GRAPHIC',
     payload: {
       id,
       updates
@@ -156,8 +155,8 @@ export const ShapeActions = {
   /**
    * 创建删除形状 Action
    */
-  deleteShape: (id: string): DeleteShapeAction => ({
-    type: 'DELETE_SHAPE',
+  deleteShape: (id: string): DeleteGraphicAction => ({
+    type: 'DELETE_GRAPHIC',
     payload: {
       id
     },
@@ -401,7 +400,7 @@ export const BatchActions = {
   /**
    * 创建批量操作
    */
-  batch: (actions: Action[], description?: string): BatchAction => ({
+  batch: (actions: Action[]): BatchAction => ({
     type: 'BATCH',
     payload: {
       actions

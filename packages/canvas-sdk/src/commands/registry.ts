@@ -5,38 +5,33 @@
 
 import { Action } from '../actions/types';
 import { Command } from './base';
-import { CanvasModel } from '../models/CanvasModel';
+import { ICanvasModel } from '../models/CanvasModel';
+import { ICommandRegistry, ICommandRegistration } from './services';
+import { ILogService } from '../services';
+
 
 /**
- * 命令工厂函数接口
+ * 命令注册表类 - DI 版本
  */
-export interface CommandFactory {
-  (model: CanvasModel, action: Action): Command;
-}
-
-/**
- * 命令注册信息
- */
-export interface CommandRegistration {
-  factory: CommandFactory;
-  description?: string;
-  category?: string;
-  version?: string;
-}
-
-/**
- * 命令注册表类
- */
-export class CommandRegistry {
-  private registry = new Map<string, CommandRegistration>();
+export class CommandRegistry implements ICommandRegistry {
+  private registry = new Map<string, ICommandRegistration>();
   private plugins = new Set<string>();
+
+  constructor(
+    private logger?: ILogService
+  ) {}
 
   /**
    * 注册单个命令
    */
-  register(actionType: string, registration: CommandRegistration): void {
+  register(actionType: string, registration: ICommandRegistration): void {
     if (this.registry.has(actionType)) {
-      console.warn(`Command for action type '${actionType}' is already registered. Overwriting.`);
+      const message = `Command for action type '${actionType}' is already registered. Overwriting.`;
+      if (this.logger) {
+        this.logger.warn(message);
+      } else {
+        console.warn(message);
+      }
     }
 
     this.registry.set(actionType, registration);
@@ -45,7 +40,7 @@ export class CommandRegistry {
   /**
    * 批量注册命令
    */
-  registerBatch(registrations: Record<string, CommandRegistration>): void {
+  registerBatch(registrations: Record<string, ICommandRegistration>): void {
     Object.entries(registrations).forEach(([actionType, registration]) => {
       this.register(actionType, registration);
     });
@@ -54,21 +49,31 @@ export class CommandRegistry {
   /**
    * 注册插件
    */
-  registerPlugin(pluginName: string, registrations: Record<string, CommandRegistration>): void {
+  registerPlugin(pluginName: string, registrations: Record<string, ICommandRegistration>): void {
     if (this.plugins.has(pluginName)) {
-      console.warn(`Plugin '${pluginName}' is already registered. Skipping.`);
+      const message = `Plugin '${pluginName}' is already registered. Skipping.`;
+      if (this.logger) {
+        this.logger.warn(message);
+      } else {
+        console.warn(message);
+      }
       return;
     }
 
     this.registerBatch(registrations);
     this.plugins.add(pluginName);
-    console.log(`Plugin '${pluginName}' registered with ${Object.keys(registrations).length} commands`);
+    const message = `Plugin '${pluginName}' registered with ${Object.keys(registrations).length} commands`;
+    if (this.logger) {
+      this.logger.info(message);
+    } else {
+      console.log(message);
+    }
   }
 
   /**
    * 创建命令实例
    */
-  createCommand(model: CanvasModel, action: Action): Command {
+  createCommand(model: ICanvasModel, action: Action): Command {
     const registration = this.registry.get(action.type);
     if (!registration) {
       throw new Error(`No command registered for action type: ${action.type}`);
@@ -98,7 +103,7 @@ export class CommandRegistry {
   /**
    * 获取注册信息
    */
-  getRegistration(actionType: string): CommandRegistration | undefined {
+  getRegistration(actionType: string): ICommandRegistration | undefined {
     return this.registry.get(actionType);
   }
 
@@ -157,33 +162,3 @@ export class CommandRegistry {
   }
 }
 
-/**
- * 全局命令注册表实例
- */
-export const commandRegistry = new CommandRegistry();
-
-/**
- * 便捷注册函数
- */
-export function registerCommand(
-  actionType: string,
-  factory: CommandFactory,
-  options?: Omit<CommandRegistration, 'factory'>
-): void {
-  commandRegistry.register(actionType, {
-    factory,
-    ...options
-  });
-}
-
-/**
- * 便捷批量注册函数
- */
-export function registerCommands(registrations: Record<string, CommandFactory>): void {
-  const mapped = Object.entries(registrations).reduce((acc, [actionType, factory]) => {
-    acc[actionType] = { factory };
-    return acc;
-  }, {} as Record<string, CommandRegistration>);
-
-  commandRegistry.registerBatch(mapped);
-}

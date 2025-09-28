@@ -55,7 +55,9 @@
       "Bash(pnpm exec tsc:*)",
       "Bash(pnpm --filter @sky-canvas/canvas-sdk exec tsc --noEmit)",
       "Bash(pnpm --filter @sky-canvas/render-engine exec tsc --noEmit)",
-      "Bash(pnpm -r run test)"
+      "Bash(pnpm -r run test)",
+      "Bash(node:*)",
+      "Bash(pnpm --filter @sky-canvas/canvas-sdk exec npx tsc --noEmit)"
     ],
     "deny": [],
     "ask": []

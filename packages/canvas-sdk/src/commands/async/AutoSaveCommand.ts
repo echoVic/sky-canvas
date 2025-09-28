@@ -1,11 +1,12 @@
 /**
- * 自动保存异步命令
+* 自动保存异步命令
  * 定期保存Canvas状态到本地存储或服务器
  */
 
 import { AsyncCommand } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
-import { ShapeData } from '../../actions/types';
+import { ICanvasModel } from '../../models/CanvasModel';
+import { GraphicData } from '../../actions/types';
+import { Shape } from '@sky-canvas/render-engine';
 
 /**
  * 自动保存参数
@@ -24,7 +25,7 @@ export interface AutoSaveParams {
 interface SaveData {
   version: string;
   timestamp: number;
-  shapes: ShapeData[];
+  shapes: GraphicData[];
   selection: string[];
   metadata?: Record<string, any>;
 }
@@ -37,7 +38,7 @@ export class AutoSaveCommand extends AsyncCommand {
   private saveData?: SaveData;
   private intervalId?: NodeJS.Timeout;
 
-  constructor(model: CanvasModel, params: AutoSaveParams) {
+  constructor(model: ICanvasModel, params: AutoSaveParams) {
     super(model, 'Auto-save canvas data');
     this.params = params;
   }
@@ -99,7 +100,7 @@ export class AutoSaveCommand extends AsyncCommand {
     return {
       version: '1.0',
       timestamp: Date.now(),
-      shapes: shapes.map(shape => this.shapeToShapeData(shape)),
+      shapes: shapes.map(shape => this.shapeToGraphicData(shape)),
       selection,
       metadata: {
         userAgent: navigator.userAgent,
@@ -216,21 +217,22 @@ export class AutoSaveCommand extends AsyncCommand {
   }
 
   /**
-   * 将Shape转换为ShapeData
+   * 将Shape转换为GraphicData
    */
-  private shapeToShapeData(shape: any): ShapeData {
+  private shapeToGraphicData(shape: Shape): GraphicData {
+    const shapeAny = shape as any;
     return {
       id: shape.id,
-      type: shape.type,
+      type: shape.type as any,
       x: shape.x,
       y: shape.y,
-      width: shape.width,
-      height: shape.height,
-      radius: shape.radius,
-      text: shape.text,
-      style: shape.style,
+      width: shapeAny.width,
+      height: shapeAny.height,
+      radius: shapeAny.radius,
+      text: shapeAny.text,
+      style: shapeAny.style,
       visible: shape.visible,
-      locked: shape.locked,
+      locked: shapeAny.locked,
       zIndex: shape.zIndex
     };
   }
@@ -300,7 +302,7 @@ export class AutoSaveCommand extends AsyncCommand {
    * 静态方法：从保存数据恢复Canvas状态
    */
   static async restoreFromSave(
-    model: CanvasModel,
+    model: ICanvasModel,
     target: 'localStorage' | 'sessionStorage',
     key: string = 'sky-canvas-autosave'
   ): Promise<boolean> {
@@ -365,11 +367,11 @@ export class AutoSaveCommand extends AsyncCommand {
   }
 
   /**
-   * 从ShapeData创建Shape对象
+   * 从GraphicData创建Shape对象
    */
-  private static createShapeFromData(data: ShapeData): any {
+  private static createShapeFromData(data: GraphicData): any {
     return {
-      id: data.id || `shape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: data.id || `shape-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: data.type,
       x: data.x,
       y: data.y,

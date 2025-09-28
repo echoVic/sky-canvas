@@ -37,16 +37,15 @@ export interface Action {
 }
 
 /**
- * 形状相关 Action 类型
+ * 图形相关 Action 类型
  */
-export type ShapeActionType =
+export type GraphicActionType =
   | 'ADD_RECTANGLE'
   | 'ADD_CIRCLE'
-  | 'ADD_DIAMOND'
   | 'ADD_TEXT'
-  | 'ADD_PATH'
-  | 'UPDATE_SHAPE'
-  | 'DELETE_SHAPE'
+  | 'ADD_LINE'
+  | 'UPDATE_GRAPHIC'
+  | 'DELETE_GRAPHIC'
   | 'DELETE_SELECTED';
 
 /**
@@ -112,7 +111,7 @@ export type AsyncActionType =
  * 所有 Action 类型的联合类型
  */
 export type ActionType =
-  | ShapeActionType
+  | GraphicActionType
   | SelectionActionType
   | TransformActionType
   | ZIndexActionType
@@ -122,18 +121,21 @@ export type ActionType =
   | AsyncActionType;
 
 /**
- * 形状数据接口
+ * 图形数据接口
  */
-export interface ShapeData {
+export interface GraphicData {
   id?: string;
-  type: 'rectangle' | 'circle' | 'diamond' | 'text' | 'path';
+  type: 'rectangle' | 'circle' | 'text' | 'line';
   x: number;
   y: number;
   width?: number;
   height?: number;
   radius?: number;
   text?: string;
-  points?: Array<{ x: number; y: number }>; // 用于路径
+  fontSize?: number;
+  fontFamily?: string;
+  x2?: number; // 用于线条
+  y2?: number; // 用于线条
   style?: {
     fill?: string;
     stroke?: string;
@@ -163,29 +165,29 @@ export interface TransformData {
  */
 
 /**
- * 添加形状 Action
+ * 添加图形 Action
  */
-export interface AddShapeAction extends Action {
-  type: ShapeActionType;
-  payload: ShapeData;
+export interface AddGraphicAction extends Action {
+  type: GraphicActionType;
+  payload: GraphicData;
 }
 
 /**
- * 更新形状 Action
+ * 更新图形 Action
  */
-export interface UpdateShapeAction extends Action {
-  type: 'UPDATE_SHAPE';
+export interface UpdateGraphicAction extends Action {
+  type: 'UPDATE_GRAPHIC';
   payload: {
     id: string;
-    updates: Partial<ShapeData>;
+    updates: Partial<GraphicData>;
   };
 }
 
 /**
- * 删除形状 Action
+ * 删除图形 Action
  */
-export interface DeleteShapeAction extends Action {
-  type: 'DELETE_SHAPE';
+export interface DeleteGraphicAction extends Action {
+  type: 'DELETE_GRAPHIC';
   payload: {
     id: string;
   };
@@ -278,8 +280,8 @@ export interface ExportFileAction extends Action {
 /**
  * Action 类型守卫
  */
-export function isShapeAction(action: Action): action is AddShapeAction | UpdateShapeAction | DeleteShapeAction {
-  return ['ADD_RECTANGLE', 'ADD_CIRCLE', 'ADD_DIAMOND', 'ADD_TEXT', 'ADD_PATH', 'UPDATE_SHAPE', 'DELETE_SHAPE'].includes(action.type);
+export function isGraphicAction(action: Action): action is AddGraphicAction | UpdateGraphicAction | DeleteGraphicAction {
+  return ['ADD_RECTANGLE', 'ADD_CIRCLE', 'ADD_TEXT', 'ADD_LINE', 'UPDATE_GRAPHIC', 'DELETE_GRAPHIC'].includes(action.type);
 }
 
 export function isSelectionAction(action: Action): action is SelectShapeAction {

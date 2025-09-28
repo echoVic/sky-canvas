@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import { ActionProcessor } from '../processor';
 import { CanvasModel } from '../../models/CanvasModel';
 import { Action } from '../types';
+import { CommandRegistry } from '../../commands/registry';
 
 // Mock EventBus 和 Logger
 const mockEventBus = {
@@ -36,7 +37,8 @@ describe('ActionProcessor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     model = new CanvasModel();
-    processor = new ActionProcessor(model, {
+    const commandRegistry = new CommandRegistry();
+    processor = new ActionProcessor(model, commandRegistry, undefined, undefined, undefined, {
       enableValidation: true,
       enableLogging: false
     });

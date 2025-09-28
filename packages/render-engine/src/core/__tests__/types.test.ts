@@ -166,6 +166,7 @@ describe('Engine Types', () => {
 
       mockRenderable = {
         id: 'test-renderable',
+        type: 'mock',
         visible: true,
         zIndex: 5,
         render: vi.fn(),
@@ -207,6 +208,7 @@ describe('Engine Types', () => {
     it('should work without optional dispose method', () => {
       const minimalRenderable: IRenderable = {
         id: 'minimal',
+        type: 'mock',
         visible: false,
         zIndex: 0,
         render: vi.fn(),
@@ -223,6 +225,7 @@ describe('Engine Types', () => {
     it('should handle negative zIndex values', () => {
       const negativeZRenderable: IRenderable = {
         id: 'negative-z',
+        type: 'mock',
         visible: true,
         zIndex: -10,
         render: vi.fn(),
@@ -253,6 +256,7 @@ describe('Engine Types', () => {
 
       const emptyRenderable: IRenderable = {
         id: 'empty',
+        type: 'mock',
         visible: true,
         zIndex: 0,
         render: vi.fn(),
@@ -262,6 +266,7 @@ describe('Engine Types', () => {
 
       const largeRenderable: IRenderable = {
         id: 'large',
+        type: 'mock',
         visible: true,
         zIndex: 0,
         render: vi.fn(),
@@ -509,6 +514,7 @@ describe('Engine Types', () => {
     it('should handle renderable visibility states', () => {
       const visibleRenderable: IRenderable = {
         id: 'visible',
+        type: 'mock',
         visible: true,
         zIndex: 0,
         render: vi.fn(),
@@ -518,6 +524,7 @@ describe('Engine Types', () => {
 
       const hiddenRenderable: IRenderable = {
         id: 'hidden',
+        type: 'mock',
         visible: false,
         zIndex: 0,
         render: vi.fn(),

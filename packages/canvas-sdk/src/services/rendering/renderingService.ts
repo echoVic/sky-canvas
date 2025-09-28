@@ -32,7 +32,7 @@ export interface IRenderingStats {
   /** 渲染器类型 */
   rendererType: string;
   /** 对象数量 */
-  objectCount: number;
+  graphicCount: number;
   /** 是否正在运行 */
   isRunning: boolean;
   /** 当前帧率 */
@@ -47,8 +47,8 @@ export interface IRenderingStats {
 export interface ICanvasRenderingService {
   initialize(container: HTMLElement, config: IRenderingServiceConfig): Promise<void>;
   getRenderEngine(): RenderEngine | null;
-  addObject(object: IRenderable): void;
-  removeObject(id: string): void;
+  addGraphic(graphic: IRenderable): void;
+  removeGraphic(id: string): void;
   render(): void;
   start(): void;
   stop(): void;
@@ -68,7 +68,7 @@ export const ICanvasRenderingService = createDecorator<ICanvasRenderingService>(
 export class CanvasRenderingService implements ICanvasRenderingService {
   private renderEngine: RenderEngine | null = null;
   private running = false;
-  private objects = new Map<string, IRenderable>();
+  private graphics = new Map<string, IRenderable>();
 
   constructor(
     @IEventBusService private eventBus: IEventBusService,
@@ -110,29 +110,29 @@ export class CanvasRenderingService implements ICanvasRenderingService {
     return this.renderEngine;
   }
 
-  addObject(object: IRenderable): void {
+  addGraphic(graphic: IRenderable): void {
     if (!this.renderEngine) {
       this.logger.error('RenderEngine is not initialized');
       return;
     }
 
-    if (!object?.id) {
-      this.logger.warn('Cannot add object without id');
+    if (!graphic?.id) {
+      this.logger.warn('Cannot add graphic without id');
       return;
     }
 
-    this.objects.set(object.id, object);
-    this.renderEngine.addObject(object);
-    this.logger.debug(`Added object ${object.id} (total: ${this.objects.size})`);
+    this.graphics.set(graphic.id, graphic);
+    this.renderEngine.addGraphic(graphic);
+    this.logger.debug(`Added graphic ${graphic.id} (total: ${this.graphics.size})`);
 
     // 手动触发一次渲染
     this.render();
   }
 
-  removeObject(id: string): void {
-    if (this.objects.has(id)) {
-      this.objects.delete(id);
-      this.renderEngine?.removeObject(id);
+  removeGraphic(id: string): void {
+    if (this.graphics.has(id)) {
+      this.graphics.delete(id);
+      this.renderEngine?.removeGraphic(id);
     }
   }
 
@@ -182,7 +182,7 @@ export class CanvasRenderingService implements ICanvasRenderingService {
     const capabilities = this.renderEngine?.getCapabilities();
     return {
       rendererType: this.renderEngine?.getRendererType() || 'unknown',
-      objectCount: this.objects.size,
+      graphicCount: this.graphics.size,
       isRunning: this.running,
       capabilities: capabilities ? { ...capabilities } : undefined
     };
@@ -190,7 +190,7 @@ export class CanvasRenderingService implements ICanvasRenderingService {
 
   dispose(): void {
     this.stop();
-    this.objects.clear();
+    this.graphics.clear();
     this.renderEngine?.dispose();
   }
 }

@@ -45,6 +45,15 @@ import {
   type LogLevel
 } from './services';
 
+// Command 体系服务
+import { ICommandRegistry, IActionProcessor } from './commands/services';
+import { registerDefaultCommands } from './commands/defaultCommands';
+import { CommandRegistry } from './commands/registry';
+import { ActionProcessor } from './actions/processor';
+
+// Models
+import { ICanvasModel, CanvasModel } from './models/CanvasModel';
+
 
 /**
  * SDK 配置接口
@@ -175,6 +184,12 @@ class CanvasSDKBootstrap {
       accessor.get(ILogService)
     );
 
+    // 注册默认命令
+    const commandRegistry = this.instantiationService.invokeFunction(accessor =>
+      accessor.get(ICommandRegistry)
+    );
+    registerDefaultCommands(commandRegistry);
+
     this.logger.info('Canvas SDK Bootstrap services initialized');
   }
 
@@ -302,6 +317,13 @@ class CanvasSDKBootstrap {
 
     // 剪贴板服务
     services.set(IClipboardService, new SyncDescriptor(ClipboardService));
+
+    // Models
+    services.set(ICanvasModel, new SyncDescriptor(CanvasModel));
+
+    // Command 体系服务
+    services.set(ICommandRegistry, new SyncDescriptor(CommandRegistry));
+    services.set(IActionProcessor, new SyncDescriptor(ActionProcessor));
 
     // ViewModels
     services.set(ISelectionViewModel, new SyncDescriptor(SelectionViewModel));

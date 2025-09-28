@@ -1,11 +1,11 @@
 /**
- * 文件导入异步命令
+* 文件导入异步命令
  * 支持从文件导入Canvas内容
  */
 
 import { AsyncCommand } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
-import { ShapeData } from '../../actions/types';
+import { ICanvasModel } from '../../models/CanvasModel';
+import { GraphicData } from '../../actions/types';
 
 /**
  * 文件导入参数
@@ -25,9 +25,9 @@ export interface ImportFileParams {
 export class ImportFileCommand extends AsyncCommand {
   private params: ImportFileParams;
   private importedShapeIds: string[] = [];
-  private originalShapes?: ShapeData[];
+  private originalShapes?: GraphicData[];
 
-  constructor(model: CanvasModel, params: ImportFileParams) {
+  constructor(model: ICanvasModel, params: ImportFileParams) {
     super(model, `Import file ${params.file?.name || params.url || 'unknown'}`);
     this.params = params;
   }
@@ -143,7 +143,7 @@ export class ImportFileCommand extends AsyncCommand {
   /**
    * 解析文件内容
    */
-  private async parseFileContent(content: string | ArrayBuffer): Promise<ShapeData[]> {
+  private async parseFileContent(content: string | ArrayBuffer): Promise<GraphicData[]> {
     const format = this.params.format || 'json';
 
     switch (format) {
@@ -162,15 +162,15 @@ export class ImportFileCommand extends AsyncCommand {
   /**
    * 解析JSON内容
    */
-  private parseJsonContent(content: string): ShapeData[] {
+  private parseJsonContent(content: string): GraphicData[] {
     try {
       const data = JSON.parse(content);
 
       if (Array.isArray(data)) {
-        return data.filter(item => this.isValidShapeData(item));
+        return data.filter(item => this.isValidGraphicData(item));
       } else if (data && Array.isArray(data.shapes)) {
-        return data.shapes.filter((item: any) => this.isValidShapeData(item));
-      } else if (this.isValidShapeData(data)) {
+        return data.shapes.filter((item: any) => this.isValidGraphicData(item));
+      } else if (this.isValidGraphicData(data)) {
         return [data];
       } else {
         throw new Error('Invalid JSON structure');
@@ -183,9 +183,9 @@ export class ImportFileCommand extends AsyncCommand {
   /**
    * 解析SVG内容（简化版）
    */
-  private parseSvgContent(content: string): ShapeData[] {
+  private parseSvgContent(content: string): GraphicData[] {
     // 这是一个简化的SVG解析器，实际项目中需要更完善的实现
-    const shapes: ShapeData[] = [];
+    const shapes: GraphicData[] = [];
 
     // 解析矩形
     const rectMatches = content.match(/<rect[^>]*>/g);
@@ -233,7 +233,7 @@ export class ImportFileCommand extends AsyncCommand {
   /**
    * 解析图片内容（创建图片形状）
    */
-  private parseImageContent(content: ArrayBuffer): ShapeData[] {
+  private parseImageContent(content: ArrayBuffer): GraphicData[] {
     // 将图片作为base64编码保存在形状数据中
     const uint8Array = new Uint8Array(content);
     let binary = '';
@@ -259,19 +259,19 @@ export class ImportFileCommand extends AsyncCommand {
   /**
    * 导入形状到模型
    */
-  private async importShapes(shapes: ShapeData[]): Promise<void> {
+  private async importShapes(shapes: GraphicData[]): Promise<void> {
     if (this.params.replaceExisting) {
       // 保存原有形状用于撤销
       this.originalShapes = this.model.getShapes().map(shape => ({
         id: shape.id,
-        type: shape.constructor.name.toLowerCase() as any,
+        type: (shape as any).type,
         x: shape.x,
         y: shape.y,
         width: (shape as any).width,
         height: (shape as any).height,
         radius: (shape as any).radius,
         text: (shape as any).text,
-        style: shape.style(),
+        style: (shape as any).style,
         zIndex: shape.zIndex
       }));
 
@@ -288,26 +288,26 @@ export class ImportFileCommand extends AsyncCommand {
 
     for (const shapeData of shapes) {
       // 应用位置偏移
-      const adjustedShapeData = {
+      const adjustedGraphicData = {
         ...shapeData,
         x: shapeData.x + offsetX,
         y: shapeData.y + offsetY
       };
 
-      const shape = this.createShapeFromData(adjustedShapeData);
+      const shape = this.createShapeFromData(adjustedGraphicData);
       this.model.addShape(shape);
       this.importedShapeIds.push(shape.id!);
     }
   }
 
   /**
-   * 从ShapeData创建Shape对象
+   * 从GraphicData创建Shape对象
    */
-  private createShapeFromData(data: ShapeData): any {
+  private createShapeFromData(data: GraphicData): any {
     // 这里需要根据实际的Shape类来创建
     // 简化实现，实际需要根据render-engine的Shape类来创建
     return {
-      id: data.id || `shape-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: data.id || `shape-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: data.type,
       x: data.x,
       y: data.y,
@@ -325,7 +325,7 @@ export class ImportFileCommand extends AsyncCommand {
   /**
    * 验证形状数据
    */
-  private isValidShapeData(data: any): data is ShapeData {
+  private isValidGraphicData(data: any): data is GraphicData {
     return data &&
       typeof data === 'object' &&
       typeof data.type === 'string' &&

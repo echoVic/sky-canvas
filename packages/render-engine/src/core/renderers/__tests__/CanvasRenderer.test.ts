@@ -46,6 +46,7 @@ const createMockCanvas2DContext = () => ({
 // 模拟 IRenderable 对象
 const createMockRenderable = (id: string, visible = true): IRenderable => ({
   id,
+  type: 'mock',
   visible,
   zIndex: 0,
   transform: new Transform(),

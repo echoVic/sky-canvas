@@ -4,7 +4,6 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
-  BaseCommand,
   SyncCommand,
   AsyncCommand,
   CompositeCommand,
@@ -12,16 +11,26 @@ import {
   StatefulCommand,
   CommandStatus
 } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 
-// Mock CanvasModel
-vi.mock('../../models/CanvasModel', () => ({
-  CanvasModel: vi.fn().mockImplementation(() => ({
-    beginBatch: vi.fn(),
-    endBatch: vi.fn(),
-    notify: vi.fn()
-  }))
-}));
+// Mock实现
+const mockCanvasModel = {
+  beginBatch: vi.fn(),
+  endBatch: vi.fn(),
+  notify: vi.fn(),
+  getShapes: vi.fn(() => []),
+  addShape: vi.fn(),
+  removeShape: vi.fn(),
+  getSelection: vi.fn(() => []),
+  setSelection: vi.fn(),
+  addToSelection: vi.fn(),
+  removeFromSelection: vi.fn(),
+  clearSelection: vi.fn(),
+  selectAll: vi.fn(),
+  invertSelection: vi.fn(),
+  subscribe: vi.fn(() => () => {}),
+  unsubscribe: vi.fn()
+};
 
 // 测试用的具体命令实现
 class TestSyncCommand extends SyncCommand {
@@ -55,11 +64,11 @@ class TestAsyncCommand extends AsyncCommand {
 }
 
 describe('Command基础类测试', () => {
-  let model: CanvasModel;
+  let model: ICanvasModel;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    model = new CanvasModel();
+    model = mockCanvasModel as any;
   });
 
   describe('SyncCommand', () => {

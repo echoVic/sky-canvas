@@ -4,74 +4,69 @@
  */
 
 import { Action } from '../actions/types';
-import { Command } from './base';
-import { CommandRegistration, registerCommands } from './registry';
-import { CanvasModel } from '../models/CanvasModel';
+import { ICanvasModel } from '../models/CanvasModel';
+import { ICommandRegistration, ICommandRegistry } from './services';
 
-// 形状命令
-import { AddShapeCommand } from './shapes/AddShapeCommand';
+// 图形命令
+import { AddGraphicCommand } from './shapes/AddGraphicCommand';
+import { DeleteSelectedCommand, DeleteShapeCommand } from './shapes/DeleteShapeCommand';
 import { UpdateShapeCommand } from './shapes/UpdateShapeCommand';
-import { DeleteShapeCommand, DeleteSelectedCommand } from './shapes/DeleteShapeCommand';
 
 // 选择命令
 import {
-  SelectShapesCommand,
-  DeselectShapeCommand,
   ClearSelectionCommand,
+  DeselectShapeCommand,
+  InvertSelectionCommand,
   SelectAllCommand,
-  InvertSelectionCommand
+  SelectShapesCommand
 } from './selection/SelectShapesCommand';
 
 // Z-index命令
 import { ZIndexCommand } from './zindex/ZIndexCommand';
 
 // 工具命令
-import { ToolCommand } from './tools/ToolCommand';
-import { BatchActionCommand } from './batch/BatchActionCommand';
-import { ImportFileCommand } from './async/ImportFileCommand';
-import { ExportFileCommand } from './async/ExportFileCommand';
 import { AutoSaveCommand } from './async/AutoSaveCommand';
+import { ExportFileCommand } from './async/ExportFileCommand';
+import { ImportFileCommand } from './async/ImportFileCommand';
+import { BatchActionCommand } from './batch/BatchActionCommand';
+import { ToolCommand } from './tools/ToolCommand';
 
 /**
  * 形状命令工厂函数
  */
 const shapeCommandFactories = {
-  'ADD_RECTANGLE': (model: CanvasModel, action: Action) => {
+  'ADD_RECTANGLE': (model: ICanvasModel, action: Action) => {
     const { x, y, width, height, style } = action.payload;
-    return new AddShapeCommand(model, { type: 'rectangle', x, y, width, height, style });
+    return new AddGraphicCommand(model, { type: 'rectangle', x, y, width, height, style });
   },
 
-  'ADD_CIRCLE': (model: CanvasModel, action: Action) => {
+  'ADD_CIRCLE': (model: ICanvasModel, action: Action) => {
     const { x, y, radius, style } = action.payload;
-    return new AddShapeCommand(model, { type: 'circle', x, y, radius, style });
+    return new AddGraphicCommand(model, { type: 'circle', x, y, radius, style });
   },
 
-  'ADD_TEXT': (model: CanvasModel, action: Action) => {
+  'ADD_TEXT': (model: ICanvasModel, action: Action) => {
     const { x, y, text, style } = action.payload;
-    return new AddShapeCommand(model, { type: 'text', x, y, text, style });
+    return new AddGraphicCommand(model, { type: 'text', x, y, text, style });
   },
 
-  'ADD_PATH': (model: CanvasModel, action: Action) => {
-    const { x, y, points, style } = action.payload;
-    return new AddShapeCommand(model, { type: 'path', x, y, points, style });
+  'ADD_LINE': (model: ICanvasModel, action: Action) => {
+    const { x, y, x2, y2, style } = action.payload;
+    return new AddGraphicCommand(model, { type: 'line', x, y, x2, y2, style });
   },
 
-  'ADD_DIAMOND': (model: CanvasModel, action: Action) => {
-    const { x, y, width, height, style } = action.payload;
-    return new AddShapeCommand(model, { type: 'diamond', x, y, width, height, style });
+
+  'UPDATE_GRAPHIC': (model: ICanvasModel, action: Action) => {
+    const { graphicId, updates } = action.payload;
+    return new UpdateShapeCommand(model, graphicId, updates);
   },
 
-  'UPDATE_SHAPE': (model: CanvasModel, action: Action) => {
-    const { shapeId, updates } = action.payload;
-    return new UpdateShapeCommand(model, shapeId, updates);
+  'DELETE_GRAPHIC': (model: ICanvasModel, action: Action) => {
+    const { graphicId } = action.payload;
+    return new DeleteShapeCommand(model, graphicId);
   },
 
-  'DELETE_SHAPE': (model: CanvasModel, action: Action) => {
-    const { shapeId } = action.payload;
-    return new DeleteShapeCommand(model, shapeId);
-  },
-
-  'DELETE_SELECTED': (model: CanvasModel, action: Action) => {
+  'DELETE_SELECTED': (model: ICanvasModel, action: Action) => {
     return new DeleteSelectedCommand(model);
   }
 };
@@ -80,25 +75,25 @@ const shapeCommandFactories = {
  * 选择命令工厂函数
  */
 const selectionCommandFactories = {
-  'SELECT_SHAPES': (model: CanvasModel, action: Action) => {
+  'SELECT_SHAPES': (model: ICanvasModel, action: Action) => {
     const { shapeIds, addToSelection } = action.payload;
     return new SelectShapesCommand(model, shapeIds, addToSelection);
   },
 
-  'DESELECT_SHAPE': (model: CanvasModel, action: Action) => {
+  'DESELECT_SHAPE': (model: ICanvasModel, action: Action) => {
     const { shapeId } = action.payload;
     return new DeselectShapeCommand(model, shapeId);
   },
 
-  'CLEAR_SELECTION': (model: CanvasModel, action: Action) => {
+  'CLEAR_SELECTION': (model: ICanvasModel, action: Action) => {
     return new ClearSelectionCommand(model);
   },
 
-  'SELECT_ALL': (model: CanvasModel, action: Action) => {
+  'SELECT_ALL': (model: ICanvasModel, action: Action) => {
     return new SelectAllCommand(model);
   },
 
-  'INVERT_SELECTION': (model: CanvasModel, action: Action) => {
+  'INVERT_SELECTION': (model: ICanvasModel, action: Action) => {
     return new InvertSelectionCommand(model);
   }
 };
@@ -107,7 +102,7 @@ const selectionCommandFactories = {
  * Z-index命令工厂函数
  */
 const zIndexCommandFactories = {
-  'BRING_TO_FRONT': (model: CanvasModel, action: Action) => {
+  'BRING_TO_FRONT': (model: ICanvasModel, action: Action) => {
     const { shapeIds } = action.payload;
     return new ZIndexCommand(model, {
       operation: 'bring-to-front',
@@ -115,7 +110,7 @@ const zIndexCommandFactories = {
     });
   },
 
-  'SEND_TO_BACK': (model: CanvasModel, action: Action) => {
+  'SEND_TO_BACK': (model: ICanvasModel, action: Action) => {
     const { shapeIds } = action.payload;
     return new ZIndexCommand(model, {
       operation: 'send-to-back',
@@ -123,7 +118,7 @@ const zIndexCommandFactories = {
     });
   },
 
-  'BRING_FORWARD': (model: CanvasModel, action: Action) => {
+  'BRING_FORWARD': (model: ICanvasModel, action: Action) => {
     const { shapeIds } = action.payload;
     return new ZIndexCommand(model, {
       operation: 'bring-forward',
@@ -131,7 +126,7 @@ const zIndexCommandFactories = {
     });
   },
 
-  'SEND_BACKWARD': (model: CanvasModel, action: Action) => {
+  'SEND_BACKWARD': (model: ICanvasModel, action: Action) => {
     const { shapeIds } = action.payload;
     return new ZIndexCommand(model, {
       operation: 'send-backward',
@@ -139,7 +134,7 @@ const zIndexCommandFactories = {
     });
   },
 
-  'SET_Z_INDEX': (model: CanvasModel, action: Action) => {
+  'SET_Z_INDEX': (model: ICanvasModel, action: Action) => {
     const { shapeIds, zIndex } = action.payload;
     return new ZIndexCommand(model, {
       operation: 'set-z-index',
@@ -153,7 +148,7 @@ const zIndexCommandFactories = {
  * 工具命令工厂函数
  */
 const toolCommandFactories = {
-  'SET_TOOL': (model: CanvasModel, action: Action) => {
+  'SET_TOOL': (model: ICanvasModel, action: Action) => {
     const { toolType, previousTool } = action.payload;
     return new ToolCommand(model, {
       toolType,
@@ -163,24 +158,24 @@ const toolCommandFactories = {
 };
 
 /**
- * 批量操作命令工厂函数
+ * 创建批量操作命令工厂函数，需要commandRegistry
  */
-const batchCommandFactories = {
-  'BATCH': (model: CanvasModel, action: Action) => {
+const createBatchCommandFactories = (commandRegistry: ICommandRegistry) => ({
+  'BATCH': (model: ICanvasModel, action: Action) => {
     const { actions, transactional = true, description } = action.payload;
-    return new BatchActionCommand(model, {
+    return new BatchActionCommand(model, commandRegistry, {
       actions: actions || [],
       transactional,
       description
     });
   }
-};
+});
 
 /**
  * 异步操作命令工厂函数
  */
 const asyncCommandFactories = {
-  'IMPORT_FILE': (model: CanvasModel, action: Action) => {
+  'IMPORT_FILE': (model: ICanvasModel, action: Action) => {
     const { file, url, format, replaceExisting, position } = action.payload;
     return new ImportFileCommand(model, {
       file,
@@ -191,7 +186,7 @@ const asyncCommandFactories = {
     });
   },
 
-  'EXPORT_FILE': (model: CanvasModel, action: Action) => {
+  'EXPORT_FILE': (model: ICanvasModel, action: Action) => {
     const { filename, format, quality, includeOnlySelected, bounds } = action.payload;
     return new ExportFileCommand(model, {
       filename,
@@ -202,7 +197,7 @@ const asyncCommandFactories = {
     });
   },
 
-  'AUTO_SAVE': (model: CanvasModel, action: Action) => {
+  'AUTO_SAVE': (model: ICanvasModel, action: Action) => {
     const { target, key, url, interval, enableCompression } = action.payload;
     return new AutoSaveCommand(model, {
       target,
@@ -213,7 +208,7 @@ const asyncCommandFactories = {
     });
   },
 
-  'SYNC_TO_SERVER': (model: CanvasModel, action: Action) => {
+  'SYNC_TO_SERVER': (model: ICanvasModel, action: Action) => {
     // 服务器同步命令 - 可以复用AutoSaveCommand的逻辑
     const { url, interval } = action.payload;
     return new AutoSaveCommand(model, {
@@ -225,23 +220,30 @@ const asyncCommandFactories = {
 };
 
 /**
- * 组合所有命令工厂函数
+ * 注册所有默认命令到指定的命令注册表
  */
-const allCommandFactories = {
-  ...shapeCommandFactories,
-  ...selectionCommandFactories,
-  ...zIndexCommandFactories,
-  ...toolCommandFactories,
-  ...batchCommandFactories,
-  ...asyncCommandFactories
-};
+export function registerDefaultCommands(commandRegistry: ICommandRegistry): void {
+  // 创建需要commandRegistry的工厂函数
+  const batchCommandFactories = createBatchCommandFactories(commandRegistry);
 
-/**
- * 注册所有默认命令
- */
-export function registerDefaultCommands(): void {
-  registerCommands(allCommandFactories);
+  // 组合所有命令工厂函数
+  const allCommandFactories = {
+    ...shapeCommandFactories,
+    ...selectionCommandFactories,
+    ...zIndexCommandFactories,
+    ...toolCommandFactories,
+    ...batchCommandFactories,
+    ...asyncCommandFactories
+  };
 
+  // 转换为新的注册格式
+  const registrations: Record<string, ICommandRegistration> = {};
+
+  Object.entries(allCommandFactories).forEach(([actionType, factory]) => {
+    registrations[actionType] = { factory };
+  });
+
+  commandRegistry.registerBatch(registrations);
   console.log(`Registered ${Object.keys(allCommandFactories).length} default commands`);
 }
 
@@ -254,7 +256,7 @@ export function getImplementedCommandTypes(): string[] {
     ...Object.keys(selectionCommandFactories),
     ...Object.keys(zIndexCommandFactories),
     ...Object.keys(toolCommandFactories),
-    ...Object.keys(batchCommandFactories),
+    'BATCH', // 批量命令类型
     ...Object.keys(asyncCommandFactories)
   ];
 }

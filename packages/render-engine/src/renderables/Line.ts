@@ -43,6 +43,10 @@ export class Line extends Shape {
     }
   }
 
+  get type(): string {
+    return 'line';
+  }
+
   // 点集合属性
   get points(): number[] {
     return [...this._points];

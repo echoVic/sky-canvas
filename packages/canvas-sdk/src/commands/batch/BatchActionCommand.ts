@@ -4,9 +4,9 @@
  */
 
 import { BatchCommand } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 import { Action } from '../../actions/types';
-import { commandRegistry } from '../registry';
+import { ICommandRegistry } from '../services';
 
 /**
  * 批量Action参数
@@ -25,10 +25,10 @@ export class BatchActionCommand extends BatchCommand {
   private params: BatchActionParams;
   private actions: Action[];
 
-  constructor(model: CanvasModel, params: BatchActionParams) {
+  constructor(model: ICanvasModel, commandRegistry: ICommandRegistry, params: BatchActionParams) {
     // 先创建所有子命令
     const commands = params.actions.map(action =>
-      commandRegistry.createCommand(model, action)
+      commandRegistry.createCommand(model as any, action)
     );
 
     super(model, commands);

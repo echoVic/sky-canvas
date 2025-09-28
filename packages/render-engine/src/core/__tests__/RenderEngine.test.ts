@@ -147,6 +147,7 @@ describe('RenderEngine', () => {
         // Arrange
         const mockRenderable: IRenderable = {
           id: 'test-renderable',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -156,18 +157,19 @@ describe('RenderEngine', () => {
         };
 
         // Act
-        renderEngine.addObject(mockRenderable);
+        renderEngine.addGraphic(mockRenderable);
 
         // Assert
-        const retrievedRenderable = renderEngine.getObject('test-renderable');
+        const retrievedRenderable = renderEngine.getGraphic('test-renderable');
         expect(retrievedRenderable).toBe(mockRenderable);
-        expect(renderEngine.getObjects()).toHaveLength(1);
+        expect(renderEngine.getGraphics()).toHaveLength(1);
       });
 
       it('Then it should replace existing renderable with same ID', () => {
         // Arrange
         const renderable1: IRenderable = {
           id: 'same-id',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -177,6 +179,7 @@ describe('RenderEngine', () => {
         };
         const renderable2: IRenderable = {
           id: 'same-id',
+          type: 'mock',
           visible: true,
           zIndex: 1,
           render: vi.fn(),
@@ -186,14 +189,14 @@ describe('RenderEngine', () => {
         };
 
         // Act
-        renderEngine.addObject(renderable1);
-        renderEngine.addObject(renderable2);
+        renderEngine.addGraphic(renderable1);
+        renderEngine.addGraphic(renderable2);
 
         // Assert
-        const retrieved = renderEngine.getObject('same-id');
+        const retrieved = renderEngine.getGraphic('same-id');
         expect(retrieved).toBe(renderable2);
         expect(retrieved?.zIndex).toBe(1);
-        expect(renderEngine.getObjects()).toHaveLength(1);
+        expect(renderEngine.getGraphics()).toHaveLength(1);
       });
     });
 
@@ -202,6 +205,7 @@ describe('RenderEngine', () => {
         // Arrange
         const mockRenderable: IRenderable = {
           id: 'to-remove',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -209,14 +213,14 @@ describe('RenderEngine', () => {
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 }),
           dispose: vi.fn()
         };
-        renderEngine.addObject(mockRenderable);
+        renderEngine.addGraphic(mockRenderable);
 
         // Act
-        renderEngine.removeObject('to-remove');
+        renderEngine.removeGraphic('to-remove');
 
         // Assert
-        expect(renderEngine.getObject('to-remove')).toBeUndefined();
-        expect(renderEngine.getObjects()).toHaveLength(0);
+        expect(renderEngine.getGraphic('to-remove')).toBeUndefined();
+        expect(renderEngine.getGraphics()).toHaveLength(0);
       });
 
       it('Then it should handle removing non-existent renderable gracefully', () => {
@@ -225,7 +229,7 @@ describe('RenderEngine', () => {
 
         // Act & Assert
         expect(() => {
-          renderEngine.removeObject('non-existent');
+          renderEngine.removeGraphic('non-existent');
         }).not.toThrow();
       });
     });
@@ -235,6 +239,7 @@ describe('RenderEngine', () => {
         // Arrange
         const renderable1: IRenderable = {
           id: 'renderable-1',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -244,6 +249,7 @@ describe('RenderEngine', () => {
         };
         const renderable2: IRenderable = {
           id: 'renderable-2',
+          type: 'mock',
           visible: true,
           zIndex: 1,
           render: vi.fn(),
@@ -251,16 +257,16 @@ describe('RenderEngine', () => {
           getBounds: vi.fn().mockReturnValue({ x: 10, y: 10, width: 30, height: 30 }),
           dispose: vi.fn()
         };
-        renderEngine.addObject(renderable1);
-        renderEngine.addObject(renderable2);
+        renderEngine.addGraphic(renderable1);
+        renderEngine.addGraphic(renderable2);
 
         // Act
-        renderEngine.clearObjects();
+        renderEngine.clearGraphics();
 
         // Assert
-        expect(renderEngine.getObjects()).toHaveLength(0);
-        expect(renderEngine.getObject('renderable-1')).toBeUndefined();
-        expect(renderEngine.getObject('renderable-2')).toBeUndefined();
+        expect(renderEngine.getGraphics()).toHaveLength(0);
+        expect(renderEngine.getGraphic('renderable-1')).toBeUndefined();
+        expect(renderEngine.getGraphic('renderable-2')).toBeUndefined();
       });
     });
   });
@@ -307,6 +313,7 @@ describe('RenderEngine', () => {
         // Arrange
         const mockRenderable: IRenderable = {
           id: 'test-render',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -314,7 +321,7 @@ describe('RenderEngine', () => {
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 }),
           dispose: vi.fn()
         };
-        renderEngine.addObject(mockRenderable);
+        renderEngine.addGraphic(mockRenderable);
 
         // Act
         renderEngine.render();
@@ -336,7 +343,7 @@ describe('RenderEngine', () => {
         // Assert
         expect(renderEngine.isRunning()).toBe(false);
         expect(mockRenderer.dispose).toHaveBeenCalled();
-        expect(renderEngine.getObjects()).toHaveLength(0);
+        expect(renderEngine.getGraphics()).toHaveLength(0);
       });
     });
   });
@@ -679,6 +686,7 @@ describe('RenderEngine', () => {
         // Arrange
         const mockRenderable: IRenderable = {
           id: 'debug-test',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -687,7 +695,7 @@ describe('RenderEngine', () => {
         };
 
         // Act
-        renderEngine.addObject(mockRenderable);
+        renderEngine.addGraphic(mockRenderable);
 
         // Assert
         expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Added object: debug-test');
@@ -699,17 +707,18 @@ describe('RenderEngine', () => {
         // Arrange
         const mockRenderable: IRenderable = {
           id: 'debug-remove',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
           hitTest: vi.fn(),
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 })
         };
-        renderEngine.addObject(mockRenderable);
+        renderEngine.addGraphic(mockRenderable);
         consoleLogSpy.mockClear();
 
         // Act
-        renderEngine.removeObject('debug-remove');
+        renderEngine.removeGraphic('debug-remove');
 
         // Assert
         expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Removed object: debug-remove');
@@ -721,6 +730,7 @@ describe('RenderEngine', () => {
         // Arrange
         const renderable1: IRenderable = {
           id: 'clear-1',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
@@ -729,18 +739,19 @@ describe('RenderEngine', () => {
         };
         const renderable2: IRenderable = {
           id: 'clear-2',
+          type: 'mock',
           visible: true,
           zIndex: 0,
           render: vi.fn(),
           hitTest: vi.fn(),
           getBounds: vi.fn().mockReturnValue({ x: 0, y: 0, width: 50, height: 50 })
         };
-        renderEngine.addObject(renderable1);
-        renderEngine.addObject(renderable2);
+        renderEngine.addGraphic(renderable1);
+        renderEngine.addGraphic(renderable2);
         consoleLogSpy.mockClear();
 
         // Act
-        renderEngine.clearObjects();
+        renderEngine.clearGraphics();
 
         // Assert
         expect(consoleLogSpy).toHaveBeenCalledWith('[RenderEngine] Cleared 2 objects');

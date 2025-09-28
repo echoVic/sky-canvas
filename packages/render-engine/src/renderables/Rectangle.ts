@@ -32,6 +32,10 @@ export class Rectangle extends Shape {
     this._cornerRadius = config.cornerRadius ?? 0;
   }
 
+  get type(): string {
+    return 'rectangle';
+  }
+
   // 尺寸属性
   get width(): number {
     return this._width;

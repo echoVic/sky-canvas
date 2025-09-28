@@ -1,10 +1,10 @@
 /**
- * 更新形状命令
+* 更新形状命令
  */
 
 import { SyncCommand, ChangeDescription } from '../base';
-import { ShapeData } from '../../actions/types';
-import { CanvasModel } from '../../models/CanvasModel';
+import { GraphicData } from '../../actions/types';
+import { ICanvasModel } from '../../models/CanvasModel';
 import { Shape } from '@sky-canvas/render-engine';
 
 /**
@@ -13,10 +13,10 @@ import { Shape } from '@sky-canvas/render-engine';
  */
 export class UpdateShapeCommand extends SyncCommand {
   private shapeId: string;
-  private updates: Partial<ShapeData>;
-  private oldValues: Partial<ShapeData> = {};
+  private updates: Partial<GraphicData>;
+  private oldValues: Partial<GraphicData> = {};
 
-  constructor(model: CanvasModel, shapeId: string, updates: Partial<ShapeData>) {
+  constructor(model: ICanvasModel, shapeId: string, updates: Partial<GraphicData>) {
     super(model, `Update shape ${shapeId}`);
     this.shapeId = shapeId;
     this.updates = { ...updates };
@@ -31,7 +31,7 @@ export class UpdateShapeCommand extends SyncCommand {
     // 保存旧值用于撤销
     this.saveOldValues(shape);
 
-    // 使用 CanvasModel 的更新方法（它现在直接处理 ShapeData）
+    // 使用 CanvasModel 的更新方法（它现在直接处理 GraphicData）
     const success = this.model.updateShape(this.shapeId, this.updates);
     if (!success) {
       throw new Error(`Failed to update shape ${this.shapeId}`);
@@ -71,11 +71,12 @@ export class UpdateShapeCommand extends SyncCommand {
   /**
    * 保存旧值
    */
-  private saveOldValues(shape: any): void {
-    const keys = Object.keys(this.updates) as (keyof ShapeData)[];
+  private saveOldValues(shape: Shape): void {
+    const keys = Object.keys(this.updates) as (keyof GraphicData)[];
+    const shapeAny = shape as any;
     for (const key of keys) {
-      if (key in shape) {
-        (this.oldValues as any)[key] = shape[key];
+      if (key in shapeAny) {
+        (this.oldValues as any)[key] = shapeAny[key];
       }
     }
   }
@@ -91,14 +92,14 @@ export class UpdateShapeCommand extends SyncCommand {
   /**
    * 获取更新内容
    */
-  getUpdates(): Partial<ShapeData> {
+  getUpdates(): Partial<GraphicData> {
     return { ...this.updates };
   }
 
   /**
    * 获取旧值
    */
-  getOldValues(): Partial<ShapeData> {
+  getOldValues(): Partial<GraphicData> {
     return { ...this.oldValues };
   }
 }

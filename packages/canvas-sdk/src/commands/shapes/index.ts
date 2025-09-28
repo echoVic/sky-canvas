@@ -1,7 +1,7 @@
 /**
- * 形状相关命令导出
+ * 图形相关命令导出
  */
 
-export { AddShapeCommand } from './AddShapeCommand';
+export { AddGraphicCommand } from './AddGraphicCommand';
 export { UpdateShapeCommand } from './UpdateShapeCommand';
 export { DeleteShapeCommand, DeleteSelectedCommand } from './DeleteShapeCommand';

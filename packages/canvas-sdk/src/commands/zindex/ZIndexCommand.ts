@@ -1,10 +1,10 @@
 /**
- * Z-index管理命令
+* Z-index管理命令
  * 处理形状的层级操作
  */
 
 import { BaseCommand } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 import { Shape } from '@sky-canvas/render-engine';
 
 /**
@@ -28,7 +28,7 @@ export class ZIndexCommand extends BaseCommand {
   private params: ZIndexCommandParams;
   private previousZIndexes: Map<string, number> = new Map();
 
-  constructor(model: CanvasModel, params: ZIndexCommandParams) {
+  constructor(model: ICanvasModel, params: ZIndexCommandParams) {
     super(model, `Z-index ${params.operation} operation`);
     this.params = params;
   }

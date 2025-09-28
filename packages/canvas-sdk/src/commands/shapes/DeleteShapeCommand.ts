@@ -1,10 +1,10 @@
 /**
- * 删除形状命令
+* 删除形状命令
  */
 
 import { Shape } from '@sky-canvas/render-engine';
 import { SyncCommand, ChangeDescription } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 
 /**
  * 删除形状命令
@@ -14,7 +14,7 @@ export class DeleteShapeCommand extends SyncCommand {
   private shapeId: string;
   private deletedShape: Shape | null = null;
 
-  constructor(model: CanvasModel, shapeId: string) {
+  constructor(model: ICanvasModel, shapeId: string) {
     super(model, `Delete shape ${shapeId}`);
     this.shapeId = shapeId;
   }
@@ -85,7 +85,7 @@ export class DeleteSelectedCommand extends SyncCommand {
   private deletedShapes: Map<string, Shape> = new Map();
   private deletedShapeIds: string[] = [];
 
-  constructor(model: CanvasModel) {
+  constructor(model: ICanvasModel) {
     super(model, 'Delete selected shapes');
   }
 

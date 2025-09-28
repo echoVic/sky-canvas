@@ -85,6 +85,12 @@ export abstract class Shape implements IRenderable {
     return this._id;
   }
 
+  /**
+   * 形状类型标识符
+   * 每个具体的形状类必须实现此属性
+   */
+  abstract get type(): string;
+
   get visible(): boolean {
     return this._visible;
   }

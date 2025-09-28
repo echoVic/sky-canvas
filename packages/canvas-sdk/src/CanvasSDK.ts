@@ -3,18 +3,18 @@
  * 由 DI 容器创建，通过构造函数注入获取服务
  */
 
-import { ActionProcessor } from './actions/processor';
 import { Action, ActionResult } from './actions/types';
+import { IActionProcessor, ICommandRegistry } from './commands/services';
 import { createDecorator } from './di/instantiation';
-import { ActionErrorEventData, HistoryChangedEventData, SDKChangeEvent, SDKEventListener, SelectionChangedEventData, ShapesChangedEventData, SystemErrorEventData } from './events/types';
+import { ActionErrorEventData, GraphicsChangedEventData, HistoryChangedEventData, SDKChangeEvent, SDKEventListener, SelectionChangedEventData, SystemErrorEventData } from './events/types';
 import { ICanvasManager } from './managers/CanvasManager';
 import { IToolManager } from './managers/ToolManager';
-import { CanvasModel, ChangeDescription } from './models/CanvasModel';
+import { ChangeDescription, ICanvasModel } from './models/CanvasModel';
 import { PluginManagerImpl } from './plugins/PluginManager';
 import { Plugin, PluginConfig, PluginManager } from './plugins/types';
 import type { LogLevel } from './services';
 import { IEventBusService, ILogService } from './services';
-import { HistoryService, IHistoryService } from './services/history/historyService';
+import { IHistoryService } from './services/history/historyService';
 
 /**
  * Canvas SDK 服务标识符
@@ -55,8 +55,8 @@ export interface ICanvasSDK {
   getShapeDataById(shapeId: string): any | null;
   getSelection(): string[];
   getHistoryStats(): any;
-  undo(): Promise<boolean>;
-  redo(): Promise<boolean>;
+  undo(): Promise<void>;
+  redo(): Promise<void>;
   clearHistory(): void;
   registerPlugin(plugin: Plugin): Promise<void>;
   unregisterPlugin(pluginId: string): Promise<void>;
@@ -74,9 +74,6 @@ export interface ICanvasSDK {
  * 通过 DI 容器创建，所有依赖通过构造函数注入
  */
 export class CanvasSDK implements ICanvasSDK {
-  private actionProcessor: ActionProcessor;
-  private model: CanvasModel;
-  private historyService: IHistoryService;
   private pluginManager: PluginManager;
   private sdkListeners: SDKEventListener[] = [];
   private modelUnsubscribe?: () => void;
@@ -88,27 +85,16 @@ export class CanvasSDK implements ICanvasSDK {
     @IToolManager private toolManager: any,
     @IEventBusService private eventBus: any,
     @ILogService private logger: any,
+    @IActionProcessor private actionProcessor: IActionProcessor,
+    @ICanvasModel private model: ICanvasModel,
+    @IHistoryService private historyService: IHistoryService,
+    @ICommandRegistry private commandRegistry: ICommandRegistry,
     config: ICanvasSDKConfig = {}
   ) {
     this.config = config;
     this.logger.info('Canvas SDK instance created via DI container');
 
-    // 初始化服务
-    this.model = new CanvasModel();
-    this.historyService = new HistoryService(this.eventBus, this.logger);
 
-    // 配置错误处理
-    const errorRetryConfig = this.config?.errorHandling ? {
-      maxRetries: this.config.errorHandling.maxRetries || 3,
-      retryableErrors: this.config.errorHandling.retryableErrors || ['NetworkError', 'TimeoutError', 'TemporaryError'],
-      backoffMs: this.config.errorHandling.backoffMs || 1000
-    } : undefined;
-
-    this.actionProcessor = new ActionProcessor(this.model, {
-      historyService: this.historyService,
-      enableLogging: true,
-      errorRetry: errorRetryConfig
-    });
 
     // 初始化插件管理器
     const dispatchForPlugin = async (action: Action): Promise<void> => {
@@ -117,6 +103,7 @@ export class CanvasSDK implements ICanvasSDK {
     this.pluginManager = new PluginManagerImpl(
       this.model,
       dispatchForPlugin,
+      this.commandRegistry,
       this.config.plugins || {}
     );
 
@@ -257,15 +244,15 @@ export class CanvasSDK implements ICanvasSDK {
   /**
    * 撤销操作
    */
-  async undo(): Promise<boolean> {
-    return this.actionProcessor.undo();
+  async undo(): Promise<void> {
+    this.actionProcessor.undo();
   }
 
   /**
    * 重做操作
    */
-  async redo(): Promise<boolean> {
-    return this.actionProcessor.redo();
+  async redo(): Promise<void> {
+    this.actionProcessor.redo();
   }
 
   /**
@@ -373,8 +360,8 @@ export class CanvasSDK implements ICanvasSDK {
         case 'shape-removed':
         case 'shape-updated':
           sdkEvent = {
-            type: 'shapes-changed',
-            data: this.mapToShapesChangedData(change),
+            type: 'graphics-changed',
+            data: this.mapToGraphicsChangedData(change),
             timestamp: change.timestamp
           };
           break;
@@ -454,8 +441,8 @@ export class CanvasSDK implements ICanvasSDK {
   /**
    * 映射 Model 变化为形状变化数据
    */
-  private mapToShapesChangedData(change: ChangeDescription): ShapesChangedEventData {
-    const data: ShapesChangedEventData = {};
+  private mapToGraphicsChangedData(change: ChangeDescription): GraphicsChangedEventData {
+    const data: GraphicsChangedEventData = {};
 
     switch (change.type) {
       case 'shape-added':

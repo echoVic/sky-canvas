@@ -3,7 +3,7 @@
  */
 
 import { SyncCommand, ChangeDescription } from '../base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 
 /**
  * 选择形状命令
@@ -14,7 +14,7 @@ export class SelectShapesCommand extends SyncCommand {
   private previousSelection: string[] = [];
   private addToSelection: boolean;
 
-  constructor(model: CanvasModel, shapeIds: string | string[], addToSelection: boolean = false) {
+  constructor(model: ICanvasModel, shapeIds: string | string[], addToSelection: boolean = false) {
     const ids = Array.isArray(shapeIds) ? shapeIds : [shapeIds];
     super(model, `Select ${ids.length} shape(s)`);
 
@@ -81,7 +81,7 @@ export class DeselectShapeCommand extends SyncCommand {
   private shapeId: string;
   private wasSelected: boolean = false;
 
-  constructor(model: CanvasModel, shapeId: string) {
+  constructor(model: ICanvasModel, shapeId: string) {
     super(model, `Deselect shape ${shapeId}`);
     this.shapeId = shapeId;
   }
@@ -133,7 +133,7 @@ export class DeselectShapeCommand extends SyncCommand {
 export class ClearSelectionCommand extends SyncCommand {
   private previousSelection: string[] = [];
 
-  constructor(model: CanvasModel) {
+  constructor(model: ICanvasModel) {
     super(model, 'Clear selection');
   }
 
@@ -189,7 +189,7 @@ export class SelectAllCommand extends SyncCommand {
   private previousSelection: string[] = [];
   private allShapeIds: string[] = [];
 
-  constructor(model: CanvasModel) {
+  constructor(model: ICanvasModel) {
     super(model, 'Select all');
   }
 
@@ -255,7 +255,7 @@ export class InvertSelectionCommand extends SyncCommand {
   private previousSelection: string[] = [];
   private newSelection: string[] = [];
 
-  constructor(model: CanvasModel) {
+  constructor(model: ICanvasModel) {
     super(model, 'Invert selection');
   }
 

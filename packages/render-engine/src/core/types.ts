@@ -66,6 +66,9 @@ export interface IRenderable {
   /** 唯一标识符 */
   readonly id: string;
 
+  /** 类型标识符 */
+  readonly type: string;
+
   /** 是否可见 */
   readonly visible: boolean;
 

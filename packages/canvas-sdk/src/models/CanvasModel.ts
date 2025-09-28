@@ -4,7 +4,8 @@
  */
 
 import { Shape } from '@sky-canvas/render-engine';
-import { ShapeData } from '../actions/types';
+import { GraphicData } from '../actions/types';
+import { createDecorator } from '../di';
 
 /**
  * 变更描述接口
@@ -13,6 +14,7 @@ export interface ChangeDescription {
   type: string;
   shapeId?: string;
   shapeIds?: string[];
+  graphicId?: string;  // 新增支持图形ID
   data?: any;
   timestamp: number;
 }
@@ -31,10 +33,67 @@ interface BatchState {
 }
 
 /**
+ * CanvasModel 服务接口
+ */
+export interface ICanvasModel {
+  // 查询方法
+  getShape(id: string): Shape | undefined;
+  getShapes(): Shape[];
+  getShapeIds(): string[];
+  getSelection(): string[];
+  getSelectedShapes(): Shape[];
+  getSelectedShapeIds(): string[];
+  isSelected(shapeId: string): boolean;
+  getSelectionCount(): number;
+  hasShapes(): boolean;
+  getShapeCount(): number;
+
+  // 形状操作
+  addShape(shape: Shape): void;
+  removeShape(id: string): boolean;
+  // 图形操作（新增）
+  addGraphic(graphic: Shape): void;
+  removeGraphic(id: string): boolean;
+  updateShape(id: string, updates: Partial<GraphicData>): boolean;
+  replaceShape(oldId: string, newShape: Shape): boolean;
+  moveShape(id: string, newIndex: number): boolean;
+
+  // 选择操作
+  selectShape(id: string): void;
+  deselectShape(id: string): void;
+  selectShapes(ids: string[]): void;
+  deselectShapes(ids: string[]): void;
+  selectAll(): void;
+  clearSelection(): void;
+  setSelection(ids: string[]): void;
+  addToSelection(shapeIds: string[]): void;
+  removeFromSelection(shapeIds: string[]): void;
+  invertSelection(): void;
+
+  // 批量操作
+  startBatch(): void;
+  endBatch(): void;
+  isBatchActive(): boolean;
+  beginBatch(): void;
+  isBatching(): boolean;
+
+  // 监听器
+  addListener(listener: ModelListener): void;
+  removeListener(listener: ModelListener): void;
+  subscribe(listener: ModelListener): () => void;
+  notify(change: ChangeDescription): void;
+  notifyImmediate(change: ChangeDescription): void;
+
+  // 工具方法
+  clear(): void;
+  dispose(): void;
+}
+
+/**
  * 画布模型类
  * 管理形状、选择状态和通知机制
  */
-export class CanvasModel {
+export class CanvasModel implements ICanvasModel {
   private shapes = new Map<string, Shape>();
   private selection = new Set<string>();
   private listeners: ModelListener[] = [];
@@ -70,6 +129,14 @@ export class CanvasModel {
       .filter((shape): shape is Shape => shape !== undefined);
   }
 
+  getSelectedShapeIds(): string[] {
+    return Array.from(this.selection);
+  }
+
+  hasShapes(): boolean {
+    return this.shapes.size > 0;
+  }
+
   hasShape(id: string): boolean {
     return this.shapes.has(id);
   }
@@ -103,6 +170,16 @@ export class CanvasModel {
     });
   }
 
+  addGraphic(graphic: Shape): void {
+    // 直接委托给 addShape，因为目前 Shape 就是主要的 IRenderable 实现
+    this.addShape(graphic);
+  }
+
+  removeGraphic(id: string): boolean {
+    // 直接委托给 removeShape
+    return this.removeShape(id);
+  }
+
   removeShape(id: string): boolean {
     const shape = this.shapes.get(id);
     if (!shape) {
@@ -122,14 +199,14 @@ export class CanvasModel {
     return true;
   }
 
-  updateShape(id: string, updates: Partial<ShapeData>): boolean {
+  updateShape(id: string, updates: Partial<GraphicData>): boolean {
     const shape = this.shapes.get(id);
     if (!shape) {
       return false;
     }
 
     // 记录旧值
-    const oldValues: Partial<ShapeData> = {};
+    const oldValues: Partial<GraphicData> = {};
 
     // 应用更新并记录旧值
     if (updates.x !== undefined) {
@@ -187,6 +264,64 @@ export class CanvasModel {
     });
 
     return true;
+  }
+
+  replaceShape(oldId: string, newShape: Shape): boolean {
+    const oldShape = this.shapes.get(oldId);
+    if (!oldShape) {
+      return false;
+    }
+
+    // 移除旧形状
+    this.shapes.delete(oldId);
+    this.selection.delete(oldId);
+
+    // 添加新形状
+    this.shapes.set(newShape.id, newShape);
+
+    this.notify({
+      type: 'shape-replaced',
+      shapeId: newShape.id,
+      data: { oldId, newShape },
+      timestamp: Date.now()
+    });
+
+    return true;
+  }
+
+  moveShape(id: string, newIndex: number): boolean {
+    const shape = this.shapes.get(id);
+    if (!shape) {
+      return false;
+    }
+
+    // 这里简化处理，实际中可能需要更复杂的索引管理
+    // 目前只是触发通知，具体的移动逻辑由渲染层处理
+    this.notify({
+      type: 'shape-moved',
+      shapeId: id,
+      data: { newIndex },
+      timestamp: Date.now()
+    });
+
+    return true;
+  }
+
+  // 实现接口要求的选择方法
+  selectShape(id: string): void {
+    this.addToSelection([id]);
+  }
+
+  deselectShape(id: string): void {
+    this.removeFromSelection([id]);
+  }
+
+  selectShapes(ids: string[]): void {
+    this.addToSelection(ids);
+  }
+
+  deselectShapes(ids: string[]): void {
+    this.removeFromSelection(ids);
   }
 
   clearShapes(): void {
@@ -324,6 +459,15 @@ export class CanvasModel {
     return this.batchState.active;
   }
 
+  // 接口要求的方法名
+  startBatch(): void {
+    this.beginBatch();
+  }
+
+  isBatchActive(): boolean {
+    return this.isBatching();
+  }
+
   /**
    * 通知机制
    */
@@ -337,6 +481,18 @@ export class CanvasModel {
         this.listeners.splice(index, 1);
       }
     };
+  }
+
+  // 接口要求的监听器方法
+  addListener(listener: ModelListener): void {
+    this.listeners.push(listener);
+  }
+
+  removeListener(listener: ModelListener): void {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
+    }
   }
 
   notify(change: ChangeDescription): void {
@@ -424,6 +580,21 @@ export class CanvasModel {
   }
 
   /**
+   * 清空所有数据
+   */
+  clear(): void {
+    this.clearShapes();
+    this.clearSelection();
+    this.notificationQueue = [];
+
+    this.notify({
+      type: 'model-cleared',
+      data: {},
+      timestamp: Date.now()
+    });
+  }
+
+  /**
    * 清理资源
    */
   dispose(): void {
@@ -441,3 +612,8 @@ export class CanvasModel {
     this.batchState = { active: false, changes: [] };
   }
 }
+
+/**
+ * CanvasModel 服务标识符
+ */
+export const ICanvasModel = createDecorator<ICanvasModel>('canvasModel');

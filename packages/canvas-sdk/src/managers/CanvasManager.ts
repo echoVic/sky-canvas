@@ -25,7 +25,7 @@ export interface ICanvasManager {
   addShape(shape: Shape): void;
   removeShape(id: string): void;
   updateShape(id: string, updates: Partial<Shape>): void;
-  getObjects(): IRenderable[];
+  getGraphics(): IRenderable[];
   hitTest(x: number, y: number): string | null;
   
   // 选择管理
@@ -173,9 +173,9 @@ export class CanvasManager implements ICanvasManager {
   }
 
   /**
-   * 获取所有可渲染对象
+   * 获取所有可渲染图形
    */
-  getObjects(): IRenderable[] {
+  getGraphics(): IRenderable[] {
     return Array.from(this.shapes.values());
   }
 

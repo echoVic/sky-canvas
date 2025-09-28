@@ -12,6 +12,10 @@ class TestShape extends Shape {
     super(config);
   }
 
+  get type(): string {
+    return 'test';
+  }
+
   render(context: IGraphicsContext): void {
     if (!this.visible) return;
 

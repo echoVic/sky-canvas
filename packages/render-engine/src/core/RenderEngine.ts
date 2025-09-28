@@ -20,7 +20,7 @@ export class RenderEngine {
   private canvas: HTMLCanvasElement;
   private container: HTMLElement;
   private config: RenderEngineConfig;
-  private objects: Map<string, IRenderable> = new Map();
+  private graphics: Map<string, IRenderable> = new Map();
   private isInitialized = false;
 
   constructor(container: HTMLElement, config: RenderEngineConfig = {}) {
@@ -172,59 +172,60 @@ export class RenderEngine {
   // ===== 公共 API =====
 
   /**
-   * 添加渲染对象
+   * 添加渲染图形
    */
-  addObject(renderable: IRenderable): void {
-    this.objects.set(renderable.id, renderable);
+  addGraphic(renderable: IRenderable): void {
+    this.graphics.set(renderable.id, renderable);
 
     // 直接添加到渲染器，不需要转换
     this.renderer.addRenderable(renderable);
 
     if (this.config.debug) {
-      console.log(`[RenderEngine] Added object: ${renderable.id}`);
+      console.log(`[RenderEngine] Added graphic: ${renderable.id}`);
     }
   }
 
   /**
-   * 移除渲染对象
+   * 移除渲染图形
    */
-  removeObject(id: string): void {
-    const removed = this.objects.delete(id);
+  removeGraphic(id: string): void {
+    const removed = this.graphics.delete(id);
     if (removed) {
       this.renderer.removeRenderable(id);
 
       if (this.config.debug) {
-        console.log(`[RenderEngine] Removed object: ${id}`);
+        console.log(`[RenderEngine] Removed graphic: ${id}`);
       }
     }
   }
 
   /**
-   * 清空所有渲染对象
+   * 清空所有渲染图形
    */
-  clearObjects(): void {
-    const count = this.objects.size;
-    this.objects.clear();
+  clearGraphics(): void {
+    const count = this.graphics.size;
+    this.graphics.clear();
     this.renderer.clearRenderables();
 
     if (this.config.debug) {
-      console.log(`[RenderEngine] Cleared ${count} objects`);
+      console.log(`[RenderEngine] Cleared ${count} graphics`);
     }
   }
 
   /**
-   * 获取渲染对象
+   * 获取渲染图形
    */
-  getObject(id: string): IRenderable | undefined {
-    return this.objects.get(id);
+  getGraphic(id: string): IRenderable | undefined {
+    return this.graphics.get(id);
   }
 
   /**
-   * 获取所有渲染对象
+   * 获取所有渲染图形
    */
-  getObjects(): IRenderable[] {
-    return Array.from(this.objects.values());
+  getGraphics(): IRenderable[] {
+    return Array.from(this.graphics.values());
   }
+
 
   /**
    * 启动渲染循环
@@ -337,7 +338,7 @@ export class RenderEngine {
    */
   dispose(): void {
     this.stop();
-    this.clearObjects();
+    this.clearGraphics();
     this.renderer.dispose?.();
     this.isInitialized = false;
 

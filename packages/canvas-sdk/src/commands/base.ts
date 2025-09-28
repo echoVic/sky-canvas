@@ -5,7 +5,7 @@
  * Command 的执行可以是异步的，支持网络请求、文件操作等异步场景。
  */
 
-import { CanvasModel } from '../models/CanvasModel';
+import { ICanvasModel } from '../models/CanvasModel';
 
 /**
  * 扩展的 Command 接口
@@ -13,13 +13,19 @@ import { CanvasModel } from '../models/CanvasModel';
  */
 export interface Command {
   /** 执行命令 - 可以是异步的 */
-  execute(): void | Promise<void>;
+  execute(): any | Promise<any>;
 
   /** 撤销命令 - 撤销也可以是异步的 */
   undo(): void | Promise<void>;
 
   /** 重做命令 - 重做同样支持异步 */
   redo?(): void | Promise<void>;
+
+  /** 检查是否可以撤销 */
+  canUndo(): boolean;
+
+  /** 获取命令描述 */
+  getDescription(): string;
 
   /** 中断命令 - 用于异步操作的中断 */
   abort?(): void;
@@ -46,18 +52,19 @@ export interface ChangeDescription {
   timestamp?: number;
   shapeId?: string;
   shapeIds?: string[];
+  graphicId?: string;  // 新增支持图形ID
 }
 
 /**
  * 扩展的基础 Command 抽象类
  */
 export abstract class BaseCommand implements Command {
-  protected model: CanvasModel;
+  protected model: ICanvasModel;
   public description: string;
   protected isExecuted: boolean = false;
   protected abortController?: AbortController;
 
-  constructor(model: CanvasModel, description: string = 'Command') {
+  constructor(model: ICanvasModel, description: string = 'Command') {
     this.model = model;
     this.description = description;
   }
@@ -65,8 +72,22 @@ export abstract class BaseCommand implements Command {
   /**
    * 抽象方法 - 子类必须实现
    */
-  abstract execute(): void | Promise<void>;
+  abstract execute(): any | Promise<any>;
   abstract undo(): void | Promise<void>;
+
+  /**
+   * 检查是否可以撤销
+   */
+  canUndo(): boolean {
+    return this.isExecuted;
+  }
+
+  /**
+   * 获取命令描述
+   */
+  getDescription(): string {
+    return this.description;
+  }
 
   /**
    * 默认重做实现 - 重新执行
@@ -207,7 +228,7 @@ export class CompositeCommand extends BaseCommand {
   private commands: Command[] = [];
   private completedCommands: Command[] = [];
 
-  constructor(model: CanvasModel, description: string = 'Composite Operation') {
+  constructor(model: ICanvasModel, description: string = 'Composite Operation') {
     super(model, description);
   }
 
@@ -329,7 +350,7 @@ export class BatchCommand extends AsyncCommand {
   protected commands: Command[] = [];
   protected completed: Command[] = [];
 
-  constructor(model: CanvasModel, commands: Command[]) {
+  constructor(model: ICanvasModel, commands: Command[]) {
     super(model, `Batch Operation (${commands.length} commands)`);
     this.commands = [...commands];
     this.updateProgress(0, commands.length);

@@ -5,7 +5,7 @@
 
 import { Action } from '../../actions/types';
 import { BaseCommand } from '../../commands/base';
-import { CanvasModel } from '../../models/CanvasModel';
+import { ICanvasModel } from '../../models/CanvasModel';
 import { ActionContribution, CommandContribution, Plugin, PluginContext } from '../types';
 
 /**
@@ -26,7 +26,7 @@ class WatermarkCommand extends BaseCommand {
   private params: WatermarkParams;
   private watermarkId?: string;
 
-  constructor(model: CanvasModel, params: WatermarkParams) {
+  constructor(model: ICanvasModel, params: WatermarkParams) {
     super(model, 'Add watermark');
     this.params = params;
   }
@@ -128,7 +128,7 @@ export const WatermarkPlugin: Plugin = {
       point: 'command',
       content: {
         actionType: 'ADD_WATERMARK',
-        creator: (model: CanvasModel, action: Action) => {
+        creator: (model: ICanvasModel, action: Action) => {
           return new WatermarkCommand(model, action.payload as WatermarkParams);
         },
         priority: 10

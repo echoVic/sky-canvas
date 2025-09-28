@@ -37,6 +37,7 @@ class TestRenderer extends BaseRenderer {
 // 模拟 IRenderable 对象
 const createMockRenderable = (id: string, zIndex = 0, visible = true): IRenderable => ({
   id,
+  type: 'mock',
   visible,
   zIndex,
   transform: new Transform(),
