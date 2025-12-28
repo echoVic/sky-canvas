@@ -1,52 +1,169 @@
 /**
- * Sky Canvas 渲染引擎统一入口
+ * Sky Canvas 渲染引擎
+ * 高性能图形渲染引擎，专注于WebGL渲染，包含Canvas2D和WebGPU占位符
  */
 
-// 核心引擎 (合并后的核心模块)
-export * from './core';
+// 核心类型和接口
+export type {
+  IGraphicsContext,
+  IGraphicsContextFactory, IImageData, IPoint,
+  IRect
+} from './graphics/IGraphicsContext';
 
-// 数学库 (使用命名空间导出避免冲突)
-export * as MathUtils from './math';
+export type {
+  IRenderable, IRenderEngine, IRenderEngineConfig, IRenderLayer, IRenderStats, IViewport
+} from './core/IRenderEngine';
 
-// Renderables 系统
-export * from './renderables';
+// 现代渲染管道
+export type {
+  IModernRenderPipeline
+} from './core/ModernRenderPipeline';
 
-// 渲染管道 (明确处理冲突)
-export type { IRenderable } from './core/types';
-export { CommandRenderer, RenderQueue } from './rendering/commands';
-// 批处理系统 (在 commands 后导出避免 RenderBatch 冲突)
-export {
-  BasicStrategy, BatchBuffer, BatchManager, BatchOptimizer, EnhancedStrategy,
-  InstancedStrategy,
-  OptimizationType
-} from './rendering/batch';
+// 渲染命令系统
+export type {
+  IRenderCommand,
+  MaterialKey,
+  RenderCommandType
+} from './commands/IRenderCommand';
 
-// WebGL 系统 (通过 core 导出，避免冲突)
-export {
-  AdvancedShaderManager, BufferManager,
-  SHADER_LIBRARY, WebGLShaderManager as ShaderManager, WebGLOptimizer
-} from './core/webgl';
+export type {
+  IRenderBatch,
+  IRenderQueue,
+  IRenderQueueConfig
+} from './commands/RenderQueue';
+
+export type {
+  ICommandRenderer,
+  IRenderEngineWithCommands
+} from './commands/CommandRenderer';
+
+// WebGL 系统
+export type {
+  IShaderManager, IShaderProgram, IShaderSource
+} from './webgl/ShaderManager';
+
+export type {
+  BufferType,
+  BufferUsage, IBuffer, IBufferManager, IVertexArray, IVertexAttribute, IVertexLayout as WebGLVertexLayout
+} from './webgl/BufferManager';
+
+// 统一批处理系统类型
+export type {
+  IBatchRenderer,
+  IRenderable as IBatchRenderable, // 重命名避免冲突
+  BatchStats,
+  IBatchStrategy,
+  BatchContext,
+  BatchData,
+  Vertex,
+  BatchKey,
+  RenderBatch,
+  BatchManagerConfig
+} from './batch';
 
 // 空间分割和剔除
-export * from './rendering/culling';
+export type {
+  ISpatialNode
+} from './culling/SpatialPartitioning';
 
-// 功能模块 (通过 features 统一导出)
-export * from './core/interface';
-export * from './features';
-export * from './features/plugins';
+// 数学和变换系统（通过 export * from './math/index' 导出）
 
-// 资源管理 (明确导出避免冲突)
+
+// 图形原语
+export type {
+  GraphicPrimitiveType, ICirclePrimitive, IGraphicPrimitive, IPathPrimitive, IRectanglePrimitive
+} from './primitives/IGraphicPrimitive';
+
+export type {
+  PrimitiveCreateOptions
+} from './primitives/PrimitiveFactory';
+
+// 核心实现
+export { RenderEngine } from './core/RenderEngine';
+
+// 形状基类
+export { Shape, Rectangle, Circle, Line, Text } from './core/shapes';
+
+// 现代渲染管道实现
+export * from './core/ModernRenderPipeline';
+
+// 渲染命令实现
+export * from './commands/index';
+
+// WebGL 实现 - 具体导出避免冲突
+export { BufferManager } from './webgl/BufferManager';
+export { SHADER_LIBRARY } from './webgl/ShaderLibrary';
+export { ShaderManager } from './webgl/ShaderManager';
+
+// 统一批处理系统实现
 export {
-  AsyncResourceLoader, EnhancedResourceManager, LRUCache, WebGLResourceManager as ResourceManager, TexturePool
-} from './resources';
+  BatchManager,
+  createBatchManager,
+  BatchBuffer,
+  BatchDataUtils,
+  BasicStrategy,
+  EnhancedStrategy,
+  InstancedStrategy,
+  BatchOptimizer,
+  OptimizationType,
+  createBatchManagerWithDefaultStrategies,
+  createBasicBatchManager,
+  createEnhancedBatchManager,
+  createInstancedBatchManager
+} from './batch';
+
+// 空间分割和剔除实现
+export * from './culling/index';
+
+// 图形原语实现
+export * from './primitives/index';
+
+// 数学库
+export * from './math/index';
+
+// 渲染适配器
+export * from './adapters/index';
 
 // 工具函数
-export * from './utils';
+export * from './utils/index';
 
-// 调试和性能 (使用别名导出避免冲突)
-export { PerformanceBenchmark } from './performance/benchmark';
-export { DebugRenderer } from './performance/debug';
-export { PerformanceMonitor } from './performance/monitoring';
+// 事件系统
+export * from './events/index';
+
+// 资源管理
+export * from './resources/index';
+
+// 性能监控
+export { UnifiedPerformanceMonitor } from './performance/index';
+
+// 基准测试
+export { PerformanceBenchmark as BenchmarkRunner } from './benchmark/index';
+
+// 调试工具
+export { DebugRenderer } from './debug/index';
+
+// 文本渲染
+export * from './text/index';
+
+// 动画系统
+// TODO: 解决类型兼容性问题后启用
+// export * from './animation/index';
+
+// 滤镜系统  
+// TODO: 解决类型兼容性问题后启用
+// export * from './effects/index';
+
+// 物理引擎
+export * from './physics/index';
+
+// 粒子系统
+export * from './particles/index';
+
+// 高级路径操作
+export * from './paths/index';
+
+// 插件系统
+export * from './plugins/index';
 
 // 场景编辑器
-export * from './features/editor';
+export * from './editor/index';

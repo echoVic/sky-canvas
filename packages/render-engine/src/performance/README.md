@@ -1,14 +1,15 @@
-# 渲染引擎性能监控系统
+# 统一性能监控系统
 
-渲染引擎性能监控系统专注于监控渲染引擎自身的性能，包括 FPS 统计、内存监控、GPU 性能分析和基准测试。
+统一性能监控系统提供了跨包的性能数据采集、分析和可视化能力，避免重复的数据采集，提供统一的性能监控接口。
 
 ## 核心特性
 
-- 🚀 **渲染性能监控**: 实时监控 FPS、帧时间、绘制调用
-- 📊 **GPU 性能分析**: WebGL 上下文分析，着色器性能监控
+- 🚀 **统一数据源**: 整合 Render Engine、Canvas SDK、Frontend UI 的性能数据
+- 📊 **实时监控**: 实时采集和分析性能指标
 - ⚠️ **智能警告**: 基于阈值的性能警告系统
-- 🔍 **内存分析**: 自动检测内存泄漏和内存使用模式
-- 📈 **基准测试**: 全面的性能基准测试框架
+- 🔍 **瓶颈分析**: 自动检测CPU、GPU、内存瓶颈
+- 🌐 **跨源关联**: 发现不同模块间的性能关联性
+- 📈 **可视化仪表板**: 实时性能仪表板
 - 📋 **报告生成**: 自动生成性能报告
 
 ## 快速开始
@@ -16,98 +17,103 @@
 ### 1. 基础使用
 
 ```typescript
-import {
-  PerformanceMonitor,
-  WebGLAnalyzer
+import { 
+  UnifiedPerformanceManager,
+  globalPerformanceManager 
 } from '@sky-canvas/render-engine/performance';
 
-// 创建性能监控器
-const performanceMonitor = new PerformanceMonitor(gl, {
-  enableGPUQueries: true,
-  enableMemoryProfiler: true
+// 使用全局实例
+await globalPerformanceManager.initialize();
+
+// 或创建自定义实例
+const performanceManager = new UnifiedPerformanceManager({
+  sampleInterval: 1000,
+  enableDashboard: true,
+  enableWarnings: true,
+  enableCrossSourcceCorrelation: true
 });
 
-// 开始监控
-performanceMonitor.start();
+await performanceManager.initialize();
 ```
 
-### 2. WebGL 性能分析
+### 2. 设置数据源
 
 ```typescript
-// 创建 WebGL 分析器
-const webGLAnalyzer = new WebGLAnalyzer(gl);
+// 设置 Render Engine 组件
+performanceManager.setRenderEngineComponents(
+  renderEnginePerformanceMonitor,
+  renderEnginePerformanceSystem,
+  webglContext
+);
 
-// 分析着色器性能
-const shaderAnalysis = webGLAnalyzer.analyzeShaderPerformance(shaderProgram);
+// 设置 Canvas SDK 组件
+performanceManager.setCanvasSDKComponents(canvasSDKProvider);
 
-// 分析缓冲区使用
-const bufferAnalysis = webGLAnalyzer.analyzeBufferUsage();
+// 设置 Frontend UI 组件
+performanceManager.setFrontendUIComponents(frontendUIProvider);
 ```
 
-### 3. 基准测试
+### 3. 手动记录指标
 
 ```typescript
-import {
-  createDefaultBenchmarkSuite,
-  PerformanceBenchmarkSuite
-} from '@sky-canvas/render-engine/performance';
+import { UnifiedMetricType, DataSourceType } from '@sky-canvas/render-engine/performance';
 
-// 创建基准测试套件
-const benchmarkSuite = createDefaultBenchmarkSuite(renderEngine);
-
-// 运行所有测试
-const results = await benchmarkSuite.runAll();
+// 记录自定义性能指标
+performanceManager.recordMetric(
+  UnifiedMetricType.RENDER_TIME,
+  renderTime,
+  DataSourceType.RENDER_ENGINE,
+  { frameId: 123, batchCount: 5 }
+);
 ```
 
 ## 架构设计
 
 ### 核心组件
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────┐
-│                PerformanceMonitor                           │
+│                UnifiedPerformanceManager                    │
 ├─────────────────────────────────────────────────────────────┤
-│  - 实时性能数据采集                                           │
-│  - 帧率和帧时间监控                                           │
-│  - 内存使用分析                                              │
-│  - 性能警告系统                                              │
+│  - 协调各个数据源适配器                                        │
+│  - 提供统一的API接口                                          │
+│  - 管理性能仪表板和报告                                        │
 └─────────────────────────────────────────────────────────────┘
                               │
 ┌─────────────────────────────────────────────────────────────┐
-│                WebGLAnalyzer                                │
+│                UnifiedPerformanceMonitor                    │
 ├─────────────────────────────────────────────────────────────┤
-│  - WebGL 上下文分析                                           │
-│  - 着色器性能监控                                             │
-│  - GPU 内存使用分析                                           │
-│  - 绘制调用优化建议                                           │
+│  - 统一的性能数据采集和存储                                     │
+│  - 跨源关联分析                                              │
+│  - 瓶颈检测和警告系统                                         │
 └─────────────────────────────────────────────────────────────┘
                               │
-┌─────────────────────────────────────────────────────────────┐
-│                PerformanceBenchmarkSuite                    │
-├─────────────────────────────────────────────────────────────┤
-│  - FPS 基准测试                                              │
-│  - 内存压力测试                                              │
-│  - 绘制调用效率测试                                           │
-│  - 批处理性能测试                                             │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────┬──────────────────┬──────────────────────┐
+│  RenderEngine    │   CanvasSDK      │    FrontendUI        │
+│  Adapter         │   Adapter        │    Adapter           │
+├──────────────────┼──────────────────┼──────────────────────┤
+│ - FPS            │ - Plugin性能     │ - React渲染时间       │
+│ - 绘制调用       │ - 交互延迟       │ - DOM性能            │
+│ - GPU内存        │ - 事件处理       │ - 浏览器指标         │
+│ - 着色器编译     │ - 缓存命中率     │ - 网络延迟           │
+└──────────────────┴──────────────────┴──────────────────────┘
 ```
 
 ### 数据流
 
-```text
-渲染引擎执行 → 性能数据收集 → 实时分析 → 警告/报告生成
+```
+原始性能数据 → 适配器标准化 → 统一监控器存储 → 分析处理 → 可视化/报告
 ```
 
 ## 性能指标类型
 
 ### 渲染性能
-
 - `FPS` - 帧率
 - `FRAME_TIME` - 帧时间
 - `RENDER_TIME` - 渲染时间
+- `UPDATE_TIME` - 更新时间
 
 ### GPU性能
-
 - `DRAW_CALLS` - 绘制调用次数
 - `VERTICES` - 顶点数量
 - `TRIANGLES` - 三角形数量
@@ -116,201 +122,320 @@ const results = await benchmarkSuite.runAll();
 - `SHADER_COMPILE_TIME` - 着色器编译时间
 
 ### 内存性能
-
 - `MEMORY_USAGE` - 内存使用量
 - `TEXTURE_MEMORY` - 纹理内存
 - `BUFFER_MEMORY` - 缓冲区内存
 
+### 交互性能
+- `INPUT_LATENCY` - 输入延迟
+- `EVENT_PROCESSING_TIME` - 事件处理时间
+- `GESTURE_RECOGNITION_TIME` - 手势识别时间
+
+### 插件性能
+- `PLUGIN_LOAD_TIME` - 插件加载时间
+- `PLUGIN_ACTIVATE_TIME` - 插件激活时间
+- `PLUGIN_API_CALLS` - 插件API调用次数
+- `PLUGIN_ERRORS` - 插件错误次数
+
 ## 使用场景
 
-### 渲染引擎集成
+### 1. Render Engine 集成
 
 ```typescript
-import { PerformanceMonitor } from '@sky-canvas/render-engine/performance';
+import { globalPerformanceManager } from '@sky-canvas/render-engine/performance';
 import { RenderEngine } from '@sky-canvas/render-engine';
 
 class MyRenderEngine extends RenderEngine {
-  private performanceMonitor: PerformanceMonitor;
-
-  constructor(gl: WebGLRenderingContext) {
+  constructor() {
     super();
-
-    // 创建性能监控器
-    this.performanceMonitor = new PerformanceMonitor(gl, {
-      enableGPUQueries: true,
-      enableMemoryProfiler: true,
-      enableWarnings: true
-    });
-
-    this.performanceMonitor.start();
+    
+    // 设置性能监控组件
+    globalPerformanceManager.setRenderEngineComponents(
+      this.performanceMonitor,
+      this.performanceSystem,
+      this.getWebGLContext()
+    );
   }
-
+  
   render() {
-    // 记录帧开始
-    this.performanceMonitor.recordFrame();
-
-    // 执行渲染
+    // 性能监控会自动收集渲染指标
     super.render();
-
-    // 记录绘制调用
-    this.performanceMonitor.recordDrawCall(vertexCount, triangleCount);
-  }
-
-  dispose() {
-    this.performanceMonitor.dispose();
-    super.dispose();
   }
 }
 ```
 
-### 基准测试
+### 2. Canvas SDK 集成
 
 ```typescript
-import { createDefaultBenchmarkSuite } from '@sky-canvas/render-engine/performance';
+import { CanvasSDKPerformanceHelper } from '@sky-canvas/render-engine/performance';
 
-async function runPerformanceTests(renderEngine: RenderEngine) {
-  const benchmarkSuite = createDefaultBenchmarkSuite(renderEngine);
+class InteractionManager {
+  private performanceHelper = new CanvasSDKPerformanceHelper();
+  
+  constructor() {
+    // 设置性能数据提供者
+    globalPerformanceManager.setCanvasSDKComponents(
+      this.performanceHelper.getPerformanceProvider()
+    );
+  }
+  
+  handleMouseEvent(event: MouseEvent) {
+    this.performanceHelper.recordInputStart();
+    
+    // 处理事件
+    this.processEvent(event);
+    
+    this.performanceHelper.recordInputEnd();
+  }
+  
+  @performanceDecorator('eventProcessingTime')
+  processEvent(event: MouseEvent) {
+    // 事件处理逻辑
+  }
+}
+```
 
-  // 监听测试事件
-  benchmarkSuite.on('scenarioComplete', (result) => {
-    console.log(`测试完成: ${result.name}, 分数: ${result.score} ${result.unit}`);
+### 3. Frontend UI 集成
+
+```typescript
+import React, { useEffect } from 'react';
+import { FrontendUIPerformanceHelper } from '@sky-canvas/render-engine/performance';
+
+const performanceHelper = new FrontendUIPerformanceHelper();
+
+// 设置性能数据提供者
+globalPerformanceManager.setFrontendUIComponents(
+  performanceHelper.getPerformanceProvider()
+);
+
+function MyComponent() {
+  useEffect(() => {
+    performanceHelper.recordRenderStart();
+    return () => {
+      performanceHelper.recordRenderEnd();
+    };
   });
-
-  // 运行所有测试
-  const results = await benchmarkSuite.runAll();
-
-  // 获取测试摘要
-  const summary = benchmarkSuite.getSummary();
-  console.log(`总测试: ${summary.total}, 通过: ${summary.passed}, 失败: ${summary.failed}`);
-
-  // 导出结果
-  const reportHTML = benchmarkSuite.generateHTMLReport();
-  // 保存或显示报告...
+  
+  const handleUpdate = () => {
+    performanceHelper.recordUpdateStart();
+    // 更新逻辑
+    performanceHelper.recordUpdateEnd();
+  };
+  
+  return <div>My Component</div>;
 }
 ```
 
-### 性能警告处理
+## 性能仪表板
+
+启用实时性能仪表板：
 
 ```typescript
-performanceMonitor.on('performance-warning', (warning) => {
-  console.warn(`[${warning.severity}] ${warning.type}: ${warning.message}`);
+// 启用仪表板
+performanceManager.setDashboardEnabled(true);
 
+// 配置仪表板
+performanceManager.configureDashboard({
+  position: 'top-right',
+  width: 350,
+  height: 400,
+  refreshInterval: 1000
+});
+```
+
+仪表板显示：
+- 实时FPS、帧时间、内存使用
+- 性能警告和瓶颈分析
+- 数据源状态
+- 历史趋势
+
+## 性能分析
+
+### 瓶颈检测
+
+系统会自动检测以下瓶颈类型：
+
+```typescript
+const analysis = performanceManager.analyzeBottlenecks();
+
+switch (analysis.type) {
+  case 'cpu':
+    console.log('CPU瓶颈:', analysis.suggestions);
+    break;
+  case 'gpu':
+    console.log('GPU瓶颈:', analysis.suggestions);
+    break;
+  case 'memory':
+    console.log('内存瓶颈:', analysis.suggestions);
+    break;
+}
+```
+
+### 跨源关联分析
+
+```typescript
+performanceManager.monitor.on('correlation-found', (correlation) => {
+  console.log(`发现关联: ${correlation.metrics.join(' & ')}`);
+  console.log(`关联度: ${correlation.correlation}`);
+  console.log(`描述: ${correlation.description}`);
+});
+```
+
+### 性能警告
+
+```typescript
+performanceManager.monitor.on('warning-triggered', (warning) => {
+  console.warn(`[${warning.severity}] ${warning.source}: ${warning.message}`);
+  
   // 根据警告类型采取行动
   if (warning.severity === 'high') {
     // 高严重性警告处理
-    handleCriticalPerformanceIssue(warning);
   }
 });
+```
 
-performanceMonitor.on('fps-drop', (data) => {
-  console.warn(`FPS 下降: ${data.from.toFixed(1)} → ${data.to.toFixed(1)}`);
+## 报告生成
+
+### 手动生成报告
+
+```typescript
+// 生成综合报告
+const report = performanceManager.generateReport();
+
+// 导出为不同格式
+const jsonReport = performanceManager.exportReport('json');
+const csvReport = performanceManager.exportReport('csv');
+const htmlReport = performanceManager.exportReport('html');
+```
+
+### 自动报告
+
+```typescript
+const performanceManager = new UnifiedPerformanceManager({
+  reportingInterval: 60000, // 每分钟生成报告
+  autoExportReports: true   // 自动导出到文件
 });
 
-performanceMonitor.on('memory-leak', (data) => {
-  console.error(`检测到内存泄漏: ${data.type}, 趋势: ${data.trend}`);
+// 监听报告生成事件
+window.addEventListener('performance-report-generated', (event) => {
+  const { report, counter } = event.detail;
+  console.log(`生成第 ${counter} 个报告:`, report);
 });
 ```
+
+## 性能优化建议
+
+基于分析结果，系统会提供针对性的优化建议：
+
+### CPU 瓶颈优化
+- 优化更新逻辑算法
+- 减少JavaScript计算复杂度
+- 使用Web Workers进行并行处理
+- 启用对象池减少GC压力
+
+### GPU 瓶颈优化
+- 减少绘制调用数量
+- 优化着色器性能
+- 使用LOD系统
+- 启用视锥剔除
+- 合并批处理
+
+### 内存优化
+- 优化资源管理策略
+- 启用纹理压缩
+- 清理未使用资源
+- 实现资源懒加载
 
 ## API 参考
 
-### PerformanceMonitor
+### UnifiedPerformanceManager
 
-主要性能监控类，用于实时监控渲染性能。
+主要管理类，提供统一的性能监控接口。
 
 ```typescript
-class PerformanceMonitor {
-  // 构造函数
-  constructor(gl?: WebGLRenderingContext, config?: Partial<PerformanceConfig>)
-
-  // 生命周期
-  start(): void
-  stop(): void
-  dispose(): void
-
-  // 记录性能数据
-  recordFrame(): void
-  recordDrawCall(vertices: number, triangles?: number): void
-  recordBatch(commandCount: number): void
-  recordMemoryAllocation(type: string, size: number): void
-  recordMemoryDeallocation(type: string, size: number): void
-
+class UnifiedPerformanceManager {
+  // 初始化
+  async initialize(): Promise<void>
+  
+  // 设置组件
+  setRenderEngineComponents(monitor?, system?, gl?)
+  setCanvasSDKComponents(provider?)
+  setFrontendUIComponents(provider?)
+  
+  // 记录指标
+  recordMetric(type, value, source, metadata?)
+  
   // 获取数据
-  getCurrentMetrics(): Record<MetricType, number>
-  getStats(metricType?: MetricType): MetricStats | Map<MetricType, MetricStats>
-  getHistoryData(metricType: MetricType, duration?: number): MetricDataPoint[]
-
-  // 报告
-  generateReport(): PerformanceReport
-  clearHistory(): void
+  getCurrentMetrics(): Record<UnifiedMetricType, number>
+  getStats()
+  getWarnings(severity?): UnifiedPerformanceWarning[]
+  
+  // 分析
+  analyzeBottlenecks(): BottleneckAnalysis
+  generateReport()
+  
+  // 仪表板
+  setDashboardEnabled(enabled: boolean)
+  configureDashboard(config: Partial<DashboardConfig>)
+  
+  // 生命周期
+  restart()
+  stop()
+  dispose()
 }
 ```
 
-### WebGLAnalyzer
-
-WebGL 性能分析器，用于分析 GPU 性能。
+### 事件系统
 
 ```typescript
-class WebGLAnalyzer {
-  constructor(gl: WebGLRenderingContext)
+// 监听性能事件
+performanceManager.monitor.on('metric-updated', (data) => {
+  console.log(`指标更新: ${data.type} = ${data.value} (${data.source})`);
+});
 
-  analyzeShaderPerformance(program: WebGLProgram): ShaderAnalysis
-  analyzeBufferUsage(): BufferAnalysis
-  getGPUInfo(): GPUInfo
-  measureDrawCall(drawFunction: () => void): DrawCallMetrics
-}
-```
+performanceManager.monitor.on('warning-triggered', (warning) => {
+  console.warn(`性能警告: ${warning.message}`);
+});
 
-### PerformanceBenchmarkSuite
+performanceManager.monitor.on('bottleneck-detected', (bottleneck) => {
+  console.warn(`瓶颈检测: ${bottleneck.description}`);
+});
 
-基准测试套件，用于运行性能测试。
-
-```typescript
-class PerformanceBenchmarkSuite {
-  constructor(performanceMonitor?: PerformanceMonitor)
-
-  addScenario(scenario: BenchmarkScenario): void
-  runAll(): Promise<BenchmarkResult[]>
-  runScenario(name: string): Promise<BenchmarkResult | null>
-
-  getSummary(): BenchmarkSummary
-  detectRegression(baseline: BenchmarkResult[], tolerance?: number): RegressionAnalysis
-  exportResults(): string
-  generateHTMLReport(): string
-}
+performanceManager.monitor.on('correlation-found', (correlation) => {
+  console.info(`关联发现: ${correlation.description}`);
+});
 ```
 
 ## 最佳实践
 
-### 1. 性能监控设置
+### 1. 初始化时机
+在应用启动的早期阶段初始化性能监控系统。
 
-在渲染引擎初始化时设置性能监控，确保从一开始就收集数据。
+### 2. 数据源配置
+尽早设置各个数据源组件，确保完整的数据采集。
 
-### 2. 适度监控
-
+### 3. 性能影响
 性能监控本身有轻微的性能开销，在生产环境中适度使用。
 
-### 3. 内存管理
-
-定期清理历史数据，避免内存泄漏：
+### 4. 内存管理
+定期清理历史数据，避免内存泄漏。
 
 ```typescript
 // 每5分钟清理一次历史数据
 setInterval(() => {
-  performanceMonitor.clearHistory();
+  performanceManager.clearHistory();
 }, 5 * 60 * 1000);
 ```
 
-### 4. 自定义阈值
-
-根据应用特性设置合适的性能阈值：
+### 5. 自定义阈值
+根据应用特性设置合适的性能阈值。
 
 ```typescript
-const performanceMonitor = new PerformanceMonitor(gl, {
+const performanceManager = new UnifiedPerformanceManager({
   thresholds: {
-    fps: { min: 30, max: 120 },
-    frameTime: { max: 33.33 }, // 30fps = 33.33ms
-    drawCalls: { max: 500 },
-    memoryUsage: { max: 512 * 1024 * 1024 } // 512MB
+    [UnifiedMetricType.FPS]: { min: 30, max: 120 },
+    [UnifiedMetricType.MEMORY_USAGE]: { max: 1024 * 1024 * 1024 }, // 1GB
+    [UnifiedMetricType.DRAW_CALLS]: { max: 500 }
   }
 });
 ```
@@ -319,25 +444,29 @@ const performanceMonitor = new PerformanceMonitor(gl, {
 
 ### 常见问题
 
-1. **WebGL 上下文未提供**
-   确保在创建 PerformanceMonitor 时传入有效的 WebGL 上下文。
+1. **数据源未注册**
+   确保在初始化前设置所有数据源组件。
 
 2. **性能影响过大**
    增加采样间隔，减少历史数据保留时间。
 
-3. **内存泄漏**
+3. **仪表板显示异常**
+   检查CSS样式冲突，调整仪表板位置和大小。
+
+4. **内存泄漏**
    定期清理历史数据和警告，正确销毁监控器。
 
 ### 调试
 
 ```typescript
-// 启用详细日志
-const performanceMonitor = new PerformanceMonitor(gl, {
-  enableWarnings: true,
+// 启用调试模式
+const performanceManager = new UnifiedPerformanceManager({
+  enableDashboard: true,
   sampleInterval: 500 // 更频繁的采样
 });
 
 // 查看当前状态
-console.log('当前指标:', performanceMonitor.getCurrentMetrics());
-console.log('统计信息:', performanceMonitor.getStats());
+console.log('当前指标:', performanceManager.getCurrentMetrics());
+console.log('统计信息:', performanceManager.getStats());
+console.log('警告列表:', performanceManager.getWarnings());
 ```

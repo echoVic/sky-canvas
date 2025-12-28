@@ -7,7 +7,7 @@ import { proxy, snapshot } from 'valtio';
 // ViewModel不需要DI装饰器，使用构造函数注入
 import { IToolManager } from '../managers/ToolManager';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewModel } from './types/IViewModel';
+import { IViewModel } from './interfaces/IViewModel';
 
 /**
  * 工具 UI 状态（区别于 IToolState 基础接口）

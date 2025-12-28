@@ -1,23 +1,23 @@
+import React from 'react'
 import { Button } from '@heroui/react'
 import {
-  Circle,
-  Diamond,
-  Frame,
-  Hand,
-  Image,
-  Link,
-  LucideIcon,
-  Minus,
   MousePointer2,
-  MoveRight,
-  Pencil,
+  Hand,
   Square,
+  Diamond,
+  Circle,
+  MoveRight,
+  Minus,
+  Pencil,
+  Type,
+  Image,
   StickyNote,
-  Type
+  Link,
+  Frame,
+  LucideIcon
 } from 'lucide-react'
-import React from 'react'
-import { useCanvasSDK } from '../../hooks'
 import { useCanvasStore } from '../../store/canvasStore'
+import { useCanvasSDK } from '../../hooks'
 
 const iconMap: Record<string, LucideIcon> = {
   MousePointer2, Hand, Square, Diamond, Circle, MoveRight, Minus, 
@@ -48,8 +48,13 @@ const Toolbar: React.FC = () => {
             onPress={() => {
               // 先更新UI状态
               setSelectedTool(tool.id)
-              // TODO: 将来可能需要通过Action系统同步到SDK
-              // 当前工具选择主要由前端状态管理
+              // 然后同步到SDK
+              if (sdkState.isInitialized) {
+                const toolManager = sdkActions.getToolManager()
+                if (toolManager) {
+                  toolManager.activateTool(tool.id)
+                }
+              }
             }}
             title={tool.name}
           >

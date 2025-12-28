@@ -1,13 +1,53 @@
 /**
- * 插件系统入口文件
- * 导出所有插件相关的类型和实现
+ * 插件系统主入口文件
  */
 
-// 类型定义
-export * from './types';
+// 核心组件
+export { PluginManager } from './core/PluginManager';
+export { ExtensionManager, DEFAULT_EXTENSION_POINTS } from './core/ExtensionManager';
+export { PermissionManager } from './core/PermissionManager';
+export { PluginContextImpl } from './core/PluginContext';
 
-// 插件管理器实现
-export { PluginManagerImpl } from './PluginManager';
+// 类型定义
+export * from './types/PluginTypes';
+
+// SDK
+export * from './sdk/PluginSDK';
+
+// 市场
+export { PluginMarketplace, LocalPluginStore } from './marketplace/PluginMarketplace';
 
 // 示例插件
-export { WatermarkPlugin, WatermarkAPI } from './examples/WatermarkPlugin';
+export { default as CircleToolPlugin } from './examples/CircleToolPlugin';
+export { default as TextToolPlugin } from './examples/TextToolPlugin';
+
+// 插件系统工厂
+import { PluginManager } from './core/PluginManager';
+import { DEFAULT_EXTENSION_POINTS } from './core/ExtensionManager';
+
+/**
+ * 创建插件系统实例
+ */
+export function createPluginSystem(): PluginManager {
+  const pluginManager = new PluginManager();
+  const extensionManager = pluginManager.getExtensionManager();
+  
+  // 注册默认扩展点
+  for (const extensionPoint of DEFAULT_EXTENSION_POINTS) {
+    extensionManager.defineExtensionPoint(extensionPoint);
+  }
+  
+  return pluginManager;
+}
+
+/**
+ * 插件系统单例
+ */
+let globalPluginSystem: PluginManager | null = null;
+
+export function getGlobalPluginSystem(): PluginManager {
+  if (!globalPluginSystem) {
+    globalPluginSystem = createPluginSystem();
+  }
+  return globalPluginSystem;
+}

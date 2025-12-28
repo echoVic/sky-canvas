@@ -280,12 +280,12 @@ export class SceneManager implements ISceneManager {
   // === 渲染控制 ===
 
   render(): void {
-    const graphics = this.getGraphicsInLayerOrder();
+    const renderables = this.getRenderablesInLayerOrder();
     // 假设渲染服务有批量渲染方法
-    graphics.forEach(graphic => {
-      this.renderingService.addGraphic(graphic);
+    renderables.forEach(renderable => {
+      this.renderingService.addRenderable(renderable);
     });
-    this.eventBus.emit('scene:rendered', { graphicCount: graphics.length });
+    this.eventBus.emit('scene:rendered', { renderableCount: renderables.length });
   }
 
   refreshScene(): void {
@@ -312,31 +312,31 @@ export class SceneManager implements ISceneManager {
     });
   }
 
-  private getGraphicsInLayerOrder(): IRenderable[] {
-    const allGraphics = this.canvasManager.getGraphics();
-    const graphicMap = new Map<string, IRenderable>();
-
-    // 创建 ID 到图形的映射
-    allGraphics.forEach(graphic => {
-      graphicMap.set((graphic as any).id, graphic);
+  private getRenderablesInLayerOrder(): IRenderable[] {
+    const allRenderables = this.canvasManager.getRenderables();
+    const renderableMap = new Map<string, IRenderable>();
+    
+    // 创建 ID 到 Renderable 的映射
+    allRenderables.forEach(renderable => {
+      renderableMap.set((renderable as any).id, renderable);
     });
 
     // 按图层顺序排列
-    const orderedGraphics: IRenderable[] = [];
+    const orderedRenderables: IRenderable[] = [];
     const sortedLayers = this.getAllLayers(); // 已按 zIndex 排序
-
+    
     for (const layer of sortedLayers) {
       if (!layer.visible) continue;
-
+      
       for (const shapeId of layer.shapes) {
-        const graphic = graphicMap.get(shapeId);
-        if (graphic) {
-          orderedGraphics.push(graphic);
+        const renderable = renderableMap.get(shapeId);
+        if (renderable) {
+          orderedRenderables.push(renderable);
         }
       }
     }
 
-    return orderedGraphics;
+    return orderedRenderables;
   }
 
   // === 状态查询 ===

@@ -3,7 +3,7 @@
  * 负责渲染整个画布场景（背景、网格等）
  */
 
-import { ISceneViewModel, IViewportState, IViewportViewModel } from '../viewmodels/types/IViewModel';
+import { ISceneViewModel, IViewportState, IViewportViewModel } from '../viewmodels/interfaces/IViewModel';
 
 export interface ISceneViewConfig {
   backgroundColor?: string;

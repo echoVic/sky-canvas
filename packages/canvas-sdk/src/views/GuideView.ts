@@ -3,7 +3,7 @@
  * 负责渲染辅助线、对齐线等
  */
 
-import { IViewportState } from '../viewmodels/types/IViewModel';
+import { IViewportState } from '../viewmodels/interfaces/IViewModel';
 
 export interface IGuide {
   id: string;

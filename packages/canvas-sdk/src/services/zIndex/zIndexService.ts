@@ -4,7 +4,7 @@
  */
 
 import { createDecorator } from '../../di';
-import { Shape } from '@sky-canvas/render-engine';
+import { IShapeEntity } from '../../models/entities/Shape';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService } from '../logging/logService';
 
@@ -31,42 +31,42 @@ export interface IZIndexService {
   /**
    * 置顶 - 将形状移到所有形状的最前面
    */
-  bringToFront(shapes: Shape[], allShapes: Shape[]): Shape[];
+  bringToFront(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[];
 
   /**
    * 置底 - 将形状移到所有形状的最后面
    */
-  sendToBack(shapes: Shape[], allShapes: Shape[]): Shape[];
+  sendToBack(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[];
 
   /**
    * 上移一层
    */
-  bringForward(shapes: Shape[], allShapes: Shape[]): Shape[];
+  bringForward(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[];
 
   /**
    * 下移一层
    */
-  sendBackward(shapes: Shape[], allShapes: Shape[]): Shape[];
+  sendBackward(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[];
 
   /**
    * 设置指定的zIndex值
    */
-  setZIndex(shapes: Shape[], zIndex: number): Shape[];
+  setZIndex(shapes: IShapeEntity[], zIndex: number): IShapeEntity[];
 
   /**
    * 重新计算所有形状的zIndex，确保连续性
    */
-  normalizeZIndices(allShapes: Shape[]): Shape[];
+  normalizeZIndices(allShapes: IShapeEntity[]): IShapeEntity[];
 
   /**
    * 获取按zIndex排序的形状列表
    */
-  getSortedShapes(shapes: Shape[]): Shape[];
+  getSortedShapes(shapes: IShapeEntity[]): IShapeEntity[];
 
   /**
    * 获取形状的相对层次位置（从0开始）
    */
-  getRelativePosition(shape: Shape, allShapes: Shape[]): number;
+  getRelativePosition(shape: IShapeEntity, allShapes: IShapeEntity[]): number;
 }
 
 /**
@@ -80,7 +80,7 @@ export class ZIndexService implements IZIndexService {
     @ILogService private logService: ILogService
   ) {}
 
-  bringToFront(shapes: Shape[], allShapes: Shape[]): Shape[] {
+  bringToFront(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[] {
     if (shapes.length === 0) return allShapes;
 
     const maxZIndex = this.getMaxZIndex(allShapes);
@@ -93,9 +93,11 @@ export class ZIndexService implements IZIndexService {
         const newZIndex = maxZIndex + shapes.findIndex(s => s.id === shape.id) + 1;
         newZIndices[shape.id] = newZIndex;
 
-        // 直接修改 Shape 对象的 zIndex
-        shape.setZIndex(newZIndex);
-        return shape;
+        return {
+          ...shape,
+          zIndex: newZIndex,
+          updatedAt: new Date()
+        };
       }
       return shape;
     });
@@ -106,7 +108,7 @@ export class ZIndexService implements IZIndexService {
     return updatedShapes;
   }
 
-  sendToBack(shapes: Shape[], allShapes: Shape[]): Shape[] {
+  sendToBack(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[] {
     if (shapes.length === 0) return allShapes;
 
     const minZIndex = this.getMinZIndex(allShapes);
@@ -119,9 +121,11 @@ export class ZIndexService implements IZIndexService {
         const newZIndex = minZIndex - shapes.length + shapes.findIndex(s => s.id === shape.id);
         newZIndices[shape.id] = newZIndex;
 
-        // 直接修改 Shape 对象的 zIndex
-        shape.setZIndex(newZIndex);
-        return shape;
+        return {
+          ...shape,
+          zIndex: newZIndex,
+          updatedAt: new Date()
+        };
       }
       return shape;
     });
@@ -132,7 +136,7 @@ export class ZIndexService implements IZIndexService {
     return updatedShapes;
   }
 
-  bringForward(shapes: Shape[], allShapes: Shape[]): Shape[] {
+  bringForward(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[] {
     if (shapes.length === 0) return allShapes;
 
     const sortedAllShapes = this.getSortedShapes(allShapes);
@@ -160,14 +164,19 @@ export class ZIndexService implements IZIndexService {
           const nextShape = updatedShapes[nextIndex];
           const tempZIndex = shape.zIndex;
 
-          // 交换 zIndex
-          shape.setZIndex(nextShape.zIndex);
-          nextShape.setZIndex(tempZIndex);
+          updatedShapes[index] = {
+            ...shape,
+            zIndex: nextShape.zIndex,
+            updatedAt: new Date()
+          };
 
-          updatedShapes[index] = shape;
-          updatedShapes[nextIndex] = nextShape;
+          updatedShapes[nextIndex] = {
+            ...nextShape,
+            zIndex: tempZIndex,
+            updatedAt: new Date()
+          };
 
-          newZIndices[shape.id] =nextShape.zIndex;
+          newZIndices[shape.id] = nextShape.zIndex;
         }
       }
     });
@@ -178,7 +187,7 @@ export class ZIndexService implements IZIndexService {
     return updatedShapes;
   }
 
-  sendBackward(shapes: Shape[], allShapes: Shape[]): Shape[] {
+  sendBackward(shapes: IShapeEntity[], allShapes: IShapeEntity[]): IShapeEntity[] {
     if (shapes.length === 0) return allShapes;
 
     const sortedAllShapes = this.getSortedShapes(allShapes);
@@ -206,14 +215,19 @@ export class ZIndexService implements IZIndexService {
           const prevShape = updatedShapes[prevIndex];
           const tempZIndex = shape.zIndex;
 
-          // 交换 zIndex
-          shape.setZIndex(prevShape.zIndex);
-          prevShape.setZIndex(tempZIndex);
+          updatedShapes[index] = {
+            ...shape,
+            zIndex: prevShape.zIndex,
+            updatedAt: new Date()
+          };
 
-          updatedShapes[index] = shape;
-          updatedShapes[prevIndex] = prevShape;
+          updatedShapes[prevIndex] = {
+            ...prevShape,
+            zIndex: tempZIndex,
+            updatedAt: new Date()
+          };
 
-          newZIndices[shape.id] =prevShape.zIndex;
+          newZIndices[shape.id] = prevShape.zIndex;
         }
       }
     });
@@ -224,7 +238,7 @@ export class ZIndexService implements IZIndexService {
     return updatedShapes;
   }
 
-  setZIndex(shapes: Shape[], zIndex: number): Shape[] {
+  setZIndex(shapes: IShapeEntity[], zIndex: number): IShapeEntity[] {
     const oldZIndices: Record<string, number> = {};
     const newZIndices: Record<string, number> = {};
 
@@ -233,9 +247,11 @@ export class ZIndexService implements IZIndexService {
       const newZIndex = zIndex + index;
       newZIndices[shape.id] = newZIndex;
 
-      // 直接修改 Shape 对象的 zIndex
-      shape.setZIndex(newZIndex);
-      return shape;
+      return {
+        ...shape,
+        zIndex: newZIndex,
+        updatedAt: new Date()
+      };
     });
 
     this.logService.debug(`Set zIndex to ${zIndex} for ${shapes.length} shapes`);
@@ -243,34 +259,35 @@ export class ZIndexService implements IZIndexService {
     return updatedShapes;
   }
 
-  normalizeZIndices(allShapes: Shape[]): Shape[] {
+  normalizeZIndices(allShapes: IShapeEntity[]): IShapeEntity[] {
     const sortedShapes = this.getSortedShapes(allShapes);
 
-    // 直接修改 Shape 对象的 zIndex，不创建新对象
-    sortedShapes.forEach((shape, index) => {
-      shape.setZIndex(index);
-    });
+    const normalizedShapes = sortedShapes.map((shape, index) => ({
+      ...shape,
+      zIndex: index,
+      updatedAt: new Date()
+    }));
 
     this.logService.debug(`Normalized zIndex for ${allShapes.length} shapes`);
 
-    return sortedShapes;
+    return normalizedShapes;
   }
 
-  getSortedShapes(shapes: Shape[]): Shape[] {
+  getSortedShapes(shapes: IShapeEntity[]): IShapeEntity[] {
     return [...shapes].sort((a, b) => a.zIndex - b.zIndex);
   }
 
-  getRelativePosition(shape: Shape, allShapes: Shape[]): number {
+  getRelativePosition(shape: IShapeEntity, allShapes: IShapeEntity[]): number {
     const sortedShapes = this.getSortedShapes(allShapes);
     return sortedShapes.findIndex(s => s.id === shape.id);
   }
 
-  private getMaxZIndex(shapes: Shape[]): number {
+  private getMaxZIndex(shapes: IShapeEntity[]): number {
     if (shapes.length === 0) return 0;
     return Math.max(...shapes.map(s => s.zIndex));
   }
 
-  private getMinZIndex(shapes: Shape[]): number {
+  private getMinZIndex(shapes: IShapeEntity[]): number {
     if (shapes.length === 0) return 0;
     return Math.min(...shapes.map(s => s.zIndex));
   }

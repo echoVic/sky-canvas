@@ -265,16 +265,11 @@ export class GeometryUtils {
       const centerB = new Vector2(boundsB.x + boundsB.width / 2, boundsB.y + boundsB.height / 2);
       const distance = centerA.distance(centerB);
 
-      // 计算穿透深度
-      const overlapX = Math.min(boundsA.x + boundsA.width, boundsB.x + boundsB.width) - Math.max(boundsA.x, boundsB.x);
-      const overlapY = Math.min(boundsA.y + boundsA.height, boundsB.y + boundsB.height) - Math.max(boundsA.y, boundsB.y);
-      const penetration = Math.min(overlapX, overlapY);
-
       return {
         hasCollision: true,
         distance,
         normal: centerB.subtract(centerA).normalize(),
-        penetration,
+        penetration: 0,
         contactPoint: { x: centerA.x, y: centerA.y }
       };
     }

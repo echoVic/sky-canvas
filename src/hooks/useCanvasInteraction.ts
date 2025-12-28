@@ -17,7 +17,7 @@ export interface CanvasInteractionState {
  * 根据UI状态切换SDK的当前工具
  */
 export function useCanvasInteraction(
-  containerRef: React.RefObject<HTMLDivElement>,
+  canvasRef: React.RefObject<HTMLCanvasElement>,
   sdkResult: UseCanvasSDKResult,
   currentTool: UIToolType
 ) {
@@ -70,12 +70,14 @@ export function useCanvasInteraction(
   }, [currentTool, getCursorForTool]);
 
   // 同步工具选择到SDK
-  const syncToolToSDK = useMemoizedFn(async () => {
+  const syncToolToSDK = useMemoizedFn(() => {
     if (sdkState.isInitialized) {
       try {
         const toolName = getToolName(currentTool);
-        await sdkActions.setTool(toolName);
-        console.log(`Tool synced to SDK: ${toolName}`);
+        const success = sdkActions.setTool(toolName);
+        if (!success) {
+          console.log('Failed to set tool, SDK may not be ready yet');
+        }
       } catch (error) {
         console.log('Error setting tool:', error);
       }
@@ -84,7 +86,7 @@ export function useCanvasInteraction(
 
   useEffect(() => {
     syncToolToSDK();
-  }, [currentTool, sdkState.isInitialized]); // 移除syncToolToSDK依赖，因为useMemoizedFn已保证稳定性
+  }, [currentTool, sdkState.isInitialized, syncToolToSDK]);
 
   return {
     interactionState,

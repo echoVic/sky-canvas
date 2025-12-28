@@ -1,6 +1,6 @@
 import {
   createCanvasSDK,
-  type CanvasSDK,
+  CanvasSDK,
   type ICanvasSDKConfig,
   type IShapeEntity,
   type ShapeEntity

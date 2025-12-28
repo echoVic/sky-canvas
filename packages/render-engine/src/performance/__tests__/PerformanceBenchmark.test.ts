@@ -12,7 +12,7 @@ import {
   BenchmarkType,
   createDefaultBenchmarkSuite,
   BenchmarkConfig
-} from '../monitoring/PerformanceBenchmark';
+} from '../PerformanceBenchmark';
 
 // Mock performance APIs
 Object.defineProperty(global.performance, 'now', {
@@ -69,10 +69,7 @@ describe('PerformanceBenchmarkSuite', () => {
       };
 
       suite.addScenario(mockScenario);
-      // getSummary返回的是results的数量，而不是scenarios的数量
-      // 在没有运行测试之前，results为空
-      const summary = suite.getSummary();
-      expect(summary.total).toBe(0);
+      expect(suite['scenarios']).toHaveLength(1);
     });
 
     it('应该能够运行所有测试场景', async () => {
@@ -481,9 +478,7 @@ describe('createDefaultBenchmarkSuite', () => {
     const suite = createDefaultBenchmarkSuite(mockRenderEngine);
     
     expect(suite).toBeInstanceOf(PerformanceBenchmarkSuite);
-    // getSummary返回的是results的数量，在没有运行测试之前为0
-    const summary = suite.getSummary();
-    expect(summary.total).toBe(0);
+    expect(suite['scenarios']).toHaveLength(2); // FPS + Memory tests
   });
 
   it('应该接受自定义性能监控器', () => {
@@ -492,6 +487,6 @@ describe('createDefaultBenchmarkSuite', () => {
 
     const suite = createDefaultBenchmarkSuite(mockRenderEngine, mockPerformanceMonitor);
     
-    expect(suite).toBeInstanceOf(PerformanceBenchmarkSuite);
+    expect(suite['performanceMonitor']).toBe(mockPerformanceMonitor);
   });
 });

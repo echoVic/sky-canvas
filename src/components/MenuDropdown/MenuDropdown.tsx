@@ -6,28 +6,26 @@ import {
   DropdownItem,
   Button 
 } from '@heroui/react'
-import {
+import { 
   Menu,
-  FolderOpen,
-  Save,
-  Download,
-  Users,
-  Search,
-  HelpCircle,
+  FolderOpen, 
+  Save, 
+  Download, 
+  Users, 
+  Search, 
+  HelpCircle, 
   Share,
   Folder,
   Sun,
   Moon,
+  Monitor,
   Terminal,
-  RotateCcw,
-  TestTube
+  RotateCcw
 } from 'lucide-react'
 import { useCanvasStore } from '../../store/canvasStore'
-import { useCanvasSDK } from '../../hooks'
 
 const MenuDropdown: React.FC = () => {
   const { theme, toggleTheme } = useCanvasStore()
-  const [sdkState, sdkActions] = useCanvasSDK()
 
   const handleAction = (key: string) => {
     switch (key) {
@@ -58,27 +56,6 @@ const MenuDropdown: React.FC = () => {
         break
       case 'help':
         console.log('帮助')
-        break
-      case 'test-shape':
-        // 添加测试形状
-        if (sdkState.isInitialized && sdkState.sdk) {
-          try {
-            sdkActions.addRectangle({
-              x: 100,
-              y: 100,
-              width: 100,
-              height: 80,
-              style: {
-                fill: '#ff6b6b',
-                stroke: '#333',
-                strokeWidth: 2
-              }
-            })
-            console.log('Test rectangle added via Action system')
-          } catch (error) {
-            console.error('Failed to add test rectangle:', error)
-          }
-        }
         break
       default:
         break
@@ -188,18 +165,7 @@ const MenuDropdown: React.FC = () => {
         >
           帮助
         </DropdownItem>
-
-        {/* 测试按钮 - 仅在开发环境显示 */}
-        {process.env.NODE_ENV === 'development' ? (
-          <DropdownItem
-            key="test-shape"
-            startContent={<TestTube size={16} className="text-green-500" />}
-            className="h-9 text-sm text-green-500 data-[hover=true]:bg-green-50 dark:data-[hover=true]:bg-green-900/20"
-          >
-            🧪 添加测试形状
-          </DropdownItem>
-        ) : null}
-
+        
         <DropdownItem
           key="reset"
           startContent={<RotateCcw size={16} />}
@@ -208,21 +174,67 @@ const MenuDropdown: React.FC = () => {
           重置画布
         </DropdownItem>
 
-        {/* 主题设置项 */}
-        <DropdownItem
-          key="theme-light"
-          startContent={<Sun size={16} />}
-          className={`h-9 text-sm ${theme === 'light' ? 'bg-blue-50 text-blue-600' : ''}`}
-        >
-          浅色主题
-        </DropdownItem>
-
-        <DropdownItem
-          key="theme-dark"
-          startContent={<Moon size={16} />}
-          className={`h-9 text-sm ${theme === 'dark' ? 'bg-blue-50 text-blue-600' : ''}`}
-        >
-          深色主题
+        {/* 主题分隔区域 */}
+        <DropdownItem key="theme-section" className="p-0 h-auto">
+          <div className="pt-3 pb-2">
+            <div className="border-t border-gray-200 dark:border-gray-700 mb-3" />
+            <div className="px-2">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主题</p>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => theme !== 'light' && toggleTheme()}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all text-xs ${
+                    theme === 'light' 
+                      ? 'bg-blue-50 border-blue-500 text-blue-600' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <Sun size={16} />
+                  <span>浅色</span>
+                </button>
+                <button
+                  onClick={() => theme !== 'dark' && toggleTheme()}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all text-xs ${
+                    theme === 'dark' 
+                      ? 'bg-blue-50 border-blue-500 text-blue-600' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <Moon size={16} />
+                  <span>深色</span>
+                </button>
+                <button className="flex flex-col items-center gap-1 p-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-xs">
+                  <Monitor size={16} />
+                  <span>系统</span>
+                </button>
+              </div>
+            </div>
+            
+            {/* 画布背景 */}
+            <div className="px-2 mt-4">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">画布背景</p>
+              <div className="flex gap-1.5">
+                {[
+                  { color: 'bg-white', border: 'border-blue-500', active: true },
+                  { color: 'bg-gray-100', border: 'border-gray-300', active: false },
+                  { color: 'bg-blue-50', border: 'border-gray-300', active: false },
+                  { color: 'bg-yellow-50', border: 'border-gray-300', active: false },
+                  { color: 'bg-pink-50', border: 'border-gray-300', active: false },
+                  { color: 'bg-transparent', border: 'border-gray-300', active: false }
+                ].map((item, index) => (
+                  <button
+                    key={index}
+                    className={`w-6 h-6 rounded-md border-2 transition-all hover:scale-105 ${item.color} ${
+                      item.active ? item.border : 'border-gray-200 dark:border-gray-700'
+                    }`}
+                    style={index === 5 ? { 
+                      background: 'repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 6px 6px'
+                    } : {}}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         </DropdownItem>
       </DropdownMenu>
     </Dropdown>

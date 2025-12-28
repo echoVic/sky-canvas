@@ -7,7 +7,7 @@ import { proxy, snapshot } from 'valtio';
 // ViewModel不需要DI装饰器，使用构造函数注入
 import { IZoomService, IZoomConfig } from '../services/zoom/zoomService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewModel } from './types/IViewModel';
+import { IViewModel } from './interfaces/IViewModel';
 
 /**
  * 缩放状态

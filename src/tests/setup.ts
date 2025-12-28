@@ -93,78 +93,7 @@ HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
     return mockWebGLContext as any;
   }
   if (contextType === '2d') {
-    return new (global.CanvasRenderingContext2D as any)() as any;
+    return mockCanvas2DContext as any;
   }
   return null;
 }) as any;
-
-// Mock ImageData
-global.ImageData = vi.fn().mockImplementation((dataOrWidth: Uint8ClampedArray | number, widthOrHeight?: number, height?: number) => {
-  let width: number;
-  let h: number;
-  let data: Uint8ClampedArray;
-
-  if (typeof dataOrWidth === 'number') {
-    width = dataOrWidth;
-    h = widthOrHeight || 1;
-    data = new Uint8ClampedArray(width * h * 4);
-  } else {
-    data = dataOrWidth;
-    width = widthOrHeight!;
-    h = height!;
-  }
-
-  return {
-    width,
-    height: h,
-    data,
-    colorSpace: 'srgb'
-  };
-}) as any;
-
-// Mock HTMLCanvasElement constructor for instanceof checks
-global.HTMLCanvasElement = class MockHTMLCanvasElement {
-  width = 100;
-  height = 100;
-  getContext = vi.fn(() => new (global.CanvasRenderingContext2D as any)());
-} as any;
-
-// Mock CanvasRenderingContext2D constructor for instanceof checks
-global.CanvasRenderingContext2D = class MockCanvasRenderingContext2D {
-  clearRect = vi.fn();
-  fillRect = vi.fn();
-  strokeRect = vi.fn();
-  fillText = vi.fn();
-  strokeText = vi.fn();
-  measureText = vi.fn(() => ({ width: 0 }));
-  beginPath = vi.fn();
-  closePath = vi.fn();
-  moveTo = vi.fn();
-  lineTo = vi.fn();
-  arc = vi.fn();
-  stroke = vi.fn();
-  fill = vi.fn();
-  save = vi.fn();
-  restore = vi.fn();
-  translate = vi.fn();
-  rotate = vi.fn();
-  scale = vi.fn();
-  setTransform = vi.fn();
-  getTransform = vi.fn();
-  setLineDash = vi.fn();
-  getLineDash = vi.fn();
-  clip = vi.fn();
-  createRadialGradient = vi.fn(() => ({
-    addColorStop: vi.fn()
-  }));
-  rect = vi.fn();
-  quadraticCurveTo = vi.fn();
-  putImageData = vi.fn();
-  getImageData = vi.fn(() => new ImageData(100, 100));
-  createImageData = vi.fn(() => new ImageData(100, 100));
-  drawImage = vi.fn();
-  canvas = { width: 0, height: 0 };
-  globalCompositeOperation = 'source-over';
-  globalAlpha = 1;
-  fillStyle = '#000000';
-} as any;

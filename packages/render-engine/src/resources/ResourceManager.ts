@@ -1,12 +1,4 @@
-import { Texture, TextureFormat } from './textures/types';
-import { Buffer as WebGLBufferInterface, BufferType } from '../core/webgl/types';
-import { GPUResource } from './types';
-
-// 避免与全局Buffer类型冲突
-type BufferInterface = WebGLBufferInterface;
-
-// 声明模块作用域，避免全局Buffer类型干扰
-declare const Buffer: undefined;
+import { Buffer, BufferType, GPUResource, Texture, TextureFormat } from '../core/RenderTypes';
 
 // 资源池配置
 export interface ResourcePoolConfig {
@@ -27,16 +19,16 @@ export interface ResourceStats {
 
 // 资源管理器接口
 export interface IResourceManager {
-  createBuffer(type: BufferType, data: ArrayBuffer, usage?: number): BufferInterface;
+  createBuffer(type: BufferType, data: ArrayBuffer, usage?: number): Buffer;
   createTexture(width: number, height: number, format: TextureFormat, data?: ArrayBuffer): Texture;
-  releaseResource(resource: BufferInterface | Texture): void;
+  releaseResource(resource: GPUResource): void;
   getStats(): ResourceStats;
   cleanup(): void;
   dispose(): void;
 }
 
 // WebGL缓冲区实现
-export class WebGLBuffer implements BufferInterface {
+export class WebGLBuffer implements Buffer {
   id: string;
   type: BufferType;
   size: number;
@@ -69,22 +61,16 @@ export class WebGLBuffer implements BufferInterface {
 
   update(data: ArrayBuffer, offset: number = 0): void {
     if (!this.glBuffer) return;
-
+    
     this.gl.bindBuffer(this.glType, this.glBuffer);
-
-    // 核心修复：只在需要时增长缓冲区，永远不缩小
-    if (data.byteLength > this.size) {
-      // 新数据比当前缓冲区大，需要重新分配
+    if (offset === 0 && data.byteLength === this.size) {
       this.gl.bufferData(this.glType, data, this.usage);
-      this.size = data.byteLength;
-      this.data = data;
     } else {
-      // 新数据小于等于当前缓冲区，使用 bufferSubData 部分更新
       this.gl.bufferSubData(this.glType, offset, data);
-      // 不更新 this.size，保持大缓冲区的大小
-      // 但更新 this.data 引用
-      this.data = data;
     }
+    
+    this.data = data;
+    this.size = data.byteLength;
   }
 
   bind(): void {
@@ -199,7 +185,7 @@ export class WebGLResourceManager implements IResourceManager {
   private gl: WebGLRenderingContext;
   private config: ResourcePoolConfig;
   private resources = new Map<string, GPUResource>();
-  private bufferPool = new Map<string, BufferInterface[]>();
+  private bufferPool = new Map<string, Buffer[]>();
   private texturePool = new Map<string, Texture[]>();
   private nextId = 0;
 
@@ -214,7 +200,7 @@ export class WebGLResourceManager implements IResourceManager {
     };
   }
 
-  createBuffer(type: BufferType, data: ArrayBuffer, usage?: number): BufferInterface {
+  createBuffer(type: BufferType, data: ArrayBuffer, usage?: number): Buffer {
     const id = `buffer_${this.nextId++}`;
     const buffer = new WebGLBuffer(this.gl, id, type, data, usage);
     this.resources.set(id, buffer);
@@ -236,21 +222,21 @@ export class WebGLResourceManager implements IResourceManager {
     return texture;
   }
 
-  releaseResource(resource: BufferInterface | Texture): void {
+  releaseResource(resource: GPUResource): void {
     this.resources.delete(resource.id);
     
     // 尝试放入资源池复用
-    if ('data' in resource) {
-      // 这是Buffer类型
-      this.poolBuffer(resource as BufferInterface);
-    } else {
-      // 这是Texture类型
+    if (resource.type === 'buffer') {
+      this.poolBuffer(resource as Buffer);
+    } else if (resource.type === 'texture') {
       this.poolTexture(resource as Texture);
+    } else {
+      resource.dispose();
     }
   }
 
-  private poolBuffer(buffer: BufferInterface): void {
-    const key = `${(buffer as any).type}_${(buffer as any).size}`;
+  private poolBuffer(buffer: Buffer): void {
+    const key = `${buffer.type}_${buffer.size}`;
     if (!this.bufferPool.has(key)) {
       this.bufferPool.set(key, []);
     }
@@ -259,7 +245,7 @@ export class WebGLResourceManager implements IResourceManager {
     if (pool.length < 10) { // 限制池大小
       pool.push(buffer);
     } else {
-      (buffer as any).dispose();
+      buffer.dispose();
     }
   }
 
@@ -317,7 +303,7 @@ export class WebGLResourceManager implements IResourceManager {
     for (const [key, pool] of this.bufferPool) {
       while (pool.length > 5) {
         const buffer = pool.pop();
-        (buffer as any)?.dispose();
+        buffer?.dispose();
       }
     }
     
@@ -339,7 +325,7 @@ export class WebGLResourceManager implements IResourceManager {
     // 清空资源池
     for (const pool of this.bufferPool.values()) {
       for (const buffer of pool) {
-        (buffer as any).dispose();
+        buffer.dispose();
       }
     }
     this.bufferPool.clear();

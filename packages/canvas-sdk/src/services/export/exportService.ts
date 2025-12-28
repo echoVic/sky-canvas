@@ -2,8 +2,8 @@
  * 导出服务 - 单一职责：处理各种格式的导出功能
  */
 
-import { Shape } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
+import { ShapeEntity } from '../../models/entities/Shape';
 
 /**
  * 导出选项接口
@@ -21,14 +21,14 @@ export interface IExportOptions {
  */
 export interface IExportService {
   // SVG 导出
-  exportToSVG(shapes: Shape[], options?: { width?: number; height?: number }): string;
+  exportToSVG(shapes: ShapeEntity[], options?: { width?: number; height?: number }): string;
   
   // 图片导出
   exportToPNG(canvas: HTMLCanvasElement, options?: IExportOptions): Promise<Blob>;
   exportToJPEG(canvas: HTMLCanvasElement, options?: IExportOptions): Promise<Blob>;
   
   // JSON 导出
-  exportToJSON(shapes: Shape[]): string;
+  exportToJSON(shapes: ShapeEntity[]): string;
   
   // 下载文件
   downloadFile(content: string | Blob, filename: string, mimeType?: string): void;
@@ -44,7 +44,7 @@ export class ExportService implements IExportService {
   /**
    * 导出到SVG
    */
-  exportToSVG(shapes: Shape[], options?: { width?: number; height?: number }): string {
+  exportToSVG(shapes: ShapeEntity[], options?: { width?: number; height?: number }): string {
     const width = options?.width || 800;
     const height = options?.height || 600;
     
@@ -111,7 +111,7 @@ export class ExportService implements IExportService {
   /**
    * 导出到JSON
    */
-  exportToJSON(shapes: Shape[]): string {
+  exportToJSON(shapes: ShapeEntity[]): string {
     const exportData = {
       version: '1.0',
       shapes: shapes.filter(shape => shape.visible),
@@ -152,24 +152,22 @@ export class ExportService implements IExportService {
   /**
    * 形状转SVG
    */
-  private shapeToSVG(shape: Shape): string | null {
-    const style = shape.style();
-    const fill = style.fill || 'black';
-    const stroke = style.stroke || 'none';
+  private shapeToSVG(shape: ShapeEntity): string | null {
+    const { transform, style } = shape;
+    const fill = style.fillColor || 'black';
+    const stroke = style.strokeColor || 'none';
     const strokeWidth = style.strokeWidth || 0;
     
-    switch (shape.constructor.name.toLowerCase()) {
+    switch (shape.type) {
       case 'rectangle':
         const rectShape = shape as any;
-        const bounds = shape.getBounds();
-        return `<rect x="${shape.x}" y="${shape.y}" width="${bounds.width}" height="${bounds.height}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
-
+        return `<rect x="${transform.position.x}" y="${transform.position.y}" width="${rectShape.size?.width || 100}" height="${rectShape.size?.height || 100}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
+        
       case 'circle':
-        const circleBounds = shape.getBounds();
-        const radius = circleBounds.width / 2;
-        const cx = shape.x + radius;
-        const cy = shape.y + radius;
-        return `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
+        const circleShape = shape as any;
+        const cx = transform.position.x + (circleShape.radius || 50);
+        const cy = transform.position.y + (circleShape.radius || 50);
+        return `<circle cx="${cx}" cy="${cy}" r="${circleShape.radius || 50}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
         
       case 'path':
         const pathShape = shape as any;
@@ -177,11 +175,11 @@ export class ExportService implements IExportService {
         
       case 'text':
         const textShape = shape as any;
-        return `<text x="${shape.x}" y="${shape.y + (textShape.fontSize || 16)}" font-family="${textShape.fontFamily || 'Arial'}" font-size="${textShape.fontSize || 16}" fill="${fill}">${textShape.content || ''}</text>`;
-
+        return `<text x="${transform.position.x}" y="${transform.position.y + (textShape.fontSize || 16)}" font-family="${textShape.fontFamily || 'Arial'}" font-size="${textShape.fontSize || 16}" fill="${fill}">${textShape.content || ''}</text>`;
+        
       default:
         // 默认矩形
-        return `<rect x="${shape.x}" y="${shape.y}" width="100" height="100" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
+        return `<rect x="${transform.position.x}" y="${transform.position.y}" width="100" height="100" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
     }
   }
 

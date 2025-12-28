@@ -3,7 +3,7 @@
  * MVVM架构中的View层 - 视图抽象，与具体UI框架解耦
  */
 
-import { Shape } from '@sky-canvas/render-engine';
+import { ShapeEntity } from '../../models/entities/Shape';
 import { IViewportState } from '../../viewmodels/canvas/CanvasViewModel';
 
 /**
@@ -61,12 +61,12 @@ export interface ICanvasView {
   /**
    * 渲染形状
    */
-  render(shapes: Shape[], viewport: IViewportState): Promise<void>;
+  render(shapes: ShapeEntity[], viewport: IViewportState): Promise<void>;
 
   /**
    * 渲染单个形状
    */
-  renderShape(shape: Shape, context: IRenderContext): Promise<void>;
+  renderShape(shape: ShapeEntity, context: IRenderContext): Promise<void>;
 
   /**
    * 清空画布
@@ -131,7 +131,7 @@ export interface ICanvasView {
   /**
    * 判断点是否在形状内
    */
-  hitTest(shape: Shape, x: number, y: number): boolean;
+  hitTest(shape: ShapeEntity, x: number, y: number): boolean;
 
   /**
    * 获取指定区域内的形状
@@ -207,8 +207,8 @@ export abstract class BaseCanvasView implements ICanvasView {
     this.isInitialized = true;
   }
 
-  abstract render(shapes: Shape[], viewport: IViewportState): Promise<void>;
-  abstract renderShape(shape: Shape, context: IRenderContext): Promise<void>;
+  abstract render(shapes: ShapeEntity[], viewport: IViewportState): Promise<void>;
+  abstract renderShape(shape: ShapeEntity, context: IRenderContext): Promise<void>;
   abstract clear(): void;
   protected abstract initializeRenderer(): Promise<void>;
 
@@ -284,7 +284,7 @@ export abstract class BaseCanvasView implements ICanvasView {
 
   abstract showGrid(show: boolean, gridSize?: number): void;
   abstract highlightShapes(shapeIds: string[]): void;
-  abstract hitTest(shape: Shape, x: number, y: number): boolean;
+  abstract hitTest(shape: ShapeEntity, x: number, y: number): boolean;
   abstract getShapesInRegion(x: number, y: number, width: number, height: number): string[];
   abstract exportAsImage(format?: 'png' | 'jpeg' | 'webp', quality?: number): Promise<Blob>;
   abstract exportAsSVG(): Promise<string>;

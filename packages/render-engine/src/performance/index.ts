@@ -1,22 +1,58 @@
 /**
- * 渲染引擎性能监控模块导出
- * 只包含渲染引擎自身的性能监控工具
+ * 性能监控模块导出
  */
 
-// 核心性能监控组件
-export * from './monitoring/PerformanceMonitor';
-export * from './monitoring/WebGLAnalyzer';
+// 原有的性能监控组件
+export * from './PerformanceMonitor';
+export * from './WebGLAnalyzer';
+
+// 统一性能监控系统
+export { 
+  UnifiedPerformanceMonitor,
+  UnifiedMetricType,
+  DataSourceType,
+  type UnifiedPerformanceConfig,
+  type UnifiedMetricDataPoint,
+  type UnifiedMetricStats,
+  type UnifiedPerformanceWarning,
+  type UnifiedPerformanceThresholds,
+  type IDataSourceAdapter,
+  type BottleneckAnalysis
+} from './UnifiedPerformanceMonitor';
+
+export { 
+  UnifiedPerformanceManager,
+  globalPerformanceManager,
+  type PerformanceManagerConfig
+} from './UnifiedPerformanceManager';
+
+// 数据源适配器
+export { RenderEngineAdapter } from './adapters/RenderEngineAdapter';
+export { CanvasSDKAdapter, CanvasSDKPerformanceHelper } from './adapters/CanvasSDKAdapter';
+export { FrontendUIAdapter, FrontendUIPerformanceHelper } from './adapters/FrontendUIAdapter';
 
 // 性能基准测试系统
 export {
+  PerformanceBenchmarkSuite,
+  FPSBenchmark,
+  MemoryBenchmark,
+  DrawCallBenchmark,
   BatchEfficiencyBenchmark,
   BenchmarkType,
-  createDefaultBenchmarkSuite, DrawCallBenchmark, FPSBenchmark,
-  MemoryBenchmark, PerformanceBenchmarkSuite, type BenchmarkConfig, type BenchmarkResult, type BenchmarkScenario
-} from './monitoring/PerformanceBenchmark';
+  createDefaultBenchmarkSuite,
+  type BenchmarkResult,
+  type BenchmarkConfig,
+  type BenchmarkScenario
+} from './PerformanceBenchmark';
 
 // 性能回归检测
 export {
-  createRegressionDetector, PerformanceAlertSystem, RegressionDetector, type PerformanceAlert, type RegressionAnalysis, type RegressionConfig, type StatisticalSummary,
-  type TTestResult
-} from './monitoring/RegressionDetector';
+  RegressionDetector,
+  PerformanceAlertSystem,
+  createRegressionDetector,
+  type RegressionConfig,
+  type RegressionAnalysis,
+  type StatisticalSummary,
+  type TTestResult,
+  type PerformanceAlert
+} from './RegressionDetector';

@@ -153,7 +153,7 @@ const StatusBar: React.FC = () => {
       <div className="flex items-center gap-2">
         <span className="text-xs text-gray-500 dark:text-gray-500">
           {sdkState.isInitialized ? 
-            `形状: ${sdkState.shapes.length} | 选中: ${sdkState.selectedShapeIds.length}` :
+            `形状: ${sdkState.shapes.length} | 选中: ${sdkState.selectedShapes.length}` :
             '初始化中...'
           }
         </span>

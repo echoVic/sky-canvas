@@ -4,18 +4,18 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { Shape } from '@sky-canvas/render-engine';
 import { ICanvasManager } from '../managers/CanvasManager';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewModel } from './types/IViewModel';
+import { IViewModel } from './interfaces/IViewModel';
+import { ShapeEntity } from '../models/entities/Shape';
 
 /**
  * Canvas 状态
  */
 export interface ICanvasState {
   // 形状管理
-  shapes: Shape[];
-  selectedShapes: Shape[];
+  shapes: ShapeEntity[];
+  selectedShapes: ShapeEntity[];
   
   // 画布状态
   isDrawing: boolean;
@@ -42,9 +42,9 @@ export interface ICanvasViewModel extends IViewModel {
   state: ICanvasState;
   
   // 形状操作
-  addShape(shape: Shape): void;
+  addShape(shape: ShapeEntity): void;
   removeShape(id: string): void;
-  updateShape(id: string, updates: Partial<Shape>): void;
+  updateShape(id: string, updates: Partial<ShapeEntity>): void;
   
   // 选择操作
   selectShape(id: string): void;
@@ -65,7 +65,7 @@ export interface ICanvasViewModel extends IViewModel {
   hitTest(x: number, y: number): string | null;
   
   // 状态查询
-  getSelectedShapes(): Shape[];
+  getSelectedShapes(): ShapeEntity[];
   canPerformAction(action: string): boolean;
 }
 
@@ -116,7 +116,7 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   // === 形状操作 ===
 
-  addShape(shape: Shape): void {
+  addShape(shape: ShapeEntity): void {
     this.canvasManager.addShape(shape);
     // 状态会通过事件监听器自动更新
   }
@@ -125,7 +125,7 @@ export class CanvasViewModel implements ICanvasViewModel {
     this.canvasManager.removeShape(id);
   }
 
-  updateShape(id: string, updates: Partial<Shape>): void {
+  updateShape(id: string, updates: Partial<ShapeEntity>): void {
     this.canvasManager.updateShape(id, updates);
   }
 
@@ -145,9 +145,9 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   selectAll(): void {
     // 获取所有形状并选择它们
-    const graphics = this.canvasManager.getGraphics();
-    graphics.forEach(graphic => {
-      const id = (graphic as any).id;
+    const renderables = this.canvasManager.getRenderables();
+    renderables.forEach(renderable => {
+      const id = (renderable as any).id;
       if (id) this.canvasManager.selectShape(id);
     });
   }
@@ -182,7 +182,7 @@ export class CanvasViewModel implements ICanvasViewModel {
     return this.canvasManager.hitTest(x, y);
   }
 
-  getSelectedShapes(): Shape[] {
+  getSelectedShapes(): ShapeEntity[] {
     return this.canvasManager.getSelectedShapes();
   }
 

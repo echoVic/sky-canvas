@@ -5,5 +5,10 @@
 // 对象工具函数
 export * from './ObjectUtils';
 
-// 颜色工具函数
+// 颜色工具函数  
 export * from './ColorUtils';
+
+// 工具函数集合
+export const utils = {
+  // 所有工具函数通过模块导出
+};

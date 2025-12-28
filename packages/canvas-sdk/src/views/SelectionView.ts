@@ -3,21 +3,57 @@
  * 负责渲染选择框、控制点、变换手柄等
  */
 
-import { Shape } from '@sky-canvas/render-engine';
-import { ISelectionState, IViewportState } from '../viewmodels/types/IViewModel';
+import { ShapeEntity } from '../models/entities/Shape';
+import { ISelectionState, IViewportState } from '../viewmodels/interfaces/IViewModel';
 
 /**
  * 获取形状边界的工具函数
  */
-function getShapeBounds(shape: Shape): { x: number; y: number; width: number; height: number } {
-  // 使用 getBounds() 方法获取形状的边界框
-  const bounds = shape.getBounds();
-  return {
-    x: shape.x,
-    y: shape.y,
-    width: bounds.width,
-    height: bounds.height
-  };
+function getShapeBounds(shape: ShapeEntity): { x: number; y: number; width: number; height: number } {
+  const { position } = shape.transform;
+  
+  switch (shape.type) {
+    case 'rectangle':
+      return {
+        x: position.x,
+        y: position.y,
+        width: shape.size.width,
+        height: shape.size.height
+      };
+    case 'circle':
+      const diameter = shape.radius * 2;
+      return {
+        x: position.x - shape.radius,
+        y: position.y - shape.radius,
+        width: diameter,
+        height: diameter
+      };
+    case 'text':
+      // 文本边界的简化计算，实际应该基于字体大小和内容
+      const textWidth = shape.content.length * shape.fontSize * 0.6;
+      const textHeight = shape.fontSize;
+      return {
+        x: position.x,
+        y: position.y,
+        width: textWidth,
+        height: textHeight
+      };
+    case 'path':
+      // 路径边界的简化计算，实际应该解析 SVG path data
+      return {
+        x: position.x,
+        y: position.y,
+        width: 100, // 默认值
+        height: 100  // 默认值
+      };
+    default:
+      return {
+        x: position.x,
+        y: position.y,
+        width: 100,
+        height: 100
+      };
+  }
 }
 
 export interface ISelectionViewConfig {
@@ -57,7 +93,7 @@ export class SelectionView {
   /**
    * 渲染选择状态
    */
-  render(ctx: CanvasRenderingContext2D, selection: ISelectionState, shapes: Shape[], viewport: IViewportState): void {
+  render(ctx: CanvasRenderingContext2D, selection: ISelectionState, shapes: ShapeEntity[], viewport: IViewportState): void {
     if (!selection.selectionBounds || selection.selectedShapeIds.length === 0) {
       return;
     }
@@ -84,7 +120,7 @@ export class SelectionView {
   /**
    * 渲染单个形状选择
    */
-  private renderSingleSelection(ctx: CanvasRenderingContext2D, shape: Shape, viewport: IViewportState): void {
+  private renderSingleSelection(ctx: CanvasRenderingContext2D, shape: ShapeEntity, viewport: IViewportState): void {
     const bounds = getShapeBounds(shape);
     
     // 绘制选择框
@@ -201,7 +237,7 @@ export class SelectionView {
   /**
    * 命中测试控制手柄
    */
-  hitTestHandle(point: { x: number; y: number }, selection: ISelectionState, shapes: Shape[], viewport: IViewportState): IControlHandle | null {
+  hitTestHandle(point: { x: number; y: number }, selection: ISelectionState, shapes: ShapeEntity[], viewport: IViewportState): IControlHandle | null {
     if (!selection.selectionBounds || selection.selectedShapeIds.length === 0) {
       return null;
     }

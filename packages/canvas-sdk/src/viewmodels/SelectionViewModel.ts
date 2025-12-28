@@ -4,39 +4,9 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { Shape } from '@sky-canvas/render-engine';
+import { ShapeEntity } from '../models/entities/Shape';
+import { ISelectionViewModel, ISelectionState } from './interfaces/IViewModel';
 import { IEventBusService } from '../services/eventBus/eventBusService';
-import { IViewModel } from './types/IViewModel';
-
-/**
- * 选择状态接口
- */
-export interface ISelectionState {
-  selectedShapeIds: string[];
-  isMultiSelect: boolean;
-  selectionBounds?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-}
-
-/**
- * 选择 ViewModel 接口
- */
-export interface ISelectionViewModel extends IViewModel {
-  state: ISelectionState;
-  selectShape(id: string): void;
-  deselectShape(id: string): void;
-  clearSelection(): void;
-  selectMultiple(ids: string[]): void;
-  addToSelection(ids: string[]): void;
-  removeFromSelection(ids: string[]): void;
-  isSelected(id: string): boolean;
-  getSelectedIds(): string[];
-  updateSelectionBounds(shapes: Shape[]): void;
-}
 
 export class SelectionViewModel implements ISelectionViewModel {
   private readonly _state: ISelectionState;
@@ -199,7 +169,7 @@ export class SelectionViewModel implements ISelectionViewModel {
     return [...this._state.selectedShapeIds];
   }
 
-  updateSelectionBounds(shapes: Shape[]): void {
+  updateSelectionBounds(shapes: ShapeEntity[]): void {
     if (this._state.selectedShapeIds.length === 0 || shapes.length === 0) {
       this._state.selectionBounds = undefined;
       return;
@@ -223,18 +193,18 @@ export class SelectionViewModel implements ISelectionViewModel {
 
     for (const shape of selectedShapes) {
       let bounds = {
-        x: shape.x || 0,
-        y: shape.y || 0,
+        x: shape.transform.position.x,
+        y: shape.transform.position.y,
         width: 0,
         height: 0
       };
       
       // 根据形状类型获取尺寸
-      if (shape.constructor.name.toLowerCase() === 'rectangle') {
+      if (shape.type === 'rectangle') {
         const rect = shape as any;
-        bounds.width = rect.width || 0;
-        bounds.height = rect.height || 0;
-      } else if (shape.constructor.name.toLowerCase() === 'circle') {
+        bounds.width = rect.size?.width || 0;
+        bounds.height = rect.size?.height || 0;
+      } else if (shape.type === 'circle') {
         const circle = shape as any;
         const radius = circle.radius || 0;
         bounds.width = radius * 2;

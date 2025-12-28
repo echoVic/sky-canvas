@@ -45,8 +45,8 @@ export class HistoryService implements IHistoryService {
   private maxHistorySize = 100;
 
   constructor(
-    private eventBus: IEventBusService,
-    private logger: ILogService
+    @IEventBusService private eventBus: IEventBusService,
+    @ILogService private logger: ILogService
   ) {}
 
   execute(command: ICommand): void {
