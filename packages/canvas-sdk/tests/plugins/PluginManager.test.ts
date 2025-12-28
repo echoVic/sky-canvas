@@ -268,13 +268,18 @@ describe('PluginManager', () => {
         await pluginManager.loadPlugin(manifest, { default: MockPlugin });
       }
 
+      // 激活 active-plugin 使其变为 ACTIVE 状态
       await pluginManager.activatePlugin('active-plugin');
+      // 激活后停用 inactive-plugin 使其变为 INACTIVE 状态
+      await pluginManager.activatePlugin('inactive-plugin');
+      await pluginManager.deactivatePlugin('inactive-plugin');
+      // 禁用 disabled-plugin 使其变为 DISABLED 状态
       await pluginManager.disablePlugin('disabled-plugin');
     });
 
     it('应该返回正确的统计信息', () => {
       const stats = pluginManager.getStats();
-      
+
       expect(stats.total).toBe(3);
       expect(stats.active).toBe(1);
       expect(stats.inactive).toBe(1);

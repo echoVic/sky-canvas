@@ -4,7 +4,7 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-import { IThemeService, ThemeType, IThemeConfig } from '../services/theme/themeService';
+import { IThemeService, ThemeType, IThemeConfig, IThemeColors } from '../services/theme/themeService';
 import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './types/IViewModel';
 
@@ -25,7 +25,7 @@ export interface IThemeViewModel extends IViewModel {
   state: IThemeState;
   setTheme(theme: ThemeType): void;
   toggleTheme(): void;
-  getCurrentColors(): any;
+  getCurrentColors(): IThemeColors;
 }
 
 /**
@@ -85,7 +85,7 @@ export class ThemeViewModel implements IThemeViewModel {
   /**
    * 获取当前主题颜色
    */
-  getCurrentColors(): any {
+  getCurrentColors(): IThemeColors {
     return this.themeService.getThemeColors();
   }
 

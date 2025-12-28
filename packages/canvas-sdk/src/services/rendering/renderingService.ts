@@ -2,58 +2,74 @@
  * 渲染服务
  */
 
-import { IRenderable, RenderEngine } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 
 /**
- * 渲染服务配置接口
+ * 渲染引擎配置
  */
-export interface IRenderingServiceConfig {
-  /** 渲染引擎类型 */
+export interface IRenderingConfig {
   renderEngine?: 'webgl' | 'canvas2d' | 'webgpu';
-  /** 是否启用调试模式 */
-  debug?: boolean;
-  /** 目标帧率 */
   targetFPS?: number;
-  /** 是否启用抗锯齿 */
-  antialias?: boolean;
-  /** 是否启用透明度 */
-  alpha?: boolean;
-  /** 是否启用调试日志 */
-  enableDebugLogs?: boolean;
+  enableVSync?: boolean;
+  enableCulling?: boolean;
 }
 
 /**
- * 渲染统计信息接口
+ * 可渲染对象接口
  */
-export interface IRenderingStats {
-  /** 渲染器类型 */
-  rendererType: string;
-  /** 对象数量 */
-  graphicCount: number;
-  /** 是否正在运行 */
-  isRunning: boolean;
-  /** 当前帧率 */
-  fps?: number;
-  /** 渲染器能力信息 */
-  capabilities?: Record<string, unknown>;
+export interface IRenderable {
+  readonly id: string;
+  readonly visible: boolean;
+  render(context: unknown): void;
+}
+
+/**
+ * 渲染引擎接口（本地定义，避免循环依赖）
+ */
+interface IRenderEngineInstance {
+  initialize(factory: unknown, canvas: HTMLCanvasElement): Promise<void>;
+  start(): void;
+  stop(): void;
+  render(): void;
+  isRunning(): boolean;
+  dispose(): void;
+  createLayer(id: string, zIndex?: number): unknown;
+  getLayer(id: string): unknown;
+}
+
+/**
+ * 渲染图层接口
+ */
+interface IRenderLayer {
+  addRenderable(renderable: IRenderable): void;
+  removeRenderable(id: string): void;
+  clearRenderables(): void;
+}
+
+/**
+ * 渲染统计信息
+ */
+export interface RenderingStats {
+  running: boolean;
+  renderableCount: number;
+  engineStats: Record<string, unknown>;
 }
 
 /**
  * 渲染服务接口
  */
 export interface ICanvasRenderingService {
-  initialize(container: HTMLElement, config: IRenderingServiceConfig): Promise<void>;
-  getRenderEngine(): RenderEngine | null;
-  addGraphic(graphic: IRenderable): void;
-  removeGraphic(id: string): void;
+  initialize(canvas: HTMLCanvasElement, config: IRenderingConfig): Promise<void>;
+  getRenderEngine(): IRenderEngineInstance | null;
+  addRenderable(renderable: IRenderable): void;
+  removeRenderable(id: string): void;
   render(): void;
   start(): void;
   stop(): void;
   isRunning(): boolean;
-  getStats(): IRenderingStats;
+  getStats(): RenderingStats;
   dispose(): void;
 }
 
@@ -66,104 +82,140 @@ export const ICanvasRenderingService = createDecorator<ICanvasRenderingService>(
  * 渲染服务实现
  */
 export class CanvasRenderingService implements ICanvasRenderingService {
-  private renderEngine: RenderEngine | null = null;
+  private renderEngine: IRenderEngineInstance | null = null;
   private running = false;
-  private graphics = new Map<string, IRenderable>();
+  private renderables = new Map<string, IRenderable>();
+  private defaultLayer: IRenderLayer | null = null;
+  private static readonly DEFAULT_LAYER_ID = 'default-layer';
 
   constructor(
     @IEventBusService private eventBus: IEventBusService,
     @ILogService private logger: ILogServiceInterface
   ) {}
 
-  async initialize(container: HTMLElement, config: IRenderingServiceConfig): Promise<void> {
+  async initialize(canvas: HTMLCanvasElement, config: IRenderingConfig): Promise<void> {
+    console.log('[RenderingService] Initializing with config:', config);
+    this.logger.info('Initializing canvas rendering service', { config });
+
+    // 如果已经初始化过，先停止并清理旧的引擎
+    if (this.renderEngine) {
+      console.log('[RenderingService] Stopping existing render engine before re-initialization');
+      this.renderEngine.stop();
+      this.renderEngine.dispose();
+      this.renderEngine = null;
+      this.defaultLayer = null;
+      this.renderables.clear();
+      this.running = false;
+    }
+
     try {
-      const { RenderEngine } = await import('@sky-canvas/render-engine');
+      const { RenderEngine, WebGLContextFactory, Canvas2DContextFactory, WebGPUContextFactory } = await import('@sky-canvas/render-engine');
 
-      const engineConfig = {
-        renderer: config.renderEngine || 'webgl',
-        debug: config.debug || false,
-        enableBatching: true,
-        targetFPS: config.targetFPS || 60,
-        antialias: config.antialias !== false,
-        alpha: config.alpha !== false,
-        enableDebugLogs: config.enableDebugLogs || false
-      };
+      // 根据配置选择对应的图形上下文工厂
+      let factory;
+      const renderType = config.renderEngine || 'webgl';
+      console.log('[RenderingService] Using render type:', renderType);
 
-      this.renderEngine = new RenderEngine(container, engineConfig);
-      await this.renderEngine.initialize();
+      switch (renderType) {
+        case 'webgl':
+          factory = new WebGLContextFactory();
+          break;
+        case 'canvas2d':
+          factory = new Canvas2DContextFactory();
+          break;
+        case 'webgpu':
+          factory = new WebGPUContextFactory();
+          break;
+        default:
+          factory = new WebGLContextFactory();
+      }
 
-      // 监听形状变化事件并触发重绘
-      this.eventBus.on('canvas:shapeAdded', () => this.render());
-      this.eventBus.on('canvas:shapeUpdated', () => this.render());
-      this.eventBus.on('canvas:shapeRemoved', () => this.render());
-      this.eventBus.on('canvas:cleared', () => this.render());
+      const engine = new RenderEngine(config) as unknown as IRenderEngineInstance;
+      await engine.initialize(factory, canvas);
+      this.renderEngine = engine;
 
-      this.eventBus.emit('rendering:initialized', { container, config });
-      this.logger.info('Rendering service initialized');
+      // 创建默认渲染图层
+      this.defaultLayer = engine.createLayer(CanvasRenderingService.DEFAULT_LAYER_ID, 0) as IRenderLayer;
+      this.logger.debug('Default render layer created');
+
+      // 监听形状变化事件
+      this.eventBus.on('canvas:shapeAdded', (data: { entity: unknown; view: IRenderable }) => {
+        console.log('[RenderingService] canvas:shapeAdded event received:', data);
+        this.logger.debug('Shape added, adding to render layer');
+        if (data.view) {
+          console.log('[RenderingService] Adding view to layer:', data.view.id, data.view);
+          this.addRenderable(data.view);
+        } else {
+          console.warn('[RenderingService] No view in shapeAdded event!');
+        }
+      });
+
+      this.eventBus.on('canvas:shapeUpdated', () => {
+        this.logger.debug('Shape updated, triggering render');
+        // 形状更新会自动反映在渲染中，因为view引用的是同一个对象
+      });
+
+      this.eventBus.on('canvas:shapeRemoved', (data: { id: string }) => {
+        this.logger.debug('Shape removed, removing from render layer');
+        if (data.id) {
+          this.removeRenderable(data.id);
+        }
+      });
+
+      this.eventBus.on('canvas:cleared', () => {
+        this.logger.debug('Canvas cleared, triggering render');
+        this.render();
+      });
+
+      this.eventBus.emit('rendering:initialized', { canvas, config });
+      this.logger.info('Canvas rendering service initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize rendering service', error);
       throw error;
     }
   }
 
-  getRenderEngine(): RenderEngine | null {
+  getRenderEngine(): IRenderEngineInstance | null {
     return this.renderEngine;
   }
 
-  addGraphic(graphic: IRenderable): void {
-    if (!this.renderEngine) {
-      this.logger.error('RenderEngine is not initialized');
-      return;
+  addRenderable(renderable: IRenderable): void {
+    if (renderable && renderable.id) {
+      this.renderables.set(renderable.id, renderable);
+      // 同时添加到默认渲染图层
+      if (this.defaultLayer) {
+        this.defaultLayer.addRenderable(renderable);
+      }
+      this.logger.debug('Renderable added', renderable.id);
     }
-
-    if (!graphic?.id) {
-      this.logger.warn('Cannot add graphic without id');
-      return;
-    }
-
-    this.graphics.set(graphic.id, graphic);
-    this.renderEngine.addGraphic(graphic);
-    this.logger.debug(`Added graphic ${graphic.id} (total: ${this.graphics.size})`);
-
-    // 手动触发一次渲染
-    this.render();
   }
 
-  removeGraphic(id: string): void {
-    if (this.graphics.has(id)) {
-      this.graphics.delete(id);
-      this.renderEngine?.removeGraphic(id);
+  removeRenderable(id: string): void {
+    if (this.renderables.has(id)) {
+      this.renderables.delete(id);
+      // 同时从默认渲染图层移除
+      if (this.defaultLayer) {
+        this.defaultLayer.removeRenderable(id);
+      }
+      this.logger.debug('Renderable removed', id);
     }
   }
 
   render(): void {
-    if (!this.renderEngine) {
-      this.logger.warn('No render engine available');
-      return;
-    }
-
-    try {
+    if (this.renderEngine) {
       this.renderEngine.render();
-    } catch (error) {
-      this.logger.error('Error during render:', error);
     }
   }
 
   start(): void {
-    if (this.running) {
-      this.logger.debug('Rendering already running');
-      return;
+    console.log('[RenderingService] start() called, running:', this.running, 'engine:', !!this.renderEngine);
+    if (!this.running) {
+      this.running = true;
+      this.renderEngine?.start();
+      this.eventBus.emit('rendering:started', {});
+      this.logger.debug('Rendering started');
+      console.log('[RenderingService] Rendering started successfully');
     }
-
-    if (!this.renderEngine) {
-      this.logger.error('RenderEngine not initialized, cannot start');
-      return;
-    }
-
-    this.running = true;
-    this.renderEngine.start();
-    this.eventBus.emit('rendering:started', {});
-    this.logger.info('Rendering started');
   }
 
   stop(): void {
@@ -171,6 +223,7 @@ export class CanvasRenderingService implements ICanvasRenderingService {
       this.running = false;
       this.renderEngine?.stop();
       this.eventBus.emit('rendering:stopped', {});
+      this.logger.debug('Rendering stopped');
     }
   }
 
@@ -178,19 +231,18 @@ export class CanvasRenderingService implements ICanvasRenderingService {
     return this.running;
   }
 
-  getStats(): IRenderingStats {
-    const capabilities = this.renderEngine?.getCapabilities();
+  getStats(): RenderingStats {
     return {
-      rendererType: this.renderEngine?.getRendererType() || 'unknown',
-      graphicCount: this.graphics.size,
-      isRunning: this.running,
-      capabilities: capabilities ? { ...capabilities } : undefined
+      running: this.running,
+      renderableCount: this.renderables.size,
+      engineStats: {}
     };
   }
 
   dispose(): void {
     this.stop();
-    this.graphics.clear();
+    this.renderables.clear();
     this.renderEngine?.dispose();
+    this.logger.info('Canvas rendering service disposed');
   }
 }

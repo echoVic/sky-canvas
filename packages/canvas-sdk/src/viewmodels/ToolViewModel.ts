@@ -10,44 +10,44 @@ import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './types/IViewModel';
 
 /**
- * 工具状态
+ * 工具 UI 状态（区别于 IToolState 基础接口）
  */
-export interface IToolState {
+export interface IToolUIState {
   currentTool: string;
   availableTools: string[];
   toolMode: string;
   cursor: string;
   isInteracting: boolean;
-  
+
   // 工具特定状态
   isDrawing: boolean;
   isDragging: boolean;
   startPoint: { x: number; y: number } | null;
-  
+
   // 快捷键状态
   shortcutsEnabled: boolean;
 }
 
 /**
- * 工具 ViewModel 接口
+ * 工具 UI ViewModel 接口（区别于 IToolViewModel 基础接口）
  */
-export interface IToolViewModel extends IViewModel {
-  state: IToolState;
-  
+export interface IToolUIViewModel extends IViewModel {
+  state: IToolUIState;
+
   // 工具管理
   activateTool(toolName: string): boolean;
   getCurrentTool(): string;
   getAvailableTools(): string[];
-  
+
   // 鼠标事件处理
   handleMouseDown(x: number, y: number, event?: MouseEvent): void;
   handleMouseMove(x: number, y: number, event?: MouseEvent): void;
   handleMouseUp(x: number, y: number, event?: MouseEvent): void;
-  
+
   // 键盘事件处理
   handleKeyDown(event: KeyboardEvent): void;
   handleKeyUp(event: KeyboardEvent): void;
-  
+
   // 状态查询
   isToolActive(toolName: string): boolean;
   getCurrentCursor(): string;
@@ -57,15 +57,15 @@ export interface IToolViewModel extends IViewModel {
 /**
  * 工具 ViewModel 实现
  */
-export class ToolViewModel implements IToolViewModel {
-  private readonly _state: IToolState;
+export class ToolViewModel implements IToolUIViewModel {
+  private readonly _state: IToolUIState;
 
   constructor(
     private toolManager: IToolManager,
     private eventBus: IEventBusService
   ) {
     // 使用 Valtio proxy 创建响应式状态
-    this._state = proxy<IToolState>({
+    this._state = proxy<IToolUIState>({
       currentTool: 'select',
       availableTools: [],
       toolMode: 'select',
@@ -80,7 +80,7 @@ export class ToolViewModel implements IToolViewModel {
     this.setupEventListeners();
   }
 
-  get state(): IToolState {
+  get state(): IToolUIState {
     return this._state;
   }
 
@@ -120,44 +120,53 @@ export class ToolViewModel implements IToolViewModel {
   handleMouseDown(x: number, y: number, event?: MouseEvent): void {
     this._state.isInteracting = true;
     this._state.startPoint = { x, y };
-    
+
     // 委托给 ToolManager
     this.toolManager.handleMouseDown({
       point: { x, y },
-      shiftKey: event?.shiftKey || false,
-      ctrlKey: event?.ctrlKey || false,
-      altKey: event?.altKey || false
+      button: event?.button ?? 0,
+      shiftKey: event?.shiftKey ?? false,
+      ctrlKey: event?.ctrlKey ?? false,
+      metaKey: event?.metaKey ?? false,
+      altKey: event?.altKey ?? false,
+      originalEvent: event
     });
-    
+
     this.updateInteractionState();
   }
 
   handleMouseMove(x: number, y: number, event?: MouseEvent): void {
     if (!this._state.isInteracting) return;
-    
+
     // 委托给 ToolManager
     this.toolManager.handleMouseMove({
       point: { x, y },
-      shiftKey: event?.shiftKey || false,
-      ctrlKey: event?.ctrlKey || false,
-      altKey: event?.altKey || false
+      button: event?.button ?? 0,
+      shiftKey: event?.shiftKey ?? false,
+      ctrlKey: event?.ctrlKey ?? false,
+      metaKey: event?.metaKey ?? false,
+      altKey: event?.altKey ?? false,
+      originalEvent: event
     });
-    
+
     this.updateInteractionState();
   }
 
   handleMouseUp(x: number, y: number, event?: MouseEvent): void {
     this._state.isInteracting = false;
     this._state.startPoint = null;
-    
+
     // 委托给 ToolManager
     this.toolManager.handleMouseUp({
       point: { x, y },
-      shiftKey: event?.shiftKey || false,
-      ctrlKey: event?.ctrlKey || false,
-      altKey: event?.altKey || false
+      button: event?.button ?? 0,
+      shiftKey: event?.shiftKey ?? false,
+      ctrlKey: event?.ctrlKey ?? false,
+      metaKey: event?.metaKey ?? false,
+      altKey: event?.altKey ?? false,
+      originalEvent: event
     });
-    
+
     this.updateInteractionState();
   }
 
@@ -196,12 +205,12 @@ export class ToolViewModel implements IToolViewModel {
    */
   private setupEventListeners(): void {
     // 监听工具变化
-    this.eventBus.on('tool:activated', (data: any) => {
+    this.eventBus.on('tool:activated', (data: { toolName: string }) => {
       this._state.currentTool = data.toolName;
       this._state.cursor = this.toolManager.getCurrentCursor();
-      this.eventBus.emit('tool-viewmodel:toolChanged', { 
+      this.eventBus.emit('tool-viewmodel:toolChanged', {
         toolName: data.toolName,
-        cursor: this._state.cursor 
+        cursor: this._state.cursor
       });
     });
 

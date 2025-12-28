@@ -43,7 +43,7 @@ const StatusBar: React.FC = () => {
 
   return (
     <div className="flex items-center gap-2 bg-white dark:bg-gray-900 rounded-lg p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
-      {/* 撤销重做按钮 - 功能待实现 */}
+      {/* 撤销重做按钮 */}
       {sdkState.isInitialized && (
         <>
           <div className="flex items-center gap-0.5">
@@ -51,24 +51,24 @@ const StatusBar: React.FC = () => {
               variant="light"
               size="sm"
               isIconOnly
-              isDisabled={true}
-              onPress={() => console.log('Undo - 功能待实现')}
+              isDisabled={!sdkState.canUndo}
+              onPress={() => sdkActions.undo()}
               className="flex items-center justify-center min-w-0 rounded-md h-7 w-7 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="撤销（待实现）"
+              title="撤销 (Ctrl+Z)"
             >
               <div className="flex items-center justify-center w-full h-full">
                 <Undo size={12} />
               </div>
             </Button>
-            
+
             <Button
               variant="light"
               size="sm"
               isIconOnly
-              isDisabled={true}
-              onPress={() => console.log('Redo - 功能待实现')}
+              isDisabled={!sdkState.canRedo}
+              onPress={() => sdkActions.redo()}
               className="flex items-center justify-center min-w-0 rounded-md h-7 w-7 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              title="重做（待实现）"
+              title="重做 (Ctrl+Shift+Z)"
             >
               <div className="flex items-center justify-center w-full h-full">
                 <Redo size={12} />

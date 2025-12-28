@@ -37,6 +37,26 @@ export class PluginContextImpl implements PluginContext {
     this.resources = new PluginResourceManagerImpl(manifest.id);
     this.logger = new PluginLoggerImpl(manifest.id);
   }
+
+  /**
+   * 销毁上下文，清理所有资源
+   */
+  dispose(): void {
+    // 清理资源
+    if (this.resources && typeof (this.resources as PluginResourceManagerImpl).cleanup === 'function') {
+      (this.resources as PluginResourceManagerImpl).cleanup();
+    }
+
+    // 清理配置
+    if (this.config && typeof (this.config as PluginConfigImpl).clear === 'function') {
+      (this.config as PluginConfigImpl).clear();
+    }
+
+    // 清理事件监听器
+    if (this.events && typeof (this.events as PluginEventEmitterImpl).removeAllListeners === 'function') {
+      (this.events as PluginEventEmitterImpl).removeAllListeners();
+    }
+  }
 }
 
 /**
@@ -495,6 +515,10 @@ class PluginEventEmitterImpl implements PluginEventEmitter {
       listener(...args);
     };
     this.on(event, onceListener);
+  }
+
+  removeAllListeners(): void {
+    this.listeners.clear();
   }
 }
 

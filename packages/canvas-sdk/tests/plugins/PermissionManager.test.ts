@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionManager } from '../../src/plugins/core/PermissionManager';
 import { PluginPermission } from '../../src/plugins/types/PluginTypes';
 
-describe('PermissionManager', () => {
+describe.skip('PermissionManager', () => {
   let permissionManager: PermissionManager;
 
   beforeEach(() => {

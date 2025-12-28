@@ -8,3 +8,8 @@ export type { CanvasSDKState, CanvasSDKActions, UseCanvasSDKResult } from './use
 
 export { useCanvasInteraction } from './useCanvasInteraction';
 export type { CanvasInteractionState } from './useCanvasInteraction';
+
+export { useDrawingTools, TOOLS } from './useDrawingTools';
+export type { ToolType, ToolConfig, UseDrawingToolsResult } from './useDrawingTools';
+
+export { useKeyboardShortcuts } from './useKeyboardShortcuts';

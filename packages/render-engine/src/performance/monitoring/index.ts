@@ -2,32 +2,8 @@
  * 性能监控模块导出
  */
 
-// 核心性能监控组件
-export * from './PerformanceMonitor';
-export * from './WebGLAnalyzer';
-
-// 性能基准测试系统
-export {
-  BatchEfficiencyBenchmark,
-  BenchmarkType,
-  createDefaultBenchmarkSuite,
-  DrawCallBenchmark,
-  FPSBenchmark,
-  MemoryBenchmark,
-  PerformanceBenchmarkSuite,
-  type BenchmarkConfig,
-  type BenchmarkResult,
-  type BenchmarkScenario
-} from './PerformanceBenchmark';
-
-// 性能回归检测
-export {
-  createRegressionDetector,
-  PerformanceAlertSystem,
-  RegressionDetector,
-  type PerformanceAlert,
-  type RegressionAnalysis,
-  type RegressionConfig,
-  type StatisticalSummary,
-  type TTestResult
-} from './RegressionDetector';
+export * from './PerformanceTypes';
+export { GPUQueryManager } from './GPUQueryManager';
+export { MemoryProfiler } from './MemoryProfiler';
+export type { MemoryLeak, MemoryUsage } from './MemoryProfiler';
+export { FPSCounter } from './FPSCounter';

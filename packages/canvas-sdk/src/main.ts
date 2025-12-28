@@ -3,23 +3,26 @@
  * 类似 VSCode 的 main.ts，控制整个启动流程和服务装转
  */
 
-import { CanvasSDK, ICanvasSDK } from './CanvasSDK';
+import type { CanvasSDK } from './CanvasSDK';
 import { InstantiationService } from './di/InstantiationService';
 import { ServiceCollection } from './di/ServiceCollection';
 import { SyncDescriptor } from './di/descriptors';
-import { getSingletonServiceDescriptors } from './di/instantiation';
+import { getSingletonServiceDescriptors, ServiceIdentifier } from './di/instantiation';
 
 // 管理器
 import { CanvasManager, ICanvasManager } from './managers/CanvasManager';
 import { IToolManager, ToolManager } from './managers/ToolManager';
 
 // ViewModels
-import { ISelectionViewModel, SelectionViewModel } from './viewmodels/interaction/SelectionViewModel';
-import { CircleViewModel, ICircleViewModel } from './viewmodels/shapes/CircleViewModel';
-import { IRectangleViewModel, RectangleViewModel } from './viewmodels/shapes/RectangleViewModel';
+import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
+import { IRectangleToolViewModel, RectangleToolViewModel } from './viewmodels/tools/RectangleToolViewModel';
+import { ICircleToolViewModel, CircleToolViewModel } from './viewmodels/tools/CircleToolViewModel';
+import { ILineToolViewModel, LineToolViewModel } from './viewmodels/tools/LineToolViewModel';
+import { ITextToolViewModel, TextToolViewModel } from './viewmodels/tools/TextToolViewModel';
+import { IArrowToolViewModel, ArrowToolViewModel } from './viewmodels/tools/ArrowToolViewModel';
+import { IDrawToolViewModel, DrawToolViewModel } from './viewmodels/tools/DrawToolViewModel';
 
 // 服务
-import { RenderEngineType } from '@sky-canvas/render-engine';
 import {
   CanvasRenderingService,
   ClipboardService,
@@ -36,31 +39,23 @@ import {
   ILogService,
   InteractionService,
   ISelectionService,
+  IShapeService,
   IShortcutService,
   IZIndexService,
   LogService,
   SelectionService,
+  ShapeService,
   ShortcutService,
   ZIndexService,
   type LogLevel
 } from './services';
 
-// Command 体系服务
-import { ICommandRegistry, IActionProcessor } from './commands/services';
-import { registerDefaultCommands } from './commands/defaultCommands';
-import { CommandRegistry } from './commands/registry';
-import { ActionProcessor } from './actions/processor';
-
-// Models
-import { ICanvasModel, CanvasModel } from './models/CanvasModel';
-
-
 /**
  * SDK 配置接口
  */
 export interface SDKConfig {
-  container: HTMLElement;
-  renderEngine?: RenderEngineType;
+  canvas: HTMLCanvasElement;
+  renderEngine?: 'webgl' | 'canvas2d' | 'webgpu';
   logLevel?: LogLevel;
   enableHistory?: boolean;
   enableInteraction?: boolean;
@@ -72,7 +67,7 @@ export interface SDKConfig {
  * @param config - SDK 的配置选项。
  * @returns 一个 Promise，它解析为完全初始化的 CanvasSDK 实例。
  */
-export async function createCanvasSDK(config: SDKConfig): Promise<ICanvasSDK> {
+export async function createCanvasSDK(config: SDKConfig): Promise<CanvasSDK> {
   const bootstrap = new CanvasSDKBootstrap(config);
   const sdk = await bootstrap.startup();
   return sdk;
@@ -84,8 +79,8 @@ export async function createCanvasSDK(config: SDKConfig): Promise<ICanvasSDK> {
  */
 class CanvasSDKBootstrap {
   private instantiationService?: InstantiationService;
-  private logger?: any;
-  private canvasManager?: any;
+  private logger?: ILogService;
+  private canvasManager?: ICanvasManager;
   private isInitialized = false;
 
   constructor(private config: SDKConfig) {}
@@ -93,7 +88,7 @@ class CanvasSDKBootstrap {
   /**
    * 启动引导程序
    */
-  async startup(): Promise<ICanvasSDK> {
+  async startup(): Promise<CanvasSDK> {
     console.log('=== CANVAS SDK BOOTSTRAP STARTUP ===');
 
     // 1. 应用准备阶段
@@ -108,15 +103,11 @@ class CanvasSDKBootstrap {
     // 4. 启动核心功能
     await this.startCore();
 
-    // 5. 通过DI容器创建CanvasSDK实例
-    if (!this.instantiationService) {
-      throw new Error('InstantiationService not initialized');
-    }
-
-    // 使用标准DI方式获取CanvasSDK实例
-    const canvasSDK = this.instantiationService.invokeFunction(accessor =>
-      accessor.get(ICanvasSDK)
-    );
+    // 5. 创建 CanvasSDK 实例 - 在 DI 容器中创建
+    const { CanvasSDK } = await import('./CanvasSDK');
+    const canvasSDK = this.instantiationService!.createInstance(
+      new SyncDescriptor(CanvasSDK)
+    ) as CanvasSDK;
 
     this.isInitialized = true;
     console.log('=== CANVAS SDK BOOTSTRAP STARTUP COMPLETE ===');
@@ -131,13 +122,13 @@ class CanvasSDKBootstrap {
     console.log('Canvas SDK Bootstrap: Preparing...');
 
     // 验证必要配置
-    if (!this.config.container) {
-      throw new Error('Container element is required');
+    if (!this.config.canvas) {
+      throw new Error('Canvas element is required');
     }
 
     // 设置默认配置
     this.config = {
-      renderEngine: 'webgl', // 默认使用 webgl 渲染
+      renderEngine: 'webgl',
       logLevel: 'info',
       enableHistory: true,
       enableInteraction: true,
@@ -184,12 +175,6 @@ class CanvasSDKBootstrap {
       accessor.get(ILogService)
     );
 
-    // 注册默认命令
-    const commandRegistry = this.instantiationService.invokeFunction(accessor =>
-      accessor.get(ICommandRegistry)
-    );
-    registerDefaultCommands(commandRegistry);
-
     this.logger.info('Canvas SDK Bootstrap services initialized');
   }
 
@@ -209,36 +194,32 @@ class CanvasSDKBootstrap {
     );
 
     // 初始化Canvas和核心服务连接
-    if (this.config.container) {
+    if (this.config.canvas) {
       await this.initializeCanvasServices();
     }
 
-    this.logger.info('Canvas SDK Bootstrap core started');
+    this.logger?.info('Canvas SDK Bootstrap core started');
   }
 
   /**
    * 初始化Canvas相关服务并建立连接
    */
   private async initializeCanvasServices(): Promise<void> {
-    if (!this.config.container || !this.instantiationService) return;
+    if (!this.config.canvas || !this.instantiationService) return;
 
     // 初始化渲染服务
     const renderingService = this.instantiationService.invokeFunction(accessor =>
       accessor.get(ICanvasRenderingService)
     );
-    await renderingService.initialize(this.config.container, {
-      renderEngine: this.config.renderEngine || 'webgl',
+    await renderingService.initialize(this.config.canvas, {
+      renderEngine: this.config.renderEngine || 'webgl'
     });
 
-    // 启动渲染服务
+    // 启动渲染循环
     renderingService.start();
 
-    // 获取render engine创建的canvas用于交互服务
-    const renderEngine = renderingService.getRenderEngine();
-    const canvas = renderEngine?.getCanvas();
-
     // 初始化交互服务
-    if (this.config.enableInteraction && canvas) {
+    if (this.config.enableInteraction) {
       const interactionService = this.instantiationService.invokeFunction(accessor =>
         accessor.get(IInteractionService)
       );
@@ -247,19 +228,19 @@ class CanvasSDKBootstrap {
       );
 
       // 初始化交互服务
-      interactionService.initialize(canvas);
+      interactionService.initialize(this.config.canvas);
 
       // 连接InteractionService和ToolManager
       interactionService.setToolManager(toolManager);
 
-      this.logger.info('Canvas services initialized and connected');
+      this.logger?.info('Canvas services initialized and connected');
     }
   }
 
   /**
    * 获取服务实例 - 公开 API
    */
-  getService<T>(serviceIdentifier: any): T {
+  getService<T>(serviceIdentifier: ServiceIdentifier<T>): T {
     if (!this.instantiationService) {
       throw new Error('Application not started');
     }
@@ -272,7 +253,7 @@ class CanvasSDKBootstrap {
   /**
    * 获取 Canvas Manager
    */
-  getCanvasManager(): any {
+  getCanvasManager(): ICanvasManager | undefined {
     return this.canvasManager;
   }
 
@@ -312,32 +293,29 @@ class CanvasSDKBootstrap {
     // 选择服务
     services.set(ISelectionService, new SyncDescriptor(SelectionService));
 
+    // 形状服务
+    services.set(IShapeService, new SyncDescriptor(ShapeService));
+
     // Z-Index服务
     services.set(IZIndexService, new SyncDescriptor(ZIndexService));
 
     // 剪贴板服务
     services.set(IClipboardService, new SyncDescriptor(ClipboardService));
 
-    // Models
-    services.set(ICanvasModel, new SyncDescriptor(CanvasModel));
-
-    // Command 体系服务
-    services.set(ICommandRegistry, new SyncDescriptor(CommandRegistry));
-    services.set(IActionProcessor, new SyncDescriptor(ActionProcessor));
-
     // ViewModels
-    services.set(ISelectionViewModel, new SyncDescriptor(SelectionViewModel));
-    services.set(IRectangleViewModel, new SyncDescriptor(RectangleViewModel));
-    services.set(ICircleViewModel, new SyncDescriptor(CircleViewModel));
+    services.set(ISelectToolViewModel, new SyncDescriptor(SelectToolViewModel));
+    services.set(IRectangleToolViewModel, new SyncDescriptor(RectangleToolViewModel));
+    services.set(ICircleToolViewModel, new SyncDescriptor(CircleToolViewModel));
+    services.set(ILineToolViewModel, new SyncDescriptor(LineToolViewModel));
+    services.set(ITextToolViewModel, new SyncDescriptor(TextToolViewModel));
+    services.set(IArrowToolViewModel, new SyncDescriptor(ArrowToolViewModel));
+    services.set(IDrawToolViewModel, new SyncDescriptor(DrawToolViewModel));
 
     // 工具管理器
     services.set(IToolManager, new SyncDescriptor(ToolManager));
 
     // Canvas 管理器
     services.set(ICanvasManager, new SyncDescriptor(CanvasManager));
-
-    // Canvas SDK
-    services.set(ICanvasSDK, new SyncDescriptor(CanvasSDK, [this.config]));
   }
 
   /**
@@ -348,12 +326,13 @@ class CanvasSDKBootstrap {
       services.set(IHistoryService, new SyncDescriptor(HistoryService));
     }
 
-    if (this.config.enableInteraction) {
+    if (this.config.enableInteraction && this.config.canvas) {
       services.set(IInteractionService, new SyncDescriptor(InteractionService));
     }
 
-    // 总是注册渲染服务，因为我们会创建canvas
-    services.set(ICanvasRenderingService, new SyncDescriptor(CanvasRenderingService));
+    if (this.config.canvas) {
+      services.set(ICanvasRenderingService, new SyncDescriptor(CanvasRenderingService));
+    }
   }
 }
 

@@ -5,6 +5,17 @@
 import { createDecorator } from '../../di';
 import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
+import type { IToolManager } from '../../managers/ToolManager';
+import type { ICanvasMouseEvent } from '../../viewmodels/interfaces/IViewModel';
+
+/**
+ * 事件监听器记录
+ */
+interface EventListenerRecord {
+  element: EventTarget;
+  event: string;
+  handler: (event: Event) => void;
+}
 
 /**
  * 工具接口
@@ -25,7 +36,7 @@ export interface ITool {
  */
 export interface IInteractionService {
   initialize(canvas: HTMLCanvasElement): void;
-  setToolManager(toolManager: any): void;
+  setToolManager(toolManager: IToolManager): void;
   setActiveTool(toolName: string | null): boolean;
   getActiveTool(): ITool | null;
   registerTool(tool: ITool): void;
@@ -48,8 +59,8 @@ export class InteractionService implements IInteractionService {
   private activeTool: ITool | null = null;
   private tools = new Map<string, ITool>();
   private enabled = true;
-  private eventListeners: Array<{ element: any; event: string; handler: any }> = [];
-  private toolManager?: any;
+  private eventListeners: EventListenerRecord[] = [];
+  private toolManager?: IToolManager;
 
   constructor(
     @IEventBusService private eventBus: IEventBusService,
@@ -63,22 +74,33 @@ export class InteractionService implements IInteractionService {
     this.logger.info('Interaction service initialized');
   }
 
-  setToolManager(toolManager: any): void {
+  setToolManager(toolManager: IToolManager): void {
     this.toolManager = toolManager;
     this.logger.debug('ToolManager set in InteractionService');
+  }
+
+  /**
+   * 将原生 MouseEvent 转换为 ICanvasMouseEvent
+   */
+  private createCanvasMouseEvent(event: MouseEvent): ICanvasMouseEvent {
+    return {
+      point: this.getCanvasPoint(event),
+      button: event.button,
+      shiftKey: event.shiftKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      altKey: event.altKey,
+      originalEvent: event
+    };
   }
 
   private setupEventListeners(): void {
     if (!this.canvas) return;
 
-    const mouseDownHandler = (event: MouseEvent) => {
-      if (!this.enabled) return;
+    const mouseDownHandler = (event: Event) => {
+      if (!this.enabled || !(event instanceof MouseEvent)) return;
 
-      const canvasPoint = this.getCanvasPoint(event);
-      const eventData = {
-        point: canvasPoint,
-        originalEvent: event
-      };
+      const eventData = this.createCanvasMouseEvent(event);
 
       // 优先使用ToolManager处理事件
       if (this.toolManager) {
@@ -88,14 +110,10 @@ export class InteractionService implements IInteractionService {
       }
     };
 
-    const mouseMoveHandler = (event: MouseEvent) => {
-      if (!this.enabled) return;
+    const mouseMoveHandler = (event: Event) => {
+      if (!this.enabled || !(event instanceof MouseEvent)) return;
 
-      const canvasPoint = this.getCanvasPoint(event);
-      const eventData = {
-        point: canvasPoint,
-        originalEvent: event
-      };
+      const eventData = this.createCanvasMouseEvent(event);
 
       // 优先使用ToolManager处理事件
       if (this.toolManager) {
@@ -105,14 +123,10 @@ export class InteractionService implements IInteractionService {
       }
     };
 
-    const mouseUpHandler = (event: MouseEvent) => {
-      if (!this.enabled) return;
+    const mouseUpHandler = (event: Event) => {
+      if (!this.enabled || !(event instanceof MouseEvent)) return;
 
-      const canvasPoint = this.getCanvasPoint(event);
-      const eventData = {
-        point: canvasPoint,
-        originalEvent: event
-      };
+      const eventData = this.createCanvasMouseEvent(event);
 
       // 优先使用ToolManager处理事件
       if (this.toolManager) {
@@ -122,8 +136,8 @@ export class InteractionService implements IInteractionService {
       }
     };
 
-    const keyDownHandler = (event: KeyboardEvent) => {
-      if (!this.enabled) return;
+    const keyDownHandler = (event: Event) => {
+      if (!this.enabled || !(event instanceof KeyboardEvent)) return;
 
       // 优先使用ToolManager处理事件
       if (this.toolManager) {
@@ -133,8 +147,8 @@ export class InteractionService implements IInteractionService {
       }
     };
 
-    const keyUpHandler = (event: KeyboardEvent) => {
-      if (!this.enabled) return;
+    const keyUpHandler = (event: Event) => {
+      if (!this.enabled || !(event instanceof KeyboardEvent)) return;
 
       // 优先使用ToolManager处理事件
       if (this.toolManager) {

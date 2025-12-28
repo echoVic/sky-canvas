@@ -61,7 +61,7 @@ export class ViewportViewModel implements IViewportViewModel {
    */
   private setupEventListeners(): void {
     // 监听缩放服务的变化，同步缩放级别
-    this.eventBus.on('zoom:changed', (data: any) => {
+    this.eventBus.on('zoom:changed', (data: { zoom: number }) => {
       this._state.zoom = data.zoom;
     });
   }

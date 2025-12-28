@@ -4,7 +4,7 @@ import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
 import { useCanvasStore } from '../../store/canvasStore'
 
 const Canvas: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   
   // 直接使用Canvas SDK Hook
   const [sdkState, sdkActions] = useCanvasSDK()
@@ -14,7 +14,7 @@ const Canvas: React.FC = () => {
   
   // 使用Canvas交互hook
   const { interactionState } = useCanvasInteraction(
-    containerRef,
+    canvasRef,
     [sdkState, sdkActions],
     selectedTool
   )
@@ -41,13 +41,12 @@ const Canvas: React.FC = () => {
 
   // 初始化SDK
   useEffect(() => {
-    const container = containerRef.current
-    if (!container || sdkState.isInitialized) return
+    const canvas = canvasRef.current
+    if (!canvas || sdkState.isInitialized) return
 
-    const initializeSDK = async () => {
+    const initializeCanvas = async () => {
       try {
-        console.log('Initializing Canvas SDK with container')
-        await sdkActions.initialize(container, {
+        await sdkActions.initialize(canvas, {
           enableInteraction: true,
           logLevel: 'info'
         })
@@ -56,87 +55,53 @@ const Canvas: React.FC = () => {
       }
     }
 
-    initializeSDK()
-  }, [sdkState.isInitialized, sdkActions.initialize])
+    initializeCanvas()
+  }, [sdkState.isInitialized]) // 移除sdkActions依赖，避免循环
 
   // 渲染由SDK内部自动处理，不需要手动启动
 
   // 这个 useEffect 不再需要，因为工具选择现在由 Toolbar 组件直接通过 SDK 处理
 
-  // 渲染引擎应该自己处理canvas尺寸变化
-  // 移除ResizeObserver，避免手动干预canvas尺寸
+  // 处理画布尺寸变化
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !sdkState.isInitialized) return
 
-  // 清理逻辑已移除 - 由 useCanvasSDK hook 内部管理生命周期
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        canvas.width = width
+        canvas.height = height
+        
+        // 画布尺寸变化，暂时不需要特殊处理
+        // Canvas SDK会自动处理渲染更新
+      }
+    })
+
+    resizeObserver.observe(canvas)
+    return () => resizeObserver.disconnect()
+  }, [sdkState.isInitialized, sdkState.sdk]) // 移除sdkActions依赖避免循环
+
+  // 注意：dispose 已经在 useCanvasSDK hook 内部处理，这里不需要重复调用
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-white dark:bg-gray-900">
-      {/* 画布容器 */}
-      <div
-        ref={containerRef}
+      {/* 画布 */}
+      <canvas
+        ref={canvasRef}
         className="absolute inset-0 w-full h-full"
+        width={800}
+        height={600}
         style={{ cursor: interactionState.cursor }}
       />
-
+      
       {/* 调试信息 */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute p-2 text-xs text-white bg-black bg-opacity-50 rounded top-2 right-2">
           <div>形状数量: {sdkState.shapes.length}</div>
-          <div>选中: {sdkState.selectedShapeIds.length}</div>
+          <div>选中: {sdkState.selectedShapes.length}</div>
           <div>初始化: {sdkState.isInitialized ? '是' : '否'}</div>
           <div>SDK状态: {sdkState.sdk ? 'Ready' : 'Not Ready'}</div>
-        </div>
-      )}
-
-      {/* 测试按钮 */}
-      {process.env.NODE_ENV === 'development' && sdkState.isInitialized && (
-        <div className="absolute bottom-2 right-2 space-y-2">
-          <button
-            onClick={async () => {
-              try {
-                console.log('=== Frontend: About to add rectangle via Action ===');
-                await sdkActions.addRectangle({
-                  x: Math.random() * 400 + 50,
-                  y: Math.random() * 300 + 50,
-                  width: 100,
-                  height: 60,
-                  style: {
-                    fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                    stroke: '#333',
-                    strokeWidth: 2
-                  }
-                });
-                console.log('=== Frontend: Rectangle added successfully ===');
-              } catch (error) {
-                console.error('Failed to add rectangle:', error);
-              }
-            }}
-            className="block px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            添加矩形测试
-          </button>
-          <button
-            onClick={async () => {
-              try {
-                console.log('=== Frontend: About to add circle via Action ===');
-                await sdkActions.addCircle({
-                  x: Math.random() * 400 + 100,
-                  y: Math.random() * 300 + 100,
-                  radius: 40,
-                  style: {
-                    fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                    stroke: '#333',
-                    strokeWidth: 2
-                  }
-                });
-                console.log('=== Frontend: Circle added successfully ===');
-              } catch (error) {
-                console.error('Failed to add circle:', error);
-              }
-            }}
-            className="block px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            添加圆形测试
-          </button>
         </div>
       )}
 

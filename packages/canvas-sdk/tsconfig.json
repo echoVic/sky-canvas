@@ -28,6 +28,9 @@
     "dist",
     "tests",
     "examples",
-    "src/examples.ts"
+    "src/examples.ts",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ]
 }

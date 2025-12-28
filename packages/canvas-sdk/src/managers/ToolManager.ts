@@ -5,9 +5,16 @@
 
 import { createDecorator } from '../di';
 import { IEventBusService, IHistoryService, ILogService, IShortcutService } from '../services';
-import { ISelectionViewModel } from '../viewmodels/interaction/SelectionViewModel';
-import { ICircleViewModel } from '../viewmodels/shapes/CircleViewModel';
-import { IRectangleViewModel } from '../viewmodels/shapes/RectangleViewModel';
+import {
+  IArrowToolViewModel,
+  ICircleToolViewModel,
+  IDrawToolViewModel,
+  ILineToolViewModel,
+  IRectangleToolViewModel,
+  ISelectToolViewModel,
+  ITextToolViewModel
+} from '../viewmodels/tools';
+import { ICanvasMouseEvent, IToolViewModel } from '../viewmodels/interfaces/IViewModel';
 import { ICanvasManager } from './CanvasManager';
 
 /**
@@ -18,17 +25,17 @@ export interface IToolManager {
   activateTool(toolName: string): boolean;
   getCurrentToolName(): string | null;
   getAvailableTools(): string[];
-  
+
   // 事件处理
-  handleMouseDown(event: any): void;
-  handleMouseMove(event: any): void;
-  handleMouseUp(event: any): void;
+  handleMouseDown(event: ICanvasMouseEvent): void;
+  handleMouseMove(event: ICanvasMouseEvent): void;
+  handleMouseUp(event: ICanvasMouseEvent): void;
   handleKeyDown(event: KeyboardEvent): void;
   handleKeyUp(event: KeyboardEvent): void;
-  
+
   // 状态查询
   getCurrentCursor(): string;
-  
+
   dispose(): void;
 }
 
@@ -41,14 +48,18 @@ export const IToolManager = createDecorator<IToolManager>('ToolManager');
  * 工具管理器实现
  */
 export class ToolManager implements IToolManager {
-  private toolViewModels: Map<string, any> = new Map();
+  private toolViewModels: Map<string, IToolViewModel> = new Map();
   private currentToolName: string | null = null;
 
   constructor(
     @ICanvasManager private canvasManager: ICanvasManager,
-    @ISelectionViewModel private selectionViewModel: ISelectionViewModel,
-    @IRectangleViewModel private rectangleViewModel: IRectangleViewModel,
-    @ICircleViewModel private circleViewModel: ICircleViewModel,
+    @ISelectToolViewModel private selectToolViewModel: ISelectToolViewModel,
+    @IRectangleToolViewModel private rectangleToolViewModel: IRectangleToolViewModel,
+    @ICircleToolViewModel private circleToolViewModel: ICircleToolViewModel,
+    @ILineToolViewModel private lineToolViewModel: ILineToolViewModel,
+    @ITextToolViewModel private textToolViewModel: ITextToolViewModel,
+    @IArrowToolViewModel private arrowToolViewModel: IArrowToolViewModel,
+    @IDrawToolViewModel private drawToolViewModel: IDrawToolViewModel,
     @IShortcutService private shortcutService: IShortcutService,
     @IHistoryService private historyService: IHistoryService,
     @IEventBusService private eventBus: IEventBusService,
@@ -63,13 +74,17 @@ export class ToolManager implements IToolManager {
    * 初始化所有工具 ViewModels
    */
   private initializeToolViewModels(): void {
-    // 注册工具 ViewModels
-    this.toolViewModels.set('select', this.selectionViewModel);
-    this.toolViewModels.set('rectangle', this.rectangleViewModel);
-    this.toolViewModels.set('circle', this.circleViewModel);
+    // 注册已实现的工具 ViewModels
+    this.toolViewModels.set('select', this.selectToolViewModel);
+    this.toolViewModels.set('rectangle', this.rectangleToolViewModel);
+    this.toolViewModels.set('circle', this.circleToolViewModel);
+    this.toolViewModels.set('line', this.lineToolViewModel);
+    this.toolViewModels.set('text', this.textToolViewModel);
+    this.toolViewModels.set('arrow', this.arrowToolViewModel);
+    this.toolViewModels.set('draw', this.drawToolViewModel);
 
     // 注册占位符工具 - 暂时未实现的工具
-    const placeholderTools = ['diamond', 'arrow', 'line', 'draw', 'text', 'image', 'sticky', 'link', 'frame', 'hand'];
+    const placeholderTools = ['diamond', 'image', 'sticky', 'link', 'frame', 'hand'];
     placeholderTools.forEach(toolName => {
       this.toolViewModels.set(toolName, this.createPlaceholderTool(toolName));
     });
@@ -97,6 +112,18 @@ export class ToolManager implements IToolManager {
 
     this.shortcutService.register('tool-line', { key: 'l' }, () => {
       this.activateTool('line');
+    });
+
+    this.shortcutService.register('tool-text', { key: 't' }, () => {
+      this.activateTool('text');
+    });
+
+    this.shortcutService.register('tool-arrow', { key: 'a' }, () => {
+      this.activateTool('arrow');
+    });
+
+    this.shortcutService.register('tool-draw', { key: 'd' }, () => {
+      this.activateTool('draw');
     });
 
     // 通用操作快捷键
@@ -170,36 +197,36 @@ export class ToolManager implements IToolManager {
   /**
    * 处理鼠标按下事件
    */
-  handleMouseDown(event: any): void {
+  handleMouseDown(event: ICanvasMouseEvent): void {
     if (!this.currentToolName) return;
-    
+
     const currentTool = this.toolViewModels.get(this.currentToolName);
     if (currentTool && currentTool.handleMouseDown) {
-      currentTool.handleMouseDown(event.point.x, event.point.y, event);
+      currentTool.handleMouseDown(event.point.x, event.point.y, event.originalEvent);
     }
   }
 
   /**
    * 处理鼠标移动事件
    */
-  handleMouseMove(event: any): void {
+  handleMouseMove(event: ICanvasMouseEvent): void {
     if (!this.currentToolName) return;
-    
+
     const currentTool = this.toolViewModels.get(this.currentToolName);
     if (currentTool && currentTool.handleMouseMove) {
-      currentTool.handleMouseMove(event.point.x, event.point.y, event);
+      currentTool.handleMouseMove(event.point.x, event.point.y, event.originalEvent);
     }
   }
 
   /**
    * 处理鼠标抬起事件
    */
-  handleMouseUp(event: any): void {
+  handleMouseUp(event: ICanvasMouseEvent): void {
     if (!this.currentToolName) return;
-    
+
     const currentTool = this.toolViewModels.get(this.currentToolName);
     if (currentTool && currentTool.handleMouseUp) {
-      currentTool.handleMouseUp(event.point.x, event.point.y, event);
+      currentTool.handleMouseUp(event.point.x, event.point.y, event.originalEvent);
     }
   }
 
@@ -240,8 +267,13 @@ export class ToolManager implements IToolManager {
   /**
    * 创建占位符工具
    */
-  private createPlaceholderTool(toolName: string) {
+  private createPlaceholderTool(toolName: string): IToolViewModel {
+    const cursor = this.getCursorForTool(toolName);
     return {
+      state: {
+        enabled: false,
+        cursor
+      },
       activate: () => {
         this.logService.info(`Placeholder tool '${toolName}' activated - not implemented yet`);
         this.eventBus.emit('tool:activated', { toolName });
@@ -264,9 +296,9 @@ export class ToolManager implements IToolManager {
       handleKeyUp: () => {
         this.logService.debug(`Tool '${toolName}' key up - not implemented`);
       },
-      state: {
-        cursor: this.getCursorForTool(toolName)
-      }
+      initialize: async () => {},
+      dispose: () => {},
+      getSnapshot: () => ({ enabled: false, cursor })
     };
   }
 

@@ -1,428 +1,405 @@
 /**
- * 渲染引擎统一入口
- * 根据配置自动选择合适的渲染器，提供统一的API接口
+ * 渲染引擎核心实现
  */
-
-import { BaseRenderer } from './renderers/BaseRenderer';
-import { CanvasRenderer } from './renderers/CanvasRenderer';
-import { RendererCapabilities } from './renderers/types';
-import { WebGLRenderer } from './renderers/WebGLRenderer';
-import { WebGPURenderer } from './renderers/WebGPURenderer';
-import type { IRenderable, IViewport, RenderEngineConfig } from './types';
-
+import {
+  IRenderEngine,
+  IRenderLayer,
+  IRenderable,
+  IViewport,
+  IRenderStats,
+  IRenderEngineConfig
+} from './IRenderEngine';
+import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
+import { DirtyRegionManager } from './DirtyRegionManager';
+import { LayerCache } from './LayerCache';
+import { BatchManager, createBatchManagerWithDefaultStrategies } from '../batch';
+import { Matrix3x3 } from '../math/Matrix3';
+import { RenderLayer } from './RenderLayer';
+import { GeometryAdapter, IBounds } from './GeometryAdapter';
 
 /**
- * 渲染引擎主类
- * 提供统一的渲染器管理和渲染接口
+ * 渲染引擎实现
  */
-export class RenderEngine {
-  private renderer: BaseRenderer;
-  private canvas: HTMLCanvasElement;
-  private container: HTMLElement;
-  private config: RenderEngineConfig;
-  private graphics: Map<string, IRenderable> = new Map();
-  private isInitialized = false;
+export class RenderEngine implements IRenderEngine {
+  private context: IGraphicsContext | null = null;
+  private layers: Map<string, IRenderLayer> = new Map();
+  private viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
+  private config: IRenderEngineConfig;
+  private stats: IRenderStats = {
+    frameCount: 0,
+    fps: 0,
+    renderTime: 0,
+    objectsRendered: 0
+  };
 
-  constructor(container: HTMLElement, config: RenderEngineConfig = {}) {
-    this.container = container;
+  private dirtyRegionManager: DirtyRegionManager = new DirtyRegionManager();
+  private layerCache: LayerCache = new LayerCache();
+  private batchManager: BatchManager | null = null;
+  private geometryAdapter: GeometryAdapter = new GeometryAdapter();
 
-    // 创建canvas元素
-    this.canvas = document.createElement('canvas');
-    this.canvas.style.position = 'absolute';
-    this.canvas.style.top = '0';
-    this.canvas.style.left = '0';
-    this.canvas.style.width = '100%';
-    this.canvas.style.height = '100%';
+  private isRunningFlag = false;
+  private animationId: number | null = null;
+  private lastFrameTime = 0;
+  private frameTimeHistory: number[] = [];
 
-    // 确保容器是相对定位的
-    if (getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative';
-    }
-
-    // 将canvas添加到容器中
-    container.appendChild(this.canvas);
+  constructor(config: IRenderEngineConfig = {}) {
     this.config = {
-      renderer: 'webgl',
-      antialias: true,
-      alpha: true,
-      preserveDrawingBuffer: false,
-      enableBatching: true,
       targetFPS: 60,
-      debug: false,
+      enableVSync: true,
+      enableCulling: true,
+      cullMargin: 50,
       ...config
     };
-
-    this.renderer = this.createRenderer();
-    // 移除自动初始化，改为外部显式调用
   }
 
-  /**
-   * 根据配置创建渲染器，如果不支持则降级
-   */
-  private createRenderer(): BaseRenderer {
-    const requestedType = this.config.renderer!;
-    let actualType = requestedType;
-
-    // 检查浏览器支持并进行降级处理
-    if (requestedType === 'webgpu' && !('gpu' in navigator)) {
-      actualType = 'webgl';
-      if (this.config.debug) {
-        console.warn('[RenderEngine] WebGPU not supported, falling back to WebGL');
-      }
+  async initialize<TCanvas>(factory: IGraphicsContextFactory<TCanvas>, canvas: TCanvas): Promise<void> {
+    if (this.context) {
+      throw new Error('Render engine already initialized');
+    }
+    if (!factory.isSupported()) {
+      throw new Error('Graphics context not supported');
     }
 
-    if (actualType === 'webgl' && !this.isWebGLSupported()) {
-      actualType = 'canvas2d';
-      if (this.config.debug) {
-        console.warn('[RenderEngine] WebGL not supported, falling back to Canvas2D');
-      }
+    this.context = await factory.createContext(canvas);
+
+    const gl = (this.context as { gl?: WebGLRenderingContext }).gl;
+    if (gl) {
+      this.batchManager = createBatchManagerWithDefaultStrategies(gl);
     }
 
-    // 如果最终降级的类型与请求的不同，更新配置
-    if (actualType !== requestedType) {
-      this.config.renderer = actualType;
+    this.viewport.width = this.context.width;
+    this.viewport.height = this.context.height;
+  }
+
+  start(): void {
+    console.log('[RenderEngine] start() called, isRunning:', this.isRunningFlag, 'context:', !!this.context);
+    if (this.isRunningFlag || !this.context) {
+      console.log('[RenderEngine] start() aborted - already running or no context');
+      return;
     }
 
-    switch (actualType) {
-      case 'webgl':
-        return new WebGLRenderer();
-      case 'canvas2d':
-        return new CanvasRenderer();
-      case 'webgpu':
-        return new WebGPURenderer();
-      default:
-        throw new Error(`Unknown renderer type: ${actualType}. Supported types: 'webgl', 'canvas2d', 'webgpu'`);
+    this.isRunningFlag = true;
+    this.lastFrameTime = performance.now();
+
+    console.log('[RenderEngine] Starting render loop, enableVSync:', this.config.enableVSync);
+    if (this.config.enableVSync) {
+      this.startVSyncLoop();
+    } else {
+      this.startCustomLoop();
     }
   }
 
-
-  /**
-   * 初始化渲染引擎
-   */
-  async initialize(): Promise<void> {
-    if (this.isInitialized) return;
-
-    const originalRenderer = this.config.renderer;
-    let initSuccess = false;
-
-    try {
-      initSuccess = await this.tryInitializeRenderer();
-    } catch (error) {
-      if (this.config.debug) {
-        console.warn(`[RenderEngine] ${this.config.renderer} initialization failed:`, error);
-      }
-      initSuccess = false;
-    }
-
-    // 如果初始化失败，尝试降级
-    if (!initSuccess) {
-      initSuccess = await this.tryFallbackRenderers();
-    }
-
-    if (!initSuccess) {
-      throw new Error(`Failed to initialize any renderer. Tried: ${originalRenderer} -> canvas2d`);
-    }
-
-    this.isInitialized = true;
-
-    if (this.config.debug) {
-      console.log(`[RenderEngine] Initialized with ${this.getRendererType()} renderer`);
-    }
-  }
-
-  private async tryInitializeRenderer(): Promise<boolean> {
-    if (this.renderer.initialize) {
-      const result = this.renderer.initialize(this.canvas, this.config);
-
-      // 处理异步初始化
-      if (result instanceof Promise) {
-        return await result;
+  stop(): void {
+    this.isRunningFlag = false;
+    if (this.animationId !== null) {
+      if (this.config.enableVSync) {
+        cancelAnimationFrame(this.animationId);
       } else {
-        return result !== false;
+        clearTimeout(this.animationId);
       }
+      this.animationId = null;
     }
-    return true;
   }
 
-  private async tryFallbackRenderers(): Promise<boolean> {
-    const currentType = this.config.renderer;
+  render(): void {
+    if (!this.context) {
+      console.log('[RenderEngine] render() aborted - no context');
+      return;
+    }
 
-    // 降级路径：webgpu -> webgl -> canvas2d
-    if (currentType === 'webgpu' || currentType === 'webgl') {
-      if (this.config.debug) {
-        console.warn(`[RenderEngine] ${currentType} failed, falling back to Canvas2D`);
+    const startTime = performance.now();
+    const dirtyRegions = this.dirtyRegionManager.optimizeDirtyRegions();
+
+    if (dirtyRegions.length > 0) {
+      dirtyRegions.forEach((region) => this.renderRegion(region));
+    } else {
+      this.context.clear();
+      this.context.save();
+      this.setupViewportTransform();
+      this.renderLayers();
+      this.context.restore();
+    }
+
+    // 提交渲染命令到 GPU（关键：WebGL batchManager 需要 flush）
+    this.context.present();
+
+    this.dirtyRegionManager.prepareNextFrame();
+    this.updateStats(performance.now() - startTime);
+  }
+
+  isRunning(): boolean {
+    return this.isRunningFlag;
+  }
+
+  getContext(): IGraphicsContext | null {
+    return this.context;
+  }
+
+  setViewport(viewport: Partial<IViewport>): void {
+    this.viewport = { ...this.viewport, ...viewport };
+  }
+
+  getViewport(): IViewport {
+    return { ...this.viewport };
+  }
+
+  createLayer(id: string, zIndex: number = 0): IRenderLayer {
+    const layer = new RenderLayer(id, true, 1, zIndex);
+    this.layers.set(id, layer);
+    return layer;
+  }
+
+  getLayer(id: string): IRenderLayer | undefined {
+    return this.layers.get(id);
+  }
+
+  removeLayer(id: string): void {
+    this.layers.delete(id);
+  }
+
+  screenToWorld(point: IPoint): IPoint {
+    if (!this.context) return point;
+    const screenPoint = this.context.screenToWorld(point);
+    return {
+      x: (screenPoint.x + this.viewport.x) / this.viewport.zoom,
+      y: (screenPoint.y + this.viewport.y) / this.viewport.zoom
+    };
+  }
+
+  worldToScreen(point: IPoint): IPoint {
+    if (!this.context) return point;
+    const worldPoint = {
+      x: point.x * this.viewport.zoom - this.viewport.x,
+      y: point.y * this.viewport.zoom - this.viewport.y
+    };
+    return this.context.worldToScreen(worldPoint);
+  }
+
+  getStats(): IRenderStats {
+    return { ...this.stats };
+  }
+
+  // 性能优化方法
+  markRegionDirty(bounds: IBounds): void {
+    this.dirtyRegionManager.markRegionDirty(bounds as unknown as Parameters<typeof this.dirtyRegionManager.markRegionDirty>[0]);
+  }
+
+  invalidateLayerCache(layerId: string): void {
+    this.layerCache.invalidateCache(layerId);
+  }
+
+  getCacheMemoryUsage(): number {
+    return this.layerCache.getCacheMemoryUsage();
+  }
+
+  cleanupExpiredCache(): void {
+    this.layerCache.cleanupExpiredCache();
+  }
+
+  hitTest(point: IPoint): IRenderable | null {
+    const worldPoint = this.screenToWorld(point);
+    const sortedLayers = this.getSortedLayers(true);
+
+    for (const layer of sortedLayers) {
+      const renderables = layer.getRenderables().reverse();
+      for (const renderable of renderables) {
+        if (renderable.hitTest(worldPoint)) {
+          return renderable;
+        }
+      }
+    }
+    return null;
+  }
+
+  getObjectsInViewport(): IRenderable[] {
+    const cullMargin = this.config.cullMargin || 50;
+    const viewportBounds: IBounds = {
+      x: this.viewport.x - cullMargin,
+      y: this.viewport.y - cullMargin,
+      width: this.viewport.width / this.viewport.zoom + cullMargin * 2,
+      height: this.viewport.height / this.viewport.zoom + cullMargin * 2
+    };
+
+    const result: IRenderable[] = [];
+    for (const layer of this.layers.values()) {
+      if (!layer.visible) continue;
+      for (const renderable of layer.getRenderables()) {
+        if (this.boundsIntersect(renderable.getBounds(), viewportBounds)) {
+          result.push(renderable);
+        }
+      }
+    }
+    return result;
+  }
+
+  dispose(): void {
+    this.stop();
+    if (this.context) {
+      this.context.dispose();
+      this.context = null;
+    }
+    this.layers.clear();
+  }
+
+  // 私有方法
+  private renderRegion(region: IBounds): void {
+    if (!this.context) return;
+    this.context.save();
+    this.context.beginPath();
+    this.context.rect(region.x, region.y, region.width, region.height);
+    this.context.clip();
+    this.renderLayers();
+    this.context.restore();
+  }
+
+  private startVSyncLoop(): void {
+    const loop = () => {
+      if (!this.isRunningFlag) return;
+      this.render();
+      this.animationId = requestAnimationFrame(loop);
+    };
+    this.animationId = requestAnimationFrame(loop);
+  }
+
+  private startCustomLoop(): void {
+    const targetInterval = 1000 / (this.config.targetFPS || 60);
+    const loop = () => {
+      if (!this.isRunningFlag) return;
+      this.render();
+      this.animationId = setTimeout(loop, targetInterval) as unknown as number;
+    };
+    this.animationId = setTimeout(loop, targetInterval) as unknown as number;
+  }
+
+  private setupViewportTransform(): void {
+    if (!this.context) return;
+    this.context.scale(this.viewport.zoom, this.viewport.zoom);
+    this.context.translate(-this.viewport.x, -this.viewport.y);
+  }
+
+  private getSortedLayers(descending: boolean = false): IRenderLayer[] {
+    const sorted = Array.from(this.layers.values())
+      .filter((layer) => layer.visible)
+      .sort((a, b) => a.zIndex - b.zIndex);
+    return descending ? sorted.reverse() : sorted;
+  }
+
+  private renderLayers(): void {
+    if (!this.context) return;
+
+    const sortedLayers = this.getSortedLayers();
+    let objectsRendered = 0;
+
+    console.log('[RenderEngine] renderLayers called, layers count:', sortedLayers.length);
+
+    for (const layer of sortedLayers) {
+      this.context.save();
+      this.context.setOpacity(layer.opacity);
+
+      const renderables = layer.getRenderables();
+      console.log('[RenderEngine] Layer', layer.id, 'has', renderables.length, 'renderables');
+
+      if (this.canCacheLayer(renderables)) {
+        try {
+          this.layerCache.renderFromCache(layer.id, this.context as unknown as CanvasRenderingContext2D, { x: 0, y: 0 });
+          objectsRendered += renderables.length;
+        } catch {
+          this.renderLayerRenderables(renderables);
+          objectsRendered += renderables.length;
+        }
+      } else if (renderables.length > 10) {
+        this.renderWithBatching(renderables);
+        objectsRendered += renderables.length;
+      } else {
+        this.renderLayerRenderables(renderables);
+        objectsRendered += renderables.length;
       }
 
-      this.config.renderer = 'canvas2d';
-      this.renderer = this.createRenderer();
+      this.context.restore();
+    }
 
-      try {
-        return await this.tryInitializeRenderer();
-      } catch (error) {
-        if (this.config.debug) {
-          console.error('[RenderEngine] Canvas2D fallback also failed:', error);
-        }
-        return false;
+    this.stats.objectsRendered = objectsRendered;
+  }
+
+  private renderLayerRenderables(renderables: IRenderable[]): void {
+    if (!this.context) return;
+    console.log('[RenderEngine] renderLayerRenderables called with', renderables.length, 'items');
+    for (const renderable of renderables) {
+      console.log('[RenderEngine] Rendering:', renderable.id, 'visible:', renderable.visible);
+      this.context.save();
+      renderable.render(this.context);
+      // 更新脏区域跟踪
+      const bounds = renderable.getBounds();
+      this.dirtyRegionManager.updateCurrentFrameShape({
+        id: renderable.id,
+        bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+      } as Parameters<typeof this.dirtyRegionManager.updateCurrentFrameShape>[0]);
+      this.context.restore();
+    }
+  }
+
+  private renderWithBatching(renderables: IRenderable[]): void {
+    const groups = this.groupRenderablesByType(renderables);
+
+    for (const [, groupRenderables] of groups.entries()) {
+      if (groupRenderables.length > 10 && this.batchManager) {
+        this.batchManager.setStrategy('instanced');
+        groupRenderables.forEach((renderable) => {
+          const batchRenderable = this.geometryAdapter.adaptRenderable(renderable);
+          this.batchManager!.addRenderable(batchRenderable);
+        });
+      } else {
+        this.renderLayerRenderables(groupRenderables);
       }
     }
 
+    if (this.batchManager) {
+      // 创建正投影矩阵
+      const projectionMatrix = new Matrix3x3();
+      this.batchManager.flush(projectionMatrix);
+    }
+  }
+
+  private groupRenderablesByType(renderables: IRenderable[]): Map<string, IRenderable[]> {
+    const groups = new Map<string, IRenderable[]>();
+    renderables.forEach((renderable) => {
+      const type = renderable.constructor.name;
+      const group = groups.get(type) || [];
+      group.push(renderable);
+      groups.set(type, group);
+    });
+    return groups;
+  }
+
+  private canCacheLayer(renderables: IRenderable[]): boolean {
+    return renderables.every((renderable) => !this.isRenderableAnimating(renderable));
+  }
+
+  private isRenderableAnimating(_renderable: IRenderable): boolean {
     return false;
   }
 
-  // ===== 公共 API =====
-
-  /**
-   * 添加渲染图形
-   */
-  addGraphic(renderable: IRenderable): void {
-    this.graphics.set(renderable.id, renderable);
-
-    // 直接添加到渲染器，不需要转换
-    this.renderer.addRenderable(renderable);
-
-    if (this.config.debug) {
-      console.log(`[RenderEngine] Added graphic: ${renderable.id}`);
-    }
+  private boundsIntersect(a: IBounds, b: IBounds): boolean {
+    return !(a.x + a.width < b.x || b.x + b.width < a.x || a.y + a.height < b.y || b.y + b.height < a.y);
   }
 
-  /**
-   * 移除渲染图形
-   */
-  removeGraphic(id: string): void {
-    const removed = this.graphics.delete(id);
-    if (removed) {
-      this.renderer.removeRenderable(id);
+  private updateStats(renderTime: number): void {
+    this.stats.frameCount++;
+    this.stats.renderTime = renderTime;
 
-      if (this.config.debug) {
-        console.log(`[RenderEngine] Removed graphic: ${id}`);
+    const currentTime = performance.now();
+    this.frameTimeHistory.push(currentTime);
+
+    while (this.frameTimeHistory.length > 0) {
+      const firstFrameTime = this.frameTimeHistory[0];
+      if (firstFrameTime !== undefined && currentTime - firstFrameTime > 1000) {
+        this.frameTimeHistory.shift();
+      } else {
+        break;
       }
     }
-  }
 
-  /**
-   * 清空所有渲染图形
-   */
-  clearGraphics(): void {
-    const count = this.graphics.size;
-    this.graphics.clear();
-    this.renderer.clearRenderables();
-
-    if (this.config.debug) {
-      console.log(`[RenderEngine] Cleared ${count} graphics`);
-    }
-  }
-
-  /**
-   * 获取渲染图形
-   */
-  getGraphic(id: string): IRenderable | undefined {
-    return this.graphics.get(id);
-  }
-
-  /**
-   * 获取所有渲染图形
-   */
-  getGraphics(): IRenderable[] {
-    return Array.from(this.graphics.values());
-  }
-
-
-  /**
-   * 启动渲染循环
-   */
-  start(): void {
-    if (!this.isInitialized) {
-      console.warn('[RenderEngine] Engine not initialized, cannot start');
-      return;
-    }
-
-    this.renderer.startRenderLoop();
-
-    if (this.config.debug) {
-      console.log('[RenderEngine] Render loop started');
-    }
-  }
-
-  /**
-   * 停止渲染循环
-   */
-  stop(): void {
-    this.renderer.stopRenderLoop();
-
-    if (this.config.debug) {
-      console.log('[RenderEngine] Render loop stopped');
-    }
-  }
-
-  /**
-   * 手动渲染一帧
-   */
-  render(): void {
-    console.log(`[RenderEngine] render() called, isInitialized: ${this.isInitialized}`);
-    if (!this.isInitialized) {
-      console.warn('[RenderEngine] Engine not initialized, cannot render');
-      return;
-    }
-
-    console.log(`[RenderEngine] Calling renderer.render()`);
-    this.renderer.render();
-  }
-
-  /**
-   * 设置视口
-   */
-  setViewport(viewport: Partial<IViewport>): void {
-    this.renderer.setViewport(viewport);
-  }
-
-  /**
-   * 获取当前视口
-   */
-  getViewport(): IViewport {
-    return this.renderer.getViewport();
-  }
-
-  /**
-   * 获取渲染统计信息
-   */
-  getStats(): any {
-    return this.renderer.getStats?.() || {
-      drawCalls: 0,
-      triangles: 0,
-      vertices: 0,
-      frameTime: 0
-    };
-  }
-
-  /**
-   * 获取渲染器能力
-   */
-  getCapabilities(): RendererCapabilities {
-    return this.renderer.getCapabilities();
-  }
-
-  /**
-   * 获取当前使用的渲染器类型
-   */
-  getRendererType(): string {
-    if (this.renderer instanceof WebGLRenderer) return 'webgl';
-    if (this.renderer instanceof CanvasRenderer) return 'canvas2d';
-    if (this.renderer instanceof WebGPURenderer) return 'webgpu';
-    return 'unknown';
-  }
-
-
-  /**
-   * 获取画布元素
-   */
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
-  }
-
-  /**
-   * 获取配置
-   */
-  getConfig(): RenderEngineConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * 是否正在运行
-   */
-  isRunning(): boolean {
-    return this.renderer.isRunning?.() || false;
-  }
-
-  /**
-   * 销毁渲染引擎
-   */
-  dispose(): void {
-    this.stop();
-    this.clearGraphics();
-    this.renderer.dispose?.();
-    this.isInitialized = false;
-
-    if (this.config.debug) {
-      console.log('[RenderEngine] Disposed');
-    }
-  }
-
-  // ===== 私有辅助方法 =====
-
-  /**
-   * 检测 WebGL 支持
-   */
-  private isWebGLSupported(): boolean {
-    try {
-      const canvas = document.createElement('canvas');
-      const contextOptions = {
-        alpha: true,
-        antialias: true,
-        stencil: true,
-        failIfMajorPerformanceCaveat: false
-      };
-
-      let gl = canvas.getContext('webgl', contextOptions) as WebGLRenderingContext ||
-               canvas.getContext('experimental-webgl', contextOptions) as WebGLRenderingContext;
-
-      if (!gl) {
-        return false;
-      }
-
-      // 检查上下文属性是否正确获取
-      const contextAttributes = gl.getContextAttributes();
-      if (!contextAttributes) {
-        return false;
-      }
-
-      // 检查是否支持必要的扩展
-      const requiredExtensions = ['OES_standard_derivatives'];
-      for (const ext of requiredExtensions) {
-        if (!gl.getExtension(ext)) {
-          if (this.config.debug) {
-            console.warn(`[RenderEngine] WebGL extension ${ext} not supported`);
-          }
-        }
-      }
-
-      // 清理上下文以避免内存泄漏
-      const loseContext = gl.getExtension('WEBGL_lose_context');
-      if (loseContext) {
-        loseContext.loseContext();
-      }
-
-      gl = null as any;
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /**
-   * 检测 WebGPU 支持（异步检测）
-   */
-  private async isWebGPUSupported(): Promise<boolean> {
-    if (!('gpu' in navigator) || typeof navigator.gpu?.requestAdapter !== 'function') {
-      return false;
-    }
-
-    try {
-      const adapter = await navigator.gpu.requestAdapter();
-      if (!adapter) {
-        return false;
-      }
-
-      // 尝试请求设备以确保真正可用
-      const device = await adapter.requestDevice();
-      if (!device) {
-        return false;
-      }
-
-      // 清理设备资源
-      device.destroy();
-      return true;
-    } catch (e) {
-      return false;
-    }
+    this.stats.fps = this.frameTimeHistory.length;
+    this.lastFrameTime = currentTime;
   }
 }

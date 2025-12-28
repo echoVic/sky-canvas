@@ -228,7 +228,7 @@ export class CanvasViewModel implements ICanvasViewModel {
     this.eventBus.on('canvas:shapesPasted', () => this.updateClipboardState());
     
     // 监听历史变化
-    this.eventBus.on('canvas:historyChanged', (data: any) => {
+    this.eventBus.on('canvas:historyChanged', (data: { canUndo: boolean; canRedo: boolean }) => {
       this._state.canUndo = data.canUndo;
       this._state.canRedo = data.canRedo;
     });

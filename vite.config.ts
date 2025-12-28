@@ -10,6 +10,27 @@ export default defineConfig({
       '@sky-canvas/canvas-sdk': resolve(__dirname, 'packages/canvas-sdk/src'),
     },
   },
+  esbuild: {
+    // 启用装饰器支持
+    tsconfigRaw: {
+      compilerOptions: {
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true,
+      },
+    },
+  },
+  optimizeDeps: {
+    // 排除包含装饰器的包，让它们通过 TypeScript 编译
+    exclude: ['@sky-canvas/canvas-sdk'],
+    esbuildOptions: {
+      tsconfigRaw: {
+        compilerOptions: {
+          experimentalDecorators: true,
+          emitDecoratorMetadata: true,
+        },
+      },
+    },
+  },
   server: {
     open: true
   },

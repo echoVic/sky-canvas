@@ -71,26 +71,26 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "valtio": "^2.1.7",
-    "zustand": "^4.4.1"
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
-    "@types/jest": "^30.0.0",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
-    "@vitest/coverage-v8": "^1.6.1",
-    "@vitest/ui": "^1.6.1",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
     "autoprefixer": "^10.4.14",
-    "happy-dom": "^12.10.3",
+    "happy-dom": "^20.0.11",
     "jsdom": "^23.0.1",
     "postcss": "^8.4.24",
-    "tailwindcss": "^3.3.0",
+    "tailwindcss": "^4.1.18",
     "tsx": "^4.20.4",
     "typescript": "~5.8.3",
-    "vite": "^4.4.5",
-    "vitest": "^1.6.1"
+    "vite": "^7.3.0",
+    "vitest": "^4.0.16"
   }
 }

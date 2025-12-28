@@ -3,8 +3,8 @@
  * 为复杂的 ViewModels 提供业务逻辑协调
  */
 
-export { CanvasManager } from './CanvasManager';
-export type { ICanvasManager } from './CanvasManager';
+export { CanvasManager, ICanvasManager } from './CanvasManager';
+export type { CanvasStats } from './ICanvasManager';
 
 export { ToolManager } from './ToolManager';
 export type { IToolManager } from './ToolManager';

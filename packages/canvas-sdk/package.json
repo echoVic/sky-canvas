@@ -30,6 +30,10 @@
   "author": "Sky Canvas Team",
   "license": "MIT",
   "dependencies": {
+    "@turf/boolean-point-in-polygon": "^7.3.1",
+    "@turf/helpers": "^7.3.1",
+    "@turf/point-to-line-distance": "^7.3.1",
+    "hotkeys-js": "^4.0.0",
     "reflect-metadata": "^0.1.14"
   },
   "peerDependencies": {
@@ -37,11 +41,11 @@
   },
   "devDependencies": {
     "@sky-canvas/render-engine": "workspace:^1.0.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "@vitest/ui": "^1.0.0",
-    "jsdom": "^22.0.0",
-    "typescript": "^5.8.0",
-    "vitest": "^1.0.0"
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/ui": "^4.0.16",
+    "jsdom": "^23.0.1",
+    "typescript": "~5.8.3",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=18.0.0"

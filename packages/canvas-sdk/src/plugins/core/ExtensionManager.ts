@@ -23,17 +23,14 @@ export class ExtensionManager {
     }
 
     const extensionPoint: ExtensionPoint = {
-      id: declaration.id,
-      type: declaration.type,
-      name: declaration.name,
-      description: declaration.description,
+      ...declaration,
       providers: []
     };
 
     this.extensionPoints.set(declaration.id, extensionPoint);
     this.providers.set(declaration.id, new Map());
-    
-    this.emit('extension-point:defined', extensionPoint);
+
+    this.emit('extension-point:defined', declaration.id, extensionPoint);
   }
 
   /**
@@ -57,8 +54,9 @@ export class ExtensionManager {
 
     providers.set(providerId, provider);
     extensionPoint.providers.push(provider);
-    
+
     this.emit('provider:registered', extensionPointId, provider);
+    this.emit('extensions:updated', extensionPointId);
   }
 
   /**
