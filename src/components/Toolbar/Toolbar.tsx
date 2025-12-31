@@ -1,23 +1,23 @@
-import React from 'react'
 import { Button } from '@heroui/react'
 import {
-  MousePointer2,
-  Hand,
-  Square,
-  Diamond,
-  Circle,
-  MoveRight,
-  Minus,
-  Pencil,
-  Type,
-  Image,
-  StickyNote,
-  Link,
-  Frame,
-  LucideIcon
+    Circle,
+    Diamond,
+    Frame,
+    Hand,
+    Image,
+    Link,
+    LucideIcon,
+    Minus,
+    MousePointer2,
+    MoveRight,
+    Pencil,
+    Square,
+    StickyNote,
+    Type
 } from 'lucide-react'
+import React from 'react'
 import { useCanvasStore } from '../../store/canvasStore'
-import { useCanvasSDK } from '../../hooks'
+import { useSDKStore } from '../../store/sdkStore'
 
 const iconMap: Record<string, LucideIcon> = {
   MousePointer2, Hand, Square, Diamond, Circle, MoveRight, Minus, 
@@ -26,7 +26,7 @@ const iconMap: Record<string, LucideIcon> = {
 
 const Toolbar: React.FC = () => {
   const { tools, selectedTool, setSelectedTool } = useCanvasStore()
-  const [sdkState, sdkActions] = useCanvasSDK()
+  const { isInitialized, setTool } = useSDKStore()
 
   return (
     <div className="flex items-center gap-0.5 bg-white dark:bg-gray-900 rounded-lg p-1.5 shadow-lg border border-gray-200 dark:border-gray-700">
@@ -46,14 +46,9 @@ const Toolbar: React.FC = () => {
               }
             `}
             onPress={() => {
-              // 先更新UI状态
               setSelectedTool(tool.id)
-              // 然后同步到SDK
-              if (sdkState.isInitialized) {
-                const toolManager = sdkActions.getToolManager()
-                if (toolManager) {
-                  toolManager.activateTool(tool.id)
-                }
+              if (isInitialized) {
+                setTool(tool.id)
               }
             }}
             title={tool.name}
