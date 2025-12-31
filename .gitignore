@@ -112,3 +112,6 @@ Thumbs.db
 # Temporary folders
 tmp/
 temp/
+
+# Blade local settings
+.blade/settings.local.json

@@ -6,20 +6,20 @@ import {
   createBatchManagerWithDefaultStrategies,
   type BatchManagerConfig
 } from '../batch';
-import { IImageData, IPoint, ITransform, IGraphicsState, ITextStyle } from '../graphics/IGraphicsContext';
+import { IGraphicsState, IImageData, IPoint, ITextStyle, ITransform } from '../graphics/IGraphicsContext';
 import { Matrix3 } from '../math/Matrix3';
+import { AdvancedShaderManager } from '../webgl/AdvancedShaderManager';
 import { BufferManager, IBuffer } from '../webgl/BufferManager';
 import { SHADER_LIBRARY } from '../webgl/ShaderLibrary';
 import { ShaderManager } from '../webgl/ShaderManager';
-import { AdvancedShaderManager } from '../webgl/AdvancedShaderManager';
 import { WebGLOptimizer } from '../webgl/WebGLOptimizer';
 import { GeometryGenerator } from './GeometryGenerator';
-import { IWebGLContext, WebGLAdvancedConfig, ClipRegion, PathPoint } from './WebGLContextTypes';
+import { ClipRegion, IWebGLContext, PathPoint, WebGLAdvancedConfig } from './WebGLContextTypes';
 import { WebGLRenderableFactory } from './WebGLRenderableFactory';
 
 // 重新导出类型和工厂
-export * from './WebGLContextTypes';
 export { WebGLContextFactory } from './WebGLContextFactory';
+export * from './WebGLContextTypes';
 export { WebGLRenderableFactory } from './WebGLRenderableFactory';
 
 /**
@@ -439,34 +439,37 @@ export class WebGLContext implements IWebGLContext {
 
   fill(): void {
     if (this.currentPath.length < 3) {
-      console.log('[WebGLContext] fill() - path too short:', this.currentPath.length);
       return;
     }
 
+    // 应用当前变换矩阵到路径点
+    const transformedPath = this.currentPath.map(p => this.transformPoint(p.x, p.y));
+
     // 使用扇形三角剖分（适用于凸多边形和简单凹多边形）
     const color = GeometryGenerator.parseColor(this.fillStyle);
+    color[3] *= this.globalAlpha;
     const vertices: number[] = [];
     const colors: number[] = [];
 
     // 计算路径中心点
     let centerX = 0, centerY = 0;
-    for (const point of this.currentPath) {
+    for (const point of transformedPath) {
       centerX += point.x;
       centerY += point.y;
     }
-    centerX /= this.currentPath.length;
-    centerY /= this.currentPath.length;
+    centerX /= transformedPath.length;
+    centerY /= transformedPath.length;
 
     // 使用扇形三角剖分
-    for (let i = 0; i < this.currentPath.length; i++) {
-      const p1 = this.currentPath[i];
-      const p2 = this.currentPath[(i + 1) % this.currentPath.length];
+    for (let i = 0; i < transformedPath.length; i++) {
+      const p1 = transformedPath[i];
+      const p2 = transformedPath[(i + 1) % transformedPath.length];
 
       // 三角形：中心点 -> 当前点 -> 下一点
       vertices.push(centerX, centerY, p1.x, p1.y, p2.x, p2.y);
       // 每个顶点添加颜色 (color 是 [r, g, b, a] 数组)
       for (let j = 0; j < 3; j++) {
-        colors.push(color[0], color[1], color[2], color[3] * this.globalAlpha);
+        colors.push(color[0], color[1], color[2], color[3]);
       }
     }
 
@@ -482,24 +485,25 @@ export class WebGLContext implements IWebGLContext {
 
   stroke(): void {
     if (this.currentPath.length < 2) {
-      console.log('[WebGLContext] stroke() - path too short:', this.currentPath.length);
       return;
     }
 
     const color = GeometryGenerator.parseColor(this.strokeStyle);
+    color[3] *= this.globalAlpha;
 
-    // 将路径转换为线段
-    for (let i = 0; i < this.currentPath.length - 1; i++) {
-      const p1 = this.currentPath[i];
-      const p2 = this.currentPath[i + 1];
+    const transformedPath = this.currentPath.map(p => this.transformPoint(p.x, p.y));
+
+    for (let i = 0; i < transformedPath.length - 1; i++) {
+      const p1 = transformedPath[i];
+      const p2 = transformedPath[i + 1];
       const renderable = WebGLRenderableFactory.createLine(p1.x, p1.y, p2.x, p2.y, this.lineWidth, color);
       this.batchManager.addRenderable(renderable);
     }
 
     // 如果路径闭合，连接最后一点和第一点
-    if (this.currentPath.length > 2) {
-      const first = this.currentPath[0];
-      const last = this.currentPath[this.currentPath.length - 1];
+    if (transformedPath.length > 2) {
+      const first = transformedPath[0];
+      const last = transformedPath[transformedPath.length - 1];
       // 检查是否需要闭合（最后一点是否回到起点）
       if (Math.abs(first.x - last.x) > 0.1 || Math.abs(first.y - last.y) > 0.1) {
         // 路径未闭合，不自动连接
@@ -511,35 +515,82 @@ export class WebGLContext implements IWebGLContext {
     this.pathStarted = false;
   }
 
+  /**
+   * 应用当前变换矩阵到点
+   */
+  private transformPoint(x: number, y: number): { x: number; y: number } {
+    const e = this.currentTransform.elements;
+    return {
+      x: e[0] * x + e[3] * y + e[6],
+      y: e[1] * x + e[4] * y + e[7]
+    };
+  }
+
   // ============ 绘制方法 ============
 
   fillRect(x: number, y: number, width: number, height: number): void {
     const color = GeometryGenerator.parseColor(this.fillStyle);
-    const renderable = WebGLRenderableFactory.createRectangle(x, y, width, height, color);
+    color[3] *= this.globalAlpha;
+    // 应用变换到矩形的四个角
+    const p1 = this.transformPoint(x, y);
+    const p2 = this.transformPoint(x + width, y);
+    const p3 = this.transformPoint(x + width, y + height);
+    const p4 = this.transformPoint(x, y + height);
+    // 使用变换后的顶点创建矩形
+    const vertices: number[] = [p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p1.x, p1.y, p3.x, p3.y, p4.x, p4.y];
+    const colors: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      colors.push(color[0], color[1], color[2], color[3]);
+    }
+    const renderable = WebGLRenderableFactory.createFromVertices(vertices, colors);
     this.batchManager.addRenderable(renderable);
   }
 
   strokeRect(x: number, y: number, width: number, height: number): void {
-    const renderables = WebGLRenderableFactory.createRectangleStroke(x, y, width, height, this.strokeStyle, this.lineWidth);
-    renderables.forEach(r => this.batchManager.addRenderable(r));
+    const color = GeometryGenerator.parseColor(this.strokeStyle);
+    color[3] *= this.globalAlpha;
+    // 应用变换到矩形的四个角
+    const p1 = this.transformPoint(x, y);
+    const p2 = this.transformPoint(x + width, y);
+    const p3 = this.transformPoint(x + width, y + height);
+    const p4 = this.transformPoint(x, y + height);
+    // 绘制四条边
+    const lines = [
+      WebGLRenderableFactory.createLine(p1.x, p1.y, p2.x, p2.y, this.lineWidth, color),
+      WebGLRenderableFactory.createLine(p2.x, p2.y, p3.x, p3.y, this.lineWidth, color),
+      WebGLRenderableFactory.createLine(p3.x, p3.y, p4.x, p4.y, this.lineWidth, color),
+      WebGLRenderableFactory.createLine(p4.x, p4.y, p1.x, p1.y, this.lineWidth, color)
+    ];
+    lines.forEach(r => this.batchManager.addRenderable(r));
   }
 
   fillCircle(x: number, y: number, radius: number): void {
     const color = GeometryGenerator.parseColor(this.fillStyle);
-    const renderable = WebGLRenderableFactory.createCircle(x, y, radius, 32, color);
+    color[3] *= this.globalAlpha;
+    // 应用变换到圆心
+    const center = this.transformPoint(x, y);
+    // 注意：这里简化处理，假设变换不包含非均匀缩放
+    const renderable = WebGLRenderableFactory.createCircle(center.x, center.y, radius, 32, color);
     this.batchManager.addRenderable(renderable);
   }
 
   strokeCircle(x: number, y: number, radius: number): void {
     const strokeColorParsed = GeometryGenerator.parseColor(this.strokeStyle);
+    strokeColorParsed[3] *= this.globalAlpha;
+    // 应用变换到圆心
+    const center = this.transformPoint(x, y);
     const outerRadius = radius + this.lineWidth / 2;
-    const outerRenderable = WebGLRenderableFactory.createCircle(x, y, outerRadius, 32, strokeColorParsed);
+    const outerRenderable = WebGLRenderableFactory.createCircle(center.x, center.y, outerRadius, 32, strokeColorParsed);
     this.batchManager.addRenderable(outerRenderable);
   }
 
   drawLine(x1: number, y1: number, x2: number, y2: number): void {
     const color = GeometryGenerator.parseColor(this.strokeStyle);
-    const renderable = WebGLRenderableFactory.createLine(x1, y1, x2, y2, this.lineWidth, color);
+    color[3] *= this.globalAlpha;
+    // 应用变换到线段的两个端点
+    const p1 = this.transformPoint(x1, y1);
+    const p2 = this.transformPoint(x2, y2);
+    const renderable = WebGLRenderableFactory.createLine(p1.x, p1.y, p2.x, p2.y, this.lineWidth, color);
     this.batchManager.addRenderable(renderable);
   }
 
@@ -668,31 +719,23 @@ export class WebGLContext implements IWebGLContext {
   // ============ 渲染方法 ============
 
   present(): void {
-    // 获取并激活基础着色器
     const basicShader = this.shaderManager.getShaderByName('basic_shape');
     if (!basicShader) {
-      console.warn('[WebGLContext] present() - basic_shape shader not found');
       return;
     }
 
-    // 使用着色器程序
     basicShader.use(this.gl);
 
-    // 设置变换矩阵
     const projectionMatrix = this.createProjectionMatrix();
-    const transformMatrix = this.currentTransform;
+    const identityMatrix = Matrix3.identity();
 
-    // 设置 uniforms - 着色器期望 mat3，需要转换为 9 元素数组
     basicShader.setUniform('u_projection', projectionMatrix.toArray());
-    basicShader.setUniform('u_transform', transformMatrix.toArray());
+    basicShader.setUniform('u_transform', identityMatrix.toArray());
 
-    // 启用混合
     this.gl.enable(this.gl.BLEND);
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
 
-    // 刷新批处理
-    const combinedMatrix = projectionMatrix.multiply(transformMatrix);
-    this.batchManager.flush(combinedMatrix);
+    this.batchManager.flush(projectionMatrix);
   }
 
   private createProjectionMatrix(): Matrix3 {

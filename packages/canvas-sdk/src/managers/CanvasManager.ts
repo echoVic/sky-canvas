@@ -15,8 +15,8 @@ import {
   IZIndexService
 } from '../services';
 import { CanvasStats, ICanvasManager } from './ICanvasManager';
-import * as ZIndexMixin from './mixins/CanvasZIndexMixin';
 import * as ClipboardMixin from './mixins/CanvasClipboardMixin';
+import * as ZIndexMixin from './mixins/CanvasZIndexMixin';
 
 // 重新导出接口
 export { ICanvasManager } from './ICanvasManager';

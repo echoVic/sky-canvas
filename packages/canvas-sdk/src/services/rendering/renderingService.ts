@@ -140,13 +140,9 @@ export class CanvasRenderingService implements ICanvasRenderingService {
 
       // 监听形状变化事件
       this.eventBus.on('canvas:shapeAdded', (data: { entity: unknown; view: IRenderable }) => {
-        console.log('[RenderingService] canvas:shapeAdded event received:', data);
         this.logger.debug('Shape added, adding to render layer');
         if (data.view) {
-          console.log('[RenderingService] Adding view to layer:', data.view.id, data.view);
           this.addRenderable(data.view);
-        } else {
-          console.warn('[RenderingService] No view in shapeAdded event!');
         }
       });
 
@@ -180,11 +176,15 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   }
 
   addRenderable(renderable: IRenderable): void {
+    console.log('[RenderingService] addRenderable called:', renderable?.id, 'defaultLayer:', !!this.defaultLayer);
     if (renderable && renderable.id) {
       this.renderables.set(renderable.id, renderable);
       // 同时添加到默认渲染图层
       if (this.defaultLayer) {
         this.defaultLayer.addRenderable(renderable);
+        console.log('[RenderingService] Renderable added to default layer:', renderable.id);
+      } else {
+        console.warn('[RenderingService] No default layer available!');
       }
       this.logger.debug('Renderable added', renderable.id);
     }

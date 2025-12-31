@@ -1,21 +1,21 @@
 /**
  * 渲染引擎核心实现
  */
+import { BatchManager, createBatchManagerWithDefaultStrategies } from '../batch';
+import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
+import { Matrix3x3 } from '../math/Matrix3';
+import { DirtyRegionManager } from './DirtyRegionManager';
+import { GeometryAdapter, IBounds } from './GeometryAdapter';
 import {
   IRenderEngine,
+  IRenderEngineConfig,
   IRenderLayer,
-  IRenderable,
-  IViewport,
   IRenderStats,
-  IRenderEngineConfig
+  IRenderable,
+  IViewport
 } from './IRenderEngine';
-import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
-import { DirtyRegionManager } from './DirtyRegionManager';
 import { LayerCache } from './LayerCache';
-import { BatchManager, createBatchManagerWithDefaultStrategies } from '../batch';
-import { Matrix3x3 } from '../math/Matrix3';
 import { RenderLayer } from './RenderLayer';
-import { GeometryAdapter, IBounds } from './GeometryAdapter';
 
 /**
  * 渲染引擎实现
@@ -290,30 +290,15 @@ export class RenderEngine implements IRenderEngine {
     const sortedLayers = this.getSortedLayers();
     let objectsRendered = 0;
 
-    console.log('[RenderEngine] renderLayers called, layers count:', sortedLayers.length);
-
     for (const layer of sortedLayers) {
       this.context.save();
       this.context.setOpacity(layer.opacity);
 
       const renderables = layer.getRenderables();
-      console.log('[RenderEngine] Layer', layer.id, 'has', renderables.length, 'renderables');
 
-      if (this.canCacheLayer(renderables)) {
-        try {
-          this.layerCache.renderFromCache(layer.id, this.context as unknown as CanvasRenderingContext2D, { x: 0, y: 0 });
-          objectsRendered += renderables.length;
-        } catch {
-          this.renderLayerRenderables(renderables);
-          objectsRendered += renderables.length;
-        }
-      } else if (renderables.length > 10) {
-        this.renderWithBatching(renderables);
-        objectsRendered += renderables.length;
-      } else {
-        this.renderLayerRenderables(renderables);
-        objectsRendered += renderables.length;
-      }
+      // 直接渲染，跳过缓存逻辑
+      this.renderLayerRenderables(renderables);
+      objectsRendered += renderables.length;
 
       this.context.restore();
     }
@@ -323,17 +308,11 @@ export class RenderEngine implements IRenderEngine {
 
   private renderLayerRenderables(renderables: IRenderable[]): void {
     if (!this.context) return;
-    console.log('[RenderEngine] renderLayerRenderables called with', renderables.length, 'items');
     for (const renderable of renderables) {
-      console.log('[RenderEngine] Rendering:', renderable.id, 'visible:', renderable.visible);
       this.context.save();
       renderable.render(this.context);
-      // 更新脏区域跟踪
-      const bounds = renderable.getBounds();
-      this.dirtyRegionManager.updateCurrentFrameShape({
-        id: renderable.id,
-        bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
-      } as Parameters<typeof this.dirtyRegionManager.updateCurrentFrameShape>[0]);
+      // 直接传递 renderable 对象，它有 getBounds 方法
+      this.dirtyRegionManager.updateCurrentFrameShape(renderable);
       this.context.restore();
     }
   }

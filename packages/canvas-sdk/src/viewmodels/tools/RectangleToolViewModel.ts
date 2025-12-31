@@ -100,6 +100,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
   // === 鼠标事件 ===
 
   handleMouseDown(x: number, y: number, event?: MouseEvent): void {
+    console.log('[RectangleToolViewModel] handleMouseDown called, enabled:', this._state.enabled, 'x:', x, 'y:', y);
     if (!this._state.enabled) return;
     
     this._state.isDrawing = true;
@@ -116,6 +117,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
         opacity: 1
       }
     );
+    console.log('[RectangleToolViewModel] created temp shape:', this._state.currentShape.id);
     
     this.eventBus.emit('tool:drawingStarted', {});
   }

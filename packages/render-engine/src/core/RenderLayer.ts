@@ -36,9 +36,9 @@ export class RenderLayer implements IRenderLayer {
    * 获取所有可见的可渲染对象（按 zIndex 排序）
    */
   getRenderables(): IRenderable[] {
-    return Array.from(this.renderables.values())
-      .filter((r) => r.visible)
-      .sort((a, b) => a.zIndex - b.zIndex);
+    const all = Array.from(this.renderables.values());
+    const visible = all.filter((r) => r.visible);
+    return visible.sort((a, b) => a.zIndex - b.zIndex);
   }
 
   /**

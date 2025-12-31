@@ -3,13 +3,13 @@
  * MVVM 中的 View 层 - 实现 IRenderable，知道如何渲染 Model 数据
  */
 
-import { IRenderable, IGraphicsContext, IRect, IPoint } from '@sky-canvas/render-engine';
-import { 
-  ShapeEntity, 
-  IRectangleEntity, 
-  ICircleEntity, 
-  ITextEntity, 
-  IPathEntity 
+import { IGraphicsContext, IPoint, IRect, IRenderable } from '@sky-canvas/render-engine';
+import {
+  ICircleEntity,
+  IPathEntity,
+  IRectangleEntity,
+  ITextEntity,
+  ShapeEntity
 } from '../models/entities/Shape';
 
 /**
@@ -48,18 +48,10 @@ export class RenderableShapeView implements IRenderable {
     context.save();
 
     try {
-      // 应用变换
       this.applyTransform(context);
-      
-      // 应用样式
       this.applyStyle(context);
-      
-      // 根据类型渲染
       this.renderByType(context);
-      
-      // 渲染状态装饰（选中、悬停等）
       this.renderStateDecorations(context);
-      
     } finally {
       context.restore();
     }
@@ -133,6 +125,7 @@ export class RenderableShapeView implements IRenderable {
     if (borderRadius && borderRadius > 0) {
       this.renderRoundedRect(context, 0, 0, size.width, size.height, borderRadius);
     } else {
+      context.beginPath();
       context.rect(0, 0, size.width, size.height);
     }
     
@@ -282,14 +275,54 @@ export class RenderableShapeView implements IRenderable {
 
   /**
    * 填充和描边
+   * 注意：fill() 会清空路径，所以需要先描边再填充，或者重新构建路径
    */
   private fillAndStroke(context: IGraphicsContext): void {
-    if (this.entity.style.fillColor) {
-      context.fill();
-    }
+    const hasFill = !!this.entity.style.fillColor;
+    const hasStroke = !!this.entity.style.strokeColor;
     
-    if (this.entity.style.strokeColor) {
+    if (hasFill && hasStroke) {
+      context.fill();
+      this.rebuildPath(context);
       context.stroke();
+    } else if (hasFill) {
+      context.fill();
+    } else if (hasStroke) {
+      context.stroke();
+    }
+  }
+
+  /**
+   * 重新构建当前形状的路径（用于 fill 后需要 stroke 的情况）
+   */
+  private rebuildPath(context: IGraphicsContext): void {
+    switch (this.entity.type) {
+      case 'rectangle': {
+        const rect = this.entity as IRectangleEntity;
+        const { size, borderRadius } = rect;
+        if (borderRadius && borderRadius > 0) {
+          this.renderRoundedRect(context, 0, 0, size.width, size.height, borderRadius);
+        } else {
+          context.beginPath();
+          context.rect(0, 0, size.width, size.height);
+        }
+        break;
+      }
+      case 'circle': {
+        const circle = this.entity as ICircleEntity;
+        context.beginPath();
+        context.arc(0, 0, circle.radius, 0, Math.PI * 2);
+        break;
+      }
+      case 'path': {
+        const path = this.entity as IPathEntity;
+        context.beginPath();
+        this.parseSVGPath(context, path.pathData);
+        if (path.closed) {
+          context.closePath();
+        }
+        break;
+      }
     }
   }
 

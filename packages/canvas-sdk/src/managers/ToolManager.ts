@@ -5,6 +5,7 @@
 
 import { createDecorator } from '../di';
 import { IEventBusService, IHistoryService, ILogService, IShortcutService } from '../services';
+import { ICanvasMouseEvent, IToolViewModel } from '../viewmodels/interfaces/IViewModel';
 import {
   IArrowToolViewModel,
   ICircleToolViewModel,
@@ -14,7 +15,6 @@ import {
   ISelectToolViewModel,
   ITextToolViewModel
 } from '../viewmodels/tools';
-import { ICanvasMouseEvent, IToolViewModel } from '../viewmodels/interfaces/IViewModel';
 import { ICanvasManager } from './CanvasManager';
 
 /**
@@ -157,7 +157,7 @@ export class ToolManager implements IToolManager {
   activateTool(toolName: string): boolean {
     const toolViewModel = this.toolViewModels.get(toolName);
     if (!toolViewModel) {
-      console.warn(`Tool '${toolName}' not found`);
+      this.logService.warn(`Tool '${toolName}' not found`);
       return false;
     }
 

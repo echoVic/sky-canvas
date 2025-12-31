@@ -134,10 +134,8 @@ export class BasicStrategy implements IBatchStrategy {
       return;
     }
 
-    // 设置着色器和纹理
     this.setupRenderState(batch, projectionMatrix);
 
-    // 上传几何数据
     const vertexData = BatchDataUtils.verticesToArray(batch.vertices);
     const indexData = new Uint16Array(batch.indices);
 
@@ -146,7 +144,6 @@ export class BasicStrategy implements IBatchStrategy {
     this.batchBuffer.bind();
     this.batchBuffer.setupVertexAttributes();
 
-    // 绘制
     context.gl.drawElements(
       context.gl.TRIANGLES,
       batch.indices.length,
@@ -154,7 +151,6 @@ export class BasicStrategy implements IBatchStrategy {
       0
     );
 
-    // 更新统计
     this.stats.drawCalls++;
     this.stats.batches++;
     this.stats.vertices += batch.vertices.length;

@@ -171,6 +171,11 @@ export class ShaderProgram implements IShaderProgram {
     
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
+    
+    gl.bindAttribLocation(program, 0, 'a_position');
+    gl.bindAttribLocation(program, 1, 'a_color');
+    gl.bindAttribLocation(program, 2, 'a_texCoord');
+    
     gl.linkProgram(program);
     
     // 清理着色器对象（程序已链接）
