@@ -3,6 +3,10 @@
  * 负责着色器的创建、编译、缓存和状态管理
  */
 
+import { createLogger } from '../utils/Logger';
+
+const logger = createLogger('ShaderManager');
+
 /**
  * 着色器类型
  */
@@ -136,7 +140,7 @@ export class ShaderProgram implements IShaderProgram {
   setUniform(name: string, value: any): void {
     const location = this.uniforms.get(name);
     if (!location) {
-      console.warn(`Uniform '${name}' not found in shader ${this.id}`);
+      logger.warn(`Uniform '${name}' not found in shader ${this.id}`);
       return;
     }
     
@@ -254,7 +258,7 @@ export class ShaderProgram implements IShaderProgram {
           gl.uniformMatrix4fv(location, false, value);
           break;
         default:
-          console.warn(`Unsupported uniform array length: ${value.length}`);
+          logger.warn(`Unsupported uniform array length: ${value.length}`);
       }
     } else if (value && typeof value === 'object') {
       // 处理矩阵和向量对象

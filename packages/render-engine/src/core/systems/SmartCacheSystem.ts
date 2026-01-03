@@ -1,5 +1,8 @@
+import { createLogger } from '../../utils/Logger';
 import { BaseSystem } from './SystemManager';
 import { Extension, ExtensionType } from './ExtensionSystem';
+
+const logger = createLogger('SmartCacheSystem');
 
 /**
  * 缓存策略类型
@@ -268,7 +271,7 @@ export class SmartCacheSystem extends BaseSystem {
           stats.compressionRatio = (stats.compressionRatio + compressionRatio) / 2;
         }
       } catch (error) {
-        console.warn('Compression failed:', error);
+        logger.warn('Compression failed:', error);
       }
     }
     
@@ -344,7 +347,7 @@ export class SmartCacheSystem extends BaseSystem {
       try {
         value = await this.compressor.decompress(value);
       } catch (error) {
-        console.warn('Decompression failed:', error);
+        logger.warn('Decompression failed:', error);
         return null;
       }
     }

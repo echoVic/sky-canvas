@@ -4,6 +4,7 @@
 import { BatchManager, createBatchManagerWithDefaultStrategies } from '../batch';
 import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
 import { Matrix3x3 } from '../math/Matrix3';
+import { createLogger } from '../utils/Logger';
 import { DirtyRegionManager } from './DirtyRegionManager';
 import { GeometryAdapter, IBounds } from './GeometryAdapter';
 import {
@@ -16,6 +17,8 @@ import {
 } from './IRenderEngine';
 import { LayerCache } from './LayerCache';
 import { RenderLayer } from './RenderLayer';
+
+const logger = createLogger('RenderEngine');
 
 /**
  * 渲染引擎实现
@@ -72,16 +75,16 @@ export class RenderEngine implements IRenderEngine {
   }
 
   start(): void {
-    console.log('[RenderEngine] start() called, isRunning:', this.isRunningFlag, 'context:', !!this.context);
+    logger.debug('start() called, isRunning:', this.isRunningFlag, 'context:', !!this.context);
     if (this.isRunningFlag || !this.context) {
-      console.log('[RenderEngine] start() aborted - already running or no context');
+      logger.debug('start() aborted - already running or no context');
       return;
     }
 
     this.isRunningFlag = true;
     this.lastFrameTime = performance.now();
 
-    console.log('[RenderEngine] Starting render loop, enableVSync:', this.config.enableVSync);
+    logger.debug('Starting render loop, enableVSync:', this.config.enableVSync);
     if (this.config.enableVSync) {
       this.startVSyncLoop();
     } else {
@@ -103,7 +106,7 @@ export class RenderEngine implements IRenderEngine {
 
   render(): void {
     if (!this.context) {
-      console.log('[RenderEngine] render() aborted - no context');
+      logger.debug('render() aborted - no context');
       return;
     }
 

@@ -3,8 +3,11 @@
  * 协调各个渲染子系统，管理渲染任务和性能优化
  */
 
+import { createLogger } from '../../utils/Logger';
 import { BaseSystem } from './SystemManager';
 import { Extension, ExtensionType } from './ExtensionSystem';
+
+const logger = createLogger('RenderPipelineScheduler');
 import { BatchRenderSystem } from './BatchRenderSystem';
 import { PerformanceSystem } from './PerformanceSystem';
 import { ResourceSystem } from './ResourceSystem';
@@ -87,7 +90,7 @@ export class RenderPipelineScheduler extends BaseSystem {
   }
 
   private initializeSubSystems(): void {
-    console.log('Initializing render pipeline subsystems');
+    logger.debug('Initializing render pipeline subsystems');
   }
 
   setSubSystems(systems: {
@@ -122,7 +125,7 @@ export class RenderPipelineScheduler extends BaseSystem {
         this.qualityManager.updateFrameTime(this.stats.frameTime);
       }
     } catch (error) {
-      console.error('Render frame failed:', error);
+      logger.error('Render frame failed:', error);
       throw error;
     }
   }
@@ -211,33 +214,33 @@ export class RenderPipelineScheduler extends BaseSystem {
   }
 
   private executeSetupPhase(): void {
-    console.log('Executing setup phase');
+    logger.debug('Executing setup phase');
   }
 
   private executeCullPhase(): void {
-    console.log('Executing cull phase');
+    logger.debug('Executing cull phase');
   }
 
   private executeSortPhase(): void {
-    console.log('Executing sort phase');
+    logger.debug('Executing sort phase');
   }
 
   private executeBatchPhase(): void {
     if (this.batchSystem) {
-      console.log('Executing batch phase');
+      logger.debug('Executing batch phase');
     }
   }
 
   private executeRenderPhase(): void {
-    console.log('Executing render phase');
+    logger.debug('Executing render phase');
   }
 
   private executePostProcessPhase(): void {
-    console.log('Executing post-process phase');
+    logger.debug('Executing post-process phase');
   }
 
   private executePresentPhase(): void {
-    console.log('Executing present phase');
+    logger.debug('Executing present phase');
   }
 
   private updateStats(frameStartTime: number): void {
@@ -269,7 +272,7 @@ export class RenderPipelineScheduler extends BaseSystem {
 
     const budgetViolations = this.checkBudgetViolations();
     if (budgetViolations.length > 0) {
-      console.warn('Performance budget violations:', budgetViolations);
+      logger.warn('Performance budget violations:', budgetViolations);
       this.triggerOptimizations(budgetViolations);
     }
   }
@@ -286,10 +289,10 @@ export class RenderPipelineScheduler extends BaseSystem {
   private triggerOptimizations(violations: string[]): void {
     for (const violation of violations) {
       switch (violation) {
-        case 'frame_time': console.log('Optimizing frame time'); break;
-        case 'draw_calls': console.log('Optimizing draw calls'); break;
-        case 'triangles': console.log('Optimizing triangle count'); break;
-        case 'memory_usage': console.log('Optimizing memory usage'); break;
+        case 'frame_time': logger.debug('Optimizing frame time'); break;
+        case 'draw_calls': logger.debug('Optimizing draw calls'); break;
+        case 'triangles': logger.debug('Optimizing triangle count'); break;
+        case 'memory_usage': logger.debug('Optimizing memory usage'); break;
       }
     }
   }
@@ -297,7 +300,7 @@ export class RenderPipelineScheduler extends BaseSystem {
   private optimizeRenderPipeline(): void {
     if (!this.config.enableDynamicOptimization) return;
     const recommendations = this.qualityManager.getQualityRecommendations();
-    console.log('Applying quality settings:', recommendations);
+    logger.debug('Applying quality settings:', recommendations);
     this.adjustConcurrency();
   }
 

@@ -3,8 +3,11 @@
  * 实现统一的资源生命周期管理、缓存和优化
  */
 
+import { createLogger } from '../../utils/Logger';
 import { BaseSystem } from './SystemManager';
 import { ExtensionType, Extension } from './ExtensionSystem';
+
+const logger = createLogger('ResourceSystem');
 
 /**
  * 资源类型
@@ -375,7 +378,7 @@ export class ResourceSystem extends BaseSystem {
   async preloadResources(resources: Array<{ id: string; factory: () => IResource }>): Promise<void> {
     const promises = resources.map(({ id, factory }) => 
       this.loadResource(id, factory).catch(error => {
-        console.warn(`Failed to preload resource ${id}:`, error);
+        logger.warn(`Failed to preload resource ${id}:`, error);
         return null;
       })
     );
@@ -423,7 +426,7 @@ export class ResourceSystem extends BaseSystem {
     }
     
     if (toDispose.length > 0) {
-      console.log(`Garbage collected ${toDispose.length} resources`);
+      logger.debug(`Garbage collected ${toDispose.length} resources`);
     }
   }
   

@@ -4,6 +4,9 @@
  */
 
 import { EventEmitter } from '../events/EventBus';
+import { createLogger } from '../utils/Logger';
+
+const logger = createLogger('WebGLResourceManager');
 import { TextureManager } from './TextureManager';
 import { FramebufferManager } from './FramebufferManager';
 import { ResourceRefCounter } from './ResourceRefCounter';
@@ -125,7 +128,7 @@ export class WebGLResourceManager extends EventEmitter<ResourceManagerEvents> {
    */
   deleteResource(id: string): boolean {
     if (!this.refCounter.hasNoReferences(id)) {
-      console.warn(`Cannot delete resource '${id}': still has references`);
+      logger.warn(`Cannot delete resource '${id}': still has references`);
       return false;
     }
 

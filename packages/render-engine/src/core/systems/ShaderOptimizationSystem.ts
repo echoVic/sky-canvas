@@ -1,5 +1,8 @@
+import { createLogger } from '../../utils/Logger';
 import { BaseSystem } from './SystemManager';
 import { Extension, ExtensionType } from './ExtensionSystem';
+
+const logger = createLogger('ShaderOptimizationSystem');
 
 /**
  * 着色器类型
@@ -104,7 +107,7 @@ class ShaderPreprocessor {
       if (includeContent) {
         return this.processIncludes(includeContent); // 递归处理嵌套包含
       }
-      console.warn(`Include file not found: ${filename}`);
+      logger.warn(`Include file not found: ${filename}`);
       return match;
     });
   }
@@ -546,7 +549,7 @@ export class ShaderOptimizationSystem extends BaseSystem {
     
     if (!this.gl.getProgramParameter(program, this.gl.VALIDATE_STATUS)) {
       const error = this.gl.getProgramInfoLog(program);
-      console.warn(`Shader validation warning: ${error}`);
+      logger.warn(`Shader validation warning: ${error}`);
     }
   }
   
@@ -689,7 +692,7 @@ export class ShaderOptimizationSystem extends BaseSystem {
     
     for (const variant of commonVariants) {
       this.getShaderProgram('basic', variant).catch(error => {
-        console.warn('Failed to precompile shader variant:', error);
+        logger.warn('Failed to precompile shader variant:', error);
       });
     }
   }
@@ -714,7 +717,7 @@ export class ShaderOptimizationSystem extends BaseSystem {
   cleanupUnusedShaders(maxAge: number = 300000): void {
     // 这里需要遍历缓存中的程序，但cache是私有的
     // 在实际实现中，需要添加相应的方法
-    console.log(`Cleaning up shaders older than ${maxAge}ms`);
+    logger.debug(`Cleaning up shaders older than ${maxAge}ms`);
   }
   
   /**

@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "dev": "tsc --watch",
+    "docs:api": "typedoc",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -49,6 +50,8 @@
     "@vitest/ui": "^4.0.16",
     "@webgpu/types": "^0.1.68",
     "jsdom": "^23.0.1",
+    "typedoc": "^0.27.0",
+    "typedoc-plugin-markdown": "^4.4.0",
     "typescript": "~5.8.3",
     "vitest": "^4.0.16"
   },

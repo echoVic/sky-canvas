@@ -31,7 +31,21 @@ export type {
   GestureState, GestureType, IGestureConfig
 } from './GestureRecognizer';
 
+// 统一输入管理器
+export { InputManager, createInputManager } from './InputManager';
+
+export type {
+  IMouseEvent as InputMouseEvent,
+  IKeyboardEvent,
+  ITouchEvent as InputTouchEvent,
+  ITouchPoint,
+  IGestureEvent as InputGestureEvent,
+  InputManagerConfig,
+  InputManagerEvents
+} from './InputManager';
+
 // 向后兼容的简化接口
 export { EventBus as UnifiedEventBus } from './EventBus';
 export { EventDispatcher as UnifiedEventDispatcher } from './EventDispatcher';
 export { GestureRecognizer as UnifiedGestureRecognizer } from './GestureRecognizer';
+export { InputManager as UnifiedInputManager } from './InputManager';

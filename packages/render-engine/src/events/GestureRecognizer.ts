@@ -71,6 +71,9 @@ export class GestureRecognizer extends EventDispatcher {
   private _totalScale = 1;
   private _totalRotation = 0;
   private _totalTranslation = new Vector2(0, 0);
+  
+  // 点击位置跟踪
+  private _lastTapPosition: IPoint = { x: 0, y: 0 };
 
   constructor(config: IGestureConfig = {}) {
     super();
@@ -184,6 +187,8 @@ export class GestureRecognizer extends EventDispatcher {
   private _handleSingleTouchStart(event: ITouchEvent): void {
     const touch = event.changedTouches[0];
     if (!touch) return;
+
+    this._lastTapPosition = { ...touch.worldPosition };
 
     // 设置长按计时器
     this._longPressTimer = window.setTimeout(() => {
@@ -383,24 +388,61 @@ export class GestureRecognizer extends EventDispatcher {
    * 识别点击
    */
   private _recognizeTap(): void {
-    // 这里可以发送点击事件
-    console.log('Tap recognized');
+    this._gestureType = GestureType.TAP;
+    this._gestureState = GestureState.ENDED;
+    
+    const gestureEvent = InputEventFactory.createGestureEvent(
+      GestureType.TAP,
+      this._lastTapPosition,
+      1,
+      0,
+      new Vector2(0, 0),
+      0,
+      0,
+      new Vector2(0, 0)
+    );
+    this.dispatchEvent(gestureEvent);
   }
 
   /**
    * 识别双击
    */
   private _recognizeDoubleTap(): void {
-    // 这里可以发送双击事件
-    console.log('Double tap recognized');
+    this._gestureType = GestureType.DOUBLE_TAP;
+    this._gestureState = GestureState.ENDED;
+    
+    const gestureEvent = InputEventFactory.createGestureEvent(
+      GestureType.DOUBLE_TAP,
+      this._lastTapPosition,
+      1,
+      0,
+      new Vector2(0, 0),
+      0,
+      0,
+      new Vector2(0, 0)
+    );
+    this.dispatchEvent(gestureEvent);
   }
 
   /**
    * 识别长按
    */
   private _recognizeLongPress(position: IPoint): void {
-    // 这里可以发送长按事件
-    console.log('Long press recognized at', position);
+    this._gestureType = GestureType.LONG_PRESS;
+    this._gestureState = GestureState.ENDED;
+    this._clearTimers();
+    
+    const gestureEvent = InputEventFactory.createGestureEvent(
+      GestureType.LONG_PRESS,
+      position,
+      1,
+      0,
+      new Vector2(0, 0),
+      0,
+      0,
+      new Vector2(0, 0)
+    );
+    this.dispatchEvent(gestureEvent);
   }
 
   /**

@@ -8,6 +8,21 @@ import { WebGLRenderer } from './WebGLRenderer';
 import { WebGPURenderer } from './WebGPURenderer';
 
 export { CanvasRenderer, WebGLRenderer, WebGPURenderer };
+export { RendererBase } from './BaseRenderer';
+export type {
+  IRenderer,
+  IDrawRectOptions,
+  IDrawCircleOptions,
+  IDrawLineOptions,
+  IDrawTextOptions,
+  IDrawImageOptions,
+  IImageSource,
+  IPoint,
+  IRect,
+  IColor,
+  ITextStyle,
+  IGraphicsStyle
+} from './IRenderer';
 
 export class RendererFactory {
   static async createCanvasRenderer(canvas: HTMLCanvasElement): Promise<CanvasRenderer | null> {

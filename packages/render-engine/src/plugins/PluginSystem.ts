@@ -4,6 +4,9 @@
  */
 
 import { IEventBus } from '../events/EventBus';
+import { createLogger } from '../utils/Logger';
+
+const logger = createLogger('PluginSystem');
 import { PluginContextFactory } from './PluginContextFactory';
 import {
   Plugin,
@@ -371,7 +374,7 @@ export class PluginSystem {
       try {
         await this.unloadPlugin(pluginId);
       } catch (error) {
-        console.error(`Failed to unload plugin ${pluginId}:`, error);
+        logger.error(`Failed to unload plugin ${pluginId}:`, error);
       }
     }
 

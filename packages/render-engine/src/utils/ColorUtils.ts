@@ -3,6 +3,10 @@
  * 提供颜色解析、转换和操作的通用方法
  */
 
+import { createLogger } from './Logger';
+
+const logger = createLogger('ColorUtils');
+
 export interface RGBAColor {
   r: number; // 0-255
   g: number; // 0-255
@@ -60,7 +64,7 @@ export function parseColor(colorString: string): RGBAColor {
   }
   
   // 默认返回黑色
-  console.warn(`Unable to parse color: ${colorString}`);
+  logger.warn(`Unable to parse color: ${colorString}`);
   return { r: 0, g: 0, b: 0, a: 255 };
 }
 

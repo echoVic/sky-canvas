@@ -1,9 +1,18 @@
 import { ICanvas2DContext } from '../adapters/Canvas2DContext';
-import { BaseRenderer, Drawable, RenderContext, RendererCapabilities, RenderState } from '../core';
-import { IPoint, IRect } from '../graphics/IGraphicsContext';
+import { Drawable, RenderContext, RendererCapabilities, RenderState } from '../core';
+import { IColor, IPoint, IRect } from '../graphics/IGraphicsContext';
 import { Transform } from '../math';
+import {
+    IDrawCircleOptions,
+    IDrawImageOptions,
+    IDrawLineOptions,
+    IDrawRectOptions,
+    IDrawTextOptions,
+    IImageSource,
+    RendererBase
+} from './BaseRenderer';
 
-export class CanvasRenderer extends BaseRenderer {
+export class CanvasRenderer extends RendererBase {
   private animationId: number | null = null;
   private lastTime = 0;
   private currentContext: RenderContext | null = null;
@@ -18,25 +27,18 @@ export class CanvasRenderer extends BaseRenderer {
     this.currentContext = context;
     const { viewport, devicePixelRatio } = context;
 
-    // 清空画布
     this.clear();
 
-    // 设置视口变换
     this.canvasAdapter.save();
     this.canvasAdapter.scale(devicePixelRatio, devicePixelRatio);
     this.canvasAdapter.translate(-viewport.x, -viewport.y);
 
-    // 应用全局渲染状态
     this.applyRenderStateToAdapter(this.renderState);
 
-    // 绘制所有可见的对象
     for (const drawable of this.drawables) {
       if (drawable.visible && this.isDrawableInViewport(drawable, viewport)) {
         this.canvasAdapter.save();
-
-        // 应用对象变换
         this.applyTransformToAdapter(drawable.transform);
-
         drawable.draw(context);
         this.canvasAdapter.restore();
       }
@@ -45,7 +47,11 @@ export class CanvasRenderer extends BaseRenderer {
     this.canvasAdapter.restore();
   }
 
-  clear(): void {
+  clear(color?: IColor | string): void {
+    if (color) {
+      const colorStr = typeof color === 'string' ? color : this.colorToString(color);
+      this.canvasAdapter.setFillStyle(colorStr);
+    }
     this.canvasAdapter.clear();
   }
 
@@ -85,11 +91,13 @@ export class CanvasRenderer extends BaseRenderer {
     }
   }
 
-  // 绘制基础图形
-  drawLine(start: IPoint, end: IPoint, style?: Partial<RenderState>): void {
+  drawLine(start: IPoint, end: IPoint, options?: IDrawLineOptions): void {
     this.canvasAdapter.save();
 
-    if (style) this.applyRenderStateToAdapter({ ...this.renderState, ...style });
+    if (options?.style) {
+      this.applyStyleFromOptions(options);
+      this.applyRenderStateToAdapter(this.renderState);
+    }
 
     this.canvasAdapter.beginPath();
     this.canvasAdapter.moveTo(start.x, start.y);
@@ -99,12 +107,15 @@ export class CanvasRenderer extends BaseRenderer {
     this.canvasAdapter.restore();
   }
 
-  drawRect(x: number, y: number, width: number, height: number, filled = false, style?: Partial<RenderState>): void {
+  drawRect(x: number, y: number, width: number, height: number, options?: IDrawRectOptions): void {
     this.canvasAdapter.save();
 
-    if (style) this.applyRenderStateToAdapter({ ...this.renderState, ...style });
+    if (options?.style) {
+      this.applyStyleFromOptions(options);
+      this.applyRenderStateToAdapter(this.renderState);
+    }
 
-    if (filled) {
+    if (options?.filled) {
       this.canvasAdapter.fillRect(x, y, width, height);
     } else {
       this.canvasAdapter.strokeRect(x, y, width, height);
@@ -113,15 +124,18 @@ export class CanvasRenderer extends BaseRenderer {
     this.canvasAdapter.restore();
   }
 
-  drawCircle(center: IPoint, radius: number, filled = false, style?: Partial<RenderState>): void {
+  drawCircle(center: IPoint, radius: number, options?: IDrawCircleOptions): void {
     this.canvasAdapter.save();
 
-    if (style) this.applyRenderStateToAdapter({ ...this.renderState, ...style });
+    if (options?.style) {
+      this.applyStyleFromOptions(options);
+      this.applyRenderStateToAdapter(this.renderState);
+    }
 
     this.canvasAdapter.beginPath();
     this.canvasAdapter.arc(center.x, center.y, radius, 0, Math.PI * 2);
 
-    if (filled) {
+    if (options?.filled) {
       this.canvasAdapter.fill();
     } else {
       this.canvasAdapter.stroke();
@@ -130,24 +144,56 @@ export class CanvasRenderer extends BaseRenderer {
     this.canvasAdapter.restore();
   }
 
-  drawText(text: string, position: IPoint, style?: Partial<RenderState> & { font?: string; textAlign?: CanvasTextAlign; textBaseline?: CanvasTextBaseline }): void {
+  drawText(text: string, position: IPoint, options?: IDrawTextOptions): void {
     this.canvasAdapter.save();
 
-    if (style) {
-      this.applyRenderStateToAdapter({ ...this.renderState, ...style });
-      if (style.font) this.canvasAdapter.setFont(style.font);
-      if (style.textAlign) this.canvasAdapter.setTextAlign(style.textAlign);
+    if (options?.style) {
+      this.applyStyleFromOptions(options);
+      this.applyRenderStateToAdapter(this.renderState);
+
+      const style = options.style;
+      if (style.fontFamily && style.fontSize) {
+        const fontWeight = style.fontWeight || 'normal';
+        const fontStyle = style.fontStyle || 'normal';
+        this.canvasAdapter.setFont(`${fontStyle} ${fontWeight} ${style.fontSize}px ${style.fontFamily}`);
+      }
+      if (style.textAlign) {
+        this.canvasAdapter.setTextAlign(style.textAlign);
+      }
       if (style.textBaseline) {
-        // 转换CanvasTextBaseline到IGraphicsContext支持的类型
-        const supportedBaselines = ['top', 'middle', 'bottom', 'alphabetic', 'hanging'];
-        const baseline = supportedBaselines.includes(style.textBaseline) ?
-          style.textBaseline as 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging' :
-          'alphabetic';
-        this.canvasAdapter.setTextBaseline(baseline);
+        this.canvasAdapter.setTextBaseline(style.textBaseline);
       }
     }
 
     this.canvasAdapter.fillText(text, position.x, position.y);
+
+    this.canvasAdapter.restore();
+  }
+
+  drawImage(
+    image: IImageSource,
+    position: IPoint,
+    size?: { width: number; height: number },
+    options?: IDrawImageOptions
+  ): void {
+    this.canvasAdapter.save();
+
+    if (options?.opacity !== undefined) {
+      this.canvasAdapter.setGlobalAlpha(options.opacity);
+    }
+
+    const targetWidth = size?.width ?? image.width;
+    const targetHeight = size?.height ?? image.height;
+
+    if (image.data) {
+      if (image.data instanceof ImageData) {
+        this.canvasAdapter.putImageData(image.data, position.x, position.y);
+      } else if (image.data instanceof Uint8ClampedArray) {
+        const imageData = new ImageData(image.width, image.height);
+        imageData.data.set(image.data);
+        this.canvasAdapter.putImageData(imageData, position.x, position.y);
+      }
+    }
 
     this.canvasAdapter.restore();
   }

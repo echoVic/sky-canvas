@@ -4,6 +4,9 @@
  */
 
 import { EventEmitter } from '../events/EventBus';
+import { createLogger } from '../utils/Logger';
+
+const logger = createLogger('TextureLoader');
 import { TextureAtlas, TextureInfo, AtlasEntry } from './TextureAtlas';
 
 // 纹理加载状态
@@ -126,7 +129,7 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
    */
   preloadTexture(url: string, options: LoadOptions = {}): void {
     this.loadTexture(url, { ...options, priority: -1 }).catch(error => {
-      console.warn(`Failed to preload texture: ${url}`, error);
+      logger.warn(`Failed to preload texture: ${url}`, error);
     });
   }
 
@@ -314,7 +317,7 @@ export class TextureLoader extends EventEmitter<LoaderEvents> {
     task.retryCount++;
     
     if (task.retryCount < task.maxRetries) {
-      console.warn(`Retrying load for ${task.url} (${task.retryCount}/${task.maxRetries})`);
+      logger.warn(`Retrying load for ${task.url} (${task.retryCount}/${task.maxRetries})`);
       
       // 延迟重试
       await new Promise(resolve => setTimeout(resolve, 1000 * task.retryCount));

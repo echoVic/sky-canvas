@@ -251,6 +251,22 @@ export class WebGPUContext implements IGraphicsContext {
     }
   }
 
+  getDevice(): GPUDevice | null {
+    return this.device;
+  }
+
+  getGPUContext(): GPUCanvasContext | null {
+    return this.gpuContext;
+  }
+
+  getFormat(): GPUTextureFormat {
+    return this.format;
+  }
+
+  getRenderer(): WebGPURenderer | null {
+    return this.renderer;
+  }
+
   dispose(): void {
     this.renderer?.dispose();
     this.renderer = null;

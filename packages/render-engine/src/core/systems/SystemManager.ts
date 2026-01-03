@@ -3,7 +3,10 @@
  * 管理渲染引擎中的各个子系统
  */
 
+import { createLogger } from '../../utils/Logger';
 import { ExtensionType, ExtensionManager } from './ExtensionSystem';
+
+const logger = createLogger('SystemManager');
 
 /**
  * 系统接口
@@ -36,7 +39,7 @@ export class SystemManager {
    */
   addSystem(system: ISystem): void {
     if (this.systems.has(system.name)) {
-      console.warn(`System ${system.name} already exists`);
+      logger.warn(`System ${system.name} already exists`);
       return;
     }
     
@@ -75,28 +78,28 @@ export class SystemManager {
       // 从扩展管理器加载系统
       await this.loadSystemsFromExtensions();
       
-      console.log(`Initializing ${this.sortedSystems.length} systems...`);
+      logger.info(`Initializing ${this.sortedSystems.length} systems...`);
       
       // 初始化所有系统 - 按优先级顺序
       for (const system of this.sortedSystems) {
         try {
           if (system.init) {
-            console.log(`Initializing system: ${system.name} (priority: ${system.priority})`);
+            logger.debug(`Initializing system: ${system.name} (priority: ${system.priority})`);
             await system.init();
-            console.log(`✓ System ${system.name} initialized successfully`);
+            logger.debug(`✓ System ${system.name} initialized successfully`);
           }
         } catch (error) {
           const initError = error as Error;
           initErrors.push({ systemName: system.name, error: initError });
-          console.error(`✗ Failed to initialize system ${system.name}:`, initError.message);
+          logger.error(`✗ Failed to initialize system ${system.name}:`, initError.message);
         }
       }
       
       // 如果有初始化错误，报告但不完全失败
       if (initErrors.length > 0) {
-        console.warn(`${initErrors.length} systems failed to initialize:`);
+        logger.warn(`${initErrors.length} systems failed to initialize:`);
         initErrors.forEach(({ systemName, error }) => {
-          console.warn(`- ${systemName}: ${error.message}`);
+          logger.warn(`- ${systemName}: ${error.message}`);
         });
         
         // 对于关键系统的失败，抛出错误
@@ -110,9 +113,9 @@ export class SystemManager {
         }
       }
       
-      console.log('✓ System manager initialization completed');
+      logger.info('✓ System manager initialization completed');
     } catch (error) {
-      console.error('System manager initialization failed:', error);
+      logger.error('System manager initialization failed:', error);
       throw error;
     }
   }
@@ -208,7 +211,7 @@ export class SystemManager {
    * 销毁所有系统
    */
   destroy(): void {
-    console.log('Destroying all systems...');
+    logger.info('Destroying all systems...');
     
     // 按相反优先级顺序销毁（先销毁优先级低的）
     const reverseSortedSystems = [...this.sortedSystems].reverse();
@@ -216,17 +219,17 @@ export class SystemManager {
     for (const system of reverseSortedSystems) {
       try {
         if (system.destroy) {
-          console.log(`Destroying system: ${system.name}`);
+          logger.debug(`Destroying system: ${system.name}`);
           system.destroy();
         }
       } catch (error) {
-        console.error(`Failed to destroy system ${system.name}:`, error);
+        logger.error(`Failed to destroy system ${system.name}:`, error);
       }
     }
     
     this.systems.clear();
     this.sortedSystems = [];
-    console.log('✓ All systems destroyed');
+    logger.info('✓ All systems destroyed');
   }
   
   /**
