@@ -3,7 +3,6 @@
  */
 
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService } from '../logging/logService';
 
 /**
@@ -45,33 +44,22 @@ export class HistoryService implements IHistoryService {
   private maxHistorySize = 100;
 
   constructor(
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logger: ILogService
   ) {}
 
   execute(command: ICommand): void {
     try {
-      // 执行命令
       command.execute();
       
-      // 清除当前位置之后的历史记录
       this.history.splice(this.currentIndex + 1);
       
-      // 添加新命令到历史记录
       this.history.push(command);
       this.currentIndex++;
       
-      // 限制历史记录大小
       if (this.history.length > this.maxHistorySize) {
         this.history.shift();
         this.currentIndex--;
       }
-      
-      this.eventBus.emit('history:executed', { 
-        command, 
-        canUndo: this.canUndo(), 
-        canRedo: this.canRedo() 
-      });
       
       this.logger.debug('Command executed', command.description || 'Unknown command');
     } catch (error) {
@@ -91,12 +79,6 @@ export class HistoryService implements IHistoryService {
       command.undo();
       this.currentIndex--;
       
-      this.eventBus.emit('history:undone', { 
-        command, 
-        canUndo: this.canUndo(), 
-        canRedo: this.canRedo() 
-      });
-      
       this.logger.debug('Command undone', command.description || 'Unknown command');
     } catch (error) {
       this.logger.error('Failed to undo command', error);
@@ -115,15 +97,9 @@ export class HistoryService implements IHistoryService {
       const command = this.history[this.currentIndex];
       command.execute();
       
-      this.eventBus.emit('history:redone', { 
-        command, 
-        canUndo: this.canUndo(), 
-        canRedo: this.canRedo() 
-      });
-      
       this.logger.debug('Command redone', command.description || 'Unknown command');
     } catch (error) {
-      this.currentIndex--; // 回滚索引
+      this.currentIndex--;
       this.logger.error('Failed to redo command', error);
       throw error;
     }
@@ -140,7 +116,6 @@ export class HistoryService implements IHistoryService {
   clear(): void {
     this.history = [];
     this.currentIndex = -1;
-    this.eventBus.emit('history:cleared', {});
     this.logger.debug('History cleared');
   }
 
@@ -158,7 +133,6 @@ export class HistoryService implements IHistoryService {
   setMaxHistorySize(size: number): void {
     this.maxHistorySize = Math.max(1, size);
     
-    // 如果当前历史记录超过新的限制，移除最旧的记录
     while (this.history.length > this.maxHistorySize) {
       this.history.shift();
       if (this.currentIndex >= 0) {

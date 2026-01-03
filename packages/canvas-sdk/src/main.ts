@@ -27,15 +27,12 @@ import {
   CanvasRenderingService,
   ClipboardService,
   ConfigurationService,
-  EventBusService,
   HistoryService,
   ICanvasRenderingService,
   IClipboardService,
   IConfigurationService,
-  IEventBusService,
   IHistoryService,
   IInteractionService,
-  // 服务标识符
   ILogService,
   InteractionService,
   ISelectionService,
@@ -89,8 +86,6 @@ class CanvasSDKBootstrap {
    * 启动引导程序
    */
   async startup(): Promise<CanvasSDK> {
-    console.log('=== CANVAS SDK BOOTSTRAP STARTUP ===');
-
     // 1. 应用准备阶段
     await this.prepare();
 
@@ -99,6 +94,8 @@ class CanvasSDKBootstrap {
 
     // 3. 初始化服务
     await this.initServices();
+
+    this.logger?.info('=== CANVAS SDK BOOTSTRAP STARTUP ===');
 
     // 4. 启动核心功能
     await this.startCore();
@@ -110,7 +107,7 @@ class CanvasSDKBootstrap {
     ) as CanvasSDK;
 
     this.isInitialized = true;
-    console.log('=== CANVAS SDK BOOTSTRAP STARTUP COMPLETE ===');
+    this.logger?.info('=== CANVAS SDK BOOTSTRAP STARTUP COMPLETE ===');
 
     return canvasSDK;
   }
@@ -119,8 +116,6 @@ class CanvasSDKBootstrap {
    * 应用准备阶段
    */
   private async prepare(): Promise<void> {
-    console.log('Canvas SDK Bootstrap: Preparing...');
-
     // 验证必要配置
     if (!this.config.canvas) {
       throw new Error('Canvas element is required');
@@ -140,8 +135,6 @@ class CanvasSDKBootstrap {
    * 创建服务
    */
   private createServices(): void {
-    console.log('Canvas SDK Bootstrap: Creating services...');
-
     // 1. 创建服务集合
     const services = new ServiceCollection();
 
@@ -164,8 +157,6 @@ class CanvasSDKBootstrap {
    * 初始化服务
    */
   private async initServices(): Promise<void> {
-    console.log('Canvas SDK Bootstrap: Initializing services...');
-
     if (!this.instantiationService) {
       throw new Error('InstantiationService not created');
     }
@@ -182,8 +173,6 @@ class CanvasSDKBootstrap {
    * 启动核心功能
    */
   private async startCore(): Promise<void> {
-    console.log('Canvas SDK Bootstrap: Starting core...');
-
     if (!this.instantiationService) {
       throw new Error('InstantiationService not available');
     }
@@ -258,6 +247,13 @@ class CanvasSDKBootstrap {
   }
 
   /**
+   * 获取 InstantiationService
+   */
+  getInstantiationService(): InstantiationService | undefined {
+    return this.instantiationService;
+  }
+
+  /**
    * 检查是否已初始化
    */
   isReady(): boolean {
@@ -280,9 +276,6 @@ class CanvasSDKBootstrap {
   private registerCoreServices(services: ServiceCollection): void {
     // 日志服务 - 最先注册
     services.set(ILogService, new SyncDescriptor(LogService));
-
-    // 事件总线服务
-    services.set(IEventBusService, new SyncDescriptor(EventBusService));
 
     // 配置服务
     services.set(IConfigurationService, new SyncDescriptor(ConfigurationService));

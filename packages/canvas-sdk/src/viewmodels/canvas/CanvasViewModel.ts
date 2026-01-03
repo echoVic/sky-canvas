@@ -324,8 +324,7 @@ export class CanvasViewModel {
       listeners.forEach(listener => {
         try {
           (listener as any)(data);
-        } catch (error) {
-          console.error(`Error in canvas view model listener for ${event}:`, error);
+        } catch {
         }
       });
     }

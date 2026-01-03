@@ -25,6 +25,8 @@ export interface IImportResult {
  * 导入服务接口
  */
 export interface IImportService {
+  readonly _serviceBrand: undefined;
+
   // JSON 导入
   importFromJSON(jsonString: string): Promise<IImportResult>;
   
@@ -39,6 +41,8 @@ export interface IImportService {
   
   // 验证文件格式
   validateFileFormat(file: File): boolean;
+
+  dispose(): void;
 }
 
 export const IImportService = createDecorator<IImportService>('ImportService');
@@ -58,6 +62,7 @@ export enum SupportedFormat {
  * 导入服务实现
  */
 export class ImportService implements IImportService {
+  readonly _serviceBrand: undefined;
 
   /**
    * 从JSON导入
@@ -328,8 +333,7 @@ export class ImportService implements IImportService {
         default:
           return null;
       }
-    } catch (error) {
-      console.error('Error creating shape from data:', error);
+    } catch {
       return null;
     }
   }
@@ -410,4 +414,6 @@ export class ImportService implements IImportService {
       reader.readAsText(file);
     });
   }
+
+  dispose(): void {}
 }

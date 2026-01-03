@@ -190,8 +190,7 @@ export class ExtensionManager {
           const result = await implementation[method](...args);
           results.push(result);
         }
-      } catch (error) {
-        console.error(`Error executing provider ${provider.pluginId}:${provider.extensionId}`, error);
+      } catch {
       }
     }
     
@@ -245,8 +244,7 @@ export class ExtensionManager {
       for (const listener of listeners) {
         try {
           listener(...args);
-        } catch (error) {
-          console.error(`Error in event listener for '${event}'`, error);
+        } catch {
         }
       }
     }

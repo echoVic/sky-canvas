@@ -1,13 +1,7 @@
-/**
- * 选择工具 ViewModel
- * 实现点选、拖拽、框选和删除功能
- */
-
 import { proxy } from 'valtio';
 
 import { ShapeEntity } from '../../models/entities/Shape';
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { ISelectionService } from '../../services/selection/selectionService';
 import { ICanvasManager } from '../../managers/CanvasManager';
 import {
@@ -23,22 +17,12 @@ import {
   SelectToolRotateHandler
 } from './selection';
 
-// 重新导出类型
 export type { HandleType, HandlePosition, IBounds, ISelectToolState, IInitialShapeState } from './selection';
 
-/**
- * 选择工具 ViewModel 接口类型
- */
 export type ISelectToolViewModel = ISelectToolViewModelType;
 
-/**
- * 选择工具 ViewModel 服务标识符
- */
 export const ISelectToolViewModel = createDecorator<ISelectToolViewModelType>('SelectToolViewModel');
 
-/**
- * 选择工具 ViewModel 实现
- */
 export class SelectToolViewModel implements ISelectToolViewModelType {
   private readonly _state: ISelectToolStateType;
   private draggedShapeId: string | null = null;
@@ -48,7 +32,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
 
   constructor(
     @ISelectionService private selectionService: ISelectionService,
-    @IEventBusService private eventBus: IEventBusService,
     @ICanvasManager private canvasManager: ICanvasManager
   ) {
     this._state = proxy<ISelectToolStateType>({
@@ -66,13 +49,11 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     this.resizeHandler = new SelectToolResizeHandler(
       this._state,
       canvasManager,
-      eventBus,
       this.initialShapeStates
     );
     this.rotateHandler = new SelectToolRotateHandler(
       this._state,
       canvasManager,
-      eventBus,
       this.initialShapeStates
     );
   }
@@ -81,13 +62,10 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     return this._state;
   }
 
-  async initialize(): Promise<void> {
-    this.eventBus.emit('select-tool-viewmodel:initialized', {});
-  }
+  async initialize(): Promise<void> {}
 
   dispose(): void {
     this.deactivate();
-    this.eventBus.emit('select-tool-viewmodel:disposed', {});
   }
 
   getSnapshot() {
@@ -97,7 +75,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
   activate(): void {
     this._state.enabled = true;
     this._state.cursor = 'default';
-    this.eventBus.emit('tool:activated', { toolName: 'select' });
   }
 
   deactivate(): void {
@@ -112,7 +89,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     this._state.startPoint = { x, y };
     this._state.lastPoint = { x, y };
 
-    // 检查控制手柄
     const selectedShapes = this.canvasManager.getSelectedShapes();
     if (selectedShapes.length > 0) {
       const handle = hitTestControlHandle(x, y, selectedShapes);
@@ -127,7 +103,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
       }
     }
 
-    // hitTest
     const hitShapeId = this.canvasManager.hitTest(x, y);
 
     if (hitShapeId) {
@@ -154,8 +129,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
       }
       this._state.isSelecting = true;
     }
-
-    this.eventBus.emit('select-tool:mousedown', { x, y, hitShapeId });
   }
 
   handleMouseMove(x: number, y: number, _event?: MouseEvent): void {
@@ -171,13 +144,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
 
     if (this._state.isDragging && this._state.lastPoint) {
       this.handleDrag(x, y);
-    } else if (this._state.isSelecting && this._state.startPoint) {
-      this.eventBus.emit('select-tool:marquee', {
-        startX: this._state.startPoint.x,
-        startY: this._state.startPoint.y,
-        currentX: x,
-        currentY: y
-      });
     }
   }
 
@@ -188,7 +154,7 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
       this.completeMarqueeSelect(x, y);
     }
 
-    this.emitEndEvents(x, y);
+    this.emitEndEvents();
     this.resetState();
   }
 
@@ -198,7 +164,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     switch (event.key) {
       case 'Escape':
         this.canvasManager.clearSelection();
-        this.eventBus.emit('select-tool:escape', {});
         break;
       case 'Delete':
       case 'Backspace':
@@ -222,16 +187,10 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     return this.canvasManager.getSelectedShapes().length;
   }
 
-  /**
-   * 开始缩放（供外部调用或测试）
-   */
   startResize(handle: HandlePosition, x: number, y: number): void {
     this.resizeHandler.startResize(handle, x, y);
   }
 
-  /**
-   * 开始旋转（供外部调用或测试）
-   */
   startRotate(x: number, y: number): void {
     this.rotateHandler.startRotate(x, y);
   }
@@ -259,7 +218,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     }
 
     this._state.lastPoint = { x, y };
-    this.eventBus.emit('select-tool:drag', { x, y, deltaX, deltaY });
   }
 
   private completeMarqueeSelect(x: number, y: number): void {
@@ -274,28 +232,21 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
   }
 
   private performMarqueeSelect(bounds: { x: number; y: number; width: number; height: number }): void {
-    let selectedCount = 0;
-
     for (const shape of this.canvasManager.getShapesByZOrder()) {
       if (shape.locked) continue;
       if (boundsIntersect(bounds, getShapeBounds(shape))) {
         this.canvasManager.selectShape(shape.id);
-        selectedCount++;
       }
     }
-
-    this.eventBus.emit('select-tool:marquee-complete', { bounds, selectedCount });
   }
 
   private deleteSelectedShapes(): void {
     const selectedShapes = this.canvasManager.getSelectedShapes();
     if (selectedShapes.length === 0) return;
 
-    const deletedIds = selectedShapes.map(s => s.id);
     for (const shape of selectedShapes) {
       this.canvasManager.removeShape(shape.id);
     }
-    this.eventBus.emit('select-tool:shapes-deleted', { ids: deletedIds });
   }
 
   private selectAllShapes(): void {
@@ -305,19 +256,13 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
         this.canvasManager.selectShape(shape.id);
       }
     }
-    this.eventBus.emit('select-tool:select-all', { count: allShapes.length });
   }
 
-  private emitEndEvents(x: number, y: number): void {
-    if (this._state.isDragging) {
-      this.eventBus.emit('select-tool:drag-end', { x, y });
-    }
+  private emitEndEvents(): void {
     if (this._state.isResizing) {
-      this.eventBus.emit('select-tool:resize-end', { x, y });
       this.initialShapeStates.clear();
     }
     if (this._state.isRotating) {
-      this.eventBus.emit('select-tool:rotate-end', { x, y });
       this.initialShapeStates.clear();
     }
   }

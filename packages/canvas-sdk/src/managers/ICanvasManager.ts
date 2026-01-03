@@ -6,11 +6,20 @@ import { IRenderable } from '@sky-canvas/render-engine';
 import { createDecorator } from '../di';
 import { IShapeEntity, ShapeEntity } from '../models/entities/Shape';
 
+export interface CanvasState {
+  shapeCount: number;
+  selectedIds: string[];
+  canUndo: boolean;
+  canRedo: boolean;
+  hasClipboardData: boolean;
+}
+
 /**
  * Canvas 管理器接口
  */
 export interface ICanvasManager {
   readonly _serviceBrand: undefined;
+  readonly state: CanvasState;
 
   // 形状管理
   addShape(entity: ShapeEntity): void;

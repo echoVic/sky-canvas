@@ -4,7 +4,6 @@
  */
 
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../eventBus/eventBusService';
 
 /**
  * 快捷键配置
@@ -36,6 +35,7 @@ export interface IShortcutEventData {
  * 快捷键服务接口
  */
 export interface IShortcutService {
+  readonly _serviceBrand: undefined;
   register(id: string, config: IShortcutConfig, handler: ShortcutHandler): void;
   unregister(id: string): void;
   enable(): void;
@@ -43,6 +43,7 @@ export interface IShortcutService {
   isEnabled(): boolean;
   getRegisteredShortcuts(): Map<string, { config: IShortcutConfig; handler: ShortcutHandler }>;
   clear(): void;
+  dispose(): void;
 }
 
 /**
@@ -54,25 +55,21 @@ export const IShortcutService = createDecorator<IShortcutService>('ShortcutServi
  * 快捷键服务实现
  */
 export class ShortcutService implements IShortcutService {
+  readonly _serviceBrand: undefined;
   private shortcuts = new Map<string, { config: IShortcutConfig; handler: ShortcutHandler }>();
   private enabled = false;
   private boundHandler: (event: KeyboardEvent) => void;
 
-  constructor(
-    @IEventBusService private eventBus: IEventBusService
-  ) {
+  constructor() {
     this.boundHandler = this.handleKeydown.bind(this);
   }
 
   register(id: string, config: IShortcutConfig, handler: ShortcutHandler): void {
     this.shortcuts.set(id, { config, handler });
-    this.eventBus.emit('shortcut:registered', { id, config });
   }
 
   unregister(id: string): void {
-    if (this.shortcuts.delete(id)) {
-      this.eventBus.emit('shortcut:unregistered', { id });
-    }
+    this.shortcuts.delete(id);
   }
 
   enable(): void {
@@ -80,7 +77,6 @@ export class ShortcutService implements IShortcutService {
     
     this.enabled = true;
     document.addEventListener('keydown', this.boundHandler, true);
-    this.eventBus.emit('shortcut:enabled', {});
   }
 
   disable(): void {
@@ -88,7 +84,6 @@ export class ShortcutService implements IShortcutService {
     
     this.enabled = false;
     document.removeEventListener('keydown', this.boundHandler, true);
-    this.eventBus.emit('shortcut:disabled', {});
   }
 
   isEnabled(): boolean {
@@ -101,14 +96,14 @@ export class ShortcutService implements IShortcutService {
 
   clear(): void {
     this.shortcuts.clear();
-    this.eventBus.emit('shortcut:cleared', {});
   }
 
-  /**
-   * 处理键盘事件
-   */
+  dispose(): void {
+    this.disable();
+    this.shortcuts.clear();
+  }
+
   private handleKeydown(event: KeyboardEvent): void {
-    // 忽略在输入框中的按键
     const target = event.target as HTMLElement;
     if (target && (
       target.tagName === 'INPUT' ||
@@ -118,26 +113,16 @@ export class ShortcutService implements IShortcutService {
       return;
     }
 
-    // 查找匹配的快捷键
-    for (const [id, { config, handler }] of this.shortcuts) {
+    for (const [_id, { config, handler }] of this.shortcuts) {
       if (this.matchesShortcut(event, config)) {
-        // 发布快捷键触发事件
-        this.eventBus.emit<IShortcutEventData>('shortcut:triggered', {
-          shortcutId: id,
-          config,
-          event
-        });
-
-        // 调用处理器
         const result = handler(event);
         
-        // 如果处理器返回 false，阻止默认行为和事件传播
         if (result !== false) {
           event.preventDefault();
           event.stopPropagation();
         }
         
-        break; // 只触发第一个匹配的快捷键
+        break;
       }
     }
   }
@@ -146,12 +131,10 @@ export class ShortcutService implements IShortcutService {
    * 检查键盘事件是否匹配快捷键配置
    */
   private matchesShortcut(event: KeyboardEvent, config: IShortcutConfig): boolean {
-    // 检查主键
     if (event.key.toLowerCase() !== config.key.toLowerCase()) {
       return false;
     }
 
-    // 检查修饰键
     if (!!event.ctrlKey !== !!config.ctrlKey) return false;
     if (!!event.shiftKey !== !!config.shiftKey) return false;
     if (!!event.altKey !== !!config.altKey) return false;

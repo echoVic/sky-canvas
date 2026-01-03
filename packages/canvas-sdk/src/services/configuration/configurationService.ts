@@ -8,12 +8,14 @@ import { createDecorator } from '../../di';
  * 配置服务接口
  */
 export interface IConfigurationService {
+  readonly _serviceBrand: undefined;
   get<T>(key: string): T | undefined;
   set<T>(key: string, value: T): void;
   has(key: string): boolean;
   remove(key: string): void;
   getAll(): Record<string, any>;
   clear(): void;
+  dispose(): void;
 }
 
 /**
@@ -25,6 +27,7 @@ export const IConfigurationService = createDecorator<IConfigurationService>('Con
  * 配置服务实现
  */
 export class ConfigurationService implements IConfigurationService {
+  readonly _serviceBrand: undefined;
   private config = new Map<string, any>();
 
   get<T>(key: string): T | undefined {
@@ -48,6 +51,10 @@ export class ConfigurationService implements IConfigurationService {
   }
 
   clear(): void {
+    this.config.clear();
+  }
+
+  dispose(): void {
     this.config.clear();
   }
 }

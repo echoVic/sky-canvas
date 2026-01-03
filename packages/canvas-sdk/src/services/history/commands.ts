@@ -239,22 +239,18 @@ export class AsyncCommandWrapper implements ICommand {
 
   execute(): void {
     if (!this.isExecuted) {
-      // 启动异步执行，但不等待
       this.asyncExecute().then(() => {
         this.isExecuted = true;
-      }).catch(error => {
-        console.error('Async command execute failed:', error);
+      }).catch(() => {
       });
     }
   }
 
   undo(): void {
     if (this.isExecuted) {
-      // 启动异步撤销，但不等待
       this.asyncUndo().then(() => {
         this.isExecuted = false;
-      }).catch(error => {
-        console.error('Async command undo failed:', error);
+      }).catch(() => {
       });
     }
   }

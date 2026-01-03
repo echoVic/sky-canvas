@@ -1,20 +1,12 @@
-/**
- * 文本工具 ViewModel
- * 使用 CanvasManager 进行形状管理
- */
-
 import { proxy } from 'valtio';
 
 import { IPoint } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
 import { ICanvasManager } from '../../managers/CanvasManager';
 import { ITextEntity, ShapeEntityFactory } from '../../models/entities/Shape';
-import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { IViewModel } from '../interfaces/IViewModel';
+import { text } from 'stream/consumers';
 
-/**
- * 文本工具状态
- */
 export interface ITextToolState {
   isEditing: boolean;
   editPosition: IPoint | null;
@@ -24,9 +16,6 @@ export interface ITextToolState {
   enabled: boolean;
 }
 
-/**
- * 文本工具 ViewModel 接口
- */
 export interface ITextToolViewModel extends IViewModel {
   state: ITextToolState;
 
@@ -37,7 +26,6 @@ export interface ITextToolViewModel extends IViewModel {
   handleMouseMove(x: number, y: number, event?: MouseEvent): void;
   handleMouseUp(x: number, y: number, event?: MouseEvent): void;
 
-  // 文本编辑
   startEditing(x: number, y: number): void;
   updateText(text: string): void;
   commitText(): void;
@@ -47,20 +35,13 @@ export interface ITextToolViewModel extends IViewModel {
   getCurrentShape(): ITextEntity | null;
 }
 
-/**
- * 文本工具 ViewModel 服务标识符
- */
 export const ITextToolViewModel = createDecorator<ITextToolViewModel>('TextToolViewModel');
 
-/**
- * 文本工具 ViewModel 实现
- */
 export class TextToolViewModel implements ITextToolViewModel {
   private readonly _state: ITextToolState;
 
   constructor(
-    @ICanvasManager private canvasManager: ICanvasManager,
-    @IEventBusService private eventBus: IEventBusService
+    @ICanvasManager private canvasManager: ICanvasManager
   ) {
     this._state = proxy<ITextToolState>({
       isEditing: false,
@@ -76,13 +57,10 @@ export class TextToolViewModel implements ITextToolViewModel {
     return this._state;
   }
 
-  async initialize(): Promise<void> {
-    this.eventBus.emit('text-tool-viewmodel:initialized', {});
-  }
+  async initialize(): Promise<void> {}
 
   dispose(): void {
     this.deactivate();
-    this.eventBus.emit('text-tool-viewmodel:disposed', {});
   }
 
   getSnapshot() {
@@ -92,7 +70,6 @@ export class TextToolViewModel implements ITextToolViewModel {
   activate(): void {
     this._state.enabled = true;
     this._state.cursor = 'text';
-    this.eventBus.emit('tool:activated', { toolName: 'text' });
   }
 
   deactivate(): void {
@@ -106,22 +83,16 @@ export class TextToolViewModel implements ITextToolViewModel {
   handleMouseDown(x: number, y: number, _event?: MouseEvent): void {
     if (!this._state.enabled) return;
 
-    // 如果正在编辑，先提交当前文本
     if (this._state.isEditing) {
       this.commitText();
     }
 
-    // 开始新的文本编辑
     this.startEditing(x, y);
   }
 
-  handleMouseMove(_x: number, _y: number, _event?: MouseEvent): void {
-    // 文本工具不需要处理鼠标移动
-  }
+  handleMouseMove(_x: number, _y: number, _event?: MouseEvent): void {}
 
-  handleMouseUp(_x: number, _y: number, _event?: MouseEvent): void {
-    // 文本工具不需要处理鼠标抬起
-  }
+  handleMouseUp(_x: number, _y: number, _event?: MouseEvent): void {}
 
   startEditing(x: number, y: number): void {
     this._state.isEditing = true;
@@ -136,10 +107,6 @@ export class TextToolViewModel implements ITextToolViewModel {
         opacity: 1
       }
     );
-
-    this.eventBus.emit('text-tool:editing-started', {
-      position: { x, y }
-    });
   }
 
   updateText(text: string): void {
@@ -150,26 +117,19 @@ export class TextToolViewModel implements ITextToolViewModel {
       ...this._state.currentShape,
       content: text
     };
-
-    this.eventBus.emit('text-tool:text-updated', { text });
   }
 
   commitText(): void {
     if (!this._state.isEditing || !this._state.currentShape) return;
 
-    // 只有非空文本才添加到画布
     if (this._state.currentText.trim().length > 0) {
       this.canvasManager.addShape(this._state.currentShape);
-      this.eventBus.emit('text-tool:text-committed', {
-        text: this._state.currentText
-      });
     }
 
     this.reset();
   }
 
   cancelEditing(): void {
-    this.eventBus.emit('text-tool:editing-cancelled', {});
     this.reset();
   }
 

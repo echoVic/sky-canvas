@@ -112,7 +112,7 @@ export class RenderableShapeView implements IRenderable {
         this.renderPath(context, this.entity as IPathEntity);
         break;
       default:
-        console.warn(`Unknown shape type: ${(this.entity as any).type}`);
+        break;
     }
   }
 

@@ -321,8 +321,7 @@ export class MemoryShapeRepository implements IShapeRepository {
     this.subscribers.forEach(callback => {
       try {
         callback(event);
-      } catch (error) {
-        console.error('Error in repository subscriber:', error);
+      } catch {
       }
     });
   }

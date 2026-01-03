@@ -20,6 +20,8 @@ export interface IExportOptions {
  * 导出服务接口
  */
 export interface IExportService {
+  readonly _serviceBrand: undefined;
+  
   // SVG 导出
   exportToSVG(shapes: ShapeEntity[], options?: { width?: number; height?: number }): string;
   
@@ -32,6 +34,8 @@ export interface IExportService {
   
   // 下载文件
   downloadFile(content: string | Blob, filename: string, mimeType?: string): void;
+  
+  dispose(): void;
 }
 
 export const IExportService = createDecorator<IExportService>('ExportService');
@@ -40,6 +44,7 @@ export const IExportService = createDecorator<IExportService>('ExportService');
  * 导出服务实现
  */
 export class ExportService implements IExportService {
+  readonly _serviceBrand: undefined;
   
   /**
    * 导出到SVG
@@ -146,6 +151,8 @@ export class ExportService implements IExportService {
     // 清理URL对象
     URL.revokeObjectURL(url);
   }
+
+  dispose(): void {}
 
   // === 私有方法 ===
 

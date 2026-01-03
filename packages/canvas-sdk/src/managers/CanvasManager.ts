@@ -4,10 +4,10 @@
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
+import { proxy } from 'valtio';
 import { IShapeEntity, ShapeEntity } from '../models/entities/Shape';
 import {
   IClipboardService,
-  IEventBusService,
   IHistoryService,
   ILogService,
   ISelectionService,
@@ -17,6 +17,14 @@ import {
 import { CanvasStats, ICanvasManager } from './ICanvasManager';
 import * as ClipboardMixin from './mixins/CanvasClipboardMixin';
 import * as ZIndexMixin from './mixins/CanvasZIndexMixin';
+
+export interface CanvasState {
+  shapeCount: number;
+  selectedIds: string[];
+  canUndo: boolean;
+  canRedo: boolean;
+  hasClipboardData: boolean;
+}
 
 // 重新导出接口
 export { ICanvasManager } from './ICanvasManager';
@@ -29,8 +37,15 @@ export type { CanvasStats } from './ICanvasManager';
 export class CanvasManager implements ICanvasManager {
   readonly _serviceBrand: undefined;
 
+  readonly state: CanvasState = proxy({
+    shapeCount: 0,
+    selectedIds: [],
+    canUndo: false,
+    canRedo: false,
+    hasClipboardData: false
+  });
+
   constructor(
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logService: ILogService,
     @IShapeService private shapeService: IShapeService,
     @ISelectionService private selectionService: ISelectionService,
@@ -41,16 +56,24 @@ export class CanvasManager implements ICanvasManager {
     this.logService.info('CanvasManager initialized');
   }
 
+  private syncState(): void {
+    this.state.shapeCount = this.shapeService.getAllShapeEntities().length;
+    this.state.selectedIds = this.selectionService.getSelectedShapes().map(s => s.id);
+    this.state.canUndo = this.historyService.canUndo();
+    this.state.canRedo = this.historyService.canRedo();
+    this.state.hasClipboardData = this.clipboardService.hasData();
+  }
+
   // === 形状管理 ===
 
   addShape(entity: ShapeEntity): void {
-    const view = this.shapeService.addShape(entity);
+    this.shapeService.addShape(entity);
     this.historyService.execute({
       execute: () => {},
       undo: () => this.shapeService.removeShape(entity.id)
     });
-    this.eventBus.emit('canvas:shapeAdded', { entity, view });
     this.logService.debug(`Shape added: ${entity.id}`);
+    this.syncState();
   }
 
   removeShape(id: string): void {
@@ -62,8 +85,8 @@ export class CanvasManager implements ICanvasManager {
       execute: () => {},
       undo: () => this.shapeService.addShape(entity)
     });
-    this.eventBus.emit('canvas:shapeRemoved', { id });
     this.logService.debug(`Shape removed: ${id}`);
+    this.syncState();
   }
 
   updateShape(id: string, updates: Partial<ShapeEntity>): void {
@@ -79,8 +102,8 @@ export class CanvasManager implements ICanvasManager {
       execute: () => {},
       undo: () => this.shapeService.updateShape(id, oldValues)
     });
-    this.eventBus.emit('canvas:shapeUpdated', { id, updates });
     this.logService.debug(`Shape updated: ${id}`);
+    this.syncState();
   }
 
   getRenderables(): IRenderable[] {
@@ -98,8 +121,8 @@ export class CanvasManager implements ICanvasManager {
     if (!entity) return;
 
     this.selectionService.select([entity]);
-    this.eventBus.emit('canvas:shapeSelected', { id, entity });
     this.logService.debug(`Shape selected: ${id}`);
+    this.syncState();
   }
 
   deselectShape(id: string): void {
@@ -107,14 +130,14 @@ export class CanvasManager implements ICanvasManager {
     if (!entity) return;
 
     this.selectionService.deselect([entity]);
-    this.eventBus.emit('canvas:shapeDeselected', { id, entity });
     this.logService.debug(`Shape deselected: ${id}`);
+    this.syncState();
   }
 
   clearSelection(): void {
     this.selectionService.clearSelection();
-    this.eventBus.emit('canvas:selectionCleared', {});
     this.logService.debug('Selection cleared');
+    this.syncState();
   }
 
   getSelectedShapes(): ShapeEntity[] {
@@ -131,7 +154,6 @@ export class CanvasManager implements ICanvasManager {
   private get clipboardDeps(): ClipboardMixin.IClipboardDeps {
     return {
       clipboardService: this.clipboardService,
-      eventBus: this.eventBus,
       logService: this.logService,
       getSelectedShapes: () => this.getSelectedShapes(),
       removeShape: (id) => this.removeShape(id),
@@ -143,32 +165,30 @@ export class CanvasManager implements ICanvasManager {
 
   copySelectedShapes(): void {
     ClipboardMixin.copySelectedShapes(this.clipboardDeps);
+    this.syncState();
   }
 
   cutSelectedShapes(): void {
     ClipboardMixin.cutSelectedShapes(this.clipboardDeps);
+    this.syncState();
   }
 
   paste(): ShapeEntity[] {
-    return ClipboardMixin.paste(this.clipboardDeps);
+    const shapes = ClipboardMixin.paste(this.clipboardDeps);
+    this.syncState();
+    return shapes;
   }
 
   // === 历史操作 ===
 
   undo(): void {
     this.historyService.undo();
-    this.eventBus.emit('canvas:historyChanged', {
-      canUndo: this.historyService.canUndo(),
-      canRedo: this.historyService.canRedo()
-    });
+    this.syncState();
   }
 
   redo(): void {
     this.historyService.redo();
-    this.eventBus.emit('canvas:historyChanged', {
-      canUndo: this.historyService.canUndo(),
-      canRedo: this.historyService.canRedo()
-    });
+    this.syncState();
   }
 
   // === Z轴管理 (委托给 mixin) ===
@@ -177,7 +197,6 @@ export class CanvasManager implements ICanvasManager {
     return {
       shapeService: this.shapeService,
       zIndexService: this.zIndexService,
-      eventBus: this.eventBus,
       logService: this.logService
     };
   }
@@ -226,8 +245,8 @@ export class CanvasManager implements ICanvasManager {
     this.shapeService.clear();
     this.selectionService.clearSelection();
     this.historyService.clear();
-    this.eventBus.emit('canvas:cleared', {});
     this.logService.info('Canvas cleared');
+    this.syncState();
   }
 
   dispose(): void {

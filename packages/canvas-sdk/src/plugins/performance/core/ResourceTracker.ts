@@ -106,8 +106,7 @@ export class ResourceTracker {
       for (const callback of callbacks) {
         try {
           callback();
-        } catch (error) {
-          console.error(`清理回调执行失败 [${pluginId}:${resourceId}]:`, error);
+        } catch {
         }
       }
     }

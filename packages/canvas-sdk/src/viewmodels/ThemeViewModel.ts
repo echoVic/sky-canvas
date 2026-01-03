@@ -5,7 +5,6 @@
 
 import { proxy, snapshot } from 'valtio';
 import { IThemeService, ThemeType, IThemeConfig, IThemeColors } from '../services/theme/themeService';
-import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
 
 /**
@@ -35,18 +34,14 @@ export class ThemeViewModel implements IThemeViewModel {
   private readonly _state: IThemeState;
 
   constructor(
-    private themeService: IThemeService,
-    private eventBus: IEventBusService
+    private themeService: IThemeService
   ) {
-    // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IThemeState>({
       currentTheme: this.themeService.getCurrentTheme(),
       config: this.themeService.getThemeConfig(),
       availableThemes: this.themeService.getAvailableThemes(),
       isDarkMode: this.isDarkTheme(this.themeService.getCurrentTheme())
     });
-
-    this.setupEventListeners();
   }
 
   get state(): IThemeState {
@@ -54,9 +49,7 @@ export class ThemeViewModel implements IThemeViewModel {
   }
 
   async initialize(): Promise<void> {
-    // 同步初始状态
     this.updateState();
-    this.eventBus.emit('theme-viewmodel:initialized', {});
   }
 
   getSnapshot() {
@@ -64,8 +57,6 @@ export class ThemeViewModel implements IThemeViewModel {
   }
 
   dispose(): void {
-    // ViewModels 通常不需要显式清理，因为它们是通过 DI 管理的
-    this.eventBus.emit('theme-viewmodel:disposed', {});
   }
 
   /**
@@ -90,16 +81,6 @@ export class ThemeViewModel implements IThemeViewModel {
   }
 
   /**
-   * 设置事件监听器
-   */
-  private setupEventListeners(): void {
-    // 监听主题服务的变化
-    this.eventBus.on('theme:changed', () => {
-      this.updateState();
-    });
-  }
-
-  /**
    * 更新状态
    */
   private updateState(): void {
@@ -115,7 +96,6 @@ export class ThemeViewModel implements IThemeViewModel {
   private isDarkTheme(theme: ThemeType): boolean {
     if (theme === ThemeType.DARK) return true;
     if (theme === ThemeType.LIGHT) return false;
-    // AUTO 模式需要检查系统设置
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }

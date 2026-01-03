@@ -4,11 +4,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SelectToolViewModel, ISelectToolState, HandlePosition } from '../../src/viewmodels/tools/SelectToolViewModel';
 import { ISelectionService } from '../../src/services/selection/selectionService';
-import { IEventBusService } from '../../src/services/eventBus/eventBusService';
 import { ICanvasManager } from '../../src/managers/CanvasManager';
 import { ShapeEntity, IRectangleEntity, ICircleEntity } from '../../src/models/entities/Shape';
 
-// 创建 mock 形状
 function createMockRectangle(id: string, x: number, y: number, width: number, height: number): IRectangleEntity {
   return {
     id,
@@ -58,7 +56,6 @@ function createMockCircle(id: string, x: number, y: number, radius: number): ICi
 describe('SelectToolViewModel', () => {
   let viewModel: SelectToolViewModel;
   let mockSelectionService: ISelectionService;
-  let mockEventBus: IEventBusService;
   let mockCanvasManager: ICanvasManager;
   let shapes: ShapeEntity[];
 
@@ -70,20 +67,25 @@ describe('SelectToolViewModel', () => {
     ];
 
     mockSelectionService = {
+      _serviceBrand: undefined,
       selectShape: vi.fn(),
       deselectShape: vi.fn(),
       clearSelection: vi.fn(),
       getSelectedIds: vi.fn(() => []),
-      isSelected: vi.fn(() => false)
+      getSelectedShapes: vi.fn(() => []),
+      isSelected: vi.fn(() => false),
+      dispose: vi.fn()
     } as unknown as ISelectionService;
 
-    mockEventBus = {
-      emit: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn()
-    } as unknown as IEventBusService;
-
     mockCanvasManager = {
+      _serviceBrand: undefined,
+      state: {
+        shapeCount: 0,
+        selectedIds: [],
+        canUndo: false,
+        canRedo: false,
+        hasClipboardData: false
+      },
       hitTest: vi.fn(() => null),
       isShapeSelected: vi.fn(() => false),
       selectShape: vi.fn(),
@@ -92,14 +94,31 @@ describe('SelectToolViewModel', () => {
       getSelectedShapes: vi.fn(() => []),
       getShapesByZOrder: vi.fn(() => shapes),
       updateShape: vi.fn(),
-      removeShape: vi.fn()
+      removeShape: vi.fn(),
+      addShape: vi.fn(),
+      getRenderables: vi.fn(() => []),
+      copySelectedShapes: vi.fn(),
+      cutSelectedShapes: vi.fn(),
+      paste: vi.fn(() => []),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      bringToFront: vi.fn(),
+      sendToBack: vi.fn(),
+      bringForward: vi.fn(),
+      sendBackward: vi.fn(),
+      setZIndex: vi.fn(),
+      getStats: vi.fn(() => ({
+        shapes: { totalShapes: 0, selectedShapes: 0, visibleShapes: 0, shapesByType: {} },
+        history: { canUndo: false, canRedo: false }
+      })),
+      clear: vi.fn(),
+      dispose: vi.fn()
     } as unknown as ICanvasManager;
 
-    viewModel = new SelectToolViewModel(
-      mockSelectionService,
-      mockEventBus,
-      mockCanvasManager
-    );
+    const ViewModelClass = SelectToolViewModel as unknown as {
+      new (selectionService: ISelectionService, canvasManager: ICanvasManager): SelectToolViewModel;
+    };
+    viewModel = new ViewModelClass(mockSelectionService, mockCanvasManager);
   });
 
   describe('初始化', () => {
@@ -117,7 +136,6 @@ describe('SelectToolViewModel', () => {
     it('activate 应该启用工具', () => {
       viewModel.activate();
       expect(viewModel.state.enabled).toBe(true);
-      expect(mockEventBus.emit).toHaveBeenCalledWith('tool:activated', { toolName: 'select' });
     });
 
     it('deactivate 应该禁用工具', () => {
@@ -193,11 +211,9 @@ describe('SelectToolViewModel', () => {
     });
 
     it('框选应该选中区域内的形状', () => {
-      // 开始框选
       viewModel.handleMouseDown(50, 50);
       expect(viewModel.state.isSelecting).toBe(true);
 
-      // 结束框选 - 覆盖 rect1 (100,100 - 150,150)
       viewModel.handleMouseUp(160, 160);
 
       expect(mockCanvasManager.selectShape).toHaveBeenCalledWith('rect1');
@@ -282,7 +298,6 @@ describe('SelectToolViewModel', () => {
 
       expect(viewModel.state.isResizing).toBe(false);
       expect(viewModel.state.activeHandle).toBeNull();
-      expect(mockEventBus.emit).toHaveBeenCalledWith('select-tool:resize-end', expect.any(Object));
     });
   });
 
@@ -305,7 +320,6 @@ describe('SelectToolViewModel', () => {
       viewModel.handleMouseUp(200, 100);
 
       expect(viewModel.state.isRotating).toBe(false);
-      expect(mockEventBus.emit).toHaveBeenCalledWith('select-tool:rotate-end', expect.any(Object));
     });
   });
 

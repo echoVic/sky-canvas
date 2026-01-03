@@ -4,7 +4,6 @@
  */
 
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../eventBus/eventBusService';
 
 /**
  * 缩放配置
@@ -30,6 +29,7 @@ export interface IZoomEventData {
  * 缩放服务接口
  */
 export interface IZoomService {
+  readonly _serviceBrand: undefined;
   getCurrentZoom(): number;
   setZoom(zoom: number, centerX?: number, centerY?: number): boolean;
   zoomIn(centerX?: number, centerY?: number): boolean;
@@ -40,6 +40,7 @@ export interface IZoomService {
   canZoomOut(): boolean;
   getZoomConfig(): IZoomConfig;
   updateZoomConfig(config: Partial<IZoomConfig>): void;
+  dispose(): void;
 }
 
 /**
@@ -51,12 +52,11 @@ export const IZoomService = createDecorator<IZoomService>('ZoomService');
  * 缩放服务实现
  */
 export class ZoomService implements IZoomService {
+  readonly _serviceBrand: undefined;
   private currentZoom: number;
   private config: IZoomConfig;
 
-  constructor(
-    @IEventBusService private eventBus: IEventBusService
-  ) {
+  constructor() {
     this.config = {
       minZoom: 0.1,
       maxZoom: 10,
@@ -70,23 +70,14 @@ export class ZoomService implements IZoomService {
     return this.currentZoom;
   }
 
-  setZoom(zoom: number, centerX: number = 0, centerY: number = 0): boolean {
+  setZoom(zoom: number, _centerX: number = 0, _centerY: number = 0): boolean {
     const clampedZoom = Math.max(this.config.minZoom, Math.min(this.config.maxZoom, zoom));
     
     if (clampedZoom === this.currentZoom) {
       return false;
     }
 
-    const previousZoom = this.currentZoom;
     this.currentZoom = clampedZoom;
-
-    // 发布缩放变化事件
-    this.eventBus.emit<IZoomEventData>('zoom:changed', {
-      zoom: this.currentZoom,
-      previousZoom,
-      centerX,
-      centerY
-    });
 
     return true;
   }
@@ -102,12 +93,10 @@ export class ZoomService implements IZoomService {
   }
 
   zoomToFit(): void {
-    // 缩放到适合视口的大小 (1:1 比例)
     this.setZoom(1);
   }
 
   zoomToActualSize(): void {
-    // 缩放到实际尺寸 (100%)
     this.setZoom(1);
   }
 
@@ -126,11 +115,12 @@ export class ZoomService implements IZoomService {
   updateZoomConfig(config: Partial<IZoomConfig>): void {
     this.config = { ...this.config, ...config };
     
-    // 确保当前缩放级别在新的限制范围内
     if (this.currentZoom < this.config.minZoom) {
       this.setZoom(this.config.minZoom);
     } else if (this.currentZoom > this.config.maxZoom) {
       this.setZoom(this.config.maxZoom);
     }
   }
+
+  dispose(): void {}
 }

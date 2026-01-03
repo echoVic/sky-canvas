@@ -4,17 +4,14 @@
  */
 import { afterEach, beforeEach, describe, test, expect, vi } from 'vitest';
 import { InteractionService, ITool } from '../src/services/interaction/interactionService';
-import { IEventBusService } from '../src/services/eventBus/eventBusService';
 import { ILogService } from '../src/services/logging/logService';
 
 describe('InteractionService', () => {
   let interactionService: InteractionService;
   let mockCanvas: HTMLCanvasElement;
-  let mockEventBus: IEventBusService;
   let mockLogger: ILogService;
 
   beforeEach(() => {
-    // 创建 mock canvas
     mockCanvas = {
       width: 800,
       height: 600,
@@ -29,31 +26,21 @@ describe('InteractionService', () => {
       }))
     } as unknown as HTMLCanvasElement;
 
-    // 创建 mock EventBus
-    mockEventBus = {
-      _serviceBrand: undefined,
-      emit: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      once: vi.fn()
-    } as unknown as IEventBusService;
-
-    // 创建 mock Logger
     mockLogger = {
+      _serviceBrand: undefined,
       debug: vi.fn(),
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
       setLevel: vi.fn(),
       getLevel: vi.fn(),
-      _serviceBrand: undefined
+      dispose: vi.fn()
     } as unknown as ILogService;
 
-    // 创建 InteractionService 实例（使用类型断言绕过 DI）
     const ServiceClass = InteractionService as unknown as {
-      new (eventBus: IEventBusService, logger: ILogService): InteractionService;
+      new (logger: ILogService): InteractionService;
     };
-    interactionService = new ServiceClass(mockEventBus, mockLogger);
+    interactionService = new ServiceClass(mockLogger);
   });
 
   afterEach(() => {
@@ -70,7 +57,6 @@ describe('InteractionService', () => {
       expect(mockCanvas.addEventListener).toHaveBeenCalledWith('mousedown', expect.any(Function));
       expect(mockCanvas.addEventListener).toHaveBeenCalledWith('mousemove', expect.any(Function));
       expect(mockCanvas.addEventListener).toHaveBeenCalledWith('mouseup', expect.any(Function));
-      expect(mockEventBus.emit).toHaveBeenCalledWith('interaction:initialized', { canvas: mockCanvas });
     });
 
     test('应该默认处于启用状态', () => {
@@ -99,10 +85,6 @@ describe('InteractionService', () => {
       interactionService.registerTool(mockTool);
 
       expect(interactionService.hasTool('test-tool')).toBe(true);
-      expect(mockEventBus.emit).toHaveBeenCalledWith('interaction:tool_registered', {
-        toolName: 'test-tool',
-        tool: mockTool
-      });
     });
 
     test('应该能够激活工具', () => {
@@ -155,9 +137,6 @@ describe('InteractionService', () => {
       interactionService.unregisterTool('test-tool');
 
       expect(interactionService.hasTool('test-tool')).toBe(false);
-      expect(mockEventBus.emit).toHaveBeenCalledWith('interaction:tool_unregistered', {
-        toolName: 'test-tool'
-      });
     });
 
     test('注销当前活动工具时应自动停用', () => {
@@ -201,7 +180,6 @@ describe('InteractionService', () => {
       interactionService.setEnabled(false);
 
       expect(interactionService.isEnabled()).toBe(false);
-      expect(mockEventBus.emit).toHaveBeenCalledWith('interaction:enabled_changed', { enabled: false });
     });
 
     test('应该能够重新启用交互服务', () => {
@@ -210,21 +188,6 @@ describe('InteractionService', () => {
       interactionService.setEnabled(true);
 
       expect(interactionService.isEnabled()).toBe(true);
-    });
-
-    test('状态未改变时不应触发事件', () => {
-      interactionService.initialize(mockCanvas);
-
-      // 清除初始化时的事件调用
-      vi.clearAllMocks();
-
-      // 设置为相同状态
-      interactionService.setEnabled(true);
-
-      expect(mockEventBus.emit).not.toHaveBeenCalledWith(
-        'interaction:enabled_changed',
-        expect.anything()
-      );
     });
   });
 
@@ -259,14 +222,12 @@ describe('InteractionService', () => {
       interactionService.dispose();
 
       expect(mockTool.deactivate).toHaveBeenCalled();
-      expect(mockEventBus.emit).toHaveBeenCalledWith('interaction:disposed', {});
     });
 
     test('销毁后应移除所有事件监听器', () => {
       interactionService.initialize(mockCanvas);
       interactionService.dispose();
 
-      // 应该调用了 removeEventListener
       expect(mockCanvas.removeEventListener).toHaveBeenCalled();
     });
   });

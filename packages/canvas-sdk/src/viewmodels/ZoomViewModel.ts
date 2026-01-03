@@ -4,9 +4,7 @@
  */
 
 import { proxy, snapshot } from 'valtio';
-// ViewModel不需要DI装饰器，使用构造函数注入
 import { IZoomService, IZoomConfig } from '../services/zoom/zoomService';
-import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
 
 /**
@@ -40,10 +38,8 @@ export class ZoomViewModel implements IZoomViewModel {
   private readonly _state: IZoomState;
 
   constructor(
-    private zoomService: IZoomService,
-    private eventBus: IEventBusService
+    private zoomService: IZoomService
   ) {
-    // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<IZoomState>({
       currentZoom: this.zoomService.getCurrentZoom(),
       config: this.zoomService.getZoomConfig(),
@@ -51,8 +47,6 @@ export class ZoomViewModel implements IZoomViewModel {
       canZoomOut: this.zoomService.canZoomOut(),
       zoomPercentage: this.formatZoomPercentage(this.zoomService.getCurrentZoom())
     });
-
-    this.setupEventListeners();
   }
 
   get state(): IZoomState {
@@ -61,11 +55,9 @@ export class ZoomViewModel implements IZoomViewModel {
 
   async initialize(): Promise<void> {
     this.updateState();
-    this.eventBus.emit('zoom-viewmodel:initialized', {});
   }
 
   dispose(): void {
-    this.eventBus.emit('zoom-viewmodel:disposed', {});
   }
 
   getSnapshot() {
@@ -112,16 +104,6 @@ export class ZoomViewModel implements IZoomViewModel {
    */
   updateZoomConfig(config: Partial<IZoomConfig>): void {
     this.zoomService.updateZoomConfig(config);
-  }
-
-  /**
-   * 设置事件监听器
-   */
-  private setupEventListeners(): void {
-    // 监听缩放服务的变化
-    this.eventBus.on('zoom:changed', () => {
-      this.updateState();
-    });
   }
 
   /**

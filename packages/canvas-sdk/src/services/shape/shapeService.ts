@@ -133,12 +133,11 @@ export class ShapeService implements IShapeService {
    * 碰撞检测
    */
   hitTest(x: number, y: number): string | null {
-    // 按 z-index 从高到低检测
     const sortedViews = Array.from(this.views.entries())
-      .sort(([,a], [,b]) => (b as any).zIndex - (a as any).zIndex);
+      .sort(([, a], [, b]) => b.zIndex - a.zIndex);
     
     for (const [id, view] of sortedViews) {
-      if ((view as any).visible && view.hitTest({ x, y })) {
+      if (view.visible && view.hitTest({ x, y })) {
         return id;
       }
     }

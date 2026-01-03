@@ -1,38 +1,22 @@
-/**
- * 选择工具缩放处理器
- */
-
 import { ShapeEntity } from '../../../models/entities/Shape';
 import { ICanvasManager } from '../../../managers/CanvasManager';
-import { IEventBusService } from '../../../services/eventBus/eventBusService';
 import { HandlePosition, IInitialShapeState, ISelectToolState } from './SelectToolTypes';
 
-/**
- * 缩放处理器
- */
 export class SelectToolResizeHandler {
   constructor(
     private state: ISelectToolState,
     private canvasManager: ICanvasManager,
-    private eventBus: IEventBusService,
     private initialShapeStates: Map<string, IInitialShapeState>
   ) {}
 
-  /**
-   * 开始缩放操作
-   */
   startResize(handle: HandlePosition, x: number, y: number): void {
     this.state.isResizing = true;
     this.state.activeHandle = handle;
     this.state.startPoint = { x, y };
     this.state.lastPoint = { x, y };
     this.saveInitialShapeStates();
-    this.eventBus.emit('select-tool:resize-start', { handle, x, y });
   }
 
-  /**
-   * 处理缩放
-   */
   handleResize(x: number, y: number): void {
     if (!this.state.startPoint || !this.state.activeHandle) return;
 
@@ -54,13 +38,8 @@ export class SelectToolResizeHandler {
         this.canvasManager.updateShape(shape.id, updates);
       }
     }
-
-    this.eventBus.emit('select-tool:resizing', { handle, deltaX, deltaY });
   }
 
-  /**
-   * 保存初始形状状态
-   */
   saveInitialShapeStates(): void {
     this.initialShapeStates.clear();
     const selectedShapes = this.canvasManager.getSelectedShapes();
@@ -84,9 +63,6 @@ export class SelectToolResizeHandler {
     }
   }
 
-  /**
-   * 计算矩形缩放
-   */
   private calculateRectResize(
     initial: IInitialShapeState,
     handle: HandlePosition,
@@ -143,9 +119,6 @@ export class SelectToolResizeHandler {
     } as Partial<ShapeEntity>;
   }
 
-  /**
-   * 计算圆形缩放
-   */
   private calculateCircleResize(
     initial: IInitialShapeState,
     deltaX: number,

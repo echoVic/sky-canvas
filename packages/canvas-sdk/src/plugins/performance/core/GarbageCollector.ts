@@ -77,9 +77,6 @@ export class GarbageCollector {
     
     // 检查是否需要执行垃圾回收
     if (this.shouldPerformGC()) {
-      console.log('执行自动垃圾回收...');
-      // 这里需要外部提供资源访问接口
-      // 实际实现中会通过回调或事件通知主管理器
     }
   }
 
@@ -129,8 +126,7 @@ export class GarbageCollector {
     if ('gc' in window && typeof (window as any).gc === 'function') {
       try {
         (window as any).gc();
-      } catch (error) {
-        console.warn('无法触发浏览器垃圾回收:', error);
+      } catch {
       }
     }
   }

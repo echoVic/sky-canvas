@@ -4,16 +4,16 @@
  */
 
 import { createDecorator } from '../di';
-import { IEventBusService, IHistoryService, ILogService, IShortcutService } from '../services';
+import { IHistoryService, ILogService, IShortcutService } from '../services';
 import { ICanvasMouseEvent, IToolViewModel } from '../viewmodels/interfaces/IViewModel';
 import {
-  IArrowToolViewModel,
-  ICircleToolViewModel,
-  IDrawToolViewModel,
-  ILineToolViewModel,
-  IRectangleToolViewModel,
-  ISelectToolViewModel,
-  ITextToolViewModel
+    IArrowToolViewModel,
+    ICircleToolViewModel,
+    IDrawToolViewModel,
+    ILineToolViewModel,
+    IRectangleToolViewModel,
+    ISelectToolViewModel,
+    ITextToolViewModel
 } from '../viewmodels/tools';
 import { ICanvasManager } from './CanvasManager';
 
@@ -62,7 +62,6 @@ export class ToolManager implements IToolManager {
     @IDrawToolViewModel private drawToolViewModel: IDrawToolViewModel,
     @IShortcutService private shortcutService: IShortcutService,
     @IHistoryService private historyService: IHistoryService,
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logService: ILogService
   ) {
     this.initializeToolViewModels();
@@ -175,7 +174,6 @@ export class ToolManager implements IToolManager {
       toolViewModel.activate();
     }
 
-    this.eventBus.emit('tool:activated', { toolName });
     this.logService.info(`Tool activated: ${toolName}`);
     return true;
   }
@@ -276,7 +274,6 @@ export class ToolManager implements IToolManager {
       },
       activate: () => {
         this.logService.info(`Placeholder tool '${toolName}' activated - not implemented yet`);
-        this.eventBus.emit('tool:activated', { toolName });
       },
       deactivate: () => {
         this.logService.debug(`Placeholder tool '${toolName}' deactivated`);

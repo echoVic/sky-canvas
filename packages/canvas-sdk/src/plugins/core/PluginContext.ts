@@ -461,8 +461,7 @@ class PluginConfigImpl implements PluginConfig {
           this.storage.set(key, value);
         }
       }
-    } catch (error) {
-      console.error('Error loading plugin config from storage', error);
+    } catch {
     }
   }
 
@@ -470,8 +469,7 @@ class PluginConfigImpl implements PluginConfig {
     try {
       const data = this.getAll();
       localStorage.setItem(this.storageKey, JSON.stringify(data));
-    } catch (error) {
-      console.error('Error saving plugin config to storage', error);
+    } catch {
     }
   }
 }
@@ -502,8 +500,7 @@ class PluginEventEmitterImpl implements PluginEventEmitter {
       for (const listener of listeners) {
         try {
           listener(...args);
-        } catch (error) {
-          console.error(`Error in event listener for '${event}'`, error);
+        } catch {
         }
       }
     }
@@ -561,7 +558,6 @@ class PluginResourceManagerImpl implements PluginResourceManager {
       this.cache.set(path, asset);
       return asset;
     } catch (error) {
-      console.error(`Error loading asset '${path}'`, error);
       throw error;
     }
   }
@@ -600,8 +596,7 @@ class PluginResourceManagerImpl implements PluginResourceManager {
         if (typeof resource.dispose === 'function') {
           resource.dispose();
         }
-      } catch (error) {
-        console.warn(`Error disposing resource '${key}':`, error);
+      } catch {
       }
       this.resources.delete(key);
     }
@@ -620,19 +615,15 @@ class PluginResourceManagerImpl implements PluginResourceManager {
 class PluginLoggerImpl implements PluginLogger {
   constructor(private pluginId: string) {}
 
-  debug(message: string, ...args: any[]): void {
-    console.debug(`[Plugin:${this.pluginId}]`, message, ...args);
+  debug(_message: string, ..._args: any[]): void {
   }
 
-  info(message: string, ...args: any[]): void {
-    console.info(`[Plugin:${this.pluginId}]`, message, ...args);
+  info(_message: string, ..._args: any[]): void {
   }
 
-  warn(message: string, ...args: any[]): void {
-    console.warn(`[Plugin:${this.pluginId}]`, message, ...args);
+  warn(_message: string, ..._args: any[]): void {
   }
 
-  error(message: string, ...args: any[]): void {
-    console.error(`[Plugin:${this.pluginId}]`, message, ...args);
+  error(_message: string, ..._args: any[]): void {
   }
 }

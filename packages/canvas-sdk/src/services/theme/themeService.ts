@@ -4,7 +4,6 @@
  */
 
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../eventBus/eventBusService';
 import { IConfigurationService } from '../configuration/configurationService';
 
 /**
@@ -20,25 +19,20 @@ export enum ThemeType {
  * 主题颜色配置
  */
 export interface IThemeColors {
-  // 背景色
   background: string;
   surface: string;
   
-  // 文字色
   primary: string;
   secondary: string;
   
-  // 边框色
   border: string;
   divider: string;
   
-  // 状态色
   success: string;
   warning: string;
   error: string;
   info: string;
   
-  // 画布特定色
   canvasBackground: string;
   gridColor: string;
   selectionColor: string;
@@ -66,6 +60,7 @@ export interface IThemeChangeData {
  * 主题服务接口
  */
 export interface IThemeService {
+  readonly _serviceBrand: undefined;
   getCurrentTheme(): ThemeType;
   getThemeConfig(): IThemeConfig;
   setTheme(theme: ThemeType): void;
@@ -74,6 +69,7 @@ export interface IThemeService {
   getThemeColors(): IThemeColors;
   registerCustomTheme(name: string, config: IThemeConfig): void;
   removeCustomTheme(name: string): void;
+  dispose(): void;
 }
 
 /**
@@ -126,7 +122,7 @@ const THEME_CONFIGS: Record<ThemeType, IThemeConfig> = {
   [ThemeType.AUTO]: {
     type: ThemeType.AUTO,
     name: 'Auto',
-    colors: {} as IThemeColors // 会动态设置
+    colors: {} as IThemeColors
   }
 };
 
@@ -134,14 +130,13 @@ const THEME_CONFIGS: Record<ThemeType, IThemeConfig> = {
  * 主题服务实现
  */
 export class ThemeService implements IThemeService {
+  readonly _serviceBrand: undefined;
   private currentTheme: ThemeType;
   private customThemes = new Map<string, IThemeConfig>();
 
   constructor(
-    @IEventBusService private eventBus: IEventBusService,
     @IConfigurationService private configService: IConfigurationService
   ) {
-    // 从配置中读取保存的主题，默认为浅色主题
     this.currentTheme = this.configService.get<ThemeType>('theme.current') || ThemeType.LIGHT;
     this.initializeAutoTheme();
   }
@@ -152,7 +147,6 @@ export class ThemeService implements IThemeService {
 
   getThemeConfig(): IThemeConfig {
     if (this.currentTheme === ThemeType.AUTO) {
-      // 自动主题根据系统设置决定
       const systemPrefersDark = this.getSystemThemePreference() === ThemeType.DARK;
       return systemPrefersDark ? THEME_CONFIGS[ThemeType.DARK] : THEME_CONFIGS[ThemeType.LIGHT];
     }
@@ -163,18 +157,9 @@ export class ThemeService implements IThemeService {
   setTheme(theme: ThemeType): void {
     if (this.currentTheme === theme) return;
 
-    const previousTheme = this.currentTheme;
     this.currentTheme = theme;
     
-    // 保存到配置
     this.configService.set('theme.current', theme);
-
-    // 发布主题变化事件
-    this.eventBus.emit<IThemeChangeData>('theme:changed', {
-      previousTheme,
-      currentTheme: theme,
-      config: this.getThemeConfig()
-    });
   }
 
   toggleTheme(): void {
@@ -194,13 +179,14 @@ export class ThemeService implements IThemeService {
 
   registerCustomTheme(name: string, config: IThemeConfig): void {
     this.customThemes.set(name, config);
-    this.eventBus.emit('theme:custom-registered', { name, config });
   }
 
   removeCustomTheme(name: string): void {
-    if (this.customThemes.delete(name)) {
-      this.eventBus.emit('theme:custom-removed', { name });
-    }
+    this.customThemes.delete(name);
+  }
+
+  dispose(): void {
+    this.customThemes.clear();
   }
 
   /**
@@ -222,14 +208,8 @@ export class ThemeService implements IThemeService {
     if (typeof window !== 'undefined' && window.matchMedia && this.currentTheme === ThemeType.AUTO) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       
-      // 监听系统主题变化
       mediaQuery.addEventListener('change', () => {
         if (this.currentTheme === ThemeType.AUTO) {
-          this.eventBus.emit<IThemeChangeData>('theme:changed', {
-            previousTheme: this.currentTheme,
-            currentTheme: this.currentTheme,
-            config: this.getThemeConfig()
-          });
         }
       });
     }

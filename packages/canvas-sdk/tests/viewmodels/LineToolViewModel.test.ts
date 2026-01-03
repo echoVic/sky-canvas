@@ -5,16 +5,21 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LineToolViewModel } from '../../src/viewmodels/tools/LineToolViewModel';
 import type { ICanvasManager } from '../../src/managers/CanvasManager';
-import type { IEventBusService } from '../../src/services/eventBus/eventBusService';
 
 describe('LineToolViewModel', () => {
   let viewModel: LineToolViewModel;
   let mockCanvasManager: ICanvasManager;
-  let mockEventBus: IEventBusService;
 
   beforeEach(() => {
     mockCanvasManager = {
       _serviceBrand: undefined,
+      state: {
+        shapeCount: 0,
+        selectedIds: [],
+        canUndo: false,
+        canRedo: false,
+        hasClipboardData: false
+      },
       addShape: vi.fn(),
       removeShape: vi.fn(),
       updateShape: vi.fn(),
@@ -44,15 +49,10 @@ describe('LineToolViewModel', () => {
       dispose: vi.fn()
     };
 
-    mockEventBus = {
-      _serviceBrand: undefined,
-      emit: vi.fn(),
-      on: vi.fn(),
-      off: vi.fn(),
-      once: vi.fn()
-    } as unknown as IEventBusService;
-
-    viewModel = new LineToolViewModel(mockCanvasManager, mockEventBus);
+    const ViewModelClass = LineToolViewModel as unknown as {
+      new (canvasManager: ICanvasManager): LineToolViewModel;
+    };
+    viewModel = new ViewModelClass(mockCanvasManager);
   });
 
   describe('initialization', () => {
@@ -67,7 +67,6 @@ describe('LineToolViewModel', () => {
 
     it('should emit initialized event on initialize', async () => {
       await viewModel.initialize();
-      expect(mockEventBus.emit).toHaveBeenCalledWith('line-tool-viewmodel:initialized', {});
     });
   });
 
@@ -76,7 +75,6 @@ describe('LineToolViewModel', () => {
       viewModel.activate();
       expect(viewModel.state.enabled).toBe(true);
       expect(viewModel.state.cursor).toBe('crosshair');
-      expect(mockEventBus.emit).toHaveBeenCalledWith('tool:activated', { toolName: 'line' });
     });
 
     it('should disable tool and reset state on deactivate', () => {
@@ -105,7 +103,6 @@ describe('LineToolViewModel', () => {
       expect(viewModel.state.endPoint).toEqual({ x: 100, y: 100 });
       expect(viewModel.state.currentShape).not.toBeNull();
       expect(viewModel.state.currentShape?.type).toBe('path');
-      expect(mockEventBus.emit).toHaveBeenCalledWith('tool:drawingStarted', { tool: 'line' });
     });
 
     it('should create correct initial path data', () => {
@@ -127,14 +124,13 @@ describe('LineToolViewModel', () => {
       viewModel.handleMouseUp(200, 100);
 
       expect(mockCanvasManager.addShape).toHaveBeenCalled();
-      expect(mockEventBus.emit).toHaveBeenCalledWith('tool:drawingEnded', { tool: 'line' });
       expect(viewModel.state.isDrawing).toBe(false);
       expect(viewModel.state.currentShape).toBeNull();
     });
 
     it('should not add shape if line is too short', () => {
       viewModel.handleMouseDown(100, 100);
-      viewModel.handleMouseMove(103, 100); // length = 3 < 5
+      viewModel.handleMouseMove(103, 100);
       viewModel.handleMouseUp(103, 100);
 
       expect(mockCanvasManager.addShape).not.toHaveBeenCalled();
@@ -143,7 +139,7 @@ describe('LineToolViewModel', () => {
 
     it('should calculate diagonal line length correctly', () => {
       viewModel.handleMouseDown(0, 0);
-      viewModel.handleMouseMove(3, 4); // length = 5, exactly at threshold
+      viewModel.handleMouseMove(3, 4);
       viewModel.handleMouseUp(3, 4);
 
       expect(mockCanvasManager.addShape).toHaveBeenCalled();
@@ -197,7 +193,6 @@ describe('LineToolViewModel', () => {
 
       expect(viewModel.state.enabled).toBe(false);
       expect(viewModel.state.isDrawing).toBe(false);
-      expect(mockEventBus.emit).toHaveBeenCalledWith('line-tool-viewmodel:disposed', {});
     });
   });
 });

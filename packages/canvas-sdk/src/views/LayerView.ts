@@ -435,8 +435,7 @@ export class LayerView {
       listeners.forEach(listener => {
         try {
           listener(data);
-        } catch (error) {
-          console.error(`Error in layer view listener for ${event}:`, error);
+        } catch {
         }
       });
     }

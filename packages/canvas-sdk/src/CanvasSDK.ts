@@ -6,7 +6,7 @@
 import { ICanvasManager } from './managers/CanvasManager';
 import { IToolManager } from './managers/ToolManager';
 import type { LogLevel } from './services';
-import { IEventBusService, ILogService } from './services';
+import { ILogService } from './services';
 
 /**
  * SDK 配置选项
@@ -30,13 +30,18 @@ export interface ICanvasSDKConfig {
  * 通过 DI 容器创建，所有依赖通过构造函数注入
  */
 export class CanvasSDK {
+  private _disposed: boolean = false;
+
   constructor(
     @ICanvasManager private canvasManager: ICanvasManager,
     @IToolManager private toolManager: IToolManager,
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logger: ILogService
   ) {
     this.logger.info('Canvas SDK instance created via DI container');
+  }
+
+  get isDisposed(): boolean {
+    return this._disposed;
   }
 
   /**
@@ -57,22 +62,22 @@ export class CanvasSDK {
    * 销毁 SDK
    */
   dispose(): void {
+    if (this._disposed) {
+      return;
+    }
+
+    if (this.canvasManager) {
+      this.canvasManager.dispose();
+    }
+
+    if (this.toolManager) {
+      this.toolManager.dispose();
+    }
+
+    this._disposed = true;
     this.logger.info('Canvas SDK disposed');
   }
 
-  /**
-   * 事件监听
-   */
-  on(eventName: string, callback: (...args: unknown[]) => void): void {
-    this.eventBus.on(eventName, callback);
-  }
-
-  /**
-   * 移除事件监听
-   */
-  off(eventName: string, callback?: (...args: unknown[]) => void): void {
-    this.eventBus.off(eventName, callback);
-  }
 }
 
 

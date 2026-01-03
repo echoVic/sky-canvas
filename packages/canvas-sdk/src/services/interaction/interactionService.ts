@@ -3,7 +3,6 @@
  */
 
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 import type { IToolManager } from '../../managers/ToolManager';
 import type { ICanvasMouseEvent } from '../../viewmodels/interfaces/IViewModel';
@@ -44,6 +43,7 @@ export interface IInteractionService {
   setEnabled(enabled: boolean): void;
   isEnabled(): boolean;
   dispose(): void;
+  readonly _serviceBrand: undefined;
 }
 
 /**
@@ -55,6 +55,8 @@ export const IInteractionService = createDecorator<IInteractionService>('Interac
  * 交互服务实现
  */
 export class InteractionService implements IInteractionService {
+  readonly _serviceBrand: undefined;
+
   private canvas?: HTMLCanvasElement;
   private activeTool: ITool | null = null;
   private tools = new Map<string, ITool>();
@@ -63,14 +65,12 @@ export class InteractionService implements IInteractionService {
   private toolManager?: IToolManager;
 
   constructor(
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logger: ILogServiceInterface
   ) {}
 
   initialize(canvas: HTMLCanvasElement): void {
     this.canvas = canvas;
     this.setupEventListeners();
-    this.eventBus.emit('interaction:initialized', { canvas });
     this.logger.info('Interaction service initialized');
   }
 
@@ -102,7 +102,6 @@ export class InteractionService implements IInteractionService {
 
       const eventData = this.createCanvasMouseEvent(event);
 
-      // 优先使用ToolManager处理事件
       if (this.toolManager) {
         this.toolManager.handleMouseDown(eventData);
       } else if (this.activeTool?.handleMouseDown) {
@@ -115,7 +114,6 @@ export class InteractionService implements IInteractionService {
 
       const eventData = this.createCanvasMouseEvent(event);
 
-      // 优先使用ToolManager处理事件
       if (this.toolManager) {
         this.toolManager.handleMouseMove(eventData);
       } else if (this.activeTool?.handleMouseMove) {
@@ -128,7 +126,6 @@ export class InteractionService implements IInteractionService {
 
       const eventData = this.createCanvasMouseEvent(event);
 
-      // 优先使用ToolManager处理事件
       if (this.toolManager) {
         this.toolManager.handleMouseUp(eventData);
       } else if (this.activeTool?.handleMouseUp) {
@@ -139,7 +136,6 @@ export class InteractionService implements IInteractionService {
     const keyDownHandler = (event: Event) => {
       if (!this.enabled || !(event instanceof KeyboardEvent)) return;
 
-      // 优先使用ToolManager处理事件
       if (this.toolManager) {
         this.toolManager.handleKeyDown(event);
       } else if (this.activeTool?.handleKeyDown) {
@@ -150,7 +146,6 @@ export class InteractionService implements IInteractionService {
     const keyUpHandler = (event: Event) => {
       if (!this.enabled || !(event instanceof KeyboardEvent)) return;
 
-      // 优先使用ToolManager处理事件
       if (this.toolManager) {
         this.toolManager.handleKeyUp(event);
       } else if (this.activeTool?.handleKeyUp) {
@@ -158,14 +153,12 @@ export class InteractionService implements IInteractionService {
       }
     };
 
-    // 添加事件监听器
     this.canvas.addEventListener('mousedown', mouseDownHandler);
     this.canvas.addEventListener('mousemove', mouseMoveHandler);
     this.canvas.addEventListener('mouseup', mouseUpHandler);
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
 
-    // 保存监听器引用以便清理
     this.eventListeners.push(
       { element: this.canvas, event: 'mousedown', handler: mouseDownHandler },
       { element: this.canvas, event: 'mousemove', handler: mouseMoveHandler },
@@ -176,14 +169,12 @@ export class InteractionService implements IInteractionService {
   }
 
   setActiveTool(toolName: string | null): boolean {
-    // 停用当前工具
     if (this.activeTool) {
       this.activeTool.deactivate();
       this.activeTool = null;
     }
 
     if (!toolName) {
-      this.eventBus.emit('interaction:tool_changed', { toolName: null });
       this.logger.debug('Active tool cleared');
       return true;
     }
@@ -193,7 +184,6 @@ export class InteractionService implements IInteractionService {
       this.activeTool = tool;
       this.activeTool.activate();
       
-      this.eventBus.emit('interaction:tool_changed', { toolName, tool });
       this.logger.debug('Active tool changed', toolName);
       return true;
     }
@@ -212,20 +202,17 @@ export class InteractionService implements IInteractionService {
     }
     
     this.tools.set(tool.name, tool);
-    this.eventBus.emit('interaction:tool_registered', { toolName: tool.name, tool });
     this.logger.debug('Tool registered', tool.name);
   }
 
   unregisterTool(name: string): void {
     const tool = this.tools.get(name);
     if (tool) {
-      // 如果当前工具被移除，先停用它
       if (this.activeTool === tool) {
         this.setActiveTool(null);
       }
       
       this.tools.delete(name);
-      this.eventBus.emit('interaction:tool_unregistered', { toolName: name });
       this.logger.debug('Tool unregistered', name);
     }
   }
@@ -235,7 +222,6 @@ export class InteractionService implements IInteractionService {
     this.enabled = enabled;
     
     if (wasEnabled !== enabled) {
-      this.eventBus.emit('interaction:enabled_changed', { enabled });
       this.logger.debug('Interaction enabled state changed', enabled);
     }
   }
@@ -256,7 +242,6 @@ export class InteractionService implements IInteractionService {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // 考虑画布的缩放比例
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
 
@@ -267,23 +252,19 @@ export class InteractionService implements IInteractionService {
   }
 
   dispose(): void {
-    // 停用当前工具
     if (this.activeTool) {
       this.activeTool.deactivate();
       this.activeTool = null;
     }
 
-    // 移除所有事件监听器
     this.eventListeners.forEach(({ element, event, handler }) => {
       element.removeEventListener(event, handler);
     });
     this.eventListeners = [];
 
-    // 清理工具
     this.tools.clear();
     this.toolManager = undefined;
 
-    this.eventBus.emit('interaction:disposed', {});
     this.logger.info('Interaction service disposed');
   }
 

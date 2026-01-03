@@ -1,20 +1,11 @@
-/**
- * 箭头工具 ViewModel
- * 使用 CanvasManager 进行形状管理
- */
-
 import { proxy } from 'valtio';
 
 import { IPoint } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
 import { ICanvasManager } from '../../managers/CanvasManager';
 import { IPathEntity, ShapeEntityFactory } from '../../models/entities/Shape';
-import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { IViewModel } from '../interfaces/IViewModel';
 
-/**
- * 箭头工具状态
- */
 export interface IArrowToolState {
   isDrawing: boolean;
   startPoint: IPoint | null;
@@ -24,9 +15,6 @@ export interface IArrowToolState {
   enabled: boolean;
 }
 
-/**
- * 箭头工具 ViewModel 接口
- */
 export interface IArrowToolViewModel extends IViewModel {
   state: IArrowToolState;
 
@@ -41,21 +29,14 @@ export interface IArrowToolViewModel extends IViewModel {
   getCurrentShape(): IPathEntity | null;
 }
 
-/**
- * 箭头工具 ViewModel 服务标识符
- */
 export const IArrowToolViewModel = createDecorator<IArrowToolViewModel>('ArrowToolViewModel');
 
-/**
- * 箭头工具 ViewModel 实现
- */
 export class ArrowToolViewModel implements IArrowToolViewModel {
   private readonly _state: IArrowToolState;
   private readonly arrowHeadSize = 12;
 
   constructor(
-    @ICanvasManager private canvasManager: ICanvasManager,
-    @IEventBusService private eventBus: IEventBusService
+    @ICanvasManager private canvasManager: ICanvasManager
   ) {
     this._state = proxy<IArrowToolState>({
       isDrawing: false,
@@ -71,13 +52,10 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
     return this._state;
   }
 
-  async initialize(): Promise<void> {
-    this.eventBus.emit('arrow-tool-viewmodel:initialized', {});
-  }
+  async initialize(): Promise<void> {}
 
   dispose(): void {
     this.deactivate();
-    this.eventBus.emit('arrow-tool-viewmodel:disposed', {});
   }
 
   getSnapshot() {
@@ -87,7 +65,6 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
   activate(): void {
     this._state.enabled = true;
     this._state.cursor = 'crosshair';
-    this.eventBus.emit('tool:activated', { toolName: 'arrow' });
   }
 
   deactivate(): void {
@@ -102,7 +79,6 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
     this._state.startPoint = { x, y };
     this._state.endPoint = { x, y };
 
-    // 创建初始箭头路径
     const pathData = this.generateArrowPath(x, y, x, y);
     this._state.currentShape = ShapeEntityFactory.createPath(
       pathData,
@@ -113,8 +89,6 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
         opacity: 1
       }
     );
-
-    this.eventBus.emit('tool:drawingStarted', { tool: 'arrow' });
   }
 
   handleMouseMove(x: number, y: number, _event?: MouseEvent): void {
@@ -123,7 +97,6 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
 
     this._state.endPoint = { x, y };
 
-    // 更新箭头路径
     const pathData = this.generateArrowPath(
       this._state.startPoint.x,
       this._state.startPoint.y,
@@ -143,26 +116,20 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
 
     this._state.isDrawing = false;
 
-    // 计算长度
     const dx = x - this._state.startPoint.x;
     const dy = y - this._state.startPoint.y;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    // 检查长度是否足够
     if (length < 10) {
       this.reset();
       return;
     }
 
     this.canvasManager.addShape(this._state.currentShape);
-    this.eventBus.emit('tool:drawingEnded', { tool: 'arrow' });
 
     this.reset();
   }
 
-  /**
-   * 生成箭头 SVG 路径
-   */
   private generateArrowPath(x1: number, y1: number, x2: number, y2: number): string {
     const dx = x2 - x1;
     const dy = y2 - y1;
@@ -172,21 +139,17 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
       return `M ${x1} ${y1} L ${x2} ${y2}`;
     }
 
-    // 计算箭头方向的单位向量
     const ux = dx / length;
     const uy = dy / length;
 
-    // 箭头头部的基点（在终点前方）
     const arrowBase = {
       x: x2 - ux * this.arrowHeadSize,
       y: y2 - uy * this.arrowHeadSize
     };
 
-    // 垂直于箭头方向的向量
     const perpX = -uy * (this.arrowHeadSize * 0.5);
     const perpY = ux * (this.arrowHeadSize * 0.5);
 
-    // 箭头两侧的点
     const arrowLeft = {
       x: arrowBase.x + perpX,
       y: arrowBase.y + perpY
@@ -196,7 +159,6 @@ export class ArrowToolViewModel implements IArrowToolViewModel {
       y: arrowBase.y - perpY
     };
 
-    // 构建路径：线段 + 箭头头部
     return `M ${x1} ${y1} L ${x2} ${y2} M ${arrowLeft.x} ${arrowLeft.y} L ${x2} ${y2} L ${arrowRight.x} ${arrowRight.y}`;
   }
 

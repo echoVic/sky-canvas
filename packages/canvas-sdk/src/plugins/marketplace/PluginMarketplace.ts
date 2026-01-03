@@ -91,7 +91,6 @@ export class PluginMarketplace {
       
       return result;
     } catch (error) {
-      console.error('Error searching plugins:', error);
       throw error;
     }
   }
@@ -120,7 +119,6 @@ export class PluginMarketplace {
       
       return plugin;
     } catch (error) {
-      console.error(`Error getting plugin ${pluginId}:`, error);
       throw error;
     }
   }
@@ -146,7 +144,6 @@ export class PluginMarketplace {
       
       return plugins;
     } catch (error) {
-      console.error('Error getting featured plugins:', error);
       throw error;
     }
   }
@@ -172,7 +169,6 @@ export class PluginMarketplace {
       
       return categories;
     } catch (error) {
-      console.error('Error getting categories:', error);
       throw error;
     }
   }
@@ -189,7 +185,6 @@ export class PluginMarketplace {
 
       return await response.blob();
     } catch (error) {
-      console.error(`Error downloading plugin ${pluginId}:`, error);
       throw error;
     }
   }
@@ -224,7 +219,6 @@ export class PluginMarketplace {
       
       return result;
     } catch (error) {
-      console.error(`Error getting reviews for plugin ${pluginId}:`, error);
       throw error;
     }
   }
@@ -250,7 +244,6 @@ export class PluginMarketplace {
       this.clearCacheByPrefix(`reviews:${pluginId}`);
       this.clearCacheByPrefix(`plugin:${pluginId}`);
     } catch (error) {
-      console.error(`Error submitting review for plugin ${pluginId}:`, error);
       throw error;
     }
   }
@@ -281,7 +274,6 @@ export class PluginMarketplace {
       
       return plugins;
     } catch (error) {
-      console.error('Error getting recommendations:', error);
       throw error;
     }
   }
@@ -310,7 +302,6 @@ export class PluginMarketplace {
 
       return await response.json();
     } catch (error) {
-      console.error('Error checking updates:', error);
       throw error;
     }
   }
@@ -390,8 +381,7 @@ export class LocalPluginStore {
     try {
       const stored = localStorage.getItem(this.storageKey);
       return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Error reading installed plugins:', error);
+    } catch {
       return [];
     }
   }
@@ -445,8 +435,7 @@ export class LocalPluginStore {
   private saveInstalledPlugins(plugins: { id: string; version: string; installDate: string }[]): void {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(plugins));
-    } catch (error) {
-      console.error('Error saving installed plugins:', error);
+    } catch {
     }
   }
 }

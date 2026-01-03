@@ -4,7 +4,6 @@
  */
 
 import type { ILogService } from '../services';
-import { IEventBusService } from '../services/eventBus/eventBusService';
 import { CompositeCommand } from '../services/history/commands';
 import { ICommand, IHistoryService } from '../services/history/historyService';
 
@@ -42,7 +41,6 @@ export class TransactionManager implements ITransactionManager {
 
   constructor(
     private historyService: IHistoryService,
-    private eventBus: IEventBusService,
     private logService: ILogService
   ) {
     this.logService.info('TransactionManager initialized');
@@ -56,7 +54,6 @@ export class TransactionManager implements ITransactionManager {
     const transaction = new CompositeCommand(transactionName);
     this.transactionStack.push(transaction);
     
-    this.eventBus.emit('transaction:began', { name: transactionName, depth: this.transactionStack.length });
     this.logService.debug('Transaction began', transactionName);
   }
 
@@ -74,24 +71,11 @@ export class TransactionManager implements ITransactionManager {
       return; // 空事务直接忽略
     }
 
-    // 如果有父事务，添加到父事务中
     if (this.transactionStack.length > 0) {
       const parentTransaction = this.transactionStack[this.transactionStack.length - 1];
       parentTransaction.add(transaction);
-      
-      this.eventBus.emit('transaction:nested_committed', { 
-        name: transaction.description, 
-        depth: this.transactionStack.length + 1,
-        commandCount: transaction.size()
-      });
     } else {
-      // 顶层事务，通过历史服务执行
       this.historyService.execute(transaction);
-      
-      this.eventBus.emit('transaction:committed', { 
-        name: transaction.description,
-        commandCount: transaction.size()
-      });
     }
 
     this.logService.debug('Transaction committed', transaction.description);
@@ -107,14 +91,7 @@ export class TransactionManager implements ITransactionManager {
     }
 
     try {
-      // 撤销已执行的命令
       transaction.undo();
-      
-      this.eventBus.emit('transaction:rolled_back', { 
-        name: transaction.description,
-        commandCount: transaction.size()
-      });
-      
       this.logService.debug('Transaction rolled back', transaction.description);
     } catch (error) {
       this.logService.error('Failed to rollback transaction', error);
@@ -210,7 +187,6 @@ export class TransactionManager implements ITransactionManager {
     }
     
     if (transactionCount > 0) {
-      this.eventBus.emit('transaction:cleared', { transactionCount });
       this.logService.info(`Cleared ${transactionCount} active transactions`);
     }
   }

@@ -1,20 +1,11 @@
-/**
- * 圆形工具 ViewModel
- * 使用 CanvasManager 进行形状管理
- */
-
 import { proxy } from 'valtio';
 
 import { IPoint } from '@sky-canvas/render-engine';
 import { createDecorator } from '../../di';
 import { ICanvasManager } from '../../managers/CanvasManager';
 import { ICircleEntity, ShapeEntityFactory } from '../../models/entities/Shape';
-import { IEventBusService } from '../../services/eventBus/eventBusService';
 import { IViewModel } from '../interfaces/IViewModel';
 
-/**
- * 圆形工具状态
- */
 export interface ICircleToolState {
   isDrawing: boolean;
   startPoint: IPoint | null;
@@ -23,9 +14,6 @@ export interface ICircleToolState {
   enabled: boolean;
 }
 
-/**
- * 圆形工具 ViewModel 接口
- */
 export interface ICircleToolViewModel extends IViewModel {
   state: ICircleToolState;
 
@@ -40,20 +28,13 @@ export interface ICircleToolViewModel extends IViewModel {
   getCurrentShape(): ICircleEntity | null;
 }
 
-/**
- * 圆形工具 ViewModel 服务标识符
- */
 export const ICircleToolViewModel = createDecorator<ICircleToolViewModel>('CircleToolViewModel');
 
-/**
- * 圆形工具 ViewModel 实现
- */
 export class CircleToolViewModel implements ICircleToolViewModel {
   private readonly _state: ICircleToolState;
 
   constructor(
-    @ICanvasManager private canvasManager: ICanvasManager,
-    @IEventBusService private eventBus: IEventBusService
+    @ICanvasManager private canvasManager: ICanvasManager
   ) {
     this._state = proxy<ICircleToolState>({
       isDrawing: false,
@@ -68,13 +49,10 @@ export class CircleToolViewModel implements ICircleToolViewModel {
     return this._state;
   }
 
-  async initialize(): Promise<void> {
-    this.eventBus.emit('circle-tool-viewmodel:initialized', {});
-  }
+  async initialize(): Promise<void> {}
 
   dispose(): void {
     this.deactivate();
-    this.eventBus.emit('circle-tool-viewmodel:disposed', {});
   }
 
   getSnapshot() {
@@ -84,7 +62,6 @@ export class CircleToolViewModel implements ICircleToolViewModel {
   activate(): void {
     this._state.enabled = true;
     this._state.cursor = 'crosshair';
-    this.eventBus.emit('tool:activated', { toolName: 'circle' });
   }
 
   deactivate(): void {
@@ -108,15 +85,12 @@ export class CircleToolViewModel implements ICircleToolViewModel {
         opacity: 1
       }
     );
-
-    this.eventBus.emit('tool:drawingStarted', { tool: 'circle' });
   }
 
   handleMouseMove(x: number, y: number, _event?: MouseEvent): void {
     if (!this._state.enabled || !this._state.isDrawing) return;
     if (!this._state.startPoint || !this._state.currentShape) return;
 
-    // 计算半径（从起点到当前点的距离）
     const dx = x - this._state.startPoint.x;
     const dy = y - this._state.startPoint.y;
     const radius = Math.sqrt(dx * dx + dy * dy);
@@ -133,14 +107,12 @@ export class CircleToolViewModel implements ICircleToolViewModel {
 
     this._state.isDrawing = false;
 
-    // 检查半径是否足够大
     if (this._state.currentShape.radius < 5) {
       this.reset();
       return;
     }
 
     this.canvasManager.addShape(this._state.currentShape);
-    this.eventBus.emit('tool:drawingEnded', { tool: 'circle' });
 
     this.reset();
   }

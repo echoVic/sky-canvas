@@ -5,7 +5,7 @@
 
 import { IRenderable } from '@sky-canvas/render-engine';
 import type { ILogService } from '../services';
-import { ICanvasRenderingService, IConfigurationService, IEventBusService } from '../services';
+import { ICanvasRenderingService, IConfigurationService } from '../services';
 import { ICanvasManager } from './CanvasManager';
 
 /**
@@ -77,11 +77,9 @@ export class SceneManager implements ISceneManager {
   constructor(
     private canvasManager: ICanvasManager,
     private renderingService: ICanvasRenderingService,
-    private eventBus: IEventBusService,
     private logService: ILogService,
     private configService: IConfigurationService
   ) {
-    // 初始化场景状态
     this.state = {
       layers: [],
       activeLayerId: null,
@@ -91,9 +89,7 @@ export class SceneManager implements ISceneManager {
       guidesEnabled: this.configService.get('scene.guidesEnabled') || false
     };
 
-    // 创建默认图层
     this.createDefaultLayer();
-    this.setupEventListeners();
     this.logService.info('SceneManager initialized');
   }
 
@@ -112,12 +108,10 @@ export class SceneManager implements ISceneManager {
 
     this.state.layers.push(layer);
     
-    // 如果没有活动图层，设为活动图层
     if (!this.state.activeLayerId) {
       this.state.activeLayerId = layer.id;
     }
 
-    this.eventBus.emit('scene:layerCreated', { layer });
     this.logService.debug(`Layer created: ${layer.name} (${layer.id})`);
     
     return layer;
@@ -134,7 +128,6 @@ export class SceneManager implements ISceneManager {
 
     const layer = this.state.layers[layerIndex];
     
-    // 将图层中的形状移动到其他图层
     if (layer.shapes.length > 0) {
       const targetLayer = this.state.layers.find(l => l.id !== layerId);
       if (targetLayer) {
@@ -142,15 +135,12 @@ export class SceneManager implements ISceneManager {
       }
     }
 
-    // 移除图层
     this.state.layers.splice(layerIndex, 1);
     
-    // 如果删除的是活动图层，选择新的活动图层
     if (this.state.activeLayerId === layerId) {
       this.state.activeLayerId = this.state.layers.length > 0 ? this.state.layers[0].id : null;
     }
 
-    this.eventBus.emit('scene:layerRemoved', { layerId, layer });
     this.logService.debug(`Layer removed: ${layer.name} (${layerId})`);
     
     return true;
@@ -160,14 +150,8 @@ export class SceneManager implements ISceneManager {
     const layer = this.state.layers.find(l => l.id === layerId);
     if (!layer) return false;
 
-    const previousLayerId = this.state.activeLayerId;
     this.state.activeLayerId = layerId;
 
-    this.eventBus.emit('scene:activeLayerChanged', { 
-      previousLayerId, 
-      currentLayerId: layerId, 
-      layer 
-    });
     this.logService.debug(`Active layer changed to: ${layer.name} (${layerId})`);
     
     return true;
@@ -186,10 +170,8 @@ export class SceneManager implements ISceneManager {
     const layer = this.state.layers.find(l => l.id === layerId);
     if (!layer) return false;
 
-    const oldValues = { ...layer };
     Object.assign(layer, updates);
 
-    this.eventBus.emit('scene:layerUpdated', { layerId, updates, oldValues });
     this.logService.debug(`Layer updated: ${layer.name} (${layerId})`);
     
     return true;
@@ -204,10 +186,8 @@ export class SceneManager implements ISceneManager {
     const layer = this.state.layers.find(l => l.id === targetLayerId);
     if (!layer) return false;
 
-    // 从其他图层移除该形状
     this.removeShapeFromLayer(shapeId);
     
-    // 添加到目标图层
     if (!layer.shapes.includes(shapeId)) {
       layer.shapes.push(shapeId);
       this.logService.debug(`Shape ${shapeId} added to layer ${layer.name}`);
@@ -236,7 +216,6 @@ export class SceneManager implements ISceneManager {
     this.removeShapeFromLayer(shapeId);
     targetLayer.shapes.push(shapeId);
     
-    this.eventBus.emit('scene:shapeMoved', { shapeId, targetLayerId });
     this.logService.debug(`Shape ${shapeId} moved to layer ${targetLayer.name}`);
     
     return true;
@@ -256,41 +235,34 @@ export class SceneManager implements ISceneManager {
   setBackgroundColor(color: string): void {
     this.state.backgroundColor = color;
     this.configService.set('scene.backgroundColor', color);
-    this.eventBus.emit('scene:backgroundChanged', { color });
   }
 
   toggleGrid(): void {
     this.state.gridEnabled = !this.state.gridEnabled;
     this.configService.set('scene.gridEnabled', this.state.gridEnabled);
-    this.eventBus.emit('scene:gridToggled', { enabled: this.state.gridEnabled });
   }
 
   setGridSize(size: number): void {
     this.state.gridSize = Math.max(1, size);
     this.configService.set('scene.gridSize', this.state.gridSize);
-    this.eventBus.emit('scene:gridSizeChanged', { size: this.state.gridSize });
   }
 
   toggleGuides(): void {
     this.state.guidesEnabled = !this.state.guidesEnabled;
     this.configService.set('scene.guidesEnabled', this.state.guidesEnabled);
-    this.eventBus.emit('scene:guidesToggled', { enabled: this.state.guidesEnabled });
   }
 
   // === 渲染控制 ===
 
   render(): void {
     const renderables = this.getRenderablesInLayerOrder();
-    // 假设渲染服务有批量渲染方法
     renderables.forEach(renderable => {
       this.renderingService.addRenderable(renderable);
     });
-    this.eventBus.emit('scene:rendered', { renderableCount: renderables.length });
   }
 
   refreshScene(): void {
     this.render();
-    this.eventBus.emit('scene:refreshed', {});
   }
 
   // === 私有方法 ===
@@ -300,30 +272,16 @@ export class SceneManager implements ISceneManager {
     this.state.activeLayerId = defaultLayer.id;
   }
 
-  private setupEventListeners(): void {
-    // 监听形状变化，自动添加到活动图层
-    this.eventBus.on('canvas:shapeAdded', (data: any) => {
-      this.addShapeToLayer(data.entity.id);
-    });
-
-    // 监听形状删除，从图层中移除
-    this.eventBus.on('canvas:shapeRemoved', (data: any) => {
-      this.removeShapeFromLayer(data.id);
-    });
-  }
-
   private getRenderablesInLayerOrder(): IRenderable[] {
     const allRenderables = this.canvasManager.getRenderables();
     const renderableMap = new Map<string, IRenderable>();
     
-    // 创建 ID 到 Renderable 的映射
     allRenderables.forEach(renderable => {
       renderableMap.set((renderable as any).id, renderable);
     });
 
-    // 按图层顺序排列
     const orderedRenderables: IRenderable[] = [];
-    const sortedLayers = this.getAllLayers(); // 已按 zIndex 排序
+    const sortedLayers = this.getAllLayers();
     
     for (const layer of sortedLayers) {
       if (!layer.visible) continue;
@@ -346,12 +304,10 @@ export class SceneManager implements ISceneManager {
   }
 
   clear(): void {
-    // 清除所有图层（除了默认图层）
     this.state.layers = [];
     this.nextLayerId = 1;
     this.createDefaultLayer();
     
-    this.eventBus.emit('scene:cleared', {});
     this.logService.info('Scene cleared');
   }
 

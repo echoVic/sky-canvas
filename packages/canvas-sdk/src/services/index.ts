@@ -5,7 +5,6 @@
 
 // 核心服务
 export { ConfigurationService, IConfigurationService } from './configuration/configurationService';
-export { EventBusService, IEventBusService } from './eventBus/eventBusService';
 export { ILogService, LogService } from './logging/logService';
 export type { LogLevel } from './logging/logService';
 

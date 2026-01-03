@@ -308,8 +308,7 @@ export abstract class BaseCanvasView implements ICanvasView {
       listeners.forEach(listener => {
         try {
           listener(data);
-        } catch (error) {
-          console.error(`Error in canvas view listener for ${event}:`, error);
+        } catch {
         }
       });
     }

@@ -1,17 +1,15 @@
-/**
- * 日志服务 - 基于 VSCode DI 架构
- */
-
 import { createDecorator } from '../../di';
 
-/**
- * 日志级别
- */
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
 
-/**
- * 日志服务接口
- */
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  trace: 0,
+  debug: 1,
+  info: 2,
+  warn: 3,
+  error: 4,
+};
+
 export interface ILogService {
   readonly _serviceBrand: undefined;
   trace(message: string, ...args: any[]): void;
@@ -21,42 +19,47 @@ export interface ILogService {
   error(message: string, ...args: any[]): void;
   setLevel(level: LogLevel): void;
   getLevel(): LogLevel;
+  dispose(): void;
 }
 
-/**
- * 日志服务标识符
- */
 export const ILogService = createDecorator<ILogService>('LogService');
 
-/**
- * 日志服务实现
- */
 export class LogService implements ILogService {
   readonly _serviceBrand: undefined;
   private currentLevel: LogLevel = 'info';
 
-  constructor() {
-    // VSCode 风格的服务实现
+  private shouldLog(level: LogLevel): boolean {
+    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.currentLevel];
   }
 
   trace(message: string, ...args: any[]): void {
-    console.trace(`[TRACE] ${message}`, ...args);
+    if (this.shouldLog('trace')) {
+      console.trace(`[TRACE] ${message}`, ...args);
+    }
   }
 
   debug(message: string, ...args: any[]): void {
-    console.debug(`[DEBUG] ${message}`, ...args);
+    if (this.shouldLog('debug')) {
+      console.debug(`[DEBUG] ${message}`, ...args);
+    }
   }
 
   info(message: string, ...args: any[]): void {
-    console.info(`[INFO] ${message}`, ...args);
+    if (this.shouldLog('info')) {
+      console.info(`[INFO] ${message}`, ...args);
+    }
   }
 
   warn(message: string, ...args: any[]): void {
-    console.warn(`[WARN] ${message}`, ...args);
+    if (this.shouldLog('warn')) {
+      console.warn(`[WARN] ${message}`, ...args);
+    }
   }
 
   error(message: string, ...args: any[]): void {
-    console.error(`[ERROR] ${message}`, ...args);
+    if (this.shouldLog('error')) {
+      console.error(`[ERROR] ${message}`, ...args);
+    }
   }
 
   setLevel(level: LogLevel): void {
@@ -66,4 +69,6 @@ export class LogService implements ILogService {
   getLevel(): LogLevel {
     return this.currentLevel;
   }
+
+  dispose(): void {}
 }

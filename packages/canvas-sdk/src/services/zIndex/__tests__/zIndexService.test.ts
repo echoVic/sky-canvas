@@ -8,19 +8,19 @@ import { IShapeEntity, ShapeEntityFactory } from '../../../models/entities/Shape
 
 describe('ZIndexService', () => {
   let zIndexService: IZIndexService;
-  let mockEventBus: any;
   let mockLogService: any;
   let testShapes: IShapeEntity[];
 
   beforeEach(() => {
-    mockEventBus = {
-      emit: vi.fn()
-    };
     mockLogService = {
-      debug: vi.fn()
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      trace: vi.fn()
     };
 
-    zIndexService = new ZIndexService(mockEventBus, mockLogService);
+    zIndexService = new ZIndexService(mockLogService);
 
     // 创建测试用的形状数据
     testShapes = [
@@ -56,16 +56,11 @@ describe('ZIndexService', () => {
       expect(movedShapes[1].zIndex).toBe(5);
     });
 
-    it('应该发送zIndex变更事件', () => {
+    it('应该记录日志', () => {
       const shapesToMove = [testShapes[0]];
       zIndexService.bringToFront(shapesToMove, testShapes);
 
-      expect(mockEventBus.emit).toHaveBeenCalledWith('canvas:zIndexChanged', expect.objectContaining({
-        shapeIds: [testShapes[0].id],
-        operation: 'bringToFront',
-        oldZIndices: { [testShapes[0].id]: 0 },
-        newZIndices: { [testShapes[0].id]: 4 }
-      }));
+      expect(mockLogService.debug).toHaveBeenCalled();
     });
   });
 

@@ -8,10 +8,11 @@ import { ShapeEntityFactory, IShapeEntity } from '../../models/entities/Shape';
 
 describe('CanvasManager Z轴管理', () => {
   let canvasManager: CanvasManager;
-  let mockEventBus: any;
   let mockLogService: any;
   let mockShapeService: any;
   let mockSelectionService: any;
+  let mockClipboardService: any;
+  let mockHistoryService: any;
   let mockZIndexService: any;
   let testShapes: IShapeEntity[];
 
@@ -22,13 +23,12 @@ describe('CanvasManager Z轴管理', () => {
       ShapeEntityFactory.createRectangle({ x: 200, y: 200 })
     ];
 
-    mockEventBus = {
-      emit: vi.fn()
-    };
-
     mockLogService = {
       info: vi.fn(),
-      debug: vi.fn()
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      trace: vi.fn()
     };
 
     mockShapeService = {
@@ -37,11 +37,26 @@ describe('CanvasManager Z轴管理', () => {
       ),
       getAllShapeEntities: vi.fn(() => testShapes),
       updateShapeEntity: vi.fn(),
-      updateShape: vi.fn()
+      updateShape: vi.fn(),
+      addShape: vi.fn(),
+      removeShape: vi.fn()
     };
 
     mockSelectionService = {
       getSelectedShapes: vi.fn(() => [testShapes[0]])
+    };
+
+    mockClipboardService = {
+      copy: vi.fn(),
+      cut: vi.fn(),
+      paste: vi.fn(),
+      hasData: vi.fn(() => false)
+    };
+
+    mockHistoryService = {
+      execute: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn()
     };
 
     mockZIndexService = {
@@ -54,12 +69,11 @@ describe('CanvasManager Z轴管理', () => {
     };
 
     canvasManager = new CanvasManager(
-      mockEventBus,
       mockLogService,
       mockShapeService,
       mockSelectionService,
-      null as any, // clipboardService
-      null as any, // historyService
+      mockClipboardService,
+      mockHistoryService,
       mockZIndexService
     );
   });
@@ -74,9 +88,6 @@ describe('CanvasManager Z轴管理', () => {
         [testShapes[0]],
         testShapes
       );
-      expect(mockEventBus.emit).toHaveBeenCalledWith('canvas:shapesBroughtToFront', {
-        shapeIds
-      });
     });
 
     it('应该忽略不存在的形状ID', () => {
@@ -90,7 +101,6 @@ describe('CanvasManager Z轴管理', () => {
       canvasManager.bringToFront([]);
 
       expect(mockZIndexService.bringToFront).not.toHaveBeenCalled();
-      expect(mockEventBus.emit).not.toHaveBeenCalled();
     });
   });
 
@@ -104,9 +114,6 @@ describe('CanvasManager Z轴管理', () => {
         [testShapes[1]],
         testShapes
       );
-      expect(mockEventBus.emit).toHaveBeenCalledWith('canvas:shapesSentToBack', {
-        shapeIds
-      });
     });
   });
 
@@ -119,9 +126,6 @@ describe('CanvasManager Z轴管理', () => {
         [testShapes[0], testShapes[1]],
         testShapes
       );
-      expect(mockEventBus.emit).toHaveBeenCalledWith('canvas:shapesBroughtForward', {
-        shapeIds
-      });
     });
   });
 
@@ -134,9 +138,6 @@ describe('CanvasManager Z轴管理', () => {
         [testShapes[2]],
         testShapes
       );
-      expect(mockEventBus.emit).toHaveBeenCalledWith('canvas:shapesSentBackward', {
-        shapeIds
-      });
     });
   });
 
@@ -151,10 +152,6 @@ describe('CanvasManager Z轴管理', () => {
         [testShapes[0]],
         targetZIndex
       );
-      expect(mockEventBus.emit).toHaveBeenCalledWith('canvas:shapesZIndexSet', {
-        shapeIds,
-        zIndex: targetZIndex
-      });
     });
 
     it('应该批量更新形状实体', () => {

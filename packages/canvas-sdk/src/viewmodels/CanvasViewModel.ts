@@ -5,7 +5,6 @@
 
 import { proxy, snapshot } from 'valtio';
 import { ICanvasManager } from '../managers/CanvasManager';
-import { IEventBusService } from '../services/eventBus/eventBusService';
 import { IViewModel } from './interfaces/IViewModel';
 import { ShapeEntity } from '../models/entities/Shape';
 
@@ -76,10 +75,8 @@ export class CanvasViewModel implements ICanvasViewModel {
   private readonly _state: ICanvasState;
 
   constructor(
-    private canvasManager: ICanvasManager,
-    private eventBus: IEventBusService
+    private canvasManager: ICanvasManager
   ) {
-    // 使用 Valtio proxy 创建响应式状态
     this._state = proxy<ICanvasState>({
       shapes: [],
       selectedShapes: [],
@@ -93,8 +90,6 @@ export class CanvasViewModel implements ICanvasViewModel {
       totalShapes: 0,
       selectedCount: 0
     });
-
-    this.setupEventListeners();
   }
 
   get state(): ICanvasState {
@@ -103,7 +98,6 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   async initialize(): Promise<void> {
     this.updateState();
-    this.eventBus.emit('canvas-viewmodel:initialized', {});
   }
 
   getSnapshot() {
@@ -111,14 +105,12 @@ export class CanvasViewModel implements ICanvasViewModel {
   }
 
   dispose(): void {
-    this.eventBus.emit('canvas-viewmodel:disposed', {});
   }
 
   // === 形状操作 ===
 
   addShape(shape: ShapeEntity): void {
     this.canvasManager.addShape(shape);
-    // 状态会通过事件监听器自动更新
   }
 
   removeShape(id: string): void {
@@ -144,7 +136,6 @@ export class CanvasViewModel implements ICanvasViewModel {
   }
 
   selectAll(): void {
-    // 获取所有形状并选择它们
     const renderables = this.canvasManager.getRenderables();
     renderables.forEach(renderable => {
       const id = (renderable as any).id;
@@ -209,32 +200,6 @@ export class CanvasViewModel implements ICanvasViewModel {
   // === 私有方法 ===
 
   /**
-   * 设置事件监听器
-   */
-  private setupEventListeners(): void {
-    // 监听形状变化
-    this.eventBus.on('canvas:shapeAdded', () => this.updateShapesState());
-    this.eventBus.on('canvas:shapeRemoved', () => this.updateShapesState());
-    this.eventBus.on('canvas:shapeUpdated', () => this.updateShapesState());
-    
-    // 监听选择变化
-    this.eventBus.on('canvas:shapeSelected', () => this.updateSelectionState());
-    this.eventBus.on('canvas:shapeDeselected', () => this.updateSelectionState());
-    this.eventBus.on('canvas:selectionCleared', () => this.updateSelectionState());
-    
-    // 监听剪贴板变化
-    this.eventBus.on('canvas:shapesCopied', () => this.updateClipboardState());
-    this.eventBus.on('canvas:shapesCut', () => this.updateClipboardState());
-    this.eventBus.on('canvas:shapesPasted', () => this.updateClipboardState());
-    
-    // 监听历史变化
-    this.eventBus.on('canvas:historyChanged', (data: { canUndo: boolean; canRedo: boolean }) => {
-      this._state.canUndo = data.canUndo;
-      this._state.canRedo = data.canRedo;
-    });
-  }
-
-  /**
    * 更新完整状态
    */
   private updateState(): void {
@@ -265,8 +230,7 @@ export class CanvasViewModel implements ICanvasViewModel {
    * 更新剪贴板相关状态
    */
   private updateClipboardState(): void {
-    // 这里应该从剪贴板服务获取状态，但目前通过事件数据推断
-    this._state.canPaste = true; // 简化实现
+    this._state.canPaste = true;
   }
 
   /**

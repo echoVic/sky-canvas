@@ -5,7 +5,6 @@
 
 import { createDecorator } from '../../di';
 import { IShapeEntity } from '../../models/entities/Shape';
-import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService } from '../logging/logService';
 
 /**
@@ -76,7 +75,6 @@ export class ZIndexService implements IZIndexService {
   readonly _serviceBrand: undefined;
 
   constructor(
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logService: ILogService
   ) {}
 
@@ -84,14 +82,10 @@ export class ZIndexService implements IZIndexService {
     if (shapes.length === 0) return allShapes;
 
     const maxZIndex = this.getMaxZIndex(allShapes);
-    const oldZIndices: Record<string, number> = {};
-    const newZIndices: Record<string, number> = {};
 
     const updatedShapes = allShapes.map(shape => {
       if (shapes.some(s => s.id === shape.id)) {
-        oldZIndices[shape.id] = shape.zIndex;
         const newZIndex = maxZIndex + shapes.findIndex(s => s.id === shape.id) + 1;
-        newZIndices[shape.id] = newZIndex;
 
         return {
           ...shape,
@@ -102,7 +96,6 @@ export class ZIndexService implements IZIndexService {
       return shape;
     });
 
-    this.emitZIndexChangeEvent(shapes.map(s => s.id), 'bringToFront', oldZIndices, newZIndices);
     this.logService.debug(`Brought ${shapes.length} shapes to front`);
 
     return updatedShapes;
@@ -112,14 +105,10 @@ export class ZIndexService implements IZIndexService {
     if (shapes.length === 0) return allShapes;
 
     const minZIndex = this.getMinZIndex(allShapes);
-    const oldZIndices: Record<string, number> = {};
-    const newZIndices: Record<string, number> = {};
 
     const updatedShapes = allShapes.map(shape => {
       if (shapes.some(s => s.id === shape.id)) {
-        oldZIndices[shape.id] = shape.zIndex;
         const newZIndex = minZIndex - shapes.length + shapes.findIndex(s => s.id === shape.id);
-        newZIndices[shape.id] = newZIndex;
 
         return {
           ...shape,
@@ -130,7 +119,6 @@ export class ZIndexService implements IZIndexService {
       return shape;
     });
 
-    this.emitZIndexChangeEvent(shapes.map(s => s.id), 'sendToBack', oldZIndices, newZIndices);
     this.logService.debug(`Sent ${shapes.length} shapes to back`);
 
     return updatedShapes;
@@ -140,21 +128,15 @@ export class ZIndexService implements IZIndexService {
     if (shapes.length === 0) return allShapes;
 
     const sortedAllShapes = this.getSortedShapes(allShapes);
-    const oldZIndices: Record<string, number> = {};
-    const newZIndices: Record<string, number> = {};
 
     const updatedShapes = [...sortedAllShapes];
 
-    // 从高zIndex开始处理，避免重复交换
     const shapesToMove = shapes
       .map(shape => ({ shape, index: sortedAllShapes.findIndex(s => s.id === shape.id) }))
       .sort((a, b) => b.index - a.index);
 
     shapesToMove.forEach(({ shape, index }) => {
       if (index < updatedShapes.length - 1) {
-        oldZIndices[shape.id] = shape.zIndex;
-
-        // 找到下一个非选中的形状并交换zIndex
         let nextIndex = index + 1;
         while (nextIndex < updatedShapes.length && shapes.some(s => s.id === updatedShapes[nextIndex].id)) {
           nextIndex++;
@@ -175,13 +157,10 @@ export class ZIndexService implements IZIndexService {
             zIndex: tempZIndex,
             updatedAt: new Date()
           };
-
-          newZIndices[shape.id] = nextShape.zIndex;
         }
       }
     });
 
-    this.emitZIndexChangeEvent(shapes.map(s => s.id), 'bringForward', oldZIndices, newZIndices);
     this.logService.debug(`Moved ${shapes.length} shapes forward`);
 
     return updatedShapes;
@@ -191,21 +170,15 @@ export class ZIndexService implements IZIndexService {
     if (shapes.length === 0) return allShapes;
 
     const sortedAllShapes = this.getSortedShapes(allShapes);
-    const oldZIndices: Record<string, number> = {};
-    const newZIndices: Record<string, number> = {};
 
     const updatedShapes = [...sortedAllShapes];
 
-    // 从低zIndex开始处理，避免重复交换
     const shapesToMove = shapes
       .map(shape => ({ shape, index: sortedAllShapes.findIndex(s => s.id === shape.id) }))
       .sort((a, b) => a.index - b.index);
 
     shapesToMove.forEach(({ shape, index }) => {
       if (index > 0) {
-        oldZIndices[shape.id] = shape.zIndex;
-
-        // 找到前一个非选中的形状并交换zIndex
         let prevIndex = index - 1;
         while (prevIndex >= 0 && shapes.some(s => s.id === updatedShapes[prevIndex].id)) {
           prevIndex--;
@@ -226,26 +199,18 @@ export class ZIndexService implements IZIndexService {
             zIndex: tempZIndex,
             updatedAt: new Date()
           };
-
-          newZIndices[shape.id] = prevShape.zIndex;
         }
       }
     });
 
-    this.emitZIndexChangeEvent(shapes.map(s => s.id), 'sendBackward', oldZIndices, newZIndices);
     this.logService.debug(`Moved ${shapes.length} shapes backward`);
 
     return updatedShapes;
   }
 
   setZIndex(shapes: IShapeEntity[], zIndex: number): IShapeEntity[] {
-    const oldZIndices: Record<string, number> = {};
-    const newZIndices: Record<string, number> = {};
-
     const updatedShapes = shapes.map((shape, index) => {
-      oldZIndices[shape.id] = shape.zIndex;
       const newZIndex = zIndex + index;
-      newZIndices[shape.id] = newZIndex;
 
       return {
         ...shape,
@@ -290,22 +255,6 @@ export class ZIndexService implements IZIndexService {
   private getMinZIndex(shapes: IShapeEntity[]): number {
     if (shapes.length === 0) return 0;
     return Math.min(...shapes.map(s => s.zIndex));
-  }
-
-  private emitZIndexChangeEvent(
-    shapeIds: string[],
-    operation: ZIndexOperation,
-    oldZIndices: Record<string, number>,
-    newZIndices: Record<string, number>
-  ): void {
-    const eventData: IZIndexChangeEvent = {
-      shapeIds,
-      operation,
-      oldZIndices,
-      newZIndices
-    };
-
-    this.eventBus.emit('canvas:zIndexChanged', eventData);
   }
 }
 

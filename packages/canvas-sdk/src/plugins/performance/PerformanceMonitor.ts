@@ -376,8 +376,7 @@ export class PerformanceMonitor {
       for (const listener of listeners) {
         try {
           listener(data);
-        } catch (error) {
-          console.error(`Error in performance monitor listener for '${event}'`, error);
+        } catch {
         }
       }
     }

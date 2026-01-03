@@ -156,8 +156,7 @@ export class PermissionManager {
       try {
         const granted = await this.requestPermission(pluginId, permission, reason);
         results.set(permission, granted);
-      } catch (error) {
-        console.error(`Error requesting permission '${permission}' for plugin '${pluginId}'`, error);
+      } catch {
         results.set(permission, false);
       }
     }
@@ -335,14 +334,6 @@ export class PermissionManager {
    * 请求用户同意
    */
   private async requestUserConsent(request: PermissionRequest): Promise<boolean> {
-    // 在实际应用中，这里应该显示一个权限请求对话框
-    // 现在我们简单地返回true作为演示
-    console.log(`Permission request for plugin '${request.pluginId}':`, {
-      permission: request.permission,
-      reason: request.reason
-    });
-
-    // 模拟用户同意（在实际应用中应该是真实的用户交互）
     return new Promise((resolve) => {
       setTimeout(() => {
         // 对于演示目的，我们自动授予非系统级权限
@@ -391,8 +382,7 @@ export class PermissionManager {
       for (const callback of callbacks) {
         try {
           callback(pluginId, granted);
-        } catch (error) {
-          console.error('Error in permission change callback', error);
+        } catch {
         }
       }
     }
@@ -533,8 +523,7 @@ export class PermissionManager {
       for (const listener of listeners) {
         try {
           listener(...args);
-        } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
+        } catch {
         }
       }
     }

@@ -403,8 +403,7 @@ export class PluginManager {
       for (const listener of listeners) {
         try {
           (listener as Function)(...args);
-        } catch (error) {
-          console.error(`Error in event listener for '${event}'`, error);
+        } catch {
         }
       }
     }
@@ -464,8 +463,7 @@ export class PluginManager {
     for (const pluginId of pluginIds) {
       try {
         await this.unloadPlugin(pluginId);
-      } catch (error) {
-        console.error(`Error unloading plugin '${pluginId}'`, error);
+      } catch {
       }
     }
 

@@ -96,8 +96,7 @@ class ExtensionContext implements IExtensionContext {
     this.subscriptions.forEach(disposable => {
       try {
         disposable.dispose();
-      } catch (error) {
-        console.error('Error disposing extension subscription:', error);
+      } catch {
       }
     });
     this.subscriptions.length = 0;
@@ -164,8 +163,7 @@ export class ExtensionLifecycleManager {
 
     // 监听激活事件
     this._activationEventManager.onActivationEvent(event => {
-      this.activateExtension(event.extensionId).catch(error => {
-        console.error(`Failed to activate extension ${event.extensionId}:`, error);
+      this.activateExtension(event.extensionId).catch(() => {
       });
     });
 
@@ -179,8 +177,7 @@ export class ExtensionLifecycleManager {
 
     this._extensionRegistry.onExtensionUnregistered(extensionId => {
       this._activationEventManager.unregisterActivationEvents(extensionId);
-      this.deactivateExtension(extensionId).catch(error => {
-        console.error(`Failed to deactivate extension ${extensionId}:`, error);
+      this.deactivateExtension(extensionId).catch(() => {
       });
     });
   }
@@ -299,8 +296,7 @@ export class ExtensionLifecycleManager {
 
       this._onExtensionDeactivated.fire(extensionId);
 
-    } catch (error) {
-      console.error(`Failed to deactivate extension ${extensionId}:`, error);
+    } catch {
       extensionInstance.state = ExtensionState.Failed;
     }
   }
@@ -308,8 +304,7 @@ export class ExtensionLifecycleManager {
   async deactivateAllExtensions(): Promise<void> {
     const extensions = this._extensionRegistry.getAllExtensions();
     const deactivationPromises = extensions.map(ext => 
-      this.deactivateExtension(ext.id).catch(error => {
-        console.error(`Failed to deactivate extension ${ext.id}:`, error);
+      this.deactivateExtension(ext.id).catch(() => {
       })
     );
 
@@ -341,9 +336,7 @@ export class ExtensionLifecycleManager {
 
     this._disposed = true;
 
-    // 停用所有扩展
-    this.deactivateAllExtensions().catch(error => {
-      console.error('Error deactivating extensions during disposal:', error);
+    this.deactivateAllExtensions().catch(() => {
     });
 
     this._activationEventManager.dispose();

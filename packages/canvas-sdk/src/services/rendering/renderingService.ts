@@ -3,7 +3,6 @@
  */
 
 import { createDecorator } from '../../di';
-import { IEventBusService } from '../eventBus/eventBusService';
 import { ILogService, type ILogService as ILogServiceInterface } from '../logging/logService';
 
 /**
@@ -71,6 +70,7 @@ export interface ICanvasRenderingService {
   isRunning(): boolean;
   getStats(): RenderingStats;
   dispose(): void;
+  readonly _serviceBrand: undefined;
 }
 
 /**
@@ -82,6 +82,7 @@ export const ICanvasRenderingService = createDecorator<ICanvasRenderingService>(
  * 渲染服务实现
  */
 export class CanvasRenderingService implements ICanvasRenderingService {
+  readonly _serviceBrand: undefined;
   private renderEngine: IRenderEngineInstance | null = null;
   private running = false;
   private renderables = new Map<string, IRenderable>();
@@ -89,17 +90,13 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   private static readonly DEFAULT_LAYER_ID = 'default-layer';
 
   constructor(
-    @IEventBusService private eventBus: IEventBusService,
     @ILogService private logger: ILogServiceInterface
   ) {}
 
   async initialize(canvas: HTMLCanvasElement, config: IRenderingConfig): Promise<void> {
-    console.log('[RenderingService] Initializing with config:', config);
     this.logger.info('Initializing canvas rendering service', { config });
 
-    // 如果已经初始化过，先停止并清理旧的引擎
     if (this.renderEngine) {
-      console.log('[RenderingService] Stopping existing render engine before re-initialization');
       this.renderEngine.stop();
       this.renderEngine.dispose();
       this.renderEngine = null;
@@ -111,10 +108,8 @@ export class CanvasRenderingService implements ICanvasRenderingService {
     try {
       const { RenderEngine, WebGLContextFactory, Canvas2DContextFactory, WebGPUContextFactory } = await import('@sky-canvas/render-engine');
 
-      // 根据配置选择对应的图形上下文工厂
       let factory;
       const renderType = config.renderEngine || 'webgl';
-      console.log('[RenderingService] Using render type:', renderType);
 
       switch (renderType) {
         case 'webgl':
@@ -134,36 +129,9 @@ export class CanvasRenderingService implements ICanvasRenderingService {
       await engine.initialize(factory, canvas);
       this.renderEngine = engine;
 
-      // 创建默认渲染图层
       this.defaultLayer = engine.createLayer(CanvasRenderingService.DEFAULT_LAYER_ID, 0) as IRenderLayer;
       this.logger.debug('Default render layer created');
 
-      // 监听形状变化事件
-      this.eventBus.on('canvas:shapeAdded', (data: { entity: unknown; view: IRenderable }) => {
-        this.logger.debug('Shape added, adding to render layer');
-        if (data.view) {
-          this.addRenderable(data.view);
-        }
-      });
-
-      this.eventBus.on('canvas:shapeUpdated', () => {
-        this.logger.debug('Shape updated, triggering render');
-        // 形状更新会自动反映在渲染中，因为view引用的是同一个对象
-      });
-
-      this.eventBus.on('canvas:shapeRemoved', (data: { id: string }) => {
-        this.logger.debug('Shape removed, removing from render layer');
-        if (data.id) {
-          this.removeRenderable(data.id);
-        }
-      });
-
-      this.eventBus.on('canvas:cleared', () => {
-        this.logger.debug('Canvas cleared, triggering render');
-        this.render();
-      });
-
-      this.eventBus.emit('rendering:initialized', { canvas, config });
       this.logger.info('Canvas rendering service initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize rendering service', error);
@@ -176,15 +144,10 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   }
 
   addRenderable(renderable: IRenderable): void {
-    console.log('[RenderingService] addRenderable called:', renderable?.id, 'defaultLayer:', !!this.defaultLayer);
     if (renderable && renderable.id) {
       this.renderables.set(renderable.id, renderable);
-      // 同时添加到默认渲染图层
       if (this.defaultLayer) {
         this.defaultLayer.addRenderable(renderable);
-        console.log('[RenderingService] Renderable added to default layer:', renderable.id);
-      } else {
-        console.warn('[RenderingService] No default layer available!');
       }
       this.logger.debug('Renderable added', renderable.id);
     }
@@ -193,7 +156,6 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   removeRenderable(id: string): void {
     if (this.renderables.has(id)) {
       this.renderables.delete(id);
-      // 同时从默认渲染图层移除
       if (this.defaultLayer) {
         this.defaultLayer.removeRenderable(id);
       }
@@ -208,13 +170,10 @@ export class CanvasRenderingService implements ICanvasRenderingService {
   }
 
   start(): void {
-    console.log('[RenderingService] start() called, running:', this.running, 'engine:', !!this.renderEngine);
     if (!this.running) {
       this.running = true;
       this.renderEngine?.start();
-      this.eventBus.emit('rendering:started', {});
       this.logger.debug('Rendering started');
-      console.log('[RenderingService] Rendering started successfully');
     }
   }
 
@@ -222,7 +181,6 @@ export class CanvasRenderingService implements ICanvasRenderingService {
     if (this.running) {
       this.running = false;
       this.renderEngine?.stop();
-      this.eventBus.emit('rendering:stopped', {});
       this.logger.debug('Rendering stopped');
     }
   }

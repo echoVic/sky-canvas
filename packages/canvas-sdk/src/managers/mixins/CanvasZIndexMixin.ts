@@ -6,9 +6,6 @@
 import { IShapeEntity } from '../../models/entities/Shape';
 import { IZIndexService } from '../../services';
 
-/**
- * Z轴管理依赖接口
- */
 export interface IZIndexDeps {
   shapeService: {
     getShapeEntity(id: string): IShapeEntity | null | undefined;
@@ -16,9 +13,6 @@ export interface IZIndexDeps {
     updateShape(id: string, updates: Partial<IShapeEntity>): void;
   };
   zIndexService: IZIndexService;
-  eventBus: {
-    emit(event: string, data: unknown): void;
-  };
   logService: {
     debug(message: string): void;
   };
@@ -48,9 +42,6 @@ function batchUpdateZIndex(
   });
 }
 
-/**
- * 置顶 - 将形状移到最前面
- */
 export function bringToFront(deps: IZIndexDeps, shapeIds: string[]): void {
   if (shapeIds.length === 0) return;
 
@@ -62,13 +53,9 @@ export function bringToFront(deps: IZIndexDeps, shapeIds: string[]): void {
 
   batchUpdateZIndex(updatedShapes, deps.shapeService);
 
-  deps.eventBus.emit('canvas:shapesBroughtToFront', { shapeIds });
   deps.logService.debug(`Brought ${shapeIds.length} shapes to front`);
 }
 
-/**
- * 置底 - 将形状移到最后面
- */
 export function sendToBack(deps: IZIndexDeps, shapeIds: string[]): void {
   if (shapeIds.length === 0) return;
 
@@ -80,13 +67,9 @@ export function sendToBack(deps: IZIndexDeps, shapeIds: string[]): void {
 
   batchUpdateZIndex(updatedShapes, deps.shapeService);
 
-  deps.eventBus.emit('canvas:shapesSentToBack', { shapeIds });
   deps.logService.debug(`Sent ${shapeIds.length} shapes to back`);
 }
 
-/**
- * 上移一层
- */
 export function bringForward(deps: IZIndexDeps, shapeIds: string[]): void {
   if (shapeIds.length === 0) return;
 
@@ -98,13 +81,9 @@ export function bringForward(deps: IZIndexDeps, shapeIds: string[]): void {
 
   batchUpdateZIndex(updatedShapes, deps.shapeService);
 
-  deps.eventBus.emit('canvas:shapesBroughtForward', { shapeIds });
   deps.logService.debug(`Brought ${shapeIds.length} shapes forward`);
 }
 
-/**
- * 下移一层
- */
 export function sendBackward(deps: IZIndexDeps, shapeIds: string[]): void {
   if (shapeIds.length === 0) return;
 
@@ -116,13 +95,9 @@ export function sendBackward(deps: IZIndexDeps, shapeIds: string[]): void {
 
   batchUpdateZIndex(updatedShapes, deps.shapeService);
 
-  deps.eventBus.emit('canvas:shapesSentBackward', { shapeIds });
   deps.logService.debug(`Sent ${shapeIds.length} shapes backward`);
 }
 
-/**
- * 设置指定的zIndex值
- */
 export function setZIndex(
   deps: IZIndexDeps,
   shapeIds: string[],
@@ -139,13 +114,9 @@ export function setZIndex(
     deps.shapeService.updateShape(shape.id, { zIndex: shape.zIndex });
   });
 
-  deps.eventBus.emit('canvas:shapesZIndexSet', { shapeIds, zIndex });
   deps.logService.debug(`Set zIndex to ${zIndex} for ${shapeIds.length} shapes`);
 }
 
-/**
- * 获取按Z轴顺序排序的形状列表
- */
 export function getShapesByZOrder(deps: IZIndexDeps): IShapeEntity[] {
   const allShapes = deps.shapeService.getAllShapeEntities();
   return deps.zIndexService.getSortedShapes(allShapes);
