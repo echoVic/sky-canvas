@@ -5,10 +5,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  DataSourceType,
-  IDataSourceAdapter,
-  UnifiedMetricType,
-  UnifiedPerformanceMonitor
+    DataSourceType,
+    IDataSourceAdapter,
+    UnifiedMetricType,
+    UnifiedPerformanceMonitor
 } from '../UnifiedPerformanceMonitor';
 
 // Mock 适配器
@@ -423,7 +423,8 @@ describe('UnifiedPerformanceMonitor', () => {
       monitor.recordMetric(UnifiedMetricType.DRAW_CALLS, 500, DataSourceType.RENDER_ENGINE);
       
       let metrics = monitor.getCurrentMetrics();
-      expect(Object.keys(metrics)).toHaveLength(2);
+      expect(metrics[UnifiedMetricType.FPS]).toBe(60);
+      expect(metrics[UnifiedMetricType.DRAW_CALLS]).toBe(500);
       
       monitor.clearHistory();
       
@@ -489,8 +490,8 @@ describe('UnifiedPerformanceMonitor', () => {
   
   describe('生命周期管理', () => {
     it('应该正确启动和停止', () => {
-      expect(monitor.start).not.toThrow();
-      expect(monitor.stop).not.toThrow();
+      expect(() => monitor.start()).not.toThrow();
+      expect(() => monitor.stop()).not.toThrow();
     });
     
     it('应该正确销毁', () => {

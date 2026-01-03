@@ -146,12 +146,10 @@ export { DebugRenderer } from './debug/index';
 export * from './text/index';
 
 // 动画系统
-// TODO: 解决类型兼容性问题后启用
-// export * from './animation/index';
+export * from './animation/index';
 
 // 滤镜系统  
-// TODO: 解决类型兼容性问题后启用
-// export * from './effects/index';
+export * from './effects/index';
 
 // 物理引擎
 export * from './physics/index';

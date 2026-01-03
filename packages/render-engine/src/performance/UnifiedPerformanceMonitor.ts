@@ -347,8 +347,8 @@ export class UnifiedPerformanceMonitor extends EventEmitter<UnifiedPerformanceEv
 
     const severityMultiplier = isLow ? 0.5 : 1.5;
     const isSevere = isLow
-      ? dataPoint.value < thresholdValue * severityMultiplier
-      : dataPoint.value > thresholdValue * severityMultiplier;
+      ? dataPoint.value <= thresholdValue * severityMultiplier
+      : dataPoint.value >= thresholdValue * severityMultiplier;
 
     return {
       type,

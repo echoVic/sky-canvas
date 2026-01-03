@@ -1,6 +1,6 @@
 {
   "name": "@sky-canvas/render-engine",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "高性能的框架无关图形渲染引擎",
   "type": "module",
   "main": "dist/index.js",
@@ -16,8 +16,18 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sky-canvas/sky-canvas.git",
+    "directory": "packages/render-engine"
+  },
+  "bugs": {
+    "url": "https://github.com/sky-canvas/sky-canvas/issues"
+  },
+  "homepage": "https://github.com/sky-canvas/sky-canvas/tree/main/packages/render-engine#readme",
   "keywords": [
     "canvas",
     "graphics",
@@ -25,7 +35,12 @@
     "engine",
     "webgl",
     "webgpu",
-    "framework-agnostic"
+    "framework-agnostic",
+    "2d",
+    "animation",
+    "particles",
+    "filters",
+    "effects"
   ],
   "author": "Sky Canvas Team",
   "license": "MIT",

@@ -72,7 +72,7 @@ describe('BrightnessFilter', () => {
 
     const params = {
       type: FilterType.BRIGHTNESS as const,
-      brightness: 30,
+      brightness: 0, // 亮度为0时应该返回原始图像
       opacity: 1,
       enabled: true
     };

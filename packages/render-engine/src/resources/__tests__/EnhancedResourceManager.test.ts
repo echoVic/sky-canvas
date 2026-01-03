@@ -2,9 +2,9 @@
  * 增强型资源管理系统测试
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ResourceConfig, ResourceType } from '../AsyncResourceLoader';
 import { EnhancedResourceManager, ResourceManagerConfig } from '../EnhancedResourceManager';
-import { ResourceType, ResourceConfig } from '../AsyncResourceLoader';
 
 // Mock全局API
 global.fetch = vi.fn();
@@ -34,20 +34,25 @@ describe('EnhancedResourceManager', () => {
   let manager: EnhancedResourceManager;
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    
     const config: ResourceManagerConfig = {
-      cacheMaxMemory: 10 * 1024 * 1024, // 10MB for testing
+      cacheMaxMemory: 10 * 1024 * 1024,
       cacheMaxItems: 100,
       maxConcurrentLoads: 3,
-      enableAutoGC: false, // 禁用自动GC以便测试
+      enableAutoGC: false,
       gcInterval: 1000
     };
     
     manager = new EnhancedResourceManager(config);
+    vi.clearAllTimers();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
     manager?.dispose();
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   describe('基础功能', () => {
@@ -73,7 +78,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      const resourceRef = await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      const resourceRef = await loadPromise;
       
       expect(resourceRef.id).toBe('test-texture');
       expect(resourceRef.type).toBe(ResourceType.TEXTURE);
@@ -88,11 +95,13 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      // 第一次加载
-      const ref1 = await manager.loadResource(config);
+      const loadPromise1 = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      const ref1 = await loadPromise1;
       
-      // 第二次加载应该从缓存获取
-      const ref2 = await manager.loadResource(config);
+      const loadPromise2 = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      const ref2 = await loadPromise2;
       
       expect(ref1.data).toBe(ref2.data);
     });
@@ -104,7 +113,10 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      await expect(manager.loadResource(config)).rejects.toThrow();
+      const loadPromise = manager.loadResource(config).catch(e => e);
+      await vi.runAllTimersAsync();
+      const result = await loadPromise;
+      expect(result).toBeInstanceOf(Error);
     });
 
     it('应该能够跟踪资源引用', async () => {
@@ -114,7 +126,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      const ref = await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      const ref = await loadPromise;
       ref.addRef();
       
       const stats = manager.getStats();
@@ -138,30 +152,35 @@ describe('EnhancedResourceManager', () => {
         }
       ];
 
-      const refs = await manager.loadBatch(configs);
+      const loadPromise = manager.loadBatch(configs);
+      await vi.runAllTimersAsync();
+      const refs = await loadPromise;
       expect(refs).toHaveLength(2);
       expect(refs[0].id).toBe('batch1');
       expect(refs[1].id).toBe('batch2');
     });
 
-    it('应该能够触发批量完成事件', () => {
-      return new Promise<void>((resolve) => {
-        const configs: ResourceConfig[] = [
-          {
-            id: 'event-batch1',
-            url: 'https://example.com/texture1.png',
-            type: ResourceType.TEXTURE
-          }
-        ];
+    it('应该能够触发批量完成事件', async () => {
+      const configs: ResourceConfig[] = [
+        {
+          id: 'event-batch1',
+          url: 'https://example.com/texture1.png',
+          type: ResourceType.TEXTURE
+        }
+      ];
 
-        manager.on('batchComplete', (batchId, results) => {
-          expect(results).toHaveLength(1);
-          expect(results[0].id).toBe('event-batch1');
-          resolve();
-        });
-
-        manager.loadBatch(configs);
+      let batchCompleteCalled = false;
+      manager.on('batchComplete', (batchId, results) => {
+        expect(results).toHaveLength(1);
+        expect(results[0].id).toBe('event-batch1');
+        batchCompleteCalled = true;
       });
+
+      const loadPromise = manager.loadBatch(configs);
+      await vi.runAllTimersAsync();
+      await loadPromise;
+      
+      expect(batchCompleteCalled).toBe(true);
     });
   });
 
@@ -180,9 +199,10 @@ describe('EnhancedResourceManager', () => {
         }
       ];
 
-      await expect(manager.preloadResources(configs)).resolves.toBeUndefined();
+      const preloadPromise = manager.preloadResources(configs);
+      await vi.runAllTimersAsync();
+      await expect(preloadPromise).resolves.toBeUndefined();
       
-      // 预加载后，资源应该在缓存中
       const ref1 = manager.getResource('preload1');
       const ref2 = manager.getResource('preload2');
       
@@ -199,8 +219,9 @@ describe('EnhancedResourceManager', () => {
         }
       ];
 
-      // 预加载失败不应该抛出错误
-      await expect(manager.preloadResources(configs)).resolves.toBeUndefined();
+      const preloadPromise = manager.preloadResources(configs);
+      await vi.runAllTimersAsync();
+      await expect(preloadPromise).resolves.toBeUndefined();
     });
   });
 
@@ -212,7 +233,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
       
       const ref = manager.getResource('ref-management');
       expect(ref).not.toBeNull();
@@ -233,7 +256,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
       
       const released = manager.forceReleaseResource('force-release');
       expect(released).toBe(true);
@@ -256,15 +281,14 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      // 开始加载但不等待
-      const loadPromise = manager.loadResource(config);
+      const loadPromise = manager.loadResource(config).catch(e => e);
       
-      // 立即取消
       const cancelled = manager.cancelResourceLoading('cancel-test');
       expect(cancelled).toBe(true);
 
-      // 加载应该失败
-      await expect(loadPromise).rejects.toThrow();
+      await vi.runAllTimersAsync();
+      const result = await loadPromise;
+      expect(result).toBeInstanceOf(Error);
     });
 
     it('应该能够获取加载进度', async () => {
@@ -276,10 +300,9 @@ describe('EnhancedResourceManager', () => {
 
       const loadPromise = manager.loadResource(config);
       
-      // 可能获取到进度信息
       const progress = manager.getLoadingProgress('progress-test');
-      // 进度可能为null（已完成）或有值
       
+      await vi.runAllTimersAsync();
       await loadPromise;
     });
   });
@@ -292,11 +315,13 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      // 第一次加载 - 缓存未命中
-      await manager.loadResource(config);
+      const loadPromise1 = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise1;
       
-      // 第二次加载 - 缓存命中
-      await manager.loadResource(config);
+      const loadPromise2 = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise2;
       
       const stats = manager.getStats();
       expect(stats.performance.cacheHitRate).toBeGreaterThan(0);
@@ -309,7 +334,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
       
       const stats = manager.getStats();
       expect(stats.performance.averageLoadTime).toBeGreaterThan(0);
@@ -324,90 +351,136 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      const ref = await manager.loadResource(config);
-      ref.removeRef(); // 移除引用，使其可被垃圾收集
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      const ref = await loadPromise;
+      ref.removeRef();
       
       expect(() => manager.forceGC()).not.toThrow();
     });
 
-    it('应该能够触发垃圾收集事件', () => {
-      return new Promise<void>((resolve) => {
-        manager.on('gcComplete', (freedMemory, itemsRemoved) => {
-          expect(typeof freedMemory).toBe('number');
-          expect(typeof itemsRemoved).toBe('number');
-          resolve();
-        });
-
-        manager.forceGC();
+    it('应该能够触发垃圾收集事件', async () => {
+      const testManager = new EnhancedResourceManager({
+        cacheMaxMemory: 10 * 1024 * 1024,
+        cacheMaxItems: 100,
+        maxConcurrentLoads: 3,
+        enableAutoGC: false,
+        cacheDefaultTTL: 1
       });
+
+      const config: ResourceConfig = {
+        id: 'gc-event-test',
+        url: 'https://example.com/texture.png',
+        type: ResourceType.TEXTURE
+      };
+
+      const loadPromise = testManager.loadResource(config);
+      vi.advanceTimersByTime(20);
+      const ref = await loadPromise;
+
+      vi.advanceTimersByTime(10);
+
+      let gcCompleteCalled = false;
+      testManager.on('gcComplete', (freedMemory, itemsRemoved) => {
+        expect(typeof freedMemory).toBe('number');
+        expect(typeof itemsRemoved).toBe('number');
+        gcCompleteCalled = true;
+      });
+
+      testManager.forceGC();
+      
+      expect(gcCompleteCalled).toBe(true);
+      testManager.dispose();
     });
   });
 
   describe('事件系统', () => {
-    it('应该能够触发资源加载事件', () => {
-      return new Promise<void>((resolve) => {
-        manager.on('resourceLoaded', (ref) => {
-          expect(ref.id).toBe('event-test');
-          resolve();
-        });
-
-        const config: ResourceConfig = {
-          id: 'event-test',
-          url: 'https://example.com/texture.png',
-          type: ResourceType.TEXTURE
-        };
-
-        manager.loadResource(config);
+    it('应该能够触发资源加载事件', async () => {
+      let resourceLoadedCalled = false;
+      manager.on('resourceLoaded', (ref) => {
+        expect(ref.id).toBe('event-test');
+        resourceLoadedCalled = true;
       });
+
+      const config: ResourceConfig = {
+        id: 'event-test',
+        url: 'https://example.com/texture.png',
+        type: ResourceType.TEXTURE
+      };
+
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
+      
+      expect(resourceLoadedCalled).toBe(true);
     });
 
-    it('应该能够触发资源缓存事件', () => {
-      return new Promise<void>((resolve) => {
-        manager.on('resourceCached', (id, size) => {
-          expect(id).toBe('cache-event-test');
-          expect(typeof size).toBe('number');
-          resolve();
-        });
-
-        const config: ResourceConfig = {
-          id: 'cache-event-test',
-          url: 'https://example.com/texture.png',
-          type: ResourceType.TEXTURE
-        };
-
-        manager.loadResource(config);
+    it('应该能够触发资源缓存事件', async () => {
+      let resourceCachedCalled = false;
+      manager.on('resourceCached', (id, size) => {
+        expect(id).toBe('cache-event-test');
+        expect(typeof size).toBe('number');
+        resourceCachedCalled = true;
       });
+
+      const config: ResourceConfig = {
+        id: 'cache-event-test',
+        url: 'https://example.com/texture.png',
+        type: ResourceType.TEXTURE
+      };
+
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
+      
+      expect(resourceCachedCalled).toBe(true);
     });
 
-    it('应该能够触发加载进度事件', () => {
-      return new Promise<void>((resolve) => {
-        // 模拟更复杂的响应以触发进度事件
-        (global.fetch as any).mockResolvedValueOnce({
-          ok: true,
-          body: {
-            getReader: () => ({
-              read: async () => ({ done: false, value: new Uint8Array(100) })
-            })
-          },
-          headers: { get: () => '1000' },
-          text: () => Promise.resolve('<svg></svg>')
-        });
+    it('应该能够触发加载进度事件', async () => {
+      const mockResponseBody = {
+        getReader: () => {
+          let callCount = 0;
+          return {
+            read: async () => {
+              callCount++;
+              if (callCount === 1) {
+                return { done: false, value: new Uint8Array(500) };
+              } else {
+                return { done: true };
+              }
+            }
+          };
+        }
+      };
 
-        manager.on('loadingProgress', (id, progress) => {
-          if (id === 'progress-event-test') {
-            expect(progress).toHaveProperty('percentage');
-            resolve();
-          }
-        });
+      const mockResponse = {
+        ok: true,
+        body: mockResponseBody,
+        headers: { get: () => '1000' },
+        text: () => Promise.resolve('<svg></svg>'),
+        clone: function() { return this; }
+      };
+      (global.fetch as any).mockResolvedValueOnce(mockResponse);
 
-        const config: ResourceConfig = {
-          id: 'progress-event-test',
-          url: 'https://example.com/test.svg',
-          type: ResourceType.SVG
-        };
-
-        manager.loadResource(config).catch(() => {}); // 忽略可能的错误
+      let loadingProgressCalled = false;
+      manager.on('loadingProgress', (id, progress) => {
+        if (id === 'progress-event-test') {
+          expect(progress).toHaveProperty('percentage');
+          loadingProgressCalled = true;
+        }
       });
+
+      const config: ResourceConfig = {
+        id: 'progress-event-test',
+        url: 'https://example.com/test.svg',
+        type: ResourceType.SVG
+      };
+
+      const loadPromise = manager.loadResource(config).catch(() => {});
+      await vi.runAllTimersAsync();
+      await loadPromise;
+      
+      expect(loadingProgressCalled).toBe(true);
     });
   });
 
@@ -419,7 +492,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
       
       manager.clear();
       
@@ -445,7 +520,10 @@ describe('EnhancedResourceManager', () => {
         type: 'unknown' as ResourceType
       };
 
-      await expect(manager.loadResource(config)).rejects.toThrow();
+      const loadPromise = manager.loadResource(config).catch(e => e);
+      await vi.runAllTimersAsync();
+      const result = await loadPromise;
+      expect(result).toBeInstanceOf(Error);
     });
 
     it('应该能够处理网络错误', async () => {
@@ -457,25 +535,28 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.JSON
       };
 
-      await expect(manager.loadResource(config)).rejects.toThrow();
+      const loadPromise = manager.loadResource(config).catch(e => e);
+      await vi.runAllTimersAsync();
+      const result = await loadPromise;
+      expect(result).toBeInstanceOf(Error);
     });
   });
 
   describe('JSON资源特定测试', () => {
     it('应该能够加载JSON资源', async () => {
       const mockData = { test: 'data', number: 123 };
-      (global.fetch as any).mockResolvedValueOnce({
+      const mockResponse = {
         ok: true,
         json: () => Promise.resolve(mockData),
-        clone: () => ({ 
-          body: {
-            getReader: () => ({
-              read: async () => ({ done: true })
-            })
-          }
-        }),
-        headers: { get: () => '100' }
-      });
+        body: {
+          getReader: () => ({
+            read: async () => ({ done: true })
+          })
+        },
+        headers: { get: () => '100' },
+        clone: function() { return this; }
+      };
+      (global.fetch as any).mockResolvedValueOnce(mockResponse);
 
       const config: ResourceConfig = {
         id: 'json-test',
@@ -483,24 +564,24 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.JSON
       };
 
-      const ref = await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      const ref = await loadPromise;
       expect(ref.data).toEqual(mockData);
     });
   });
 
   describe('并发控制', () => {
     it('应该能够限制并发加载数量', async () => {
-      // 创建多个加载任务
       const configs = Array.from({ length: 10 }, (_, i) => ({
         id: `concurrent-${i}`,
         url: `https://example.com/texture${i}.png`,
         type: ResourceType.TEXTURE
       }));
 
-      // 启动所有加载任务
       const promises = configs.map(config => manager.loadResource(config));
       
-      // 等待所有任务完成
+      await vi.runAllTimersAsync();
       const results = await Promise.all(promises);
       expect(results).toHaveLength(10);
     });
@@ -514,7 +595,9 @@ describe('EnhancedResourceManager', () => {
         type: ResourceType.TEXTURE
       };
 
-      await manager.loadResource(config);
+      const loadPromise = manager.loadResource(config);
+      await vi.runAllTimersAsync();
+      await loadPromise;
       
       const stats = manager.getStats();
       expect(stats.cache.used).toBeGreaterThan(0);
@@ -524,35 +607,42 @@ describe('EnhancedResourceManager', () => {
 });
 
 describe('全局资源管理器函数', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
   afterEach(() => {
-    // 清理全局实例
-    const { getResourceManager } = require('../EnhancedResourceManager');
-    const globalManager = getResourceManager();
-    globalManager.dispose();
+    vi.clearAllTimers();
+    vi.useRealTimers();
   });
 
   it('应该能够获取全局资源管理器', async () => {
-    const { getResourceManager } = await import('../EnhancedResourceManager');
-    const manager = getResourceManager();
+    const module = await import('../EnhancedResourceManager');
+    const manager = module.getResourceManager();
+    vi.clearAllTimers();
     expect(manager).toBeInstanceOf(EnhancedResourceManager);
+    manager.dispose();
   });
 
   it('应该能够设置全局资源管理器', async () => {
-    const { getResourceManager, setResourceManager, createResourceManager } = await import('../EnhancedResourceManager');
+    const module = await import('../EnhancedResourceManager');
     
-    const customManager = createResourceManager();
-    setResourceManager(customManager);
+    const customManager = module.createResourceManager();
+    vi.clearAllTimers();
+    module.setResourceManager(customManager);
     
-    const retrieved = getResourceManager();
+    const retrieved = module.getResourceManager();
     expect(retrieved).toBe(customManager);
+    customManager.dispose();
   });
 
   it('应该能够创建新的资源管理器实例', async () => {
-    const { createResourceManager } = await import('../EnhancedResourceManager');
+    const module = await import('../EnhancedResourceManager');
     
-    const manager = createResourceManager({
+    const manager = module.createResourceManager({
       cacheMaxMemory: 50 * 1024 * 1024
     });
+    vi.clearAllTimers();
     
     expect(manager).toBeInstanceOf(EnhancedResourceManager);
     manager.dispose();

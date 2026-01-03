@@ -1,0 +1,44 @@
+# Source files
+src/
+tsconfig.json
+vitest.config.ts
+
+# Tests
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+tests/
+
+# Development files
+.vscode/
+.idea/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Examples (keep in repo but not in npm package)
+examples/
+
+# Documentation (keep README.md)
+*.md
+!README.md
+!LICENSE
+
+# Build artifacts
+node_modules/
+coverage/
+.nyc_output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~
+.project
+.settings/
+.classpath

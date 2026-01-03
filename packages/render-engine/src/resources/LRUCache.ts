@@ -480,19 +480,25 @@ export class GPUResourceCache<T extends { dispose(): void }> extends LRUCache<T>
         }
       }
     });
+  }
 
-    this.on('clear', () => {
-      // 清空时确保所有GPU资源都被释放
-      this.values().forEach(value => {
-        if (value && typeof value.dispose === 'function') {
-          try {
-            value.dispose();
-          } catch (error) {
-            console.warn('Error disposing GPU resource during clear:', error);
-          }
+  /**
+   * 重写 clear 方法，确保在清空前释放所有资源
+   */
+  clear(): void {
+    // 先释放所有GPU资源
+    this.values().forEach(value => {
+      if (value && typeof value.dispose === 'function') {
+        try {
+          value.dispose();
+        } catch (error) {
+          console.warn('Error disposing GPU resource during clear:', error);
         }
-      });
+      }
     });
+    
+    // 然后调用父类的 clear 方法
+    super.clear();
   }
 }
 

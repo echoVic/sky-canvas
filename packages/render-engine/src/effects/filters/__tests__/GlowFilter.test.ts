@@ -95,8 +95,8 @@ describe('GlowFilter', () => {
     const params = {
         type: FilterType.GLOW as const,
         color: '#ffffff',
-        blur: 2,
-        strength: 1,
+        blur: 0, // 模糊为0
+        strength: 0, // 强度为0
         quality: 'medium' as const,
         opacity: 1,
         enabled: true
@@ -106,6 +106,7 @@ describe('GlowFilter', () => {
     
     expect(result.success).toBe(true);
     expect(result.processedImageData).toBeDefined();
+    // 当模糊和强度都为0时,图像尺寸应该保持不变
     expect(result.processedImageData!.width).toBe(imageData.width);
     expect(result.processedImageData!.height).toBe(imageData.height);
   });

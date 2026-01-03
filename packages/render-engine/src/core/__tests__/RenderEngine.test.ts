@@ -27,7 +27,6 @@ describe('RenderEngine Performance Features', () => {
   beforeEach(() => {
     renderEngine = new RenderEngine();
     
-    // Create mock context
     mockContext = {
       clear: vi.fn(),
       save: vi.fn(),
@@ -38,11 +37,11 @@ describe('RenderEngine Performance Features', () => {
       beginPath: vi.fn(),
       rect: vi.fn(),
       clip: vi.fn(),
+      present: vi.fn(),
       width: 800,
       height: 600
     };
 
-    // Mock the context in the render engine
     (renderEngine as any).context = mockContext;
   });
 
@@ -112,7 +111,6 @@ describe('RenderEngine Performance Features', () => {
   });
 
   it('should handle render with dirty regions', () => {
-    // Mark a region as dirty
     const bounds = { 
       x: 10, 
       y: 10, 
@@ -122,18 +120,18 @@ describe('RenderEngine Performance Features', () => {
     };
     renderEngine.markRegionDirty(bounds as any);
     
-    // Call render
+    const dirtyRegions = (renderEngine as any).dirtyRegionManager.getDirtyRegions();
+    expect(dirtyRegions.length).toBeGreaterThan(0);
+    
     renderEngine.render();
     
-    // Verify cleanup was called
     expect((renderEngine as any).dirtyRegionManager.prepareNextFrame).toBeDefined();
+    expect(typeof (renderEngine as any).dirtyRegionManager.prepareNextFrame).toBe('function');
   });
 
   it('should handle render without dirty regions', () => {
-    // Call render without marking any dirty regions
     renderEngine.render();
     
-    // Verify basic rendering flow
     expect(mockContext.clear).toHaveBeenCalled();
     expect(mockContext.save).toHaveBeenCalled();
     expect(mockContext.restore).toHaveBeenCalled();

@@ -1,3 +1,4 @@
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { LayerCache } from '../LayerCache';
 
 describe('LayerCache', () => {
@@ -14,7 +15,7 @@ describe('LayerCache', () => {
         id: 'shape-1',
         visible: true,
         getBounds: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        render: jest.fn()
+        render: vi.fn()
       }
     ];
     
@@ -30,7 +31,7 @@ describe('LayerCache', () => {
         id: 'shape-1',
         visible: true,
         getBounds: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        render: jest.fn()
+        render: vi.fn()
       }
     ];
     
@@ -63,7 +64,7 @@ describe('LayerCache', () => {
         id: 'shape-1',
         visible: true,
         getBounds: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        render: jest.fn()
+        render: vi.fn()
       }
     ];
     
