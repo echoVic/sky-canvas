@@ -9,8 +9,8 @@ export type { CanvasStats } from './ICanvasManager';
 export { ToolManager } from './ToolManager';
 export type { IToolManager } from './ToolManager';
 
-export { SceneManager } from './SceneManager';
-export type { ILayerInfo, ISceneManager, ISceneManagerState } from './SceneManager';
+export { ISceneManager, SceneManager } from './SceneManager';
+export type { ILayerInfo, ISceneManagerState } from './SceneManager';
 
 
 export { transactional, transactionalAsync, TransactionManager } from './TransactionManager';

@@ -15,6 +15,11 @@ export interface ICommand {
 }
 
 /**
+ * 历史变更监听器
+ */
+export type HistoryChangeListener = () => void;
+
+/**
  * 历史服务接口
  */
 export interface IHistoryService {
@@ -27,6 +32,7 @@ export interface IHistoryService {
   clear(): void;
   getHistory(): ICommand[];
   getCurrentIndex(): number;
+  onDidChange(listener: HistoryChangeListener): () => void;
 }
 
 /**
@@ -42,10 +48,31 @@ export class HistoryService implements IHistoryService {
   private history: ICommand[] = [];
   private currentIndex = -1;
   private maxHistorySize = 100;
+  private listeners: HistoryChangeListener[] = [];
 
   constructor(
     @ILogService private logger: ILogService
   ) {}
+
+  onDidChange(listener: HistoryChangeListener): () => void {
+    this.listeners.push(listener);
+    return () => {
+      const index = this.listeners.indexOf(listener);
+      if (index !== -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
+  }
+
+  private notifyListeners(): void {
+    this.listeners.forEach(listener => {
+      try {
+        listener();
+      } catch (error) {
+        this.logger.error('Error in history change listener', error);
+      }
+    });
+  }
 
   execute(command: ICommand): void {
     try {
@@ -62,6 +89,7 @@ export class HistoryService implements IHistoryService {
       }
       
       this.logger.debug('Command executed', command.description || 'Unknown command');
+      this.notifyListeners();
     } catch (error) {
       this.logger.error('Failed to execute command', error);
       throw error;
@@ -80,6 +108,7 @@ export class HistoryService implements IHistoryService {
       this.currentIndex--;
       
       this.logger.debug('Command undone', command.description || 'Unknown command');
+      this.notifyListeners();
     } catch (error) {
       this.logger.error('Failed to undo command', error);
       throw error;
@@ -98,6 +127,7 @@ export class HistoryService implements IHistoryService {
       command.execute();
       
       this.logger.debug('Command redone', command.description || 'Unknown command');
+      this.notifyListeners();
     } catch (error) {
       this.currentIndex--;
       this.logger.error('Failed to redo command', error);
@@ -117,6 +147,7 @@ export class HistoryService implements IHistoryService {
     this.history = [];
     this.currentIndex = -1;
     this.logger.debug('History cleared');
+    this.notifyListeners();
   }
 
   getHistory(): ICommand[] {

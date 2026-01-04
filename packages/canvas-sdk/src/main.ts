@@ -11,40 +11,41 @@ import { getSingletonServiceDescriptors, ServiceIdentifier } from './di/instanti
 
 // 管理器
 import { CanvasManager, ICanvasManager } from './managers/CanvasManager';
+import { ISceneManager, SceneManager } from './managers/SceneManager';
 import { IToolManager, ToolManager } from './managers/ToolManager';
 
 // ViewModels
-import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
-import { IRectangleToolViewModel, RectangleToolViewModel } from './viewmodels/tools/RectangleToolViewModel';
-import { ICircleToolViewModel, CircleToolViewModel } from './viewmodels/tools/CircleToolViewModel';
+import { ArrowToolViewModel, IArrowToolViewModel } from './viewmodels/tools/ArrowToolViewModel';
+import { CircleToolViewModel, ICircleToolViewModel } from './viewmodels/tools/CircleToolViewModel';
+import { DrawToolViewModel, IDrawToolViewModel } from './viewmodels/tools/DrawToolViewModel';
 import { ILineToolViewModel, LineToolViewModel } from './viewmodels/tools/LineToolViewModel';
+import { IRectangleToolViewModel, RectangleToolViewModel } from './viewmodels/tools/RectangleToolViewModel';
+import { ISelectToolViewModel, SelectToolViewModel } from './viewmodels/tools/SelectToolViewModel';
 import { ITextToolViewModel, TextToolViewModel } from './viewmodels/tools/TextToolViewModel';
-import { IArrowToolViewModel, ArrowToolViewModel } from './viewmodels/tools/ArrowToolViewModel';
-import { IDrawToolViewModel, DrawToolViewModel } from './viewmodels/tools/DrawToolViewModel';
 
 // 服务
 import {
-  CanvasRenderingService,
-  ClipboardService,
-  ConfigurationService,
-  HistoryService,
-  ICanvasRenderingService,
-  IClipboardService,
-  IConfigurationService,
-  IHistoryService,
-  IInteractionService,
-  ILogService,
-  InteractionService,
-  ISelectionService,
-  IShapeService,
-  IShortcutService,
-  IZIndexService,
-  LogService,
-  SelectionService,
-  ShapeService,
-  ShortcutService,
-  ZIndexService,
-  type LogLevel
+    CanvasRenderingService,
+    ClipboardService,
+    ConfigurationService,
+    HistoryService,
+    ICanvasRenderingService,
+    IClipboardService,
+    IConfigurationService,
+    IHistoryService,
+    IInteractionService,
+    ILogService,
+    InteractionService,
+    ISelectionService,
+    IShapeService,
+    IShortcutService,
+    IZIndexService,
+    LogService,
+    SelectionService,
+    ShapeService,
+    ShortcutService,
+    ZIndexService,
+    type LogLevel
 } from './services';
 
 /**
@@ -78,6 +79,7 @@ class CanvasSDKBootstrap {
   private instantiationService?: InstantiationService;
   private logger?: ILogService;
   private canvasManager?: ICanvasManager;
+  private sceneManager?: ISceneManager;
   private isInitialized = false;
 
   constructor(private config: SDKConfig) {}
@@ -180,6 +182,11 @@ class CanvasSDKBootstrap {
     // 获取核心管理器
     this.canvasManager = this.instantiationService.invokeFunction(accessor =>
       accessor.get(ICanvasManager)
+    );
+
+    // 获取场景管理器（会自动订阅 CanvasManager 状态）
+    this.sceneManager = this.instantiationService.invokeFunction(accessor =>
+      accessor.get(ISceneManager)
     );
 
     // 初始化Canvas和核心服务连接
@@ -309,6 +316,9 @@ class CanvasSDKBootstrap {
 
     // Canvas 管理器
     services.set(ICanvasManager, new SyncDescriptor(CanvasManager));
+    
+    // 场景管理器
+    services.set(ISceneManager, new SyncDescriptor(SceneManager));
   }
 
   /**

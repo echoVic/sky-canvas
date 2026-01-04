@@ -17,10 +17,10 @@
 
 ```
 CanvasSDK (原有DI架构)
-    ├── 传统服务 (EventBus, Logger, etc.)
+    ├── 基础服务 (Logger, History, Configuration, etc.)
     ├── MVVM服务层
     │   ├── IShapeRepositoryService (数据层)
-    │   └── ICanvasViewModelService (业务逻辑层)
+    │   └── ICanvasViewModelService (业务逻辑层 - 使用 Valtio 状态管理)
     └── MVVM扩展 (CanvasSDKMVVMExtension)
         └── 统一的MVVM API
 ```

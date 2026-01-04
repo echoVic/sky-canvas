@@ -18,8 +18,7 @@ import {
   optional,
   createServiceIdentifier,
   IShapeService,
-  ILogService,
-  IEventBusService
+  ILogService
 } from '../src/di';
 
 // ============== 基本使用演示 ==============
@@ -41,14 +40,8 @@ async function basicUsageDemo() {
       logLevel: 'info'
     });
     
-    // 监听事件
-    sdk.on('shape:added', (event) => {
-      console.log('Shape added:', event.shape.id);
-    });
-    
-    sdk.on('sdk:initialized', (event) => {
-      console.log('SDK initialized with config:', event.config);
-    });
+    // SDK 初始化完成，可以开始使用
+    console.log('SDK initialized successfully');
     
     // 添加形状
     const rect = {
@@ -120,13 +113,11 @@ const ICustomService = createServiceIdentifier<ICustomService>('customService');
 @injectable
 class CustomService implements ICustomService {
   constructor(
-    @inject(ILogService) private logger: ILogService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    @inject(ILogService) private logger: ILogService
   ) {}
   
   performCustomAction(data: any): string {
     this.logger.info('Performing custom action with data:', data);
-    this.eventBus.emit('custom:action:performed', { data });
     return `Processed: ${JSON.stringify(data)}`;
   }
 }
@@ -137,8 +128,7 @@ class CustomShapeService implements IShapeService {
   private shapes = new Map<string, any>();
   
   constructor(
-    @inject(ILogService) private logger: ILogService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    @inject(ILogService) private logger: ILogService
   ) {}
   
   addShape(shape: any): void {
@@ -150,7 +140,6 @@ class CustomShapeService implements IShapeService {
     };
     
     this.shapes.set(shape.id, enhancedShape);
-    this.eventBus.emit('shape:added', { shape: enhancedShape });
     this.logger.info('Custom shape added:', shape.id);
   }
   
@@ -158,7 +147,6 @@ class CustomShapeService implements IShapeService {
     const shape = this.shapes.get(id);
     if (shape) {
       this.shapes.delete(id);
-      this.eventBus.emit('shape:removed', { shape });
       this.logger.info('Custom shape removed:', id);
     }
   }
@@ -175,7 +163,6 @@ class CustomShapeService implements IShapeService {
     const shape = this.shapes.get(id);
     if (shape) {
       Object.assign(shape, updates, { updatedAt: new Date().toISOString() });
-      this.eventBus.emit('shape:updated', { shape, updates });
       this.logger.info('Custom shape updated:', id);
     }
   }
@@ -183,7 +170,6 @@ class CustomShapeService implements IShapeService {
   clearShapes(): void {
     const count = this.shapes.size;
     this.shapes.clear();
-    this.eventBus.emit('shapes:cleared', { count });
     this.logger.info('All custom shapes cleared');
   }
 }
@@ -255,21 +241,18 @@ class GridService implements IGridService {
   private gridSize = 20;
   
   constructor(
-    @inject(ILogService) private logger: ILogService,
-    @inject(IEventBusService) private eventBus: IEventBusService
+    @inject(ILogService) private logger: ILogService
   ) {}
   
   showGrid(enabled: boolean): void {
     this.gridEnabled = enabled;
     this.logger.info('Grid visibility changed:', enabled);
-    this.eventBus.emit('grid:visibility:changed', { enabled });
   }
   
   setGridSize(size: number): void {
     const oldSize = this.gridSize;
     this.gridSize = size;
     this.logger.debug('Grid size changed from', oldSize, 'to', size);
-    this.eventBus.emit('grid:size:changed', { oldSize, newSize: size });
   }
   
   getGridSize(): number {
@@ -298,13 +281,6 @@ class GridPlugin implements ICanvasSDKPlugin {
     sdk.setConfigValue('grid.color', '#E0E0E0');
     
     console.log('Grid plugin activated');
-    
-    // 监听配置变更
-    sdk.on('config:changed', (event) => {
-      if (event.key.startsWith('grid.')) {
-        console.log('Grid config changed:', event.key, '=', event.newValue);
-      }
-    });
   }
   
   deactivate(): void {
@@ -395,8 +371,7 @@ class DataProcessor implements IDataProcessor {
   constructor(
     @inject(IValidator) private validator: IValidator,
     @inject(IFormatter) private formatter: IFormatter,
-    @inject(ILogService) private logger: ILogService,
-    @optional(IEventBusService) private eventBus?: IEventBusService
+    @inject(ILogService) private logger: ILogService
   ) {}
   
   processData(data: any): any {
@@ -412,8 +387,6 @@ class DataProcessor implements IDataProcessor {
       processedAt: new Date().toISOString(),
       formatted: this.formatter.format(data)
     };
-    
-    this.eventBus?.emit('data:processed', { data: processed });
     
     return processed;
   }
@@ -435,10 +408,8 @@ async function complexDependencyDemo() {
       }
     );
     
-    // 监听数据处理事件
-    sdk.on('data:processed', (event) => {
-      console.log('Data processed event received:', event.data.processedAt);
-    });
+    // 数据处理完成
+    console.log('Data processing service registered');
     
     sdk.dispose();
     

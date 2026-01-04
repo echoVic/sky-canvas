@@ -4,6 +4,7 @@
  */
 
 import { ICanvasManager } from './managers/CanvasManager';
+import { ISceneManager } from './managers/SceneManager';
 import { IToolManager } from './managers/ToolManager';
 import type { LogLevel } from './services';
 import { ILogService } from './services';
@@ -34,6 +35,7 @@ export class CanvasSDK {
 
   constructor(
     @ICanvasManager private canvasManager: ICanvasManager,
+    @ISceneManager private sceneManager: ISceneManager,
     @IToolManager private toolManager: IToolManager,
     @ILogService private logger: ILogService
   ) {
@@ -52,6 +54,13 @@ export class CanvasSDK {
   }
 
   /**
+   * 获取 Scene Manager - 场景管理
+   */
+  getSceneManager(): ISceneManager {
+    return this.sceneManager;
+  }
+
+  /**
    * 获取 Tool Manager - 工具管理
    */
   getToolManager(): IToolManager {
@@ -64,6 +73,10 @@ export class CanvasSDK {
   dispose(): void {
     if (this._disposed) {
       return;
+    }
+
+    if (this.sceneManager) {
+      this.sceneManager.dispose();
     }
 
     if (this.canvasManager) {

@@ -48,12 +48,11 @@ DI Container（依赖管理）→ Service（单一职责）→ Manager（业务�
 
 ```typescript
 // 📁 src/services/
-├── eventBus/          # 事件总线服务
 ├── rendering/         # 渲染服务
 ├── configuration/     # 配置服务
 ├── logging/           # 日志服务
 ├── history/           # 历史服务和命令系统
-│   ├── historyService.ts  # 历史记录管理
+│   ├── historyService.ts  # 历史记录管理（支持变更监听）
 │   └── commands.ts        # 命令实现集合
 ├── interaction/       # 交互服务
 ├── selection/         # 选择服务
@@ -221,7 +220,7 @@ export class CanvasViewModel implements IViewModel {
     // - ShapeService：存储形状
     // - SelectionService：管理选择状态  
     // - HistoryService：记录历史
-    // - EventBusService：发布事件
+    // - 自动触发 state 更新（通过 valtio proxy）
     this.canvasManager.addShape(shape);
   }
 }
@@ -236,9 +235,9 @@ export class CanvasViewModel implements IViewModel {
 const services = new ServiceCollection();
 
 // 注册单一职责 Services
-services.registerSingleton(IEventBusService, EventBusService);
 services.registerSingleton(IThemeService, ThemeService);
 services.registerSingleton(IShapeService, ShapeService);
+services.registerSingleton(IHistoryService, HistoryService);
 
 // 注册协调型 Managers
 services.registerSingleton(ICanvasManager, CanvasManager);
@@ -255,23 +254,48 @@ constructor(
 ) {}
 ```
 
-## 事件系统
+## 状态管理系统
 
-### 事件分类
+### 响应式状态（Valtio）
 
-1. **Service 事件**：单一功能事件
+使用 Valtio 实现响应式状态管理，替代传统的事件总线：
+
+1. **Manager 状态**：使用 `proxy` 创建响应式状态
    ```typescript
-   this.eventBus.emit('theme:changed', { theme: newTheme });
+   // CanvasManager.ts
+   readonly state: CanvasState = proxy({
+     shapeCount: 0,
+     selectedIds: [],
+     canUndo: false,
+     canRedo: false,
+     hasClipboardData: false
+   });
    ```
 
-2. **Manager 事件**：业务逻辑事件
+2. **ViewModel 订阅**：使用 `subscribe` 监听状态变化
    ```typescript
-   this.eventBus.emit('canvas:shapeAdded', { entity, view });
+   // CanvasViewModel.ts
+   import { subscribe } from 'valtio/vanilla';
+   
+   private subscribeToCanvasManager(): void {
+     this.unsubscribe = subscribe(this.canvasManager.state, () => {
+       this.updateState();
+     });
+   }
    ```
 
-3. **ViewModel 事件**：状态变化事件
+3. **Service 监听器**：使用回调模式通知变化
    ```typescript
-   this.eventBus.emit('tool-viewmodel:initialized', {});
+   // HistoryService.ts
+   onDidChange(listener: HistoryChangeListener): () => void {
+     this.listeners.push(listener);
+     return () => { /* unsubscribe */ };
+   }
+   
+   // CanvasManager.ts
+   this.historyService.onDidChange(() => {
+     this.syncState();
+   });
    ```
 
 ## 工具系统架构
@@ -298,13 +322,13 @@ constructor(
 // ToolManager 实现 IToolManager 接口
 export class ToolManager implements IToolManager {
   constructor(
-    @inject('IEventBusService') private eventBus: IEventBusService,
     @inject('IShortcutService') private shortcutService: IShortcutService,
-    @inject('IHistoryService') private historyService: IHistoryService
+    @inject('IHistoryService') private historyService: IHistoryService,
+    @inject('ILogService') private logService: ILogService
   ) {}
   
   activateTool(toolName: string): void {
-    // 协调工具切换、快捷键、事件处理
+    // 协调工具切换、快捷键、状态管理
     // 支持插件工具的动态加载
   }
   
@@ -449,9 +473,10 @@ export class CanvasSDK {
 // 📁 src/services/index.ts
 export function registerInfrastructureServices(container: Container): void {
   // 注册所有基础服务
-  container.register('IEventBusService', EventBusService);
   container.register('ICanvasRenderingService', CanvasRenderingService);
   container.register('IConfigurationService', ConfigurationService);
+  container.register('IHistoryService', HistoryService);
+  container.register('ILogService', LogService);
   // ... 其他服务注册
 }
 ```

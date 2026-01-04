@@ -4,8 +4,9 @@
  */
 
 import { IRenderable } from '@sky-canvas/render-engine';
-import type { ILogService } from '../services';
-import { ICanvasRenderingService, IConfigurationService } from '../services';
+import { subscribe } from 'valtio/vanilla';
+import { createDecorator } from '../di';
+import { ICanvasRenderingService, IConfigurationService, ILogService } from '../services';
 import { ICanvasManager } from './CanvasManager';
 
 /**
@@ -37,6 +38,8 @@ export interface ISceneManagerState {
  * 场景管理器接口
  */
 export interface ISceneManager {
+  readonly _serviceBrand: undefined;
+  
   // 图层管理
   createLayer(name: string): ILayerInfo;
   removeLayer(layerId: string): boolean;
@@ -68,17 +71,26 @@ export interface ISceneManager {
 }
 
 /**
+ * 场景管理器服务标识符
+ */
+export const ISceneManager = createDecorator<ISceneManager>('SceneManager');
+
+/**
  * 场景管理器实现
  */
 export class SceneManager implements ISceneManager {
+  readonly _serviceBrand: undefined;
+  
   private state: ISceneManagerState;
   private nextLayerId = 1;
+  private unsubscribe?: () => void;
+  private trackedShapeIds = new Set<string>();
 
   constructor(
-    private canvasManager: ICanvasManager,
-    private renderingService: ICanvasRenderingService,
-    private logService: ILogService,
-    private configService: IConfigurationService
+    @ICanvasManager private canvasManager: ICanvasManager,
+    @ICanvasRenderingService private renderingService: ICanvasRenderingService,
+    @ILogService private logService: ILogService,
+    @IConfigurationService private configService: IConfigurationService
   ) {
     this.state = {
       layers: [],
@@ -90,7 +102,46 @@ export class SceneManager implements ISceneManager {
     };
 
     this.createDefaultLayer();
+    this.setupCanvasManagerSubscription();
+    this.syncShapesWithLayers();
     this.logService.info('SceneManager initialized');
+  }
+
+  private setupCanvasManagerSubscription(): void {
+    this.unsubscribe = subscribe(this.canvasManager.state, () => {
+      this.syncShapesWithLayers();
+    });
+  }
+
+  private syncShapesWithLayers(): void {
+    const renderables = this.canvasManager.getRenderables();
+    const currentShapeIds = new Set<string>();
+    const renderableMap = new Map<string, IRenderable>();
+
+    renderables.forEach(renderable => {
+      const shapeId = renderable.id;
+      if (shapeId) {
+        currentShapeIds.add(shapeId);
+        renderableMap.set(shapeId, renderable);
+        
+        if (!this.trackedShapeIds.has(shapeId)) {
+          this.addShapeToLayer(shapeId);
+          this.renderingService.addRenderable(renderable);
+          this.trackedShapeIds.add(shapeId);
+          this.logService.debug(`Shape ${shapeId} added to layer and rendering`);
+        }
+      }
+    });
+
+    const removedShapeIds = Array.from(this.trackedShapeIds).filter(
+      id => !currentShapeIds.has(id)
+    );
+    removedShapeIds.forEach(shapeId => {
+      this.removeShapeFromLayer(shapeId);
+      this.renderingService.removeRenderable(shapeId);
+      this.trackedShapeIds.delete(shapeId);
+      this.logService.debug(`Shape ${shapeId} removed from layer and rendering`);
+    });
   }
 
   // === 图层管理 ===
@@ -312,6 +363,11 @@ export class SceneManager implements ISceneManager {
   }
 
   dispose(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+    this.trackedShapeIds.clear();
     this.logService.info('SceneManager disposed');
   }
 }

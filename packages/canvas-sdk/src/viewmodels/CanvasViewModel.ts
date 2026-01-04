@@ -3,10 +3,10 @@
  * 使用 CanvasManager 协调复杂的画布业务逻辑
  */
 
-import { proxy, snapshot } from 'valtio';
+import { proxy, snapshot, subscribe } from 'valtio/vanilla';
 import { ICanvasManager } from '../managers/CanvasManager';
-import { IViewModel } from './interfaces/IViewModel';
 import { ShapeEntity } from '../models/entities/Shape';
+import { IViewModel } from './interfaces/IViewModel';
 
 /**
  * Canvas 状态
@@ -73,6 +73,7 @@ export interface ICanvasViewModel extends IViewModel {
  */
 export class CanvasViewModel implements ICanvasViewModel {
   private readonly _state: ICanvasState;
+  private unsubscribe?: () => void;
 
   constructor(
     private canvasManager: ICanvasManager
@@ -98,6 +99,7 @@ export class CanvasViewModel implements ICanvasViewModel {
 
   async initialize(): Promise<void> {
     this.updateState();
+    this.subscribeToCanvasManager();
   }
 
   getSnapshot() {
@@ -105,6 +107,16 @@ export class CanvasViewModel implements ICanvasViewModel {
   }
 
   dispose(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = undefined;
+    }
+  }
+
+  private subscribeToCanvasManager(): void {
+    this.unsubscribe = subscribe(this.canvasManager.state, () => {
+      this.updateState();
+    });
   }
 
   // === 形状操作 ===
@@ -230,7 +242,7 @@ export class CanvasViewModel implements ICanvasViewModel {
    * 更新剪贴板相关状态
    */
   private updateClipboardState(): void {
-    this._state.canPaste = true;
+    this._state.canPaste = this.canvasManager.state.hasClipboardData;
   }
 
   /**

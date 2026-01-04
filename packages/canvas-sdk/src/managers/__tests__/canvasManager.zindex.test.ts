@@ -2,7 +2,7 @@
  * CanvasManager Z轴管理功能测试
  */
 
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CanvasManager } from '../CanvasManager';
 import { ShapeEntityFactory, IShapeEntity } from '../../models/entities/Shape';
 
@@ -56,7 +56,10 @@ describe('CanvasManager Z轴管理', () => {
     mockHistoryService = {
       execute: vi.fn(),
       undo: vi.fn(),
-      redo: vi.fn()
+      redo: vi.fn(),
+      canUndo: vi.fn(() => false),
+      canRedo: vi.fn(() => false),
+      onDidChange: vi.fn(() => () => {})
     };
 
     mockZIndexService = {

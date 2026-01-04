@@ -18,11 +18,25 @@ import { CanvasStats, ICanvasManager } from './ICanvasManager';
 import * as ClipboardMixin from './mixins/CanvasClipboardMixin';
 import * as ZIndexMixin from './mixins/CanvasZIndexMixin';
 
+/**
+ * Canvas 状态接口
+ * 
+ * **重要**：此状态通过 valtio proxy 管理，更新是异步的（通过 queueMicrotask）。
+ * 在执行操作后立即读取状态可能得到旧值。如需同步读取最新状态，
+ * 请直接调用相应的 Service 方法。
+ * 
+ * @see CanvasManager.scheduleSyncState 了解异步更新机制
+ */
 export interface CanvasState {
+  /** 形状总数 */
   shapeCount: number;
+  /** 选中的形状 ID 列表 */
   selectedIds: string[];
+  /** 是否可以撤销 */
   canUndo: boolean;
+  /** 是否可以重做 */
   canRedo: boolean;
+  /** 剪贴板是否有数据 */
   hasClipboardData: boolean;
 }
 
@@ -45,6 +59,9 @@ export class CanvasManager implements ICanvasManager {
     hasClipboardData: false
   });
 
+  private unsubscribeHistory?: () => void;
+  private syncStateScheduled = false;
+
   constructor(
     @ILogService private logService: ILogService,
     @IShapeService private shapeService: IShapeService,
@@ -54,9 +71,67 @@ export class CanvasManager implements ICanvasManager {
     @IZIndexService private zIndexService: IZIndexService
   ) {
     this.logService.info('CanvasManager initialized');
+    this.setupHistorySubscription();
   }
 
+  private setupHistorySubscription(): void {
+    this.unsubscribeHistory = this.historyService.onDidChange(() => {
+      this.scheduleSyncState();
+    });
+  }
+
+  /**
+   * 调度状态同步（防抖）
+   * 
+   * 使用 queueMicrotask 实现微任务级别的防抖，确保在同一事件循环中
+   * 多次调用 syncState() 只会执行一次实际的状态同步。
+   * 
+   * **重要行为说明**：
+   * - 状态更新是异步的（延迟到下一个微任务）
+   * - 在调用 syncState() 后立即读取 state 可能得到旧值
+   * - 如果需要同步读取最新状态，应该直接调用相应的 Service 方法
+   * 
+   * @example
+   * ```typescript
+   * // 异步行为示例
+   * canvasManager.addShape(shape);  // 内部调用 syncState()
+   * console.log(canvasManager.state.shapeCount);  // 可能是旧值
+   * 
+   * // 等待微任务完成
+   * await Promise.resolve();
+   * console.log(canvasManager.state.shapeCount);  // 新值
+   * 
+   * // 或者直接读取 Service
+   * const count = shapeService.getAllShapeEntities().length;  // 总是最新值
+   * ```
+   */
+  private scheduleSyncState(): void {
+    if (this.syncStateScheduled) return;
+    
+    this.syncStateScheduled = true;
+    queueMicrotask(() => {
+      this.syncStateScheduled = false;
+      this.syncStateNow();
+    });
+  }
+
+  /**
+   * 请求状态同步（异步）
+   * 
+   * 此方法会调度一个微任务来更新状态，不会立即同步。
+   * 详见 scheduleSyncState() 的文档说明。
+   */
   private syncState(): void {
+    this.scheduleSyncState();
+  }
+
+  /**
+   * 立即同步状态（内部使用）
+   * 
+   * 直接从各个 Service 读取最新状态并更新 state proxy。
+   * 此方法由 scheduleSyncState() 在微任务中调用。
+   */
+  private syncStateNow(): void {
     this.state.shapeCount = this.shapeService.getAllShapeEntities().length;
     this.state.selectedIds = this.selectionService.getSelectedShapes().map(s => s.id);
     this.state.canUndo = this.historyService.canUndo();
@@ -250,6 +325,10 @@ export class CanvasManager implements ICanvasManager {
   }
 
   dispose(): void {
+    if (this.unsubscribeHistory) {
+      this.unsubscribeHistory();
+      this.unsubscribeHistory = undefined;
+    }
     this.shapeService.clear();
     this.logService.info('CanvasManager disposed');
   }
