@@ -1,0 +1,65 @@
+---
+name: 行为准则举报
+description: 报告不当内容或 Code of Conduct 违规行为
+title: "[MODERATION] "
+labels: ["moderation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请使用此模板报告违反 Code of Conduct 的行为或内容。
+        我们会认真处理所有报告，并尽可能保护举报者隐私。
+  - type: checkboxes
+    id: preliminary-checks
+    attributes:
+      label: 报告须知
+      options:
+        - label: 我正在报告真实的违规行为
+          required: true
+        - label: 我理解虚假报告可能导致社区处置
+          required: true
+  - type: dropdown
+    id: violation-type
+    attributes:
+      label: 违规类型
+      options:
+        - 歧视或仇恨言论
+        - 人身攻击或骚扰
+        - 垃圾信息或离题内容
+        - 不当或冒犯性内容
+        - 威胁或恐吓
+        - 隐私泄露
+        - 冒充他人
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: 发生位置
+      description: Issue/PR 编号或评论链接
+      placeholder: 例如：Issue #123 或具体评论链接
+    validations:
+      required: true
+  - type: input
+    id: user-involved
+    attributes:
+      label: 涉及用户
+      placeholder: 例如：@username1, @username2
+  - type: textarea
+    id: description
+    attributes:
+      label: 详细描述
+      description: 请描述发生了什么以及为什么违规
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据
+      description: 引用、截图或链接
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响说明
+      description: 对你或社区造成的影响

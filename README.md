@@ -1,7 +1,7 @@
 # Sky Canvas
 
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="Sky Canvas Logo" width="200" />
+  <img src="image.png" alt="Sky Canvas Logo" width="200" />
 </p>
 
 <p align="center">
@@ -10,9 +10,9 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@sky-canvas/render-engine"><img src="https://img.shields.io/npm/v/@sky-canvas/render-engine.svg" alt="npm version" /></a>
-  <a href="https://github.com/nicepkg/sky-canvas/actions"><img src="https://github.com/nicepkg/sky-canvas/workflows/CI/badge.svg" alt="CI Status" /></a>
-  <a href="https://codecov.io/gh/nicepkg/sky-canvas"><img src="https://codecov.io/gh/nicepkg/sky-canvas/branch/main/graph/badge.svg" alt="Coverage" /></a>
-  <a href="https://github.com/nicepkg/sky-canvas/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@sky-canvas/render-engine.svg" alt="License" /></a>
+  <a href="https://github.com/sky-canvas/sky-canvas/actions/workflows/render-engine-ci.yml"><img src="https://github.com/sky-canvas/sky-canvas/actions/workflows/render-engine-ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://codecov.io/gh/sky-canvas/sky-canvas"><img src="https://codecov.io/gh/sky-canvas/sky-canvas/branch/main/graph/badge.svg" alt="Coverage" /></a>
+  <a href="https://github.com/sky-canvas/sky-canvas/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@sky-canvas/render-engine.svg" alt="License" /></a>
 </p>
 
 <p align="center">
@@ -20,7 +20,8 @@
   <a href="#快速开始">快速开始</a> •
   <a href="#文档">文档</a> •
   <a href="#示例">示例</a> •
-  <a href="#贡献">贡献</a>
+  <a href="#贡献">贡献</a> •
+  <a href="#安全">安全</a>
 </p>
 
 ---
@@ -178,11 +179,14 @@ const result = await filterManager.applyFilterChain(
 
 ## 📚 文档
 
-- [API 参考](./docs/api/README.md)
 - [架构文档](./docs/architecture/README.md)
+- [渲染管线](./docs/architecture/render-pipeline.md)
+- [插件系统](./docs/architecture/plugin-system.md)
+- [交互系统](./docs/INTERACTION_SYSTEM.md)
+- [数学库设计](./docs/MATH_LIBRARY.md)
+- [Canvas SDK 架构](./packages/canvas-sdk/docs/ARCHITECTURE.md)
 - [示例代码](./packages/render-engine/examples/README.md)
-- [性能优化指南](./docs/performance/README.md)
-- [迁移指南](./docs/migration/README.md)
+- [性能优化指南](./packages/render-engine/src/performance/README.md)
 
 ## 🎮 示例
 
@@ -234,13 +238,13 @@ const result = await filterManager.applyFilterChain(
 
 ## 🤝 贡献
 
-我们欢迎所有形式的贡献!请查看 [CONTRIBUTING.md](./packages/render-engine/CONTRIBUTING.md) 了解如何参与。
+我们欢迎所有形式的贡献!请查看 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解如何参与，并遵守 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。
 
 ### 开发
 
 ```bash
 # 克隆仓库
-git clone https://github.com/nicepkg/sky-canvas.git
+git clone https://github.com/sky-canvas/sky-canvas.git
 cd sky-canvas
 
 # 安装依赖
@@ -256,9 +260,13 @@ pnpm test
 pnpm build
 ```
 
+## 🔐 安全
+
+如发现安全漏洞，请参考 [SECURITY.md](./SECURITY.md) 进行私下披露。
+
 ## 📄 许可证
 
-[MIT](./packages/render-engine/LICENSE) © Sky Canvas Team
+[MIT](./LICENSE) © Sky Canvas Team
 
 ## 🙏 致谢
 

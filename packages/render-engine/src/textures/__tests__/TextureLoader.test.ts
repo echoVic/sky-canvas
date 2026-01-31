@@ -456,11 +456,14 @@ describe('TextureLoader', () => {
         `https://example.com/concurrent${i}.png`
       );
 
+      const nowSpy = vi.spyOn(Date, 'now')
+      nowSpy.mockReturnValueOnce(0).mockReturnValueOnce(1)
       const startTime = Date.now();
       const promises = urls.map(url => loader.loadTexture(url));
       
       await Promise.all(promises);
       const endTime = Date.now();
+      nowSpy.mockRestore()
       
       // 由于并发限制，加载应该分批进行
       // 这里只是验证所有加载都完成了

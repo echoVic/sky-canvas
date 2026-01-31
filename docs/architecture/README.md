@@ -344,5 +344,3 @@ sky-canvas/
 
 - [渲染管线详解](./render-pipeline.md)
 - [插件系统架构](./plugin-system.md)
-- [API 参考](../API.md)
-- [快速开始](../QUICK_START.md)

@@ -1,0 +1,12 @@
+---
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/sky-canvas/sky-canvas/discussions
+    about: 用于提问、讨论与想法交流
+  - name: Security Policy
+    url: https://github.com/sky-canvas/sky-canvas/security/policy
+    about: 安全漏洞请私下披露
+  - name: Contributing Guide
+    url: https://github.com/sky-canvas/sky-canvas/blob/main/CONTRIBUTING.md
+    about: 贡献流程与开发指南

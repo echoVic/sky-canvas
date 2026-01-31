@@ -643,5 +643,3 @@ flowchart TB
 
 - [系统架构概述](./README.md)
 - [渲染管线详解](./render-pipeline.md)
-- [插件开发指南](../PLUGIN_SYSTEM.md)
-- [API 参考](../API.md)

@@ -1,11 +1,12 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: [],
+    setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.{test,spec}.{js,ts}', 'src/**/__tests__/*.{js,ts}'],
     coverage: {
       reporter: ['text', 'json', 'html'],
@@ -28,7 +29,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': '/src'
+      '@': resolve(__dirname, 'src'),
+      '@sky-canvas/render-engine': resolve(__dirname, '../render-engine/src')
     }
   }
 });

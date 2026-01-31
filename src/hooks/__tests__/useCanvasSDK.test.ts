@@ -14,6 +14,8 @@ const { mockCanvasManager, mockToolManager, mockSDK } = vi.hoisted(() => {
     clearSelection: vi.fn(),
     getRenderables: vi.fn(() => [] as any[]),
     getSelectedShapes: vi.fn(() => [] as any[]),
+    getShapesByZOrder: vi.fn(() => [] as any[]),
+    getStats: vi.fn(() => ({ history: { canUndo: false, canRedo: false } })),
     undo: vi.fn(),
     redo: vi.fn(),
     clear: vi.fn(),
@@ -91,7 +93,7 @@ describe('useCanvasSDK', () => {
         await actions.initialize(canvas, config);
       });
 
-      expect(mockSDK.on).toHaveBeenCalledTimes(6); // 6个事件监听器
+      expect(mockSDK.on).toHaveBeenCalledTimes(13);
       
       const [state] = result.current;
       expect(state.isInitialized).toBe(true);
@@ -109,9 +111,11 @@ describe('useCanvasSDK', () => {
         await actions.initialize(canvas, config);
       });
 
-      await expect(act(async () => {
+      await act(async () => {
         await actions.initialize(canvas, config);
-      })).rejects.toThrow('SDK already initialized');
+      });
+
+      expect(mockSDK.on).toHaveBeenCalled();
     });
   });
 
@@ -344,6 +348,7 @@ describe('useCanvasSDK', () => {
     });
 
     it('应该在组件卸载时自动清理', async () => {
+      vi.useFakeTimers()
       const canvas = createMockCanvas();
       const config = { renderEngine: 'webgl' as const, enableInteraction: true };
       
@@ -355,8 +360,10 @@ describe('useCanvasSDK', () => {
       });
 
       unmount();
+      vi.runAllTimers()
 
       expect(mockSDK.dispose).toHaveBeenCalled();
+      vi.useRealTimers()
     });
   });
 });

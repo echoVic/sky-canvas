@@ -1,17 +1,17 @@
 {
   "name": "sky-canvas",
   "version": "1.0.0",
-  "description": "🎨 一个高性能的图形渲染引擎核心库",
+  "description": "🎨 高性能 2D 图形渲染引擎与画布 SDK",
   "type": "module",
-  "author": "echoVic",
+  "author": "Sky Canvas Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/echoVic/sky-canvas.git"
+    "url": "git+https://github.com/sky-canvas/sky-canvas.git"
   },
-  "homepage": "https://github.com/echoVic/sky-canvas#readme",
+  "homepage": "https://github.com/sky-canvas/sky-canvas#readme",
   "bugs": {
-    "url": "https://github.com/echoVic/sky-canvas/issues"
+    "url": "https://github.com/sky-canvas/sky-canvas/issues"
   },
   "keywords": [
     "canvas",
@@ -42,7 +42,7 @@
     "build": "tsc && vite build",
     "build:packages": "tsc && pnpm -r build",
     "preview": "vite preview",
-    "test": "vitest run", 
+    "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",

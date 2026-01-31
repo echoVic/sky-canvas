@@ -385,6 +385,19 @@ if (!global.performance) {
   } as any
 }
 
+const navigatorRef = globalThis.navigator ?? ({} as Navigator)
+if (!globalThis.navigator) {
+  ;(globalThis as any).navigator = navigatorRef
+}
+if (!(navigatorRef as any).gpu) {
+  ;(navigatorRef as any).gpu = {
+    getPreferredCanvasFormat: () => 'bgra8unorm',
+    requestAdapter: async () => ({
+      requestDevice: async () => ({})
+    })
+  }
+}
+
 let animationId = 1
 const animationCallbacks = new Map<number, FrameRequestCallback>()
 

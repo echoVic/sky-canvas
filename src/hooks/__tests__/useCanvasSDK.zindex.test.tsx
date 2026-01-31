@@ -24,6 +24,7 @@ describe('useCanvasSDK Z轴管理', () => {
     // 创建模拟的CanvasManager
     mockCanvasManager = {
       getRenderables: vi.fn(() => []),
+      getStats: vi.fn(() => ({ history: { canUndo: false, canRedo: false } })),
       getSelectedShapes: vi.fn(() => [
         { id: 'shape1', type: 'rectangle' },
         { id: 'shape2', type: 'circle' }
@@ -136,11 +137,10 @@ describe('useCanvasSDK Z轴管理', () => {
       actions.sendBackward();
     }).not.toThrow();
 
-    // 但是不应该调用CanvasManager的方法（因为没有形状ID传入）
-    expect(mockCanvasManager.bringToFront).toHaveBeenCalledWith([]);
-    expect(mockCanvasManager.sendToBack).toHaveBeenCalledWith([]);
-    expect(mockCanvasManager.bringForward).toHaveBeenCalledWith([]);
-    expect(mockCanvasManager.sendBackward).toHaveBeenCalledWith([]);
+    expect(mockCanvasManager.bringToFront).not.toHaveBeenCalled();
+    expect(mockCanvasManager.sendToBack).not.toHaveBeenCalled();
+    expect(mockCanvasManager.bringForward).not.toHaveBeenCalled();
+    expect(mockCanvasManager.sendBackward).not.toHaveBeenCalled();
   });
 
   it('SDK未初始化时Z轴操作应该抛出错误', () => {

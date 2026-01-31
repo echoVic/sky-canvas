@@ -1,20 +1,36 @@
-name: Render Engine CI
+name: CI
 
 on:
   push:
     branches: [ main, develop ]
     paths:
       - 'packages/render-engine/**'
+      - 'packages/canvas-sdk/**'
+      - 'src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
       - '.github/workflows/render-engine-ci.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'packages/render-engine/**'
+      - 'packages/canvas-sdk/**'
+      - 'src/**'
+      - 'index.html'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
       - '.github/workflows/render-engine-ci.yml'
 
 jobs:
-  test:
-    name: Test on Node ${{ matrix.node-version }}
+  render-engine:
+    name: Render Engine (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     
     strategy:
@@ -51,21 +67,12 @@ jobs:
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: packages/render-engine
-      
-      - name: Run linter
-        run: pnpm run lint || echo "Linter not configured yet"
-        working-directory: packages/render-engine
-        continue-on-error: true
       
       - name: Run tests
-        run: pnpm run test
-        working-directory: packages/render-engine
-        continue-on-error: true
+        run: pnpm -C packages/render-engine run test
       
       - name: Build package
-        run: pnpm run build
-        working-directory: packages/render-engine
+        run: pnpm -C packages/render-engine run build
       
       - name: Check build output
         run: |
@@ -104,12 +111,9 @@ jobs:
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: packages/render-engine
       
       - name: Run tests with coverage
-        run: pnpm run test -- --coverage
-        working-directory: packages/render-engine
-        continue-on-error: true
+        run: pnpm -C packages/render-engine run test -- --coverage
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -117,7 +121,6 @@ jobs:
           files: ./packages/render-engine/coverage/coverage-final.json
           flags: render-engine
           name: render-engine-coverage
-        continue-on-error: true
 
   build-check:
     name: Build Check
@@ -139,11 +142,9 @@ jobs:
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: packages/render-engine
       
       - name: Build package
-        run: pnpm run build
-        working-directory: packages/render-engine
+        run: pnpm -C packages/render-engine run build
       
       - name: Check bundle size
         run: |
@@ -179,8 +180,60 @@ jobs:
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: packages/render-engine
       
       - name: Run TypeScript compiler
-        run: pnpm exec tsc --noEmit
-        working-directory: packages/render-engine
+        run: pnpm -C packages/render-engine exec tsc --noEmit
+
+  canvas-sdk:
+    name: Canvas SDK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run tests
+        run: pnpm -C packages/canvas-sdk run test
+      
+      - name: Build package
+        run: pnpm -C packages/canvas-sdk run build
+
+  root-app:
+    name: Root App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run tests
+        run: pnpm run test
+      
+      - name: Build app
+        run: pnpm run build

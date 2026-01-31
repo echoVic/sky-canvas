@@ -1,24 +1,5 @@
-/**
- * Vitest 测试设置文件
- */
+import { vi } from 'vitest'
 
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
-
-const navigatorRef = globalThis.navigator ?? ({} as Navigator)
-if (!globalThis.navigator) {
-  ;(globalThis as any).navigator = navigatorRef
-}
-if (!(navigatorRef as any).gpu) {
-  ;(navigatorRef as any).gpu = {
-    getPreferredCanvasFormat: () => 'bgra8unorm',
-    requestAdapter: async () => ({
-      requestDevice: async () => ({})
-    })
-  }
-}
-
-// Mock Canvas 2D Context
 const mockCanvas2DContext = {
   clearRect: vi.fn(),
   fillRect: vi.fn(),
@@ -41,27 +22,9 @@ const mockCanvas2DContext = {
   setTransform: vi.fn(),
   getTransform: vi.fn(),
   setLineDash: vi.fn(),
-  getLineDash: vi.fn(),
-};
-
-// Mock performance.memory
-Object.defineProperty(performance, 'memory', {
-  value: {
-    usedJSHeapSize: 10 * 1024 * 1024,
-    totalJSHeapSize: 20 * 1024 * 1024,
-    jsHeapSizeLimit: 100 * 1024 * 1024
-  },
-  configurable: true
-});
-
-// Mock ResizeObserver
-global.ResizeObserver = class {
-  observe = vi.fn()
-  unobserve = vi.fn()
-  disconnect = vi.fn()
+  getLineDash: vi.fn()
 }
 
-// Mock WebGL Context
 const mockWebGLContext = {
   canvas: null,
   drawingBufferWidth: 800,
@@ -97,16 +60,43 @@ const mockWebGLContext = {
   blendFunc: vi.fn(),
   viewport: vi.fn(),
   drawArrays: vi.fn(),
-  drawElements: vi.fn(),
-};
+  drawElements: vi.fn()
+}
 
-// Mock HTMLCanvasElement.getContext with proper typing
+Object.defineProperty(performance, 'memory', {
+  value: {
+    usedJSHeapSize: 10 * 1024 * 1024,
+    totalJSHeapSize: 20 * 1024 * 1024,
+    jsHeapSizeLimit: 100 * 1024 * 1024
+  },
+  configurable: true
+})
+
+global.ResizeObserver = class {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+
 HTMLCanvasElement.prototype.getContext = vi.fn((contextType: string) => {
   if (contextType === 'webgl' || contextType === 'webgl2') {
-    return mockWebGLContext as any;
+    return mockWebGLContext as any
   }
   if (contextType === '2d') {
-    return mockCanvas2DContext as any;
+    return mockCanvas2DContext as any
   }
-  return null;
-}) as any;
+  return null
+}) as any
+
+const navigatorRef = globalThis.navigator ?? ({} as Navigator)
+if (!globalThis.navigator) {
+  ;(globalThis as any).navigator = navigatorRef
+}
+if (!(navigatorRef as any).gpu) {
+  ;(navigatorRef as any).gpu = {
+    getPreferredCanvasFormat: () => 'bgra8unorm',
+    requestAdapter: async () => ({
+      requestDevice: async () => ({})
+    })
+  }
+}
