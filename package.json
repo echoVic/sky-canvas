@@ -69,7 +69,7 @@
     "@sky-canvas/render-engine": "workspace:^0.0.1",
     "@types/matter-js": "^0.20.0",
     "@types/node": "^24.3.0",
-    "ahooks": "^3.7.8",
+    "ahooks": "^3.9.6",
     "clsx": "^2.0.0",
     "eventemitter3": "^5.0.1",
     "immer": "^10.1.3",
