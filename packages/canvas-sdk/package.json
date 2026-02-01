@@ -53,11 +53,11 @@
   },
   "devDependencies": {
     "@sky-canvas/render-engine": "workspace:^0.0.1",
-    "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
     "jsdom": "^23.0.1",
-    "typescript": "~5.8.3",
-    "vitest": "^4.0.16"
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=18.0.0"
