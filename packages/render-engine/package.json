@@ -49,14 +49,14 @@
   "author": "Sky Canvas Team",
   "license": "MIT",
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.0.16",
-    "@vitest/ui": "^4.0.16",
-    "@webgpu/types": "^0.1.68",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "@webgpu/types": "^0.1.69",
     "jsdom": "^23.0.1",
-    "typedoc": "^0.27.0",
+    "typedoc": "^0.28.16",
     "typedoc-plugin-markdown": "^4.4.0",
-    "typescript": "~5.8.3",
-    "vitest": "^4.0.16"
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=18.0.0"
