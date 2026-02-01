@@ -28,6 +28,9 @@ on:
       - 'vite.config.ts'
       - '.github/workflows/render-engine-ci.yml'
 
+permissions:
+  contents: read
+
 jobs:
   render-engine:
     name: Render Engine (Node ${{ matrix.node-version }})

@@ -1,0 +1,62 @@
+Sky Canvas
+Copyright 2026 Sky Canvas Team
+
+This product includes software developed by the Sky Canvas Team.
+
+Licensed under the MIT License.
+
+---
+
+Third-Party Dependencies
+========================
+
+This project uses the following third-party libraries:
+
+React (MIT License)
+  Copyright (c) Meta Platforms, Inc. and affiliates.
+  https://github.com/facebook/react
+
+TypeScript (Apache-2.0 License)
+  Copyright (c) Microsoft Corporation.
+  https://github.com/microsoft/TypeScript
+
+Vite (MIT License)
+  Copyright (c) 2019-present, Yuxi (Evan) You and Vite contributors
+  https://github.com/vitejs/vite
+
+Vitest (MIT License)
+  Copyright (c) 2021-present, Anthony Fu and Vitest contributors
+  https://github.com/vitest-dev/vitest
+
+Zustand (MIT License)
+  Copyright (c) 2019 Paul Henschel
+  https://github.com/pmndrs/zustand
+
+Immer (MIT License)
+  Copyright (c) 2017 Michel Weststrate
+  https://github.com/immerjs/immer
+
+EventEmitter3 (MIT License)
+  Copyright (c) 2014 Arnout Kazemier
+  https://github.com/primus/eventemitter3
+
+ahooks (MIT License)
+  Copyright (c) 2019-present alibaba
+  https://github.com/alibaba/hooks
+
+Turf.js (MIT License)
+  Copyright (c) 2019 Morgan Herlocker
+  https://github.com/Turfjs/turf
+
+hotkeys-js (MIT License)
+  Copyright (c) 2015 Kenny Wong
+  https://github.com/jaywcjlove/hotkeys-js
+
+reflect-metadata (Apache-2.0 License)
+  Copyright (c) Microsoft Corporation.
+  https://github.com/rbuckton/reflect-metadata
+
+---
+
+For the complete list of dependencies and their licenses, run:
+  pnpm licenses list

@@ -179,6 +179,7 @@ const result = await filterManager.applyFilterChain(
 
 ## 📚 文档
 
+- [文档导航](./docs/README.md)
 - [架构文档](./docs/architecture/README.md)
 - [渲染管线](./docs/architecture/render-pipeline.md)
 - [插件系统](./docs/architecture/plugin-system.md)
@@ -188,6 +189,8 @@ const result = await filterManager.applyFilterChain(
 - [发布流程](./docs/RELEASING.md)
 - [示例代码](./packages/render-engine/examples/README.md)
 - [性能优化指南](./packages/render-engine/src/performance/README.md)
+- [支持渠道](./SUPPORT.md)
+- [项目治理](./GOVERNANCE.md)
 
 ## 🎮 示例
 
