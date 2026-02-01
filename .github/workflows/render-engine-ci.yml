@@ -157,7 +157,7 @@ jobs:
         working-directory: packages/render-engine
       
       - name: Archive build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         with:
           name: build-artifacts
           path: packages/render-engine/dist
