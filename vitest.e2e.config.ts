@@ -1,7 +1,8 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
+
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
@@ -9,22 +10,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/tests/setup.ts'],
-    include: [
-      'src/tests/e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'
-    ],
-    exclude: [
-      'node_modules',
-      'dist',
-      'packages',
-      'examples'
-    ],
+    include: ['src/tests/e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    exclude: ['node_modules', 'dist', 'packages', 'examples'],
     // E2E测试需要更多时间
     testTimeout: 30000,
     coverage: {
       reporter: ['text', 'json', 'html'],
-      include: [
-        'src/**/*.{ts,tsx}'
-      ],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'node_modules/',
         'packages/',
@@ -33,9 +25,9 @@ export default defineConfig({
         'src/tests/',
         '**/*.d.ts',
         '**/index.ts',
-        'src/main.tsx'
-      ]
-    }
+        'src/main.tsx',
+      ],
+    },
   },
   resolve: {
     alias: {

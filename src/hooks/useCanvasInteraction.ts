@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useMemoizedFn } from 'ahooks';
-import { UIToolType } from '../store/canvasStore';
-import { UseCanvasSDKResult } from './useCanvasSDK';
+import { useMemoizedFn } from 'ahooks'
+import { useEffect, useState } from 'react'
+import type { UIToolType } from '../store/canvasStore'
+import type { UseCanvasSDKResult } from './useCanvasSDK'
 
 /**
  * 交互状态
  */
 export interface CanvasInteractionState {
   /** 当前光标样式 */
-  cursor: string;
+  cursor: string
 }
 
 /**
@@ -21,74 +21,96 @@ export function useCanvasInteraction(
   sdkResult: UseCanvasSDKResult,
   currentTool: UIToolType
 ) {
-  const [sdkState, sdkActions] = sdkResult;
-  
+  const [sdkState, sdkActions] = sdkResult
+
   const [interactionState, setInteractionState] = useState<CanvasInteractionState>({
     cursor: 'default',
-  });
+  })
 
   // 工具映射到工具名称
   const getToolName = useMemoizedFn((tool: UIToolType): string => {
     switch (tool) {
-      case 'select': return 'select';
-      case 'hand': return 'pan';
-      case 'rectangle': return 'rectangle';
-      case 'diamond': return 'diamond';
-      case 'circle': return 'circle';
+      case 'select':
+        return 'select'
+      case 'hand':
+        return 'hand'
+      case 'rectangle':
+        return 'rectangle'
+      case 'diamond':
+        return 'diamond'
+      case 'circle':
+        return 'circle'
+      case 'ellipse':
+        return 'ellipse'
+      case 'polygon':
+        return 'polygon'
+      case 'star':
+        return 'star'
       case 'arrow':
-      case 'line': return 'line';
-      case 'draw': return 'draw';
-      case 'text': return 'text';
+      case 'line':
+        return 'line'
+      case 'draw':
+        return 'draw'
+      case 'text':
+        return 'text'
       case 'image':
+        return 'image'
+      case 'eraser':
+        return 'eraser'
+      case 'eyedropper':
+        return 'eyedropper'
       case 'sticky':
       case 'link':
       case 'frame':
-      default: return 'draw';
+      default:
+        return 'draw'
     }
-  });
+  })
 
   // 获取工具的光标样式
   const getCursorForTool = useMemoizedFn((tool: UIToolType): string => {
     switch (tool) {
       case 'select':
-        return 'default';
+        return 'default'
       case 'hand':
-        return 'grab';
+        return 'grab'
       case 'text':
-        return 'text';
+        return 'text'
+      case 'eyedropper':
+        return 'copy'
       default:
-        return 'crosshair';
+        return 'crosshair'
     }
-  });
+  })
 
   // 更新光标样式
   useEffect(() => {
-    setInteractionState(prev => ({
+    setInteractionState((prev) => ({
       ...prev,
       cursor: getCursorForTool(currentTool),
-    }));
-  }, [currentTool, getCursorForTool]);
+    }))
+  }, [currentTool, getCursorForTool])
 
   // 同步工具选择到SDK
   const syncToolToSDK = useMemoizedFn(() => {
     if (sdkState.isInitialized) {
       try {
-        const toolName = getToolName(currentTool);
-        const success = sdkActions.setTool(toolName);
+        const toolName = getToolName(currentTool)
+        const success = sdkActions.setTool(toolName)
         if (!success) {
-          console.log('Failed to set tool, SDK may not be ready yet');
+          console.log('Failed to set tool, SDK may not be ready yet')
         }
       } catch (error) {
-        console.log('Error setting tool:', error);
+        console.log('Error setting tool:', error)
       }
     }
-  });
+  })
 
   useEffect(() => {
-    syncToolToSDK();
-  }, [currentTool, sdkState.isInitialized, syncToolToSDK]);
+    syncToolToSDK()
+  }, [currentTool, sdkState.isInitialized, syncToolToSDK])
 
   return {
     interactionState,
-  };
+  }
 }

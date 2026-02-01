@@ -1,9 +1,9 @@
 import {
-  CanvasSDK,
+  type CanvasSDK,
   createCanvasSDK,
   type ICanvasSDKConfig,
   type IShapeEntity,
-  type ShapeEntity
+  type ShapeEntity,
 } from '@sky-canvas/canvas-sdk'
 import { create } from 'zustand'
 
@@ -14,10 +14,10 @@ interface SDKState {
   selectedShapes: ShapeEntity[]
   canUndo: boolean
   canRedo: boolean
-  
+
   initialize: (canvas: HTMLCanvasElement, config?: ICanvasSDKConfig) => Promise<void>
   updateState: () => void
-  
+
   getCanvasManager: () => any
   getToolManager: () => any
   addShape: (entity: ShapeEntity) => void
@@ -70,7 +70,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
 
   initialize: async (canvas: HTMLCanvasElement, config: ICanvasSDKConfig = {}) => {
     const { sdk: existingSDK, isInitialized } = get()
-    
+
     if (existingSDK || isInitialized) {
       console.log('SDK already initialized, skipping')
       return
@@ -78,7 +78,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
 
     const sdk = await createCanvasSDK({
       canvas,
-      ...config
+      ...config,
     })
 
     const eventHandlers = {
@@ -97,7 +97,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
       'canvas:shapeUpdated': () => get().updateState(),
     }
 
-    Object.keys(eventHandlers).forEach(eventName => {
+    Object.keys(eventHandlers).forEach((eventName) => {
       sdk.on(eventName, eventHandlers[eventName as keyof typeof eventHandlers])
     })
 
@@ -192,7 +192,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
   bringToFront: (shapeIds?: string[]) => {
     const { sdk, selectedShapes } = get()
     if (!sdk) return
-    const ids = shapeIds || selectedShapes.map(s => s.id)
+    const ids = shapeIds || selectedShapes.map((s) => s.id)
     if (ids.length > 0) {
       sdk.getCanvasManager().bringToFront(ids)
     }
@@ -201,7 +201,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
   sendToBack: (shapeIds?: string[]) => {
     const { sdk, selectedShapes } = get()
     if (!sdk) return
-    const ids = shapeIds || selectedShapes.map(s => s.id)
+    const ids = shapeIds || selectedShapes.map((s) => s.id)
     if (ids.length > 0) {
       sdk.getCanvasManager().sendToBack(ids)
     }
@@ -210,7 +210,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
   bringForward: (shapeIds?: string[]) => {
     const { sdk, selectedShapes } = get()
     if (!sdk) return
-    const ids = shapeIds || selectedShapes.map(s => s.id)
+    const ids = shapeIds || selectedShapes.map((s) => s.id)
     if (ids.length > 0) {
       sdk.getCanvasManager().bringForward(ids)
     }
@@ -219,7 +219,7 @@ export const useSDKStore = create<SDKState>((set, get) => ({
   sendBackward: (shapeIds?: string[]) => {
     const { sdk, selectedShapes } = get()
     if (!sdk) return
-    const ids = shapeIds || selectedShapes.map(s => s.id)
+    const ids = shapeIds || selectedShapes.map((s) => s.id)
     if (ids.length > 0) {
       sdk.getCanvasManager().sendBackward(ids)
     }

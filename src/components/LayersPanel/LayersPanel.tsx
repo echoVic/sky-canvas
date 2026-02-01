@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo } from 'react'
-import { useSDKStore } from '../../store/sdkStore'
 import type { IShapeEntity } from '@sky-canvas/canvas-sdk'
-import { Eye, EyeOff, Lock, Unlock, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, Trash2, Unlock } from 'lucide-react'
+import type React from 'react'
+import { useCallback, useMemo } from 'react'
+import { useSDKStore } from '../../store/sdkStore'
 
 const SHAPE_ICONS: Record<string, string> = {
   rectangle: '▢',
@@ -9,7 +10,7 @@ const SHAPE_ICONS: Record<string, string> = {
   line: '―',
   text: 'T',
   path: '⌇',
-  diamond: '◇'
+  diamond: '◇',
 }
 
 interface LayerItemProps {
@@ -20,7 +21,13 @@ interface LayerItemProps {
   onToggleLock: (id: string) => void
 }
 
-function LayerItem({ shape, isSelected, onSelect, onToggleVisibility, onToggleLock }: LayerItemProps) {
+function LayerItem({
+  shape,
+  isSelected,
+  onSelect,
+  onToggleVisibility,
+  onToggleLock,
+}: LayerItemProps) {
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
       onSelect(shape.id, e.shiftKey || e.metaKey || e.ctrlKey)
@@ -37,30 +44,45 @@ function LayerItem({ shape, isSelected, onSelect, onToggleVisibility, onToggleLo
       className={`
         flex items-center px-3 py-2 cursor-pointer border-b border-gray-100 dark:border-gray-800
         transition-colors group
-        ${isSelected 
-          ? 'bg-blue-50 dark:bg-blue-900/30 border-l-2 border-l-blue-500' 
-          : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-l-2 border-l-transparent'
+        ${
+          isSelected
+            ? 'bg-blue-50 dark:bg-blue-900/30 border-l-2 border-l-blue-500'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 border-l-2 border-l-transparent'
         }
         ${!shape.visible ? 'opacity-50' : ''}
       `}
     >
       <span className="w-5 text-center text-gray-400 text-sm">{icon}</span>
       <span className="flex-1 text-sm truncate ml-2 text-gray-700 dark:text-gray-300">{name}</span>
-      
+
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          onClick={(e) => { e.stopPropagation(); onToggleLock(shape.id) }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleLock(shape.id)
+          }}
           className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           title={shape.locked ? '解锁' : '锁定'}
         >
-          {shape.locked ? <Lock size={12} className="text-orange-500" /> : <Unlock size={12} className="text-gray-400" />}
+          {shape.locked ? (
+            <Lock size={12} className="text-orange-500" />
+          ) : (
+            <Unlock size={12} className="text-gray-400" />
+          )}
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onToggleVisibility(shape.id) }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleVisibility(shape.id)
+          }}
           className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           title={shape.visible ? '隐藏' : '显示'}
         >
-          {shape.visible ? <Eye size={12} className="text-gray-500" /> : <EyeOff size={12} className="text-gray-300" />}
+          {shape.visible ? (
+            <Eye size={12} className="text-gray-500" />
+          ) : (
+            <EyeOff size={12} className="text-gray-300" />
+          )}
         </button>
       </div>
     </div>
@@ -68,7 +90,15 @@ function LayerItem({ shape, isSelected, onSelect, onToggleVisibility, onToggleLo
 }
 
 export function LayersPanel() {
-  const { shapes, selectedShapes, selectShape, deselectShape, clearSelection, updateShape, removeShape } = useSDKStore()
+  const {
+    shapes,
+    selectedShapes,
+    selectShape,
+    deselectShape,
+    clearSelection,
+    updateShape,
+    removeShape,
+  } = useSDKStore()
 
   const sortedShapes = useMemo(() => {
     return [...shapes].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
@@ -129,9 +159,7 @@ export function LayersPanel() {
 
       <div className="flex-1 overflow-y-auto">
         {sortedShapes.length === 0 ? (
-          <div className="p-4 text-sm text-gray-400 text-center">
-            暂无图层
-          </div>
+          <div className="p-4 text-sm text-gray-400 text-center">暂无图层</div>
         ) : (
           sortedShapes.map((shape) => (
             <LayerItem

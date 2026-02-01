@@ -3,33 +3,33 @@
  * 管理多个粒子系统的生命周期和更新
  */
 
-import { 
-  IParticleSystem, 
-  ParticleSystemConfig, 
-  ParticleSystemState 
-} from '../types/ParticleTypes';
-import { ParticleSystem } from './ParticleSystem';
-import { EventEmitter } from '../core/EventEmitter';
+import { EventEmitter } from '../core/EventEmitter'
+import {
+  type IParticleSystem,
+  type ParticleSystemConfig,
+  ParticleSystemState,
+} from '../types/ParticleTypes'
+import { ParticleSystem } from './ParticleSystem'
 
 interface ParticleSystemManagerEvents {
-  systemAdded: (system: IParticleSystem) => void;
-  systemRemoved: (system: IParticleSystem) => void;
-  systemCompleted: (system: IParticleSystem) => void;
-  allSystemsCompleted: () => void;
-  [key: string]: (...args: any[]) => void;
+  systemAdded: (system: IParticleSystem) => void
+  systemRemoved: (system: IParticleSystem) => void
+  systemCompleted: (system: IParticleSystem) => void
+  allSystemsCompleted: () => void
+  [key: string]: (...args: any[]) => void
 }
 
 export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEvents> {
-  private systems: Map<string, IParticleSystem> = new Map();
-  private updateEnabled: boolean = true;
+  private systems: Map<string, IParticleSystem> = new Map()
+  private updateEnabled: boolean = true
 
   /**
    * 创建并添加粒子系统
    */
   createSystem(config: ParticleSystemConfig): IParticleSystem {
-    const system = new ParticleSystem(config);
-    this.addSystem(system);
-    return system;
+    const system = new ParticleSystem(config)
+    this.addSystem(system)
+    return system
   }
 
   /**
@@ -37,62 +37,60 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   addSystem(system: IParticleSystem): this {
     if (this.systems.has(system.id)) {
-      console.warn(`Particle system with id '${system.id}' already exists`);
-      return this;
+      console.warn(`Particle system with id '${system.id}' already exists`)
+      return this
     }
 
-    this.systems.set(system.id, system);
+    this.systems.set(system.id, system)
 
     // 监听系统完成事件
     system.on('complete', (completedSystem) => {
-      this.emit('systemCompleted', completedSystem);
-      this.checkAllSystemsCompleted();
-    });
+      this.emit('systemCompleted', completedSystem)
+      this.checkAllSystemsCompleted()
+    })
 
-    this.emit('systemAdded', system);
-    return this;
+    this.emit('systemAdded', system)
+    return this
   }
 
   /**
    * 移除粒子系统
    */
   removeSystem(systemId: string): boolean {
-    const system = this.systems.get(systemId);
+    const system = this.systems.get(systemId)
     if (!system) {
-      return false;
+      return false
     }
 
     // 停止并清理系统
-    system.stop();
-    system.dispose();
+    system.stop()
+    system.dispose()
 
-    this.systems.delete(systemId);
-    this.emit('systemRemoved', system);
+    this.systems.delete(systemId)
+    this.emit('systemRemoved', system)
 
-    return true;
+    return true
   }
 
   /**
    * 获取粒子系统
    */
   getSystem(systemId: string): IParticleSystem | undefined {
-    return this.systems.get(systemId);
+    return this.systems.get(systemId)
   }
 
   /**
    * 获取所有系统
    */
   getAllSystems(): IParticleSystem[] {
-    return Array.from(this.systems.values());
+    return Array.from(this.systems.values())
   }
 
   /**
    * 获取活跃系统
    */
   getActiveSystems(): IParticleSystem[] {
-    return this.getAllSystems().filter(system => 
-      system.state === ParticleSystemState.PLAYING
-    );
+    return this.getAllSystems().filter((system) => system.state === ParticleSystemState.PLAYING)
   }
 
   /**
@@ -100,15 +98,15 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   update(deltaTime: number): void {
     if (!this.updateEnabled) {
-      return;
+      return
     }
 
     for (const system of this.systems.values()) {
-      system.update(deltaTime);
+      system.update(deltaTime)
     }
 
     // 自动清理已完成的系统（可选）
-    this.autoCleanupCompleted();
+    this.autoCleanupCompleted()
   }
 
   /**
@@ -116,9 +114,9 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   startAll(): this {
     for (const system of this.systems.values()) {
-      system.start();
+      system.start()
     }
-    return this;
+    return this
   }
 
   /**
@@ -126,9 +124,9 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   stopAll(): this {
     for (const system of this.systems.values()) {
-      system.stop();
+      system.stop()
     }
-    return this;
+    return this
   }
 
   /**
@@ -136,9 +134,9 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   pauseAll(): this {
     for (const system of this.systems.values()) {
-      system.pause();
+      system.pause()
     }
-    return this;
+    return this
   }
 
   /**
@@ -146,9 +144,9 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   resumeAll(): this {
     for (const system of this.systems.values()) {
-      system.resume();
+      system.resume()
     }
-    return this;
+    return this
   }
 
   /**
@@ -156,71 +154,71 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    */
   restartAll(): this {
     for (const system of this.systems.values()) {
-      system.restart();
+      system.restart()
     }
-    return this;
+    return this
   }
 
   /**
    * 清理所有系统
    */
   clear(): this {
-    const systemIds = Array.from(this.systems.keys());
+    const systemIds = Array.from(this.systems.keys())
     for (const systemId of systemIds) {
-      this.removeSystem(systemId);
+      this.removeSystem(systemId)
     }
-    return this;
+    return this
   }
 
   /**
    * 启用/禁用更新
    */
   setUpdateEnabled(enabled: boolean): this {
-    this.updateEnabled = enabled;
-    return this;
+    this.updateEnabled = enabled
+    return this
   }
 
   /**
    * 获取更新状态
    */
   isUpdateEnabled(): boolean {
-    return this.updateEnabled;
+    return this.updateEnabled
   }
 
   /**
    * 获取管理器统计信息
    */
   getStats(): {
-    totalSystems: number;
-    activeSystems: number;
-    pausedSystems: number;
-    completedSystems: number;
-    totalParticles: number;
-    activeParticles: number;
+    totalSystems: number
+    activeSystems: number
+    pausedSystems: number
+    completedSystems: number
+    totalParticles: number
+    activeParticles: number
   } {
-    const systems = this.getAllSystems();
-    
-    let activeSystems = 0;
-    let pausedSystems = 0;
-    let completedSystems = 0;
-    let totalParticles = 0;
-    let activeParticles = 0;
+    const systems = this.getAllSystems()
+
+    let activeSystems = 0
+    let pausedSystems = 0
+    let completedSystems = 0
+    let totalParticles = 0
+    let activeParticles = 0
 
     for (const system of systems) {
       switch (system.state) {
         case ParticleSystemState.PLAYING:
-          activeSystems++;
-          break;
+          activeSystems++
+          break
         case ParticleSystemState.PAUSED:
-          pausedSystems++;
-          break;
+          pausedSystems++
+          break
         case ParticleSystemState.COMPLETED:
-          completedSystems++;
-          break;
+          completedSystems++
+          break
       }
 
-      totalParticles += system.particles.length;
-      activeParticles += system.activeParticles;
+      totalParticles += system.particles.length
+      activeParticles += system.activeParticles
     }
 
     return {
@@ -229,18 +227,18 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
       pausedSystems,
       completedSystems,
       totalParticles,
-      activeParticles
-    };
+      activeParticles,
+    }
   }
 
   /**
    * 根据标签查找系统
    */
   findSystemsByTag(tag: string): IParticleSystem[] {
-    return this.getAllSystems().filter(system => {
-      const userData = system.config.emission.userData;
-      return userData && userData.tags && userData.tags.includes(tag);
-    });
+    return this.getAllSystems().filter((system) => {
+      const userData = system.config.emission.userData
+      return userData && userData.tags && userData.tags.includes(tag)
+    })
   }
 
   /**
@@ -257,14 +255,14 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
         color: ['#ff4500', '#ff6347', '#ffa500', '#ffff00'],
         life: { min: 500, max: 2000 },
         rate: 50,
-        userData: { tags: ['fire', 'effect'] }
+        userData: { tags: ['fire', 'effect'] },
       },
       maxParticles: 200,
       autoStart: true,
-      gravity: { x: 0, y: 100 }
-    };
+      gravity: { x: 0, y: 100 },
+    }
 
-    return this.createSystem(config);
+    return this.createSystem(config)
   }
 
   createExplosionEffect(position: { x: number; y: number }): IParticleSystem {
@@ -279,39 +277,39 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
         life: { min: 200, max: 800 },
         rate: 0,
         burst: 150,
-        userData: { tags: ['explosion', 'effect'] }
+        userData: { tags: ['explosion', 'effect'] },
       },
       maxParticles: 150,
       autoStart: true,
       duration: 1000,
-      gravity: { x: 0, y: 300 }
-    };
+      gravity: { x: 0, y: 300 },
+    }
 
-    return this.createSystem(config);
+    return this.createSystem(config)
   }
 
   private checkAllSystemsCompleted(): void {
-    const allCompleted = this.getAllSystems().every(system => 
-      system.state === ParticleSystemState.COMPLETED || 
-      system.state === ParticleSystemState.STOPPED
-    );
+    const allCompleted = this.getAllSystems().every(
+      (system) =>
+        system.state === ParticleSystemState.COMPLETED ||
+        system.state === ParticleSystemState.STOPPED
+    )
 
     if (allCompleted && this.systems.size > 0) {
-      this.emit('allSystemsCompleted');
+      this.emit('allSystemsCompleted')
     }
   }
 
   private autoCleanupCompleted(): void {
-    const completedSystems = this.getAllSystems().filter(system => 
-      system.state === ParticleSystemState.COMPLETED &&
-      system.activeParticles === 0
-    );
+    const completedSystems = this.getAllSystems().filter(
+      (system) => system.state === ParticleSystemState.COMPLETED && system.activeParticles === 0
+    )
 
     for (const system of completedSystems) {
       // 如果系统有清理标记，自动移除
-      const userData = system.config.emission.userData;
+      const userData = system.config.emission.userData
       if (userData && userData.autoCleanup) {
-        this.removeSystem(system.id);
+        this.removeSystem(system.id)
       }
     }
   }
@@ -320,7 +318,7 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
    * 销毁管理器
    */
   dispose(): void {
-    this.clear();
-    this.removeAllListeners();
+    this.clear()
+    this.removeAllListeners()
   }
 }

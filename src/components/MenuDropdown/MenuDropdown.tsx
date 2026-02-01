@@ -1,27 +1,21 @@
-import React from 'react'
-import { 
-  Dropdown, 
-  DropdownTrigger, 
-  DropdownMenu, 
-  DropdownItem,
-  Button 
-} from '@heroui/react'
-import { 
-  Menu,
-  FolderOpen, 
-  Save, 
-  Download, 
-  Users, 
-  Search, 
-  HelpCircle, 
-  Share,
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
+import {
+  Download,
   Folder,
-  Sun,
-  Moon,
+  FolderOpen,
+  HelpCircle,
+  Menu,
   Monitor,
+  Moon,
+  RotateCcw,
+  Save,
+  Search,
+  Share,
+  Sun,
   Terminal,
-  RotateCcw
+  Users,
 } from 'lucide-react'
+import type React from 'react'
 import { useCanvasStore } from '../../store/canvasStore'
 
 const MenuDropdown: React.FC = () => {
@@ -75,12 +69,12 @@ const MenuDropdown: React.FC = () => {
           </div>
         </Button>
       </DropdownTrigger>
-      <DropdownMenu 
+      <DropdownMenu
         aria-label="菜单选项"
         onAction={(key) => handleAction(key as string)}
         className="w-64 p-1 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700"
         itemClasses={{
-          base: "rounded-lg data-[hover=true]:bg-gray-100 dark:data-[hover=true]:bg-gray-800 px-3 py-2"
+          base: 'rounded-lg data-[hover=true]:bg-gray-100 dark:data-[hover=true]:bg-gray-800 px-3 py-2',
         }}
       >
         {/* 文件操作 */}
@@ -96,7 +90,7 @@ const MenuDropdown: React.FC = () => {
         >
           打开
         </DropdownItem>
-        
+
         <DropdownItem
           key="save"
           startContent={<Save size={16} />}
@@ -104,7 +98,7 @@ const MenuDropdown: React.FC = () => {
         >
           保存到...
         </DropdownItem>
-        
+
         <DropdownItem
           key="export"
           startContent={<Download size={16} />}
@@ -117,15 +111,11 @@ const MenuDropdown: React.FC = () => {
         >
           导出图片...
         </DropdownItem>
-        
-        <DropdownItem
-          key="collaborate"
-          startContent={<Users size={16} />}
-          className="h-9 text-sm"
-        >
+
+        <DropdownItem key="collaborate" startContent={<Users size={16} />} className="h-9 text-sm">
           实时协作...
         </DropdownItem>
-        
+
         {/* Command palette - 特殊样式 */}
         <DropdownItem
           key="command"
@@ -139,7 +129,7 @@ const MenuDropdown: React.FC = () => {
         >
           Command palette
         </DropdownItem>
-        
+
         <DropdownItem
           key="search"
           startContent={<Search size={16} />}
@@ -152,7 +142,7 @@ const MenuDropdown: React.FC = () => {
         >
           Find on canvas
         </DropdownItem>
-        
+
         <DropdownItem
           key="help"
           startContent={<HelpCircle size={16} />}
@@ -165,12 +155,8 @@ const MenuDropdown: React.FC = () => {
         >
           帮助
         </DropdownItem>
-        
-        <DropdownItem
-          key="reset"
-          startContent={<RotateCcw size={16} />}
-          className="h-9 text-sm"
-        >
+
+        <DropdownItem key="reset" startContent={<RotateCcw size={16} />} className="h-9 text-sm">
           重置画布
         </DropdownItem>
 
@@ -184,8 +170,8 @@ const MenuDropdown: React.FC = () => {
                 <button
                   onClick={() => theme !== 'light' && toggleTheme()}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all text-xs ${
-                    theme === 'light' 
-                      ? 'bg-blue-50 border-blue-500 text-blue-600' 
+                    theme === 'light'
+                      ? 'bg-blue-50 border-blue-500 text-blue-600'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
@@ -195,8 +181,8 @@ const MenuDropdown: React.FC = () => {
                 <button
                   onClick={() => theme !== 'dark' && toggleTheme()}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all text-xs ${
-                    theme === 'dark' 
-                      ? 'bg-blue-50 border-blue-500 text-blue-600' 
+                    theme === 'dark'
+                      ? 'bg-blue-50 border-blue-500 text-blue-600'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
@@ -209,7 +195,7 @@ const MenuDropdown: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* 画布背景 */}
             <div className="px-2 mt-4">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">画布背景</p>
@@ -220,16 +206,21 @@ const MenuDropdown: React.FC = () => {
                   { color: 'bg-blue-50', border: 'border-gray-300', active: false },
                   { color: 'bg-yellow-50', border: 'border-gray-300', active: false },
                   { color: 'bg-pink-50', border: 'border-gray-300', active: false },
-                  { color: 'bg-transparent', border: 'border-gray-300', active: false }
+                  { color: 'bg-transparent', border: 'border-gray-300', active: false },
                 ].map((item, index) => (
                   <button
                     key={index}
                     className={`w-6 h-6 rounded-md border-2 transition-all hover:scale-105 ${item.color} ${
                       item.active ? item.border : 'border-gray-200 dark:border-gray-700'
                     }`}
-                    style={index === 5 ? { 
-                      background: 'repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 6px 6px'
-                    } : {}}
+                    style={
+                      index === 5
+                        ? {
+                            background:
+                              'repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 6px 6px',
+                          }
+                        : {}
+                    }
                   />
                 ))}
               </div>

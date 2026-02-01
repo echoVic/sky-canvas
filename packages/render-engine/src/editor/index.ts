@@ -3,14 +3,13 @@
  * 提供完整的可视化场景编辑功能
  */
 
-export { SceneEditor } from './SceneEditor';
-
 export type {
-  SceneObject,
-  SceneHierarchy,
-  SelectionInfo,
-  EditorTool,
-  TransformMode,
   EditorState,
-  SceneEditorEvents
-} from './SceneEditor';
+  EditorTool,
+  SceneEditorEvents,
+  SceneHierarchy,
+  SceneObject,
+  SelectionInfo,
+  TransformMode,
+} from './SceneEditor'
+export { SceneEditor } from './SceneEditor'

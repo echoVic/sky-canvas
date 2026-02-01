@@ -1,7 +1,8 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
+
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
@@ -14,14 +15,9 @@ export default defineConfig({
       'src/hooks/**/*.{test,spec}.{js,ts,jsx,tsx}',
       'src/store/**/*.{test,spec}.{js,ts,jsx,tsx}',
       'src/contexts/**/*.{test,spec}.{js,ts,jsx,tsx}',
-      'src/utils/**/*.{test,spec}.{js,ts,jsx,tsx}'
+      'src/utils/**/*.{test,spec}.{js,ts,jsx,tsx}',
     ],
-    exclude: [
-      'node_modules',
-      'dist',
-      'packages',
-      'examples'
-    ],
+    exclude: ['node_modules', 'dist', 'packages', 'examples'],
     coverage: {
       reporter: ['text', 'json', 'html'],
       include: [
@@ -29,7 +25,7 @@ export default defineConfig({
         'src/hooks/**/*.{ts,tsx}',
         'src/store/**/*.{ts,tsx}',
         'src/contexts/**/*.{ts,tsx}',
-        'src/utils/**/*.{ts,tsx}'
+        'src/utils/**/*.{ts,tsx}',
       ],
       exclude: [
         'node_modules/',
@@ -39,17 +35,17 @@ export default defineConfig({
         'src/tests/',
         '**/*.d.ts',
         '**/index.ts',
-        'src/main.tsx'
+        'src/main.tsx',
       ],
       thresholds: {
         global: {
           branches: 85,
           functions: 85,
           lines: 85,
-          statements: 85
-        }
-      }
-    }
+          statements: 85,
+        },
+      },
+    },
   },
   resolve: {
     alias: {

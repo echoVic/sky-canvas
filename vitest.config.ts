@@ -1,10 +1,11 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vitest/config'
+
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  plugins: [react()] as any,
+  plugins: [react()],
   test: {
     environment: 'jsdom',
     globals: true,
@@ -13,15 +14,9 @@ export default defineConfig({
       'src/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
       'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
       'packages/**/__tests__/**/*.{test,spec}.{js,ts,jsx,tsx}',
-      'packages/**/*.{test,spec}.{js,ts,jsx,tsx}'
+      'packages/**/*.{test,spec}.{js,ts,jsx,tsx}',
     ],
-    exclude: [
-      'node_modules',
-      'dist',
-      'src/tests/e2e',
-      'src/tests/integration',
-      'examples'
-    ],
+    exclude: ['node_modules', 'dist', 'src/tests/e2e', 'src/tests/integration', 'examples'],
     coverage: {
       reporter: ['text', 'json', 'html'],
       exclude: [
@@ -35,17 +30,17 @@ export default defineConfig({
         'src/main.tsx',
         'vite.config.ts',
         'tailwind.config.js',
-        'postcss.config.js'
+        'postcss.config.js',
       ],
       thresholds: {
         global: {
           branches: 85,
           functions: 85,
           lines: 85,
-          statements: 85
-        }
-      }
-    }
+          statements: 85,
+        },
+      },
+    },
   },
   resolve: {
     alias: {

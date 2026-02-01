@@ -3,22 +3,22 @@
  * 提供滤镜相关的实用工具和辅助函数
  */
 
+import { ShaderPresets } from '../presets/ShaderPresets'
 import {
+  type BrightnessParameters,
+  type ContrastParameters,
+  type CustomShaderParameters,
+  type DropShadowParameters,
+  type FilterParameters,
   FilterType,
-  FilterParameters,
-  GaussianBlurParameters,
-  BrightnessParameters,
-  ContrastParameters,
-  SaturationParameters,
-  HueRotateParameters,
-  GrayscaleParameters,
-  DropShadowParameters,
-  InnerShadowParameters,
-  GlowParameters,
-  CustomShaderParameters
-} from '../types/FilterTypes';
-import { ShaderPresets } from '../presets/ShaderPresets';
-import { WebGLShaderManager } from '../webgl/WebGLShaderManager';
+  type GaussianBlurParameters,
+  type GlowParameters,
+  type GrayscaleParameters,
+  type HueRotateParameters,
+  type InnerShadowParameters,
+  type SaturationParameters,
+} from '../types/FilterTypes'
+import { WebGLShaderManager } from '../webgl/WebGLShaderManager'
 
 export class FilterUtils {
   /**
@@ -34,83 +34,68 @@ export class FilterUtils {
       radius: Math.max(0, Math.min(100, radius)),
       quality,
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
    * 创建亮度调整滤镜参数
    */
-  static createBrightness(
-    brightness: number = 0,
-    opacity: number = 1
-  ): BrightnessParameters {
+  static createBrightness(brightness: number = 0, opacity: number = 1): BrightnessParameters {
     return {
       type: FilterType.BRIGHTNESS,
       brightness: Math.max(-100, Math.min(100, brightness)),
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
    * 创建对比度调整滤镜参数
    */
-  static createContrast(
-    contrast: number = 0,
-    opacity: number = 1
-  ): ContrastParameters {
+  static createContrast(contrast: number = 0, opacity: number = 1): ContrastParameters {
     return {
       type: FilterType.CONTRAST,
       contrast: Math.max(-100, Math.min(100, contrast)),
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
    * 创建饱和度调整滤镜参数
    */
-  static createSaturation(
-    saturation: number = 0,
-    opacity: number = 1
-  ): SaturationParameters {
+  static createSaturation(saturation: number = 0, opacity: number = 1): SaturationParameters {
     return {
       type: FilterType.SATURATION,
       saturation: Math.max(-100, Math.min(100, saturation)),
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
    * 创建色相旋转滤镜参数
    */
-  static createHueRotate(
-    angle: number = 0,
-    opacity: number = 1
-  ): HueRotateParameters {
+  static createHueRotate(angle: number = 0, opacity: number = 1): HueRotateParameters {
     return {
       type: FilterType.HUE_ROTATE,
       angle: angle % 360,
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
    * 创建灰度滤镜参数
    */
-  static createGrayscale(
-    amount: number = 1,
-    opacity: number = 1
-  ): GrayscaleParameters {
+  static createGrayscale(amount: number = 1, opacity: number = 1): GrayscaleParameters {
     return {
       type: FilterType.GRAYSCALE,
       amount: Math.max(0, Math.min(1, amount)),
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
@@ -130,8 +115,8 @@ export class FilterUtils {
       blur: Math.max(0, blur),
       color,
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
@@ -151,8 +136,8 @@ export class FilterUtils {
       blur: Math.max(0, blur),
       color,
       opacity: Math.max(0, Math.min(1, opacity)),
-      enabled: true
-    };
+      enabled: true,
+    }
   }
 
   /**
@@ -171,8 +156,8 @@ export class FilterUtils {
       strength: Math.max(0, strength),
       quality,
       enabled: true,
-      opacity: 1
-    };
+      opacity: 1,
+    }
   }
 
   /**
@@ -180,11 +165,11 @@ export class FilterUtils {
    */
   static createVintageEffect(): FilterParameters[] {
     return [
-      this.createSaturation(-20), // 降低饱和度
-      this.createContrast(15),     // 增加对比度
-      this.createBrightness(10),   // 稍微提亮
-      this.createHueRotate(5)      // 轻微色相偏移
-    ];
+      FilterUtils.createSaturation(-20), // 降低饱和度
+      FilterUtils.createContrast(15), // 增加对比度
+      FilterUtils.createBrightness(10), // 稍微提亮
+      FilterUtils.createHueRotate(5), // 轻微色相偏移
+    ]
   }
 
   /**
@@ -192,10 +177,10 @@ export class FilterUtils {
    */
   static createFilmNoirEffect(): FilterParameters[] {
     return [
-      this.createGrayscale(1),     // 完全灰度化
-      this.createContrast(25),     // 高对比度
-      this.createBrightness(-5)    // 略微变暗
-    ];
+      FilterUtils.createGrayscale(1), // 完全灰度化
+      FilterUtils.createContrast(25), // 高对比度
+      FilterUtils.createBrightness(-5), // 略微变暗
+    ]
   }
 
   /**
@@ -203,11 +188,11 @@ export class FilterUtils {
    */
   static createDreamEffect(): FilterParameters[] {
     return [
-      this.createGaussianBlur(2, 'medium'), // 轻微模糊
-      this.createBrightness(15),             // 提亮
-      this.createSaturation(20),             // 增加饱和度
-      this.createContrast(-10)               // 降低对比度
-    ];
+      FilterUtils.createGaussianBlur(2, 'medium'), // 轻微模糊
+      FilterUtils.createBrightness(15), // 提亮
+      FilterUtils.createSaturation(20), // 增加饱和度
+      FilterUtils.createContrast(-10), // 降低对比度
+    ]
   }
 
   /**
@@ -215,10 +200,10 @@ export class FilterUtils {
    */
   static createCoolToneEffect(): FilterParameters[] {
     return [
-      this.createHueRotate(180),   // 色相偏向蓝色
-      this.createSaturation(10),   // 略微增加饱和度
-      this.createBrightness(5)     // 稍微提亮
-    ];
+      FilterUtils.createHueRotate(180), // 色相偏向蓝色
+      FilterUtils.createSaturation(10), // 略微增加饱和度
+      FilterUtils.createBrightness(5), // 稍微提亮
+    ]
   }
 
   /**
@@ -226,11 +211,11 @@ export class FilterUtils {
    */
   static createWarmToneEffect(): FilterParameters[] {
     return [
-      this.createHueRotate(30),    // 色相偏向橙色
-      this.createSaturation(15),   // 增加饱和度
-      this.createBrightness(8),    // 稍微提亮
-      this.createContrast(5)       // 轻微增加对比度
-    ];
+      FilterUtils.createHueRotate(30), // 色相偏向橙色
+      FilterUtils.createSaturation(15), // 增加饱和度
+      FilterUtils.createBrightness(8), // 稍微提亮
+      FilterUtils.createContrast(5), // 轻微增加对比度
+    ]
   }
 
   /**
@@ -244,23 +229,23 @@ export class FilterUtils {
     return {
       type: FilterType.CUSTOM_SHADER,
       vertexShader: vertexShader || WebGLShaderManager.DEFAULT_VERTEX_SHADER,
-      fragmentShader: fragmentShader || this.getDefaultFragmentShader(),
+      fragmentShader: fragmentShader || FilterUtils.getDefaultFragmentShader(),
       uniforms: uniforms || {},
       enabled: true,
-      opacity: 1
-    };
+      opacity: 1,
+    }
   }
 
   /**
    * 从预设创建自定义着色器
    */
   static createShaderFromPreset(presetId: string): CustomShaderParameters | null {
-    const preset = ShaderPresets.getPreset(presetId);
+    const preset = ShaderPresets.getPreset(presetId)
     if (!preset) {
-      console.warn(`Shader preset '${presetId}' not found`);
-      return null;
+      console.warn(`Shader preset '${presetId}' not found`)
+      return null
     }
-    return { ...preset.parameters };
+    return { ...preset.parameters }
   }
 
   /**
@@ -275,15 +260,18 @@ export class FilterUtils {
       void main() {
         gl_FragColor = texture2D(u_image, v_texCoord);
       }
-    `;
+    `
   }
 
   /**
    * 创建用户友好的着色器函数
    */
-  static createUserShader(userFunction: string, uniforms?: Record<string, any>): CustomShaderParameters {
-    const fragmentShader = WebGLShaderManager.createUserFragmentShader(userFunction);
-    return this.createCustomShader(undefined, fragmentShader, uniforms);
+  static createUserShader(
+    userFunction: string,
+    uniforms?: Record<string, any>
+  ): CustomShaderParameters {
+    const fragmentShader = WebGLShaderManager.createUserFragmentShader(userFunction)
+    return FilterUtils.createCustomShader(undefined, fragmentShader, uniforms)
   }
 
   /**
@@ -291,10 +279,10 @@ export class FilterUtils {
    */
   static createGlowTextEffect(): FilterParameters[] {
     return [
-      this.createGlow('#00ff88', 12, 2, 'high'),  // 绿色发光
-      this.createBrightness(10),                  // 稍微提亮
-      this.createContrast(15)                     // 增加对比度
-    ];
+      FilterUtils.createGlow('#00ff88', 12, 2, 'high'), // 绿色发光
+      FilterUtils.createBrightness(10), // 稍微提亮
+      FilterUtils.createContrast(15), // 增加对比度
+    ]
   }
 
   /**
@@ -302,11 +290,11 @@ export class FilterUtils {
    */
   static createNeonEffect(): FilterParameters[] {
     return [
-      this.createGlow('#ff0080', 15, 2.5, 'high'), // 粉色强烈发光
-      this.createSaturation(30),                    // 高饱和度
-      this.createContrast(25),                      // 高对比度
-      this.createBrightness(20)                     // 提亮
-    ];
+      FilterUtils.createGlow('#ff0080', 15, 2.5, 'high'), // 粉色强烈发光
+      FilterUtils.createSaturation(30), // 高饱和度
+      FilterUtils.createContrast(25), // 高对比度
+      FilterUtils.createBrightness(20), // 提亮
+    ]
   }
 
   /**
@@ -314,10 +302,10 @@ export class FilterUtils {
    */
   static createDeepShadowEffect(): FilterParameters[] {
     return [
-      this.createDropShadow(6, 8, 12, '#000000', 0.8), // 深黑阴影
-      this.createContrast(10),                          // 稍微增加对比度
-      this.createBrightness(5)                          // 轻微提亮主体
-    ];
+      FilterUtils.createDropShadow(6, 8, 12, '#000000', 0.8), // 深黑阴影
+      FilterUtils.createContrast(10), // 稍微增加对比度
+      FilterUtils.createBrightness(5), // 轻微提亮主体
+    ]
   }
 
   /**
@@ -325,10 +313,10 @@ export class FilterUtils {
    */
   static createSoftShadowEffect(): FilterParameters[] {
     return [
-      this.createDropShadow(2, 4, 8, '#666666', 0.4),  // 软灰阴影
-      this.createInnerShadow(-1, -1, 3, '#ffffff', 0.3), // 轻微高光
-      this.createBrightness(5)                          // 稍微提亮
-    ];
+      FilterUtils.createDropShadow(2, 4, 8, '#666666', 0.4), // 软灰阴影
+      FilterUtils.createInnerShadow(-1, -1, 3, '#ffffff', 0.3), // 轻微高光
+      FilterUtils.createBrightness(5), // 稍微提亮
+    ]
   }
 
   /**
@@ -336,40 +324,40 @@ export class FilterUtils {
    */
   static createEmbossEffect(): FilterParameters[] {
     return [
-      this.createInnerShadow(2, 2, 4, '#000000', 0.6),   // 暗部内阴影
-      this.createDropShadow(-1, -1, 2, '#ffffff', 0.8),  // 亮部外阴影
-      this.createContrast(20),                            // 增加对比度
-      this.createSaturation(-20)                          // 降低饱和度
-    ];
+      FilterUtils.createInnerShadow(2, 2, 4, '#000000', 0.6), // 暗部内阴影
+      FilterUtils.createDropShadow(-1, -1, 2, '#ffffff', 0.8), // 亮部外阴影
+      FilterUtils.createContrast(20), // 增加对比度
+      FilterUtils.createSaturation(-20), // 降低饱和度
+    ]
   }
 
   /**
    * 从Canvas获取ImageData
    */
   static getImageDataFromCanvas(canvas: HTMLCanvasElement): ImageData {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')
     if (!ctx) {
-      throw new Error('Cannot get 2D context from canvas');
+      throw new Error('Cannot get 2D context from canvas')
     }
-    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height)
   }
 
   /**
    * 将ImageData绘制到Canvas
    */
   static putImageDataToCanvas(canvas: HTMLCanvasElement, imageData: ImageData): void {
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d')
     if (!ctx) {
-      throw new Error('Cannot get 2D context from canvas');
+      throw new Error('Cannot get 2D context from canvas')
     }
-    
+
     // 调整canvas尺寸
     if (canvas.width !== imageData.width || canvas.height !== imageData.height) {
-      canvas.width = imageData.width;
-      canvas.height = imageData.height;
+      canvas.width = imageData.width
+      canvas.height = imageData.height
     }
-    
-    ctx.putImageData(imageData, 0, 0);
+
+    ctx.putImageData(imageData, 0, 0)
   }
 
   /**
@@ -377,34 +365,34 @@ export class FilterUtils {
    */
   static async createImageDataFromImage(image: HTMLImageElement): Promise<ImageData> {
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
       if (!ctx) {
-        reject(new Error('Cannot create 2D context'));
-        return;
+        reject(new Error('Cannot create 2D context'))
+        return
       }
-      
-      canvas.width = image.width || image.naturalWidth;
-      canvas.height = image.height || image.naturalHeight;
-      
+
+      canvas.width = image.width || image.naturalWidth
+      canvas.height = image.height || image.naturalHeight
+
       image.onload = () => {
-        ctx.drawImage(image, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        resolve(imageData);
-      };
-      
+        ctx.drawImage(image, 0, 0)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        resolve(imageData)
+      }
+
       image.onerror = () => {
-        reject(new Error('Failed to load image'));
-      };
-      
+        reject(new Error('Failed to load image'))
+      }
+
       // 如果图像已经加载
       if (image.complete) {
-        ctx.drawImage(image, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        resolve(imageData);
+        ctx.drawImage(image, 0, 0)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        resolve(imageData)
       }
-    });
+    })
   }
 
   /**
@@ -412,44 +400,52 @@ export class FilterUtils {
    */
   static imageDataToBlob(imageData: ImageData, quality: number = 0.9): Promise<Blob> {
     return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+
       if (!ctx) {
-        reject(new Error('Cannot create 2D context'));
-        return;
+        reject(new Error('Cannot create 2D context'))
+        return
       }
-      
-      canvas.width = imageData.width;
-      canvas.height = imageData.height;
-      ctx.putImageData(imageData, 0, 0);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create blob'));
-        }
-      }, 'image/png', quality);
-    });
+
+      canvas.width = imageData.width
+      canvas.height = imageData.height
+      ctx.putImageData(imageData, 0, 0)
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob)
+          } else {
+            reject(new Error('Failed to create blob'))
+          }
+        },
+        'image/png',
+        quality
+      )
+    })
   }
 
   /**
    * 将ImageData转换为DataURL
    */
-  static imageDataToDataURL(imageData: ImageData, format: string = 'image/png', quality: number = 0.9): string {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
+  static imageDataToDataURL(
+    imageData: ImageData,
+    format: string = 'image/png',
+    quality: number = 0.9
+  ): string {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
     if (!ctx) {
-      throw new Error('Cannot create 2D context');
+      throw new Error('Cannot create 2D context')
     }
-    
-    canvas.width = imageData.width;
-    canvas.height = imageData.height;
-    ctx.putImageData(imageData, 0, 0);
-    
-    return canvas.toDataURL(format, quality);
+
+    canvas.width = imageData.width
+    canvas.height = imageData.height
+    ctx.putImageData(imageData, 0, 0)
+
+    return canvas.toDataURL(format, quality)
   }
 
   /**
@@ -457,236 +453,238 @@ export class FilterUtils {
    */
   static compareImageData(imageData1: ImageData, imageData2: ImageData): boolean {
     if (imageData1.width !== imageData2.width || imageData1.height !== imageData2.height) {
-      return false;
+      return false
     }
-    
-    const data1 = imageData1.data;
-    const data2 = imageData2.data;
-    
+
+    const data1 = imageData1.data
+    const data2 = imageData2.data
+
     if (data1.length !== data2.length) {
-      return false;
+      return false
     }
-    
+
     for (let i = 0; i < data1.length; i++) {
       if (data1[i] !== data2[i]) {
-        return false;
+        return false
       }
     }
-    
-    return true;
+
+    return true
   }
 
   /**
    * 计算ImageData的哈希值（用于缓存）
    */
   static hashImageData(imageData: ImageData): string {
-    let hash = 0;
-    const data = imageData.data;
-    
+    let hash = 0
+    const data = imageData.data
+
     // 采样策略：每隔一定步长采样像素
-    const step = Math.max(1, Math.floor(data.length / 1000));
-    
+    const step = Math.max(1, Math.floor(data.length / 1000))
+
     for (let i = 0; i < data.length; i += step) {
-      hash = ((hash << 5) - hash + data[i]) & 0xffffffff;
+      hash = ((hash << 5) - hash + data[i]) & 0xffffffff
     }
-    
-    return `${imageData.width}x${imageData.height}_${hash.toString(36)}`;
+
+    return `${imageData.width}x${imageData.height}_${hash.toString(36)}`
   }
 
   /**
    * 创建测试图像数据
    */
   static createTestImageData(width: number = 100, height: number = 100): ImageData {
-    const imageData = new ImageData(width, height);
-    const data = imageData.data;
-    
+    const imageData = new ImageData(width, height)
+    const data = imageData.data
+
     // 创建彩虹渐变测试图案
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const index = (y * width + x) * 4;
-        
+        const index = (y * width + x) * 4
+
         // 彩虹色相基于位置
-        const hue = (x / width) * 360;
-        const saturation = y / height;
-        const lightness = 0.5;
-        
-        const rgb = this.hslToRgb(hue, saturation, lightness);
-        
-        data[index] = rgb.r;     // Red
-        data[index + 1] = rgb.g; // Green
-        data[index + 2] = rgb.b; // Blue
-        data[index + 3] = 255;   // Alpha
+        const hue = (x / width) * 360
+        const saturation = y / height
+        const lightness = 0.5
+
+        const rgb = FilterUtils.hslToRgb(hue, saturation, lightness)
+
+        data[index] = rgb.r // Red
+        data[index + 1] = rgb.g // Green
+        data[index + 2] = rgb.b // Blue
+        data[index + 3] = 255 // Alpha
       }
     }
-    
-    return imageData;
+
+    return imageData
   }
 
   /**
    * HSL到RGB转换辅助函数
    */
   private static hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
-    h = h / 360; // 转换为0-1范围
-    
-    const hue2rgb = (p: number, q: number, t: number): number => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
+    h = h / 360 // 转换为0-1范围
 
-    let r: number, g: number, b: number;
+    const hue2rgb = (p: number, q: number, t: number): number => {
+      if (t < 0) t += 1
+      if (t > 1) t -= 1
+      if (t < 1 / 6) return p + (q - p) * 6 * t
+      if (t < 1 / 2) return q
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+      return p
+    }
+
+    let r: number, g: number, b: number
 
     if (s === 0) {
-      r = g = b = l; // 无饱和度时为灰度
+      r = g = b = l // 无饱和度时为灰度
     } else {
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      r = hue2rgb(p, q, h + 1/3);
-      g = hue2rgb(p, q, h);
-      b = hue2rgb(p, q, h - 1/3);
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+      const p = 2 * l - q
+      r = hue2rgb(p, q, h + 1 / 3)
+      g = hue2rgb(p, q, h)
+      b = hue2rgb(p, q, h - 1 / 3)
     }
 
     return {
       r: Math.round(r * 255),
       g: Math.round(g * 255),
-      b: Math.round(b * 255)
-    };
+      b: Math.round(b * 255),
+    }
   }
 
   /**
    * 创建边缘检测效果
    */
   static createEdgeDetectionEffect(): FilterParameters[] {
-    const edgeShader = this.createShaderFromPreset('edgeDetection');
-    if (!edgeShader) return [];
-    
+    const edgeShader = FilterUtils.createShaderFromPreset('edgeDetection')
+    if (!edgeShader) return []
+
     return [
       edgeShader,
-      this.createContrast(20),  // 增强对比度
-      this.createBrightness(10) // 稍微提亮
-    ];
+      FilterUtils.createContrast(20), // 增强对比度
+      FilterUtils.createBrightness(10), // 稍微提亮
+    ]
   }
 
   /**
    * 创建油画艺术效果
    */
   static createOilPaintingEffect(): FilterParameters[] {
-    const oilPaintingShader = this.createShaderFromPreset('oilPainting');
-    if (!oilPaintingShader) return [];
-    
+    const oilPaintingShader = FilterUtils.createShaderFromPreset('oilPainting')
+    if (!oilPaintingShader) return []
+
     return [
       oilPaintingShader,
-      this.createSaturation(15),    // 增加饱和度
-      this.createContrast(10)       // 轻微增加对比度
-    ];
+      FilterUtils.createSaturation(15), // 增加饱和度
+      FilterUtils.createContrast(10), // 轻微增加对比度
+    ]
   }
 
   /**
    * 创建科幻效果
    */
   static createSciFiEffect(): FilterParameters[] {
-    const swirlShader = this.createShaderFromPreset('swirl');
-    if (!swirlShader) return [];
-    
+    const swirlShader = FilterUtils.createShaderFromPreset('swirl')
+    if (!swirlShader) return []
+
     return [
       swirlShader,
-      this.createHueRotate(120),       // 色相偏移
-      this.createSaturation(30),       // 高饱和度
-      this.createGlow('#00ffff', 8, 1.5, 'high'), // 蓝色发光
-      this.createContrast(25)          // 高对比度
-    ];
+      FilterUtils.createHueRotate(120), // 色相偏移
+      FilterUtils.createSaturation(30), // 高饱和度
+      FilterUtils.createGlow('#00ffff', 8, 1.5, 'high'), // 蓝色发光
+      FilterUtils.createContrast(25), // 高对比度
+    ]
   }
 
   /**
    * 创建像素艺术效果
    */
   static createPixelArtEffect(): FilterParameters[] {
-    const pixelateShader = this.createShaderFromPreset('pixelate');
-    if (!pixelateShader) return [];
-    
+    const pixelateShader = FilterUtils.createShaderFromPreset('pixelate')
+    if (!pixelateShader) return []
+
     // 调整像素化参数
-    pixelateShader.uniforms = { u_pixelSize: 12.0 };
-    
+    pixelateShader.uniforms = { u_pixelSize: 12.0 }
+
     return [
       pixelateShader,
-      this.createContrast(20),      // 增强对比度
-      this.createSaturation(25)     // 增强饱和度
-    ];
+      FilterUtils.createContrast(20), // 增强对比度
+      FilterUtils.createSaturation(25), // 增强饱和度
+    ]
   }
 
   /**
    * 创建报纸印刷效果
    */
   static createNewspaperEffect(): FilterParameters[] {
-    const halftoneShader = this.createShaderFromPreset('halftone');
-    if (!halftoneShader) return [];
-    
+    const halftoneShader = FilterUtils.createShaderFromPreset('halftone')
+    if (!halftoneShader) return []
+
     return [
-      this.createGrayscale(1),      // 先转为灰度
+      FilterUtils.createGrayscale(1), // 先转为灰度
       halftoneShader,
-      this.createContrast(30)       // 高对比度
-    ];
+      FilterUtils.createContrast(30), // 高对比度
+    ]
   }
 
   /**
    * 创建怀旧相片效果
    */
   static createVintagePhotoEffect(): FilterParameters[] {
-    const sepiaShader = this.createShaderFromPreset('sepia');
-    if (!sepiaShader) return [];
-    
+    const sepiaShader = FilterUtils.createShaderFromPreset('sepia')
+    if (!sepiaShader) return []
+
     return [
       sepiaShader,
-      this.createSaturation(-10),       // 降低饱和度
-      this.createContrast(15),          // 增加对比度
-      this.createBrightness(8),         // 稍微提亮
-      this.createDropShadow(0, 0, 20, '#000000', 0.3) // 轻微暗角
-    ];
+      FilterUtils.createSaturation(-10), // 降低饱和度
+      FilterUtils.createContrast(15), // 增加对比度
+      FilterUtils.createBrightness(8), // 稍微提亮
+      FilterUtils.createDropShadow(0, 0, 20, '#000000', 0.3), // 轻微暗角
+    ]
   }
 
   /**
    * 创建魔幻效果
    */
   static createMagicalEffect(): FilterParameters[] {
-    const colorizeShader = this.createShaderFromPreset('colorize');
-    if (!colorizeShader) return [];
-    
+    const colorizeShader = FilterUtils.createShaderFromPreset('colorize')
+    if (!colorizeShader) return []
+
     // 设置紫色调
     colorizeShader.uniforms = {
       u_color: [0.8, 0.3, 1.0],
-      u_amount: 0.6
-    };
-    
+      u_amount: 0.6,
+    }
+
     return [
       colorizeShader,
-      this.createGlow('#9f4fff', 15, 2, 'high'), // 紫色发光
-      this.createSaturation(20),                 // 增加饱和度
-      this.createContrast(15),                   // 增加对比度
-      this.createBrightness(10)                  // 提亮
-    ];
+      FilterUtils.createGlow('#9f4fff', 15, 2, 'high'), // 紫色发光
+      FilterUtils.createSaturation(20), // 增加饱和度
+      FilterUtils.createContrast(15), // 增加对比度
+      FilterUtils.createBrightness(10), // 提亮
+    ]
   }
 
   /**
    * 获取所有可用的着色器预设ID
    */
   static getAvailableShaderPresets(): string[] {
-    return ShaderPresets.getAllPresets().map(preset => preset.id);
+    return ShaderPresets.getAllPresets().map((preset) => preset.id)
   }
 
   /**
    * 获取着色器预设信息
    */
-  static getShaderPresetInfo(presetId: string): { name: string; description: string; category: string } | null {
-    const preset = ShaderPresets.getPreset(presetId);
-    if (!preset) return null;
-    
+  static getShaderPresetInfo(
+    presetId: string
+  ): { name: string; description: string; category: string } | null {
+    const preset = ShaderPresets.getPreset(presetId)
+    if (!preset) return null
+
     return {
       name: preset.name,
       description: preset.description,
-      category: preset.category
-    };
+      category: preset.category,
+    }
   }
 }

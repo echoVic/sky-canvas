@@ -254,6 +254,7 @@
             createRenderEngine,
             GraphicsAdapterType
         } from '/src/engine/graphics/index.ts';
+
         
         // 全局变量
         let canvas2dEngine = null;
@@ -585,7 +586,7 @@
         }
         
         // 全局函数（供HTML调用）
-        window.renderCanvas2D = function() {
+        window.renderCanvas2D = () => {
             if (canvas2dEngine) {
                 const startTime = performance.now();
                 canvas2dEngine.render();
@@ -595,7 +596,7 @@
             }
         };
         
-        window.clearCanvas2D = function() {
+        window.clearCanvas2D = () => {
             if (canvas2dEngine) {
                 const context = canvas2dEngine.getContext();
                 if (context) {
@@ -605,7 +606,7 @@
             }
         };
         
-        window.startAnimation2D = function() {
+        window.startAnimation2D = () => {
             if (canvas2dEngine && !animationId2D) {
                 canvas2dEngine.start();
                 animationId2D = true;
@@ -613,7 +614,7 @@
             }
         };
         
-        window.renderWebGL = function() {
+        window.renderWebGL = () => {
             if (webglEngine) {
                 const startTime = performance.now();
                 webglEngine.render();
@@ -623,7 +624,7 @@
             }
         };
         
-        window.clearWebGL = function() {
+        window.clearWebGL = () => {
             if (webglEngine) {
                 const context = webglEngine.getContext();
                 if (context) {
@@ -633,7 +634,7 @@
             }
         };
         
-        window.startAnimationWebGL = function() {
+        window.startAnimationWebGL = () => {
             if (webglEngine && !animationIdWebGL) {
                 webglEngine.start();
                 animationIdWebGL = true;
@@ -641,7 +642,7 @@
             }
         };
         
-        window.renderWebGPU = function() {
+        window.renderWebGPU = () => {
             if (webgpuEngine) {
                 const startTime = performance.now();
                 webgpuEngine.render();
@@ -651,7 +652,7 @@
             }
         };
         
-        window.clearWebGPU = function() {
+        window.clearWebGPU = () => {
             if (webgpuEngine) {
                 const context = webgpuEngine.getContext();
                 if (context) {
@@ -661,7 +662,7 @@
             }
         };
         
-        window.startAnimationWebGPU = function() {
+        window.startAnimationWebGPU = () => {
             if (webgpuEngine && !animationIdWebGPU) {
                 webgpuEngine.start();
                 animationIdWebGPU = true;

@@ -3,16 +3,20 @@
  * 提供后处理效果的管道式处理
  */
 
-import { PostProcessConfig, PostProcessLayer, PostProcessType } from '../types/PostProcessTypes';
-import { PostProcessManager } from './PostProcessManager';
+import type {
+  PostProcessConfig,
+  PostProcessLayer,
+  PostProcessType,
+} from '../types/PostProcessTypes'
+import { PostProcessManager } from './PostProcessManager'
 
 export class PostProcessPipeline {
-  private static instance: PostProcessPipeline;
-  private postProcessManager: PostProcessManager;
-  private pipeline: PostProcessConfig[] = [];
+  private static instance: PostProcessPipeline
+  private postProcessManager: PostProcessManager
+  private pipeline: PostProcessConfig[] = []
 
   private constructor() {
-    this.postProcessManager = new PostProcessManager();
+    this.postProcessManager = new PostProcessManager()
   }
 
   /**
@@ -20,49 +24,49 @@ export class PostProcessPipeline {
    */
   static getInstance(): PostProcessPipeline {
     if (!PostProcessPipeline.instance) {
-      PostProcessPipeline.instance = new PostProcessPipeline();
+      PostProcessPipeline.instance = new PostProcessPipeline()
     }
-    return PostProcessPipeline.instance;
+    return PostProcessPipeline.instance
   }
 
   /**
    * 获取后处理管理器
    */
   getPostProcessManager(): PostProcessManager {
-    return this.postProcessManager;
+    return this.postProcessManager
   }
 
   /**
    * 添加后处理效果到管道
    */
   addEffect(config: PostProcessConfig): void {
-    this.pipeline.push(config);
+    this.pipeline.push(config)
   }
 
   /**
    * 移除后处理效果
    */
   removeEffect(type: PostProcessType): boolean {
-    const index = this.pipeline.findIndex(config => config.type === type);
+    const index = this.pipeline.findIndex((config) => config.type === type)
     if (index !== -1) {
-      this.pipeline.splice(index, 1);
-      return true;
+      this.pipeline.splice(index, 1)
+      return true
     }
-    return false;
+    return false
   }
 
   /**
    * 清空管道
    */
   clearPipeline(): void {
-    this.pipeline = [];
+    this.pipeline = []
   }
 
   /**
    * 获取管道中的所有效果
    */
   getPipeline(): PostProcessConfig[] {
-    return [...this.pipeline];
+    return [...this.pipeline]
   }
 
   /**
@@ -70,14 +74,14 @@ export class PostProcessPipeline {
    */
   async processImage(canvas: HTMLCanvasElement): Promise<HTMLCanvasElement> {
     if (this.pipeline.length === 0) {
-      return canvas;
+      return canvas
     }
 
-    let currentCanvas = canvas;
+    let currentCanvas = canvas
 
     for (const config of this.pipeline) {
       if (!config.enabled) {
-        continue;
+        continue
       }
 
       // 创建临时图层
@@ -85,28 +89,28 @@ export class PostProcessPipeline {
         id: `layer-${config.type}`,
         canvas: currentCanvas,
         effects: [],
-        enabled: true
-      };
+        enabled: true,
+      }
 
       // 应用效果
-      currentCanvas = this.postProcessManager.process(currentCanvas);
+      currentCanvas = this.postProcessManager.process(currentCanvas)
     }
 
-    return currentCanvas;
+    return currentCanvas
   }
 
   /**
    * 批量处理图像
    */
   async processBatchImages(canvases: HTMLCanvasElement[]): Promise<HTMLCanvasElement[]> {
-    const results: HTMLCanvasElement[] = [];
+    const results: HTMLCanvasElement[] = []
 
     for (const canvas of canvases) {
-      const result = await this.processImage(canvas);
-      results.push(result);
+      const result = await this.processImage(canvas)
+      results.push(result)
     }
 
-    return results;
+    return results
   }
 
   /**
@@ -122,8 +126,8 @@ export class PostProcessPipeline {
       type,
       enabled,
       intensity,
-      parameters
-    };
+      parameters,
+    }
   }
 
   /**
@@ -132,43 +136,43 @@ export class PostProcessPipeline {
   validatePipeline(): boolean {
     for (const config of this.pipeline) {
       if (config.intensity < 0 || config.intensity > 1) {
-        return false;
+        return false
       }
 
       for (const [key, value] of Object.entries(config.parameters)) {
         if (typeof value !== 'number') {
-          return false;
+          return false
         }
       }
     }
 
-    return true;
+    return true
   }
 
   /**
    * 获取管道统计信息
    */
   getPipelineStats(): {
-    totalEffects: number;
-    enabledEffects: number;
-    disabledEffects: number;
+    totalEffects: number
+    enabledEffects: number
+    disabledEffects: number
   } {
-    const totalEffects = this.pipeline.length;
-    const enabledEffects = this.pipeline.filter(config => config.enabled).length;
-    const disabledEffects = totalEffects - enabledEffects;
+    const totalEffects = this.pipeline.length
+    const enabledEffects = this.pipeline.filter((config) => config.enabled).length
+    const disabledEffects = totalEffects - enabledEffects
 
     return {
       totalEffects,
       enabledEffects,
-      disabledEffects
-    };
+      disabledEffects,
+    }
   }
 
   /**
    * 清理资源
    */
   dispose(): void {
-    this.postProcessManager.dispose();
-    this.pipeline = [];
+    this.postProcessManager.dispose()
+    this.pipeline = []
   }
 }

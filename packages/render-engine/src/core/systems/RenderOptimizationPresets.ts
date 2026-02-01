@@ -2,7 +2,7 @@
  * 渲染优化预设配置
  */
 
-import type { RenderOptimizationConfig } from './RenderOptimizationConfigTypes';
+import type { RenderOptimizationConfig } from './RenderOptimizationConfigTypes'
 
 /**
  * 低端设备配置
@@ -14,7 +14,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     lodLevels: 3,
     biasMultiplier: 2.0,
     hysteresis: 0.1,
-    adaptiveBias: true
+    adaptiveBias: true,
   },
   batching: {
     enabled: true,
@@ -24,7 +24,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     enableInstancing: true,
     instanceThreshold: 5,
     sortByMaterial: true,
-    sortByDepth: false
+    sortByDepth: false,
   },
   culling: {
     frustumCulling: true,
@@ -32,7 +32,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     backfaceCulling: true,
     smallObjectCulling: true,
     smallObjectThreshold: 2.0,
-    occlusionQueryDelay: 2
+    occlusionQueryDelay: 2,
   },
   cache: {
     enabled: true,
@@ -41,7 +41,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     predictiveLoading: false,
     compressionEnabled: true,
     evictionPolicy: 'LRU',
-    preloadDistance: 10
+    preloadDistance: 10,
   },
   gpuResource: {
     memoryBudget: 128 * 1024 * 1024, // 128MB
@@ -50,7 +50,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     maxTextureSize: 1024,
     compressionFormats: ['DXT1', 'DXT5'],
     mipmapGeneration: true,
-    anisotropicFiltering: 2
+    anisotropicFiltering: 2,
   },
   shader: {
     asyncCompilation: false,
@@ -59,7 +59,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     preprocessorOptimization: true,
     deadCodeElimination: true,
     constantFolding: true,
-    maxVariants: 50
+    maxVariants: 50,
   },
   monitoring: {
     enabled: true,
@@ -69,9 +69,9 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
       frameTime: 33.33, // 30 FPS
       memoryUsage: 100 * 1024 * 1024,
       drawCalls: 200,
-      triangles: 10000
+      triangles: 10000,
     },
-    profilingEnabled: false
+    profilingEnabled: false,
   },
   multiThread: {
     enabled: false,
@@ -79,7 +79,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     taskQueueSize: 10,
     loadBalancing: false,
     affinityMask: 0x1,
-    priorityScheduling: false
+    priorityScheduling: false,
   },
   adaptiveQuality: {
     enabled: true,
@@ -93,7 +93,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 0,
         anisotropicFiltering: 1,
         shadowResolution: 256,
-        maxLights: 2
+        maxLights: 2,
       },
       medium: {
         lodBias: 1.5,
@@ -103,7 +103,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 2,
         anisotropicFiltering: 2,
         shadowResolution: 512,
-        maxLights: 4
+        maxLights: 4,
       },
       high: {
         lodBias: 1.0,
@@ -113,7 +113,7 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 4,
         anisotropicFiltering: 4,
         shadowResolution: 1024,
-        maxLights: 6
+        maxLights: 6,
       },
       ultra: {
         lodBias: 0.5,
@@ -123,11 +123,11 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 8,
         anisotropicFiltering: 8,
         shadowResolution: 2048,
-        maxLights: 8
-      }
+        maxLights: 8,
+      },
     },
     adaptationSpeed: 0.1,
-    stabilityThreshold: 5
+    stabilityThreshold: 5,
   },
   pipeline: {
     deferredShading: false,
@@ -137,9 +137,9 @@ export const LOW_END_CONFIG: RenderOptimizationConfig = {
     asyncCompute: false,
     gpuDrivenRendering: false,
     meshShaders: false,
-    variableRateShading: false
-  }
-};
+    variableRateShading: false,
+  },
+}
 
 /**
  * 中端设备配置
@@ -151,7 +151,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     lodLevels: 4,
     biasMultiplier: 1.5,
     hysteresis: 0.15,
-    adaptiveBias: true
+    adaptiveBias: true,
   },
   batching: {
     enabled: true,
@@ -161,7 +161,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     enableInstancing: true,
     instanceThreshold: 3,
     sortByMaterial: true,
-    sortByDepth: true
+    sortByDepth: true,
   },
   culling: {
     frustumCulling: true,
@@ -169,7 +169,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     backfaceCulling: true,
     smallObjectCulling: true,
     smallObjectThreshold: 1.0,
-    occlusionQueryDelay: 1
+    occlusionQueryDelay: 1,
   },
   cache: {
     enabled: true,
@@ -178,7 +178,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     predictiveLoading: true,
     compressionEnabled: true,
     evictionPolicy: 'LRU',
-    preloadDistance: 20
+    preloadDistance: 20,
   },
   gpuResource: {
     memoryBudget: 256 * 1024 * 1024, // 256MB
@@ -187,7 +187,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     maxTextureSize: 2048,
     compressionFormats: ['DXT1', 'DXT5', 'BC7'],
     mipmapGeneration: true,
-    anisotropicFiltering: 4
+    anisotropicFiltering: 4,
   },
   shader: {
     asyncCompilation: true,
@@ -196,7 +196,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     preprocessorOptimization: true,
     deadCodeElimination: true,
     constantFolding: true,
-    maxVariants: 100
+    maxVariants: 100,
   },
   monitoring: {
     enabled: true,
@@ -206,9 +206,9 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
       frameTime: 16.67, // 60 FPS
       memoryUsage: 200 * 1024 * 1024,
       drawCalls: 500,
-      triangles: 50000
+      triangles: 50000,
     },
-    profilingEnabled: true
+    profilingEnabled: true,
   },
   multiThread: {
     enabled: true,
@@ -216,7 +216,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     taskQueueSize: 20,
     loadBalancing: true,
     affinityMask: 0x3,
-    priorityScheduling: true
+    priorityScheduling: true,
   },
   adaptiveQuality: {
     enabled: true,
@@ -230,7 +230,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 2,
         anisotropicFiltering: 2,
         shadowResolution: 512,
-        maxLights: 4
+        maxLights: 4,
       },
       medium: {
         lodBias: 1.0,
@@ -240,7 +240,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 4,
         anisotropicFiltering: 4,
         shadowResolution: 1024,
-        maxLights: 6
+        maxLights: 6,
       },
       high: {
         lodBias: 0.75,
@@ -250,7 +250,7 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 8,
         anisotropicFiltering: 8,
         shadowResolution: 2048,
-        maxLights: 8
+        maxLights: 8,
       },
       ultra: {
         lodBias: 0.5,
@@ -260,11 +260,11 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 16,
         anisotropicFiltering: 16,
         shadowResolution: 4096,
-        maxLights: 12
-      }
+        maxLights: 12,
+      },
     },
     adaptationSpeed: 0.15,
-    stabilityThreshold: 10
+    stabilityThreshold: 10,
   },
   pipeline: {
     deferredShading: true,
@@ -274,9 +274,9 @@ export const MEDIUM_END_CONFIG: RenderOptimizationConfig = {
     asyncCompute: true,
     gpuDrivenRendering: false,
     meshShaders: false,
-    variableRateShading: false
-  }
-};
+    variableRateShading: false,
+  },
+}
 
 /**
  * 高端设备配置
@@ -288,7 +288,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     lodLevels: 5,
     biasMultiplier: 1.0,
     hysteresis: 0.2,
-    adaptiveBias: true
+    adaptiveBias: true,
   },
   batching: {
     enabled: true,
@@ -298,7 +298,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     enableInstancing: true,
     instanceThreshold: 2,
     sortByMaterial: true,
-    sortByDepth: true
+    sortByDepth: true,
   },
   culling: {
     frustumCulling: true,
@@ -306,7 +306,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     backfaceCulling: true,
     smallObjectCulling: true,
     smallObjectThreshold: 0.5,
-    occlusionQueryDelay: 0
+    occlusionQueryDelay: 0,
   },
   cache: {
     enabled: true,
@@ -315,7 +315,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     predictiveLoading: true,
     compressionEnabled: false,
     evictionPolicy: 'LFU',
-    preloadDistance: 50
+    preloadDistance: 50,
   },
   gpuResource: {
     memoryBudget: 1024 * 1024 * 1024, // 1GB
@@ -324,7 +324,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     maxTextureSize: 4096,
     compressionFormats: ['BC7', 'ASTC'],
     mipmapGeneration: true,
-    anisotropicFiltering: 16
+    anisotropicFiltering: 16,
   },
   shader: {
     asyncCompilation: true,
@@ -333,7 +333,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     preprocessorOptimization: true,
     deadCodeElimination: true,
     constantFolding: true,
-    maxVariants: 500
+    maxVariants: 500,
   },
   monitoring: {
     enabled: true,
@@ -343,17 +343,17 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
       frameTime: 8.33, // 120 FPS
       memoryUsage: 500 * 1024 * 1024,
       drawCalls: 2000,
-      triangles: 200000
+      triangles: 200000,
     },
-    profilingEnabled: true
+    profilingEnabled: true,
   },
   multiThread: {
     enabled: true,
     workerCount: 4,
     taskQueueSize: 50,
     loadBalancing: true,
-    affinityMask: 0xF,
-    priorityScheduling: true
+    affinityMask: 0xf,
+    priorityScheduling: true,
   },
   adaptiveQuality: {
     enabled: true,
@@ -367,7 +367,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 4,
         anisotropicFiltering: 4,
         shadowResolution: 1024,
-        maxLights: 6
+        maxLights: 6,
       },
       medium: {
         lodBias: 0.75,
@@ -377,7 +377,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 8,
         anisotropicFiltering: 8,
         shadowResolution: 2048,
-        maxLights: 8
+        maxLights: 8,
       },
       high: {
         lodBias: 0.5,
@@ -387,7 +387,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 16,
         anisotropicFiltering: 16,
         shadowResolution: 4096,
-        maxLights: 12
+        maxLights: 12,
       },
       ultra: {
         lodBias: 0.25,
@@ -397,11 +397,11 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
         antiAliasing: 32,
         anisotropicFiltering: 16,
         shadowResolution: 8192,
-        maxLights: 16
-      }
+        maxLights: 16,
+      },
     },
     adaptationSpeed: 0.2,
-    stabilityThreshold: 15
+    stabilityThreshold: 15,
   },
   pipeline: {
     deferredShading: true,
@@ -411,9 +411,9 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
     asyncCompute: true,
     gpuDrivenRendering: true,
     meshShaders: true,
-    variableRateShading: true
-  }
-};
+    variableRateShading: true,
+  },
+}
 
 /**
  * 预设配置集合
@@ -421,7 +421,7 @@ export const HIGH_END_CONFIG: RenderOptimizationConfig = {
 export const PRESET_CONFIGS = {
   LOW_END: LOW_END_CONFIG,
   MEDIUM_END: MEDIUM_END_CONFIG,
-  HIGH_END: HIGH_END_CONFIG
-} as const;
+  HIGH_END: HIGH_END_CONFIG,
+} as const
 
-export type PresetConfigKey = keyof typeof PRESET_CONFIGS;
+export type PresetConfigKey = keyof typeof PRESET_CONFIGS

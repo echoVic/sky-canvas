@@ -30,8 +30,8 @@ export class FilterShaderLibrary {
           color.rgb += u_brightness;
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -60,8 +60,8 @@ export class FilterShaderLibrary {
           color.rgb = (color.rgb - 0.5) * u_contrast + 0.5;
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -91,8 +91,8 @@ export class FilterShaderLibrary {
           color.rgb = mix(vec3(gray), color.rgb, u_saturation);
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -132,8 +132,8 @@ export class FilterShaderLibrary {
           
           gl_FragColor = color / total;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -163,8 +163,8 @@ export class FilterShaderLibrary {
           color.rgb = mix(color.rgb, vec3(gray), u_amount);
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -193,8 +193,8 @@ export class FilterShaderLibrary {
           color.rgb = mix(color.rgb, 1.0 - color.rgb, u_amount);
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -232,8 +232,8 @@ export class FilterShaderLibrary {
           color.rgb = mix(color.rgb, vec3(newR, newG, newB), u_amount);
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -273,8 +273,8 @@ export class FilterShaderLibrary {
           color.rgb = hueMatrix * color.rgb;
           gl_FragColor = color;
         }
-      `
-    };
+      `,
+    }
   }
 
   /**
@@ -282,22 +282,22 @@ export class FilterShaderLibrary {
    */
   static getAllShaders(): Record<string, { vertex: string; fragment: string }> {
     return {
-      brightness: this.getBrightnessShader(),
-      contrast: this.getContrastShader(),
-      saturation: this.getSaturationShader(),
-      gaussianBlur: this.getGaussianBlurShader(),
-      grayscale: this.getGrayscaleShader(),
-      invert: this.getInvertShader(),
-      sepia: this.getSepiaShader(),
-      hueRotate: this.getHueRotateShader()
-    };
+      brightness: FilterShaderLibrary.getBrightnessShader(),
+      contrast: FilterShaderLibrary.getContrastShader(),
+      saturation: FilterShaderLibrary.getSaturationShader(),
+      gaussianBlur: FilterShaderLibrary.getGaussianBlurShader(),
+      grayscale: FilterShaderLibrary.getGrayscaleShader(),
+      invert: FilterShaderLibrary.getInvertShader(),
+      sepia: FilterShaderLibrary.getSepiaShader(),
+      hueRotate: FilterShaderLibrary.getHueRotateShader(),
+    }
   }
 
   /**
    * 获取特定着色器
    */
   static getShader(name: string): { vertex: string; fragment: string } | undefined {
-    const shaders = this.getAllShaders();
-    return shaders[name];
+    const shaders = FilterShaderLibrary.getAllShaders()
+    return shaders[name]
   }
 }

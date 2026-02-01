@@ -1,6 +1,6 @@
-import React from 'react'
 import { Button } from '@heroui/react'
 import { Menu } from 'lucide-react'
+import type React from 'react'
 import { useCanvasStore } from '../../store/canvasStore'
 
 const MenuButton: React.FC = () => {

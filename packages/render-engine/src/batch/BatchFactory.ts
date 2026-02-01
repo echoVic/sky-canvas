@@ -3,10 +3,10 @@
  * 创建预配置的批处理管理器
  */
 
-import { BatchManager, BatchManagerConfig, createBatchManager } from './core';
-import { BasicStrategy } from './strategies/BasicStrategy';
-import { EnhancedStrategy } from './strategies/EnhancedStrategy';
-import { InstancedStrategy } from './strategies/InstancedStrategy';
+import { type BatchManager, type BatchManagerConfig, createBatchManager } from './core'
+import { BasicStrategy } from './strategies/BasicStrategy'
+import { EnhancedStrategy } from './strategies/EnhancedStrategy'
+import { InstancedStrategy } from './strategies/InstancedStrategy'
 
 /**
  * 创建带有默认策略的批处理管理器
@@ -15,17 +15,17 @@ export function createBatchManagerWithDefaultStrategies(
   gl: WebGLRenderingContext,
   config?: Partial<BatchManagerConfig>
 ): BatchManager {
-  const manager = createBatchManager(gl, config);
-  
+  const manager = createBatchManager(gl, config)
+
   // 注册所有默认策略
-  manager.registerStrategy(new BasicStrategy(gl));
-  manager.registerStrategy(new EnhancedStrategy(gl));
-  manager.registerStrategy(new InstancedStrategy(gl));
-  
+  manager.registerStrategy(new BasicStrategy(gl))
+  manager.registerStrategy(new EnhancedStrategy(gl))
+  manager.registerStrategy(new InstancedStrategy(gl))
+
   // 设置默认策略
-  manager.setStrategy(config?.defaultStrategy || 'basic');
-  
-  return manager;
+  manager.setStrategy(config?.defaultStrategy || 'basic')
+
+  return manager
 }
 
 /**
@@ -35,10 +35,10 @@ export function createBasicBatchManager(
   gl: WebGLRenderingContext,
   config?: Partial<BatchManagerConfig>
 ): BatchManager {
-  const manager = createBatchManager(gl, config);
-  manager.registerStrategy(new BasicStrategy(gl));
-  manager.setStrategy('basic');
-  return manager;
+  const manager = createBatchManager(gl, config)
+  manager.registerStrategy(new BasicStrategy(gl))
+  manager.setStrategy('basic')
+  return manager
 }
 
 /**
@@ -48,11 +48,11 @@ export function createEnhancedBatchManager(
   gl: WebGLRenderingContext,
   config?: Partial<BatchManagerConfig>
 ): BatchManager {
-  const manager = createBatchManager(gl, config);
-  manager.registerStrategy(new BasicStrategy(gl));
-  manager.registerStrategy(new EnhancedStrategy(gl));
-  manager.setStrategy('enhanced');
-  return manager;
+  const manager = createBatchManager(gl, config)
+  manager.registerStrategy(new BasicStrategy(gl))
+  manager.registerStrategy(new EnhancedStrategy(gl))
+  manager.setStrategy('enhanced')
+  return manager
 }
 
 /**
@@ -62,9 +62,9 @@ export function createInstancedBatchManager(
   gl: WebGLRenderingContext,
   config?: Partial<BatchManagerConfig>
 ): BatchManager {
-  const manager = createBatchManager(gl, config);
-  manager.registerStrategy(new BasicStrategy(gl));
-  manager.registerStrategy(new InstancedStrategy(gl));
-  manager.setStrategy('instanced');
-  return manager;
+  const manager = createBatchManager(gl, config)
+  manager.registerStrategy(new BasicStrategy(gl))
+  manager.registerStrategy(new InstancedStrategy(gl))
+  manager.setStrategy('instanced')
+  return manager
 }

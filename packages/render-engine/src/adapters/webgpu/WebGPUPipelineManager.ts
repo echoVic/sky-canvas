@@ -3,74 +3,74 @@
  * 管理着色器模块、管线布局和渲染管线
  */
 
-import { SHADER_SOURCES, ShaderType } from './WebGPUShaders';
-import { VERTEX_LAYOUTS, VertexLayout } from './WebGPUBufferManager';
+import { VERTEX_LAYOUTS, type VertexLayout } from './WebGPUBufferManager'
+import { SHADER_SOURCES, ShaderType } from './WebGPUShaders'
 
 /**
  * 管线配置
  */
 export interface PipelineConfig {
-  shaderType: ShaderType;
-  vertexLayout: VertexLayout;
-  blendMode?: 'normal' | 'additive' | 'multiply';
-  depthTest?: boolean;
-  cullMode?: GPUCullMode;
-  topology?: GPUPrimitiveTopology;
+  shaderType: ShaderType
+  vertexLayout: VertexLayout
+  blendMode?: 'normal' | 'additive' | 'multiply'
+  depthTest?: boolean
+  cullMode?: GPUCullMode
+  topology?: GPUPrimitiveTopology
 }
 
 /**
  * 着色器模块缓存
  */
 interface ShaderModuleCache {
-  vertex: GPUShaderModule;
-  fragment: GPUShaderModule;
+  vertex: GPUShaderModule
+  fragment: GPUShaderModule
 }
 
 /**
  * 管线缓存项
  */
 interface PipelineCacheEntry {
-  pipeline: GPURenderPipeline;
-  bindGroupLayout: GPUBindGroupLayout;
+  pipeline: GPURenderPipeline
+  bindGroupLayout: GPUBindGroupLayout
 }
 
 /**
  * WebGPU 渲染管线管理器
  */
 export class WebGPUPipelineManager {
-  private device: GPUDevice;
-  private format: GPUTextureFormat;
-  private shaderModules: Map<ShaderType, ShaderModuleCache> = new Map();
-  private pipelines: Map<string, PipelineCacheEntry> = new Map();
+  private device: GPUDevice
+  private format: GPUTextureFormat
+  private shaderModules: Map<ShaderType, ShaderModuleCache> = new Map()
+  private pipelines: Map<string, PipelineCacheEntry> = new Map()
 
   constructor(device: GPUDevice, format: GPUTextureFormat) {
-    this.device = device;
-    this.format = format;
+    this.device = device
+    this.format = format
   }
 
   /**
    * 获取或创建着色器模块
    */
   private getShaderModules(type: ShaderType): ShaderModuleCache {
-    let cache = this.shaderModules.get(type);
+    let cache = this.shaderModules.get(type)
     if (cache) {
-      return cache;
+      return cache
     }
 
-    const sources = SHADER_SOURCES[type];
+    const sources = SHADER_SOURCES[type]
     cache = {
       vertex: this.device.createShaderModule({
         label: `${type} Vertex Shader`,
-        code: sources.vertex
+        code: sources.vertex,
       }),
       fragment: this.device.createShaderModule({
         label: `${type} Fragment Shader`,
-        code: sources.fragment
-      })
-    };
+        code: sources.fragment,
+      }),
+    }
 
-    this.shaderModules.set(type, cache);
-    return cache;
+    this.shaderModules.set(type, cache)
+    return cache
   }
 
   /**
@@ -83,41 +83,41 @@ export class WebGPUPipelineManager {
           color: {
             srcFactor: 'src-alpha',
             dstFactor: 'one',
-            operation: 'add'
+            operation: 'add',
           },
           alpha: {
             srcFactor: 'one',
             dstFactor: 'one',
-            operation: 'add'
-          }
-        };
+            operation: 'add',
+          },
+        }
       case 'multiply':
         return {
           color: {
             srcFactor: 'dst',
             dstFactor: 'zero',
-            operation: 'add'
+            operation: 'add',
           },
           alpha: {
             srcFactor: 'one',
             dstFactor: 'one-minus-src-alpha',
-            operation: 'add'
-          }
-        };
+            operation: 'add',
+          },
+        }
       case 'normal':
       default:
         return {
           color: {
             srcFactor: 'src-alpha',
             dstFactor: 'one-minus-src-alpha',
-            operation: 'add'
+            operation: 'add',
           },
           alpha: {
             srcFactor: 'one',
             dstFactor: 'one-minus-src-alpha',
-            operation: 'add'
-          }
-        };
+            operation: 'add',
+          },
+        }
     }
   }
 
@@ -125,46 +125,46 @@ export class WebGPUPipelineManager {
    * 创建顶点缓冲区布局
    */
   private createVertexBufferLayout(layout: VertexLayout): GPUVertexBufferLayout {
-    const attributes: GPUVertexAttribute[] = [];
-    let shaderLocation = 0;
+    const attributes: GPUVertexAttribute[] = []
+    let shaderLocation = 0
 
     if (layout.position) {
       attributes.push({
         shaderLocation: shaderLocation++,
         offset: layout.position.offset,
-        format: layout.position.format
-      });
+        format: layout.position.format,
+      })
     }
 
     if (layout.texCoord) {
       attributes.push({
         shaderLocation: shaderLocation++,
         offset: layout.texCoord.offset,
-        format: layout.texCoord.format
-      });
+        format: layout.texCoord.format,
+      })
     }
 
     if (layout.color) {
       attributes.push({
         shaderLocation: shaderLocation++,
         offset: layout.color.offset,
-        format: layout.color.format
-      });
+        format: layout.color.format,
+      })
     }
 
     if (layout.normal) {
       attributes.push({
         shaderLocation: shaderLocation++,
         offset: layout.normal.offset,
-        format: layout.normal.format
-      });
+        format: layout.normal.format,
+      })
     }
 
     return {
       arrayStride: layout.stride,
       stepMode: 'vertex',
-      attributes
-    };
+      attributes,
+    }
   }
 
   /**
@@ -176,9 +176,9 @@ export class WebGPUPipelineManager {
       {
         binding: 0,
         visibility: GPUShaderStage.VERTEX,
-        buffer: { type: 'uniform' }
-      }
-    ];
+        buffer: { type: 'uniform' },
+      },
+    ]
 
     // 根据着色器类型添加额外绑定
     if (shaderType === ShaderType.TEXTURED) {
@@ -186,51 +186,51 @@ export class WebGPUPipelineManager {
         {
           binding: 1,
           visibility: GPUShaderStage.FRAGMENT,
-          sampler: {}
+          sampler: {},
         },
         {
           binding: 2,
           visibility: GPUShaderStage.FRAGMENT,
-          texture: {}
+          texture: {},
         }
-      );
+      )
     } else if (shaderType === ShaderType.CIRCLE || shaderType === ShaderType.LINE) {
       entries.push({
         binding: 1,
         visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-        buffer: { type: 'uniform' }
-      });
+        buffer: { type: 'uniform' },
+      })
     }
 
     return this.device.createBindGroupLayout({
       label: `${shaderType} Bind Group Layout`,
-      entries
-    });
+      entries,
+    })
   }
 
   /**
    * 生成管线缓存键
    */
   private getPipelineKey(config: PipelineConfig): string {
-    return `${config.shaderType}_${config.blendMode ?? 'normal'}_${config.topology ?? 'triangle-list'}`;
+    return `${config.shaderType}_${config.blendMode ?? 'normal'}_${config.topology ?? 'triangle-list'}`
   }
 
   /**
    * 获取或创建渲染管线
    */
   getPipeline(config: PipelineConfig): PipelineCacheEntry {
-    const key = this.getPipelineKey(config);
-    let entry = this.pipelines.get(key);
+    const key = this.getPipelineKey(config)
+    let entry = this.pipelines.get(key)
     if (entry) {
-      return entry;
+      return entry
     }
 
-    const shaderModules = this.getShaderModules(config.shaderType);
-    const bindGroupLayout = this.createBindGroupLayout(config.shaderType);
+    const shaderModules = this.getShaderModules(config.shaderType)
+    const bindGroupLayout = this.createBindGroupLayout(config.shaderType)
     const pipelineLayout = this.device.createPipelineLayout({
       label: `${config.shaderType} Pipeline Layout`,
-      bindGroupLayouts: [bindGroupLayout]
-    });
+      bindGroupLayouts: [bindGroupLayout],
+    })
 
     const pipeline = this.device.createRenderPipeline({
       label: `${config.shaderType} Render Pipeline`,
@@ -238,25 +238,27 @@ export class WebGPUPipelineManager {
       vertex: {
         module: shaderModules.vertex,
         entryPoint: 'main',
-        buffers: [this.createVertexBufferLayout(config.vertexLayout)]
+        buffers: [this.createVertexBufferLayout(config.vertexLayout)],
       },
       fragment: {
         module: shaderModules.fragment,
         entryPoint: 'main',
-        targets: [{
-          format: this.format,
-          blend: this.createBlendState(config.blendMode ?? 'normal')
-        }]
+        targets: [
+          {
+            format: this.format,
+            blend: this.createBlendState(config.blendMode ?? 'normal'),
+          },
+        ],
       },
       primitive: {
         topology: config.topology ?? 'triangle-list',
-        cullMode: config.cullMode ?? 'none'
-      }
-    });
+        cullMode: config.cullMode ?? 'none',
+      },
+    })
 
-    entry = { pipeline, bindGroupLayout };
-    this.pipelines.set(key, entry);
-    return entry;
+    entry = { pipeline, bindGroupLayout }
+    this.pipelines.set(key, entry)
+    return entry
   }
 
   /**
@@ -265,8 +267,8 @@ export class WebGPUPipelineManager {
   getBasic2DPipeline(): PipelineCacheEntry {
     return this.getPipeline({
       shaderType: ShaderType.BASIC_2D,
-      vertexLayout: VERTEX_LAYOUTS.POSITION_COLOR
-    });
+      vertexLayout: VERTEX_LAYOUTS.POSITION_COLOR,
+    })
   }
 
   /**
@@ -275,8 +277,8 @@ export class WebGPUPipelineManager {
   getTexturedPipeline(): PipelineCacheEntry {
     return this.getPipeline({
       shaderType: ShaderType.TEXTURED,
-      vertexLayout: VERTEX_LAYOUTS.POSITION_TEXCOORD_COLOR
-    });
+      vertexLayout: VERTEX_LAYOUTS.POSITION_TEXCOORD_COLOR,
+    })
   }
 
   /**
@@ -287,9 +289,9 @@ export class WebGPUPipelineManager {
       shaderType: ShaderType.CIRCLE,
       vertexLayout: {
         position: { offset: 0, format: 'float32x2' },
-        stride: 8
-      }
-    });
+        stride: 8,
+      },
+    })
   }
 
   /**
@@ -298,15 +300,15 @@ export class WebGPUPipelineManager {
   getLinePipeline(): PipelineCacheEntry {
     return this.getPipeline({
       shaderType: ShaderType.LINE,
-      vertexLayout: VERTEX_LAYOUTS.POSITION_NORMAL
-    });
+      vertexLayout: VERTEX_LAYOUTS.POSITION_NORMAL,
+    })
   }
 
   /**
    * 清理资源
    */
   dispose(): void {
-    this.shaderModules.clear();
-    this.pipelines.clear();
+    this.shaderModules.clear()
+    this.pipelines.clear()
   }
 }

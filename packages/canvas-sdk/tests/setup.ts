@@ -22,7 +22,7 @@ const mockCanvas2DContext = {
   setTransform: vi.fn(),
   getTransform: vi.fn(),
   setLineDash: vi.fn(),
-  getLineDash: vi.fn()
+  getLineDash: vi.fn(),
 }
 
 const mockWebGLContext = {
@@ -60,16 +60,16 @@ const mockWebGLContext = {
   blendFunc: vi.fn(),
   viewport: vi.fn(),
   drawArrays: vi.fn(),
-  drawElements: vi.fn()
+  drawElements: vi.fn(),
 }
 
 Object.defineProperty(performance, 'memory', {
   value: {
     usedJSHeapSize: 10 * 1024 * 1024,
     totalJSHeapSize: 20 * 1024 * 1024,
-    jsHeapSizeLimit: 100 * 1024 * 1024
+    jsHeapSizeLimit: 100 * 1024 * 1024,
   },
-  configurable: true
+  configurable: true,
 })
 
 global.ResizeObserver = class {
@@ -96,7 +96,7 @@ if (!(navigatorRef as any).gpu) {
   ;(navigatorRef as any).gpu = {
     getPreferredCanvasFormat: () => 'bgra8unorm',
     requestAdapter: async () => ({
-      requestDevice: async () => ({})
-    })
+      requestDevice: async () => ({}),
+    }),
   }
 }

@@ -3,7 +3,7 @@
  * 提供基于 WebGPU 的高性能图形渲染能力的接口定义
  */
 
-import {
+import type {
   IColor,
   IGraphicsCapabilities,
   IGraphicsContext,
@@ -14,20 +14,20 @@ import {
   IPoint,
   IRect,
   ITextStyle,
-  ITransform
-} from '../IGraphicsContext';
+  ITransform,
+} from '../IGraphicsContext'
 
 /**
  * WebGPU 图形上下文实现（占位符）
  */
 export class WebGPUGraphicsContext implements IGraphicsContext {
-  private canvas: HTMLCanvasElement;
-  private currentState: IGraphicsState;
-  private stateStack: IGraphicsState[] = [];
+  private canvas: HTMLCanvasElement
+  private currentState: IGraphicsState
+  private stateStack: IGraphicsState[] = []
 
   constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    
+    this.canvas = canvas
+
     // 初始化默认状态
     this.currentState = {
       transform: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 },
@@ -35,81 +35,81 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
         fillColor: { r: 0, g: 0, b: 0, a: 1 },
         strokeColor: { r: 0, g: 0, b: 0, a: 1 },
         lineWidth: 1,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   get width(): number {
-    return this.canvas.width;
+    return this.canvas.width
   }
 
   get height(): number {
-    return this.canvas.height;
+    return this.canvas.height
   }
 
   get devicePixelRatio(): number {
-    return window.devicePixelRatio || 1;
+    return window.devicePixelRatio || 1
   }
 
   // 状态管理
   save(): void {
-    this.stateStack.push({ ...this.currentState });
+    this.stateStack.push({ ...this.currentState })
   }
 
   restore(): void {
-    const state = this.stateStack.pop();
+    const state = this.stateStack.pop()
     if (state) {
-      this.currentState = state;
+      this.currentState = state
     }
   }
 
   getState(): IGraphicsState {
-    return { ...this.currentState };
+    return { ...this.currentState }
   }
 
   setState(state: Partial<IGraphicsState>): void {
-    this.currentState = { ...this.currentState, ...state };
+    this.currentState = { ...this.currentState, ...state }
   }
 
   // 变换操作
   setTransform(transform: ITransform): void {
-    this.currentState.transform = { ...transform };
+    this.currentState.transform = { ...transform }
   }
 
   transform(a: number, b: number, c: number, d: number, e: number, f: number): void {
-    const t = this.currentState.transform;
+    const t = this.currentState.transform
     this.currentState.transform = {
       a: t.a * a + t.c * b,
       b: t.b * a + t.d * b,
       c: t.a * c + t.c * d,
       d: t.b * c + t.d * d,
       e: t.a * e + t.c * f + t.e,
-      f: t.b * e + t.d * f + t.f
-    };
+      f: t.b * e + t.d * f + t.f,
+    }
   }
 
   translate(x: number, y: number): void {
-    this.transform(1, 0, 0, 1, x, y);
+    this.transform(1, 0, 0, 1, x, y)
   }
 
   rotate(angle: number): void {
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    this.transform(cos, sin, -sin, cos, 0, 0);
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    this.transform(cos, sin, -sin, cos, 0, 0)
   }
 
   scale(x: number, y: number): void {
-    this.transform(x, 0, 0, y, 0, 0);
+    this.transform(x, 0, 0, y, 0, 0)
   }
 
   resetTransform(): void {
-    this.currentState.transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+    this.currentState.transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
   }
 
   // 样式设置
   setStyle(style: Partial<IGraphicsStyle>): void {
-    this.currentState.style = { ...this.currentState.style, ...style };
+    this.currentState.style = { ...this.currentState.style, ...style }
   }
 
   setFillColor(color: IColor | string): void {
@@ -121,15 +121,15 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
   }
 
   setLineWidth(width: number): void {
-    this.currentState.style.lineWidth = width;
+    this.currentState.style.lineWidth = width
   }
 
   setOpacity(opacity: number): void {
-    this.currentState.style.opacity = opacity;
+    this.currentState.style.opacity = opacity
   }
 
   setGlobalAlpha(alpha: number): void {
-    this.currentState.style.opacity = alpha;
+    this.currentState.style.opacity = alpha
   }
 
   setLineDash(segments: number[]): void {
@@ -158,28 +158,28 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
 
   drawLine(x1: number, y1: number, x2: number, y2: number): void {
     // 占位符实现
-    console.warn('WebGPU drawLine not implemented');
+    console.warn('WebGPU drawLine not implemented')
   }
 
   drawRect(rect: IRect, fill?: boolean, stroke?: boolean): void {
     // 占位符实现
-    console.warn('WebGPU drawRect not implemented');
+    console.warn('WebGPU drawRect not implemented')
   }
 
   drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
     // 占位符实现
-    console.warn('WebGPU drawCircle not implemented');
+    console.warn('WebGPU drawCircle not implemented')
   }
 
   // 绘制操作
   clear(): void {
     // 占位符实现
-    console.warn('WebGPU clear not implemented');
+    console.warn('WebGPU clear not implemented')
   }
 
   clearRect(x: number, y: number, width: number, height: number): void {
     // 占位符实现
-    console.warn('WebGPU clearRect not implemented');
+    console.warn('WebGPU clearRect not implemented')
   }
 
   // 路径操作
@@ -203,11 +203,25 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     // 占位符实现
   }
 
-  bezierCurveTo(cp1x: number, cp1y: number, cp2x: number, cp2y: number, x: number, y: number): void {
+  bezierCurveTo(
+    cp1x: number,
+    cp1y: number,
+    cp2x: number,
+    cp2y: number,
+    x: number,
+    y: number
+  ): void {
     // 占位符实现
   }
 
-  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number, counterclockwise?: boolean): void {
+  arc(
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    counterclockwise?: boolean
+  ): void {
     // 占位符实现
   }
 
@@ -225,46 +239,46 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
 
   fillRect(x: number, y: number, width: number, height: number): void {
     // 占位符实现
-    console.warn('WebGPU fillRect not implemented');
+    console.warn('WebGPU fillRect not implemented')
   }
 
   strokeRect(x: number, y: number, width: number, height: number): void {
     // 占位符实现
-    console.warn('WebGPU strokeRect not implemented');
+    console.warn('WebGPU strokeRect not implemented')
   }
 
   fillCircle(x: number, y: number, radius: number): void {
     // 占位符实现
-    console.warn('WebGPU fillCircle not implemented');
+    console.warn('WebGPU fillCircle not implemented')
   }
 
   strokeCircle(x: number, y: number, radius: number): void {
     // 占位符实现
-    console.warn('WebGPU strokeCircle not implemented');
+    console.warn('WebGPU strokeCircle not implemented')
   }
 
   // 文本操作
   fillText(text: string, x: number, y: number, style?: ITextStyle): void {
     // 占位符实现
-    console.warn('WebGPU fillText not implemented');
+    console.warn('WebGPU fillText not implemented')
   }
 
   strokeText(text: string, x: number, y: number, style?: ITextStyle): void {
     // 占位符实现
-    console.warn('WebGPU strokeText not implemented');
+    console.warn('WebGPU strokeText not implemented')
   }
 
   measureText(text: string, style?: ITextStyle): { width: number; height: number } {
     // 占位符实现
-    return { width: 0, height: 0 };
+    return { width: 0, height: 0 }
   }
 
   // 图像操作
-  drawImage(imageData: IImageData, dx: number, dy: number): void;
-  drawImage(imageData: IImageData, dx: number, dy: number, dw: number, dh: number): void;
+  drawImage(imageData: IImageData, dx: number, dy: number): void
+  drawImage(imageData: IImageData, dx: number, dy: number, dw: number, dh: number): void
   drawImage(imageData: IImageData, dx: number, dy: number, dw?: number, dh?: number): void {
     // 占位符实现
-    console.warn('WebGPU drawImage not implemented');
+    console.warn('WebGPU drawImage not implemented')
   }
 
   getImageData(x: number, y: number, width: number, height: number): IImageData {
@@ -272,13 +286,13 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     return {
       data: new Uint8ClampedArray(width * height * 4),
       width,
-      height
-    };
+      height,
+    }
   }
 
   putImageData(imageData: IImageData, x: number, y: number): void {
     // 占位符实现
-    console.warn('WebGPU putImageData not implemented');
+    console.warn('WebGPU putImageData not implemented')
   }
 
   // 裁剪操作
@@ -293,12 +307,12 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
   // 坐标转换
   screenToWorld(point: IPoint): IPoint {
     // 占位符实现
-    return { ...point };
+    return { ...point }
   }
 
   worldToScreen(point: IPoint): IPoint {
     // 占位符实现
-    return { ...point };
+    return { ...point }
   }
 
   // 资源管理
@@ -317,12 +331,12 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
 export class WebGPUGraphicsContextFactory implements IGraphicsContextFactory<HTMLCanvasElement> {
   async createContext(canvas: HTMLCanvasElement): Promise<IGraphicsContext> {
     // 占位符实现，返回基本的 WebGPU 上下文
-    return new WebGPUGraphicsContext(canvas);
+    return new WebGPUGraphicsContext(canvas)
   }
 
   isSupported(): boolean {
     // 占位符实现，暂时返回 false
-    return false;
+    return false
   }
 
   getCapabilities(): IGraphicsCapabilities {
@@ -332,7 +346,7 @@ export class WebGPUGraphicsContextFactory implements IGraphicsContextFactory<HTM
       supportsFilters: false,
       supportsBlending: false,
       maxTextureSize: 4096,
-      supportedFormats: ['rgba8unorm']
-    };
+      supportedFormats: ['rgba8unorm'],
+    }
   }
 }

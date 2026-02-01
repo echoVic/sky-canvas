@@ -3,24 +3,20 @@
  * 支持用户编写GLSL着色器进行自定义图像处理
  */
 
-import {
-    CustomShaderParameters,
-    FilterContext,
-    FilterType
-} from '../types/FilterTypes';
-import { WebGLRenderer } from '../webgl/WebGLRenderer';
-import { WebGLShaderManager } from '../webgl/WebGLShaderManager';
-import { BaseFilter } from './BaseFilter';
+import { type CustomShaderParameters, type FilterContext, FilterType } from '../types/FilterTypes'
+import { WebGLRenderer } from '../webgl/WebGLRenderer'
+import { WebGLShaderManager } from '../webgl/WebGLShaderManager'
+import { BaseFilter } from './BaseFilter'
 
 export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
-  readonly type = FilterType.CUSTOM_SHADER;
-  readonly name = 'Custom Shader';
-  readonly description = 'Apply custom GLSL shaders for advanced image effects';
-  readonly supportedInputFormats = ['image/png', 'image/jpeg', 'image/webp'];
-  readonly requiresWebGL = true;
+  readonly type = FilterType.CUSTOM_SHADER
+  readonly name = 'Custom Shader'
+  readonly description = 'Apply custom GLSL shaders for advanced image effects'
+  readonly supportedInputFormats = ['image/png', 'image/jpeg', 'image/webp']
+  readonly requiresWebGL = true
 
-  private static renderer: WebGLRenderer | null = null;
-  private static rendererRefCount = 0;
+  private static renderer: WebGLRenderer | null = null
+  private static rendererRefCount = 0
 
   /**
    * 获取WebGL渲染器实例（单例）
@@ -31,25 +27,25 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
         CustomShaderFilter.renderer = new WebGLRenderer({
           width: 1024,
           height: 1024,
-          preserveDrawingBuffer: false
-        });
+          preserveDrawingBuffer: false,
+        })
       } catch (error) {
-        throw new Error(`Failed to initialize WebGL renderer: ${error}`);
+        throw new Error(`Failed to initialize WebGL renderer: ${error}`)
       }
     }
-    CustomShaderFilter.rendererRefCount++;
-    return CustomShaderFilter.renderer;
+    CustomShaderFilter.rendererRefCount++
+    return CustomShaderFilter.renderer
   }
 
   /**
    * 释放WebGL渲染器
    */
   private static releaseRenderer(): void {
-    CustomShaderFilter.rendererRefCount--;
+    CustomShaderFilter.rendererRefCount--
     if (CustomShaderFilter.rendererRefCount <= 0 && CustomShaderFilter.renderer) {
-      CustomShaderFilter.renderer.dispose();
-      CustomShaderFilter.renderer = null;
-      CustomShaderFilter.rendererRefCount = 0;
+      CustomShaderFilter.renderer.dispose()
+      CustomShaderFilter.renderer = null
+      CustomShaderFilter.rendererRefCount = 0
     }
   }
 
@@ -57,32 +53,32 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
    * 处理自定义着色器滤镜
    */
   protected async processFilter(
-    context: FilterContext, 
+    context: FilterContext,
     parameters: CustomShaderParameters
   ): Promise<ImageData> {
-    const { sourceImageData } = context;
+    const { sourceImageData } = context
 
     // 检查WebGL支持
     if (!this.checkWebGLSupport()) {
-      throw new Error('WebGL is not supported or available');
+      throw new Error('WebGL is not supported or available')
     }
 
-    const renderer = CustomShaderFilter.getRenderer();
-    
+    const renderer = CustomShaderFilter.getRenderer()
+
     try {
       // 创建唯一的程序ID
-      const programId = this.generateProgramId(parameters);
-      
+      const programId = this.generateProgramId(parameters)
+
       // 编译着色器程序
-      const success = this.compileShaderProgram(renderer, programId, parameters);
+      const success = this.compileShaderProgram(renderer, programId, parameters)
       if (!success) {
-        throw new Error('Failed to compile shader program');
+        throw new Error('Failed to compile shader program')
       }
 
       // 创建输入纹理
-      const inputTexture = renderer.createTexture(sourceImageData);
+      const inputTexture = renderer.createTexture(sourceImageData)
       if (!inputTexture) {
-        throw new Error('Failed to create input texture');
+        throw new Error('Failed to create input texture')
       }
 
       try {
@@ -93,19 +89,19 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
           parameters.uniforms || {},
           sourceImageData.width,
           sourceImageData.height
-        );
+        )
 
         if (!result) {
-          throw new Error('Shader rendering failed');
+          throw new Error('Shader rendering failed')
         }
 
-        return result;
+        return result
       } finally {
         // 清理纹理
-        renderer.deleteTexture(inputTexture);
+        renderer.deleteTexture(inputTexture)
       }
     } finally {
-      CustomShaderFilter.releaseRenderer();
+      CustomShaderFilter.releaseRenderer()
     }
   }
 
@@ -118,17 +114,20 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
     parameters: CustomShaderParameters
   ): boolean {
     // 验证着色器代码
-    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader);
-    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', parameters.fragmentShader);
+    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader)
+    const fragmentErrors = WebGLShaderManager.validateShaderCode(
+      'fragment',
+      parameters.fragmentShader
+    )
 
     if (vertexErrors.length > 0) {
-      console.error('Vertex shader validation errors:', vertexErrors);
-      return false;
+      console.error('Vertex shader validation errors:', vertexErrors)
+      return false
     }
 
     if (fragmentErrors.length > 0) {
-      console.error('Fragment shader validation errors:', fragmentErrors);
-      return false;
+      console.error('Fragment shader validation errors:', fragmentErrors)
+      return false
     }
 
     // 创建着色器程序
@@ -136,7 +135,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
       programId,
       parameters.vertexShader,
       parameters.fragmentShader
-    );
+    )
   }
 
   /**
@@ -144,14 +143,14 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
    */
   private generateProgramId(parameters: CustomShaderParameters): string {
     // 使用着色器代码的哈希作为ID
-    const content = parameters.vertexShader + parameters.fragmentShader;
-    let hash = 0;
+    const content = parameters.vertexShader + parameters.fragmentShader
+    let hash = 0
     for (let i = 0; i < content.length; i++) {
-      const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
+      const char = content.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash // Convert to 32-bit integer
     }
-    return `custom_shader_${Math.abs(hash).toString(36)}`;
+    return `custom_shader_${Math.abs(hash).toString(36)}`
   }
 
   /**
@@ -159,11 +158,11 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
    */
   private checkWebGLSupport(): boolean {
     try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      return gl !== null;
+      const canvas = document.createElement('canvas')
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+      return gl !== null
     } catch {
-      return false;
+      return false
     }
   }
 
@@ -171,20 +170,22 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
    * 验证自定义着色器参数
    */
   protected validateSpecificParameters(parameters: CustomShaderParameters): boolean {
-
     if (typeof parameters.vertexShader !== 'string' || !parameters.vertexShader.trim()) {
-      return false;
+      return false
     }
 
     if (typeof parameters.fragmentShader !== 'string' || !parameters.fragmentShader.trim()) {
-      return false;
+      return false
     }
 
     // 验证着色器代码基本语法
-    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader);
-    const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', parameters.fragmentShader);
+    const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', parameters.vertexShader)
+    const fragmentErrors = WebGLShaderManager.validateShaderCode(
+      'fragment',
+      parameters.fragmentShader
+    )
 
-    return vertexErrors.length === 0 && fragmentErrors.length === 0;
+    return vertexErrors.length === 0 && fragmentErrors.length === 0
   }
 
   /**
@@ -197,8 +198,8 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
       fragmentShader: this.getDefaultFragmentShader(),
       uniforms: {},
       enabled: true,
-      opacity: 1
-    };
+      opacity: 1,
+    }
   }
 
   /**
@@ -218,7 +219,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
         vec4 color = texture2D(u_image, v_texCoord);
         gl_FragColor = color;
       }
-    `;
+    `
   }
 
   /**
@@ -226,14 +227,14 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
    */
   protected getComplexityFactor(parameters: CustomShaderParameters): number {
     // 自定义着色器复杂度难以预测，使用中等值
-    return 2.0;
+    return 2.0
   }
 
   /**
    * 获取基础处理时间（每像素）
    */
   protected getBaseProcessingTimePerPixel(): number {
-    return 0.003; // GPU处理相对较快，但有初始化开销
+    return 0.003 // GPU处理相对较快，但有初始化开销
   }
 
   /**
@@ -273,7 +274,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
         `,
         uniforms: {},
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
 
       // 色彩反转
@@ -292,7 +293,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
         `,
         uniforms: {},
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
 
       // 旋涡效果
@@ -327,7 +328,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
         `,
         uniforms: {},
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
 
       // 马赛克效果
@@ -348,19 +349,19 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
           }
         `,
         uniforms: {
-          u_pixelSize: 8.0
+          u_pixelSize: 8.0,
         },
         enabled: true,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   /**
    * 销毁滤镜时的清理
    */
   dispose(): void {
-    super.dispose();
-    CustomShaderFilter.releaseRenderer();
+    super.dispose()
+    CustomShaderFilter.releaseRenderer()
   }
 }

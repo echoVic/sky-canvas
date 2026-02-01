@@ -11,14 +11,12 @@
  */
 export function getNestedProperty(obj: any, path: string): any {
   if (!obj || typeof obj !== 'object' || !path) {
-    return undefined;
+    return undefined
   }
 
   return path.split('.').reduce((current, key) => {
-    return current && typeof current === 'object' && key in current 
-      ? current[key] 
-      : undefined;
-  }, obj);
+    return current && typeof current === 'object' && key in current ? current[key] : undefined
+  }, obj)
 }
 
 /**
@@ -29,21 +27,21 @@ export function getNestedProperty(obj: any, path: string): any {
  */
 export function setNestedProperty(obj: any, path: string, value: any): void {
   if (!obj || typeof obj !== 'object' || !path) {
-    return;
+    return
   }
 
-  const keys = path.split('.');
-  const lastKey = keys.pop()!;
-  
+  const keys = path.split('.')
+  const lastKey = keys.pop()!
+
   // 导航到最后一级对象，自动创建中间对象
   const target = keys.reduce((current, key) => {
     if (!current[key] || typeof current[key] !== 'object') {
-      current[key] = {};
+      current[key] = {}
     }
-    return current[key];
-  }, obj);
+    return current[key]
+  }, obj)
 
-  target[lastKey] = value;
+  target[lastKey] = value
 }
 
 /**
@@ -52,11 +50,8 @@ export function setNestedProperty(obj: any, path: string, value: any): void {
  * @param path 属性路径
  * @returns 类型安全的属性值
  */
-export function getNestedPropertySafe<T>(
-  obj: Record<string, any>, 
-  path: string
-): T | undefined {
-  return getNestedProperty(obj, path) as T | undefined;
+export function getNestedPropertySafe<T>(obj: Record<string, any>, path: string): T | undefined {
+  return getNestedProperty(obj, path) as T | undefined
 }
 
 /**
@@ -67,20 +62,20 @@ export function getNestedPropertySafe<T>(
  */
 export function hasNestedProperty(obj: any, path: string): boolean {
   if (!obj || typeof obj !== 'object' || !path) {
-    return false;
+    return false
   }
 
-  const keys = path.split('.');
-  let current = obj;
+  const keys = path.split('.')
+  let current = obj
 
   for (const key of keys) {
     if (!current || typeof current !== 'object' || !(key in current)) {
-      return false;
+      return false
     }
-    current = current[key];
+    current = current[key]
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -91,27 +86,27 @@ export function hasNestedProperty(obj: any, path: string): boolean {
  */
 export function deleteNestedProperty(obj: any, path: string): boolean {
   if (!obj || typeof obj !== 'object' || !path) {
-    return false;
+    return false
   }
 
-  const keys = path.split('.');
-  const lastKey = keys.pop()!;
+  const keys = path.split('.')
+  const lastKey = keys.pop()!
 
   // 导航到父级对象
-  let current = obj;
+  let current = obj
   for (const key of keys) {
     if (!current || typeof current !== 'object' || !(key in current)) {
-      return false;
+      return false
     }
-    current = current[key];
+    current = current[key]
   }
 
   if (current && typeof current === 'object' && lastKey in current) {
-    delete current[lastKey];
-    return true;
+    delete current[lastKey]
+    return true
   }
 
-  return false;
+  return false
 }
 
 /**
@@ -121,28 +116,28 @@ export function deleteNestedProperty(obj: any, path: string): boolean {
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
-    return obj;
+    return obj
   }
 
   if (obj instanceof Date) {
-    return new Date(obj.getTime()) as T;
+    return new Date(obj.getTime()) as T
   }
 
   if (obj instanceof Array) {
-    return obj.map(item => deepClone(item)) as T;
+    return obj.map((item) => deepClone(item)) as T
   }
 
   if (typeof obj === 'object') {
-    const cloned = {} as T;
+    const cloned = {} as T
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        cloned[key] = deepClone(obj[key]);
+      if (Object.hasOwn(obj, key)) {
+        cloned[key] = deepClone(obj[key])
       }
     }
-    return cloned;
+    return cloned
   }
 
-  return obj;
+  return obj
 }
 
 /**
@@ -151,25 +146,22 @@ export function deepClone<T>(obj: T): T {
  * @param sources 源对象
  * @returns 合并后的对象
  */
-export function deepMerge<T extends Record<string, any>>(
-  target: T, 
-  ...sources: Partial<T>[]
-): T {
-  if (!sources.length) return target;
-  const source = sources.shift();
+export function deepMerge<T extends Record<string, any>>(target: T, ...sources: Partial<T>[]): T {
+  if (!sources.length) return target
+  const source = sources.shift()
 
   if (isObject(target) && isObject(source)) {
     for (const key in source) {
       if (isObject(source[key])) {
-        if (!target[key]) Object.assign(target, { [key]: {} });
-        deepMerge(target[key] as T, source[key] as Partial<T>);
+        if (!target[key]) Object.assign(target, { [key]: {} })
+        deepMerge(target[key] as T, source[key] as Partial<T>)
       } else {
-        Object.assign(target, { [key]: source[key] });
+        Object.assign(target, { [key]: source[key] })
       }
     }
   }
 
-  return deepMerge(target, ...sources);
+  return deepMerge(target, ...sources)
 }
 
 /**
@@ -178,7 +170,7 @@ export function deepMerge<T extends Record<string, any>>(
  * @returns 是否为对象
  */
 function isObject(item: any): item is Record<string, any> {
-  return item && typeof item === 'object' && !Array.isArray(item);
+  return item && typeof item === 'object' && !Array.isArray(item)
 }
 
 /**
@@ -188,24 +180,24 @@ function isObject(item: any): item is Record<string, any> {
  * @returns 所有属性路径数组
  */
 export function getObjectPaths(obj: any, prefix: string = ''): string[] {
-  const paths: string[] = [];
-  
+  const paths: string[] = []
+
   if (!obj || typeof obj !== 'object') {
-    return paths;
+    return paths
   }
 
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      const currentPath = prefix ? `${prefix}.${key}` : key;
-      paths.push(currentPath);
-      
+    if (Object.hasOwn(obj, key)) {
+      const currentPath = prefix ? `${prefix}.${key}` : key
+      paths.push(currentPath)
+
       if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-        paths.push(...getObjectPaths(obj[key], currentPath));
+        paths.push(...getObjectPaths(obj[key], currentPath))
       }
     }
   }
 
-  return paths;
+  return paths
 }
 
 /**
@@ -216,7 +208,7 @@ export function getObjectPaths(obj: any, prefix: string = ''): string[] {
  * @returns 是否相等
  */
 export function compareNestedProperty(obj1: any, obj2: any, path: string): boolean {
-  const value1 = getNestedProperty(obj1, path);
-  const value2 = getNestedProperty(obj2, path);
-  return value1 === value2;
+  const value1 = getNestedProperty(obj1, path)
+  const value2 = getNestedProperty(obj2, path)
+  return value1 === value2
 }

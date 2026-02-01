@@ -2,45 +2,45 @@
  * 颜色调整效果
  */
 
-import { BasePostProcessEffect } from './BasePostProcessEffect';
 import {
+  type ColorAdjustmentConfig,
+  type ColorBalanceConfig,
+  type IPostProcessEffect,
   PostProcessType,
-  ColorAdjustmentConfig,
-  ColorBalanceConfig,
-  IPostProcessEffect
-} from '../types/PostProcessTypes';
+} from '../types/PostProcessTypes'
+import { BasePostProcessEffect } from './BasePostProcessEffect'
 
 /**
  * 亮度调整效果
  */
 export class BrightnessEffect extends BasePostProcessEffect {
   constructor(config: ColorAdjustmentConfig) {
-    super(PostProcessType.BRIGHTNESS, config);
+    super(PostProcessType.BRIGHTNESS, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const amount = (this._config as ColorAdjustmentConfig).parameters.amount;
-    const brightness = amount * this._config.intensity;
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const amount = (this._config as ColorAdjustmentConfig).parameters.amount
+    const brightness = amount * this._config.intensity
 
     for (let i = 0; i < data.length; i += 4) {
-      resultData[i] = this.clamp(data[i] + brightness);         // R
-      resultData[i + 1] = this.clamp(data[i + 1] + brightness); // G
-      resultData[i + 2] = this.clamp(data[i + 2] + brightness); // B
-      resultData[i + 3] = data[i + 3];                          // A
+      resultData[i] = this.clamp(data[i] + brightness) // R
+      resultData[i + 1] = this.clamp(data[i + 1] + brightness) // G
+      resultData[i + 2] = this.clamp(data[i + 2] + brightness) // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new BrightnessEffect(this._config as ColorAdjustmentConfig);
+    return new BrightnessEffect(this._config as ColorAdjustmentConfig)
   }
 }
 
@@ -49,33 +49,33 @@ export class BrightnessEffect extends BasePostProcessEffect {
  */
 export class ContrastEffect extends BasePostProcessEffect {
   constructor(config: ColorAdjustmentConfig) {
-    super(PostProcessType.CONTRAST, config);
+    super(PostProcessType.CONTRAST, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const amount = (this._config as ColorAdjustmentConfig).parameters.amount;
-    const contrast = (amount * this._config.intensity) * 2.55; // 转换为-255到255的范围
-    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const amount = (this._config as ColorAdjustmentConfig).parameters.amount
+    const contrast = amount * this._config.intensity * 2.55 // 转换为-255到255的范围
+    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
 
     for (let i = 0; i < data.length; i += 4) {
-      resultData[i] = this.clamp(factor * (data[i] - 128) + 128);         // R
-      resultData[i + 1] = this.clamp(factor * (data[i + 1] - 128) + 128); // G
-      resultData[i + 2] = this.clamp(factor * (data[i + 2] - 128) + 128); // B
-      resultData[i + 3] = data[i + 3];                                    // A
+      resultData[i] = this.clamp(factor * (data[i] - 128) + 128) // R
+      resultData[i + 1] = this.clamp(factor * (data[i + 1] - 128) + 128) // G
+      resultData[i + 2] = this.clamp(factor * (data[i + 2] - 128) + 128) // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new ContrastEffect(this._config as ColorAdjustmentConfig);
+    return new ContrastEffect(this._config as ColorAdjustmentConfig)
   }
 }
 
@@ -84,40 +84,40 @@ export class ContrastEffect extends BasePostProcessEffect {
  */
 export class SaturationEffect extends BasePostProcessEffect {
   constructor(config: ColorAdjustmentConfig) {
-    super(PostProcessType.SATURATION, config);
+    super(PostProcessType.SATURATION, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const amount = (this._config as ColorAdjustmentConfig).parameters.amount;
-    const saturation = amount * this._config.intensity;
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const amount = (this._config as ColorAdjustmentConfig).parameters.amount
+    const saturation = amount * this._config.intensity
 
     for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
 
       // 计算灰度值
-      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b
 
       // 调整饱和度
-      resultData[i] = this.clamp(gray + saturation * (r - gray));     // R
-      resultData[i + 1] = this.clamp(gray + saturation * (g - gray)); // G
-      resultData[i + 2] = this.clamp(gray + saturation * (b - gray)); // B
-      resultData[i + 3] = data[i + 3];                                // A
+      resultData[i] = this.clamp(gray + saturation * (r - gray)) // R
+      resultData[i + 1] = this.clamp(gray + saturation * (g - gray)) // G
+      resultData[i + 2] = this.clamp(gray + saturation * (b - gray)) // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new SaturationEffect(this._config as ColorAdjustmentConfig);
+    return new SaturationEffect(this._config as ColorAdjustmentConfig)
   }
 }
 
@@ -126,42 +126,42 @@ export class SaturationEffect extends BasePostProcessEffect {
  */
 export class HueShiftEffect extends BasePostProcessEffect {
   constructor(config: ColorAdjustmentConfig) {
-    super(PostProcessType.HUE_SHIFT, config);
+    super(PostProcessType.HUE_SHIFT, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const amount = (this._config as ColorAdjustmentConfig).parameters.amount;
-    const hueShift = (amount * this._config.intensity) / 360; // 转换为0-1的范围
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const amount = (this._config as ColorAdjustmentConfig).parameters.amount
+    const hueShift = (amount * this._config.intensity) / 360 // 转换为0-1的范围
 
     for (let i = 0; i < data.length; i += 4) {
-      const r = data[i] / 255;
-      const g = data[i + 1] / 255;
-      const b = data[i + 2] / 255;
+      const r = data[i] / 255
+      const g = data[i + 1] / 255
+      const b = data[i + 2] / 255
 
-      const hsl = this.rgbToHsl(r * 255, g * 255, b * 255);
-      hsl.h = (hsl.h + hueShift) % 1;
-      if (hsl.h < 0) hsl.h += 1;
+      const hsl = this.rgbToHsl(r * 255, g * 255, b * 255)
+      hsl.h = (hsl.h + hueShift) % 1
+      if (hsl.h < 0) hsl.h += 1
 
-      const rgb = this.hslToRgb(hsl.h, hsl.s, hsl.l);
+      const rgb = this.hslToRgb(hsl.h, hsl.s, hsl.l)
 
-      resultData[i] = rgb.r;         // R
-      resultData[i + 1] = rgb.g;     // G
-      resultData[i + 2] = rgb.b;     // B
-      resultData[i + 3] = data[i + 3]; // A
+      resultData[i] = rgb.r // R
+      resultData[i + 1] = rgb.g // G
+      resultData[i + 2] = rgb.b // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new HueShiftEffect(this._config as ColorAdjustmentConfig);
+    return new HueShiftEffect(this._config as ColorAdjustmentConfig)
   }
 }
 
@@ -170,33 +170,33 @@ export class HueShiftEffect extends BasePostProcessEffect {
  */
 export class GammaEffect extends BasePostProcessEffect {
   constructor(config: ColorAdjustmentConfig) {
-    super(PostProcessType.GAMMA, config);
+    super(PostProcessType.GAMMA, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const amount = (this._config as ColorAdjustmentConfig).parameters.amount;
-    const gamma = Math.max(0.1, amount * this._config.intensity);
-    const invGamma = 1 / gamma;
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const amount = (this._config as ColorAdjustmentConfig).parameters.amount
+    const gamma = Math.max(0.1, amount * this._config.intensity)
+    const invGamma = 1 / gamma
 
     for (let i = 0; i < data.length; i += 4) {
-      resultData[i] = this.clamp(Math.pow(data[i] / 255, invGamma) * 255);         // R
-      resultData[i + 1] = this.clamp(Math.pow(data[i + 1] / 255, invGamma) * 255); // G
-      resultData[i + 2] = this.clamp(Math.pow(data[i + 2] / 255, invGamma) * 255); // B
-      resultData[i + 3] = data[i + 3];                                             // A
+      resultData[i] = this.clamp((data[i] / 255) ** invGamma * 255) // R
+      resultData[i + 1] = this.clamp((data[i + 1] / 255) ** invGamma * 255) // G
+      resultData[i + 2] = this.clamp((data[i + 2] / 255) ** invGamma * 255) // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new GammaEffect(this._config as ColorAdjustmentConfig);
+    return new GammaEffect(this._config as ColorAdjustmentConfig)
   }
 }
 
@@ -205,32 +205,32 @@ export class GammaEffect extends BasePostProcessEffect {
  */
 export class ExposureEffect extends BasePostProcessEffect {
   constructor(config: ColorAdjustmentConfig) {
-    super(PostProcessType.EXPOSURE, config);
+    super(PostProcessType.EXPOSURE, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const amount = (this._config as ColorAdjustmentConfig).parameters.amount;
-    const exposure = Math.pow(2, amount * this._config.intensity);
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const amount = (this._config as ColorAdjustmentConfig).parameters.amount
+    const exposure = 2 ** (amount * this._config.intensity)
 
     for (let i = 0; i < data.length; i += 4) {
-      resultData[i] = this.clamp(data[i] * exposure);         // R
-      resultData[i + 1] = this.clamp(data[i + 1] * exposure); // G
-      resultData[i + 2] = this.clamp(data[i + 2] * exposure); // B
-      resultData[i + 3] = data[i + 3];                        // A
+      resultData[i] = this.clamp(data[i] * exposure) // R
+      resultData[i + 1] = this.clamp(data[i + 1] * exposure) // G
+      resultData[i + 2] = this.clamp(data[i + 2] * exposure) // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new ExposureEffect(this._config as ColorAdjustmentConfig);
+    return new ExposureEffect(this._config as ColorAdjustmentConfig)
   }
 }
 
@@ -239,58 +239,61 @@ export class ExposureEffect extends BasePostProcessEffect {
  */
 export class ColorBalanceEffect extends BasePostProcessEffect {
   constructor(config: ColorBalanceConfig) {
-    super(PostProcessType.COLOR_BALANCE, config);
+    super(PostProcessType.COLOR_BALANCE, config)
   }
 
   apply(imageData: ImageData, targetData?: ImageData): ImageData {
     if (!this._config.enabled) {
-      return this.copyImageData(imageData, targetData);
+      return this.copyImageData(imageData, targetData)
     }
 
-    const result = targetData || new ImageData(imageData.width, imageData.height);
-    const data = imageData.data;
-    const resultData = result.data;
-    const params = (this._config as ColorBalanceConfig).parameters;
-    const intensity = this._config.intensity;
+    const result = targetData || new ImageData(imageData.width, imageData.height)
+    const data = imageData.data
+    const resultData = result.data
+    const params = (this._config as ColorBalanceConfig).parameters
+    const intensity = this._config.intensity
 
     for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
 
       // 计算亮度以确定是阴影、中间调还是高光
-      const luminance = this.getLuminance(r, g, b);
-      const shadowWeight = Math.max(0, 1 - luminance / 85);
-      const midtoneWeight = 1 - Math.abs(luminance - 127.5) / 127.5;
-      const highlightWeight = Math.max(0, (luminance - 170) / 85);
+      const luminance = this.getLuminance(r, g, b)
+      const shadowWeight = Math.max(0, 1 - luminance / 85)
+      const midtoneWeight = 1 - Math.abs(luminance - 127.5) / 127.5
+      const highlightWeight = Math.max(0, (luminance - 170) / 85)
 
       // 应用色彩平衡
-      let newR = r + intensity * (
-        shadowWeight * params.shadowsRed +
-        midtoneWeight * params.midtonesRed +
-        highlightWeight * params.highlightsRed
-      );
-      let newG = g + intensity * (
-        shadowWeight * params.shadowsGreen +
-        midtoneWeight * params.midtonesGreen +
-        highlightWeight * params.highlightsGreen
-      );
-      let newB = b + intensity * (
-        shadowWeight * params.shadowsBlue +
-        midtoneWeight * params.midtonesBlue +
-        highlightWeight * params.highlightsBlue
-      );
+      const newR =
+        r +
+        intensity *
+          (shadowWeight * params.shadowsRed +
+            midtoneWeight * params.midtonesRed +
+            highlightWeight * params.highlightsRed)
+      const newG =
+        g +
+        intensity *
+          (shadowWeight * params.shadowsGreen +
+            midtoneWeight * params.midtonesGreen +
+            highlightWeight * params.highlightsGreen)
+      const newB =
+        b +
+        intensity *
+          (shadowWeight * params.shadowsBlue +
+            midtoneWeight * params.midtonesBlue +
+            highlightWeight * params.highlightsBlue)
 
-      resultData[i] = this.clamp(newR);         // R
-      resultData[i + 1] = this.clamp(newG);     // G
-      resultData[i + 2] = this.clamp(newB);     // B
-      resultData[i + 3] = data[i + 3];          // A
+      resultData[i] = this.clamp(newR) // R
+      resultData[i + 1] = this.clamp(newG) // G
+      resultData[i + 2] = this.clamp(newB) // B
+      resultData[i + 3] = data[i + 3] // A
     }
 
-    return result;
+    return result
   }
 
   clone(): IPostProcessEffect {
-    return new ColorBalanceEffect(this._config as ColorBalanceConfig);
+    return new ColorBalanceEffect(this._config as ColorBalanceConfig)
   }
 }

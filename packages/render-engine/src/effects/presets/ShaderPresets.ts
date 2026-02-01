@@ -3,27 +3,27 @@
  * 提供常用的着色器效果预设
  */
 
-import { CustomShaderParameters, FilterType } from '../types/FilterTypes';
-import { WebGLShaderManager } from '../webgl/WebGLShaderManager';
+import { type CustomShaderParameters, FilterType } from '../types/FilterTypes'
+import { WebGLShaderManager } from '../webgl/WebGLShaderManager'
 
 export interface ShaderPreset {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  parameters: CustomShaderParameters;
-  preview?: string; // Base64编码的预览图
+  id: string
+  name: string
+  description: string
+  category: string
+  parameters: CustomShaderParameters
+  preview?: string // Base64编码的预览图
 }
 
 export class ShaderPresets {
-  private static presets: Map<string, ShaderPreset> = new Map();
+  private static presets: Map<string, ShaderPreset> = new Map()
 
   /**
    * 初始化预设着色器
    */
   static initialize(): void {
     // 基础效果类别
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'identity',
       name: '原图',
       description: '不做任何处理，原样输出',
@@ -42,11 +42,11 @@ export class ShaderPresets {
         `,
         uniforms: {},
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'invert',
       name: '颜色反转',
       description: '反转图像的所有颜色',
@@ -66,12 +66,12 @@ export class ShaderPresets {
         `,
         uniforms: {},
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
     // 艺术效果类别
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'edgeDetection',
       name: '边缘检测',
       description: '使用Sobel算子检测边缘',
@@ -108,14 +108,14 @@ export class ShaderPresets {
           }
         `,
         uniforms: {
-          u_strength: 1.0
+          u_strength: 1.0,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'oilPainting',
       name: '油画效果',
       description: '模拟油画笔触效果',
@@ -159,15 +159,15 @@ export class ShaderPresets {
         `,
         uniforms: {
           u_radius: 4.0,
-          u_intensity: 8.0
+          u_intensity: 8.0,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
     // 变形效果类别
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'swirl',
       name: '旋涡效果',
       description: '创建旋转变形效果',
@@ -206,14 +206,14 @@ export class ShaderPresets {
         `,
         uniforms: {
           u_strength: 3.0,
-          u_center: [0.5, 0.5]
+          u_center: [0.5, 0.5],
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'fisheye',
       name: '鱼眼效果',
       description: '创建鱼眼镜头变形效果',
@@ -250,15 +250,15 @@ export class ShaderPresets {
           }
         `,
         uniforms: {
-          u_strength: 0.5
+          u_strength: 0.5,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
     // 像素化效果类别
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'pixelate',
       name: '像素化',
       description: '创建马赛克/像素化效果',
@@ -280,14 +280,14 @@ export class ShaderPresets {
           }
         `,
         uniforms: {
-          u_pixelSize: 8.0
+          u_pixelSize: 8.0,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'halftone',
       name: '半调效果',
       description: '创建报纸印刷半调效果',
@@ -336,15 +336,15 @@ export class ShaderPresets {
         `,
         uniforms: {
           u_dotSize: 6.0,
-          u_angle: 45.0
+          u_angle: 45.0,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
     // 色彩效果类别
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'sepia',
       name: '怀旧效果',
       description: '创建复古怀旧色调',
@@ -374,14 +374,14 @@ export class ShaderPresets {
           }
         `,
         uniforms: {
-          u_amount: 1.0
+          u_amount: 1.0,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
 
-    this.registerPreset({
+    ShaderPresets.registerPreset({
       id: 'colorize',
       name: '单色化',
       description: '将图像转换为单一色调',
@@ -413,79 +413,82 @@ export class ShaderPresets {
         `,
         uniforms: {
           u_color: [1.0, 0.7, 0.3],
-          u_amount: 0.5
+          u_amount: 0.5,
         },
         enabled: true,
-        opacity: 1
-      }
-    });
+        opacity: 1,
+      },
+    })
   }
 
   /**
    * 注册预设
    */
   static registerPreset(preset: ShaderPreset): void {
-    this.presets.set(preset.id, preset);
+    ShaderPresets.presets.set(preset.id, preset)
   }
 
   /**
    * 获取预设
    */
   static getPreset(id: string): ShaderPreset | undefined {
-    return this.presets.get(id);
+    return ShaderPresets.presets.get(id)
   }
 
   /**
    * 获取所有预设
    */
   static getAllPresets(): ShaderPreset[] {
-    return Array.from(this.presets.values());
+    return Array.from(ShaderPresets.presets.values())
   }
 
   /**
    * 按类别获取预设
    */
   static getPresetsByCategory(category: string): ShaderPreset[] {
-    return Array.from(this.presets.values()).filter(preset => preset.category === category);
+    return Array.from(ShaderPresets.presets.values()).filter(
+      (preset) => preset.category === category
+    )
   }
 
   /**
    * 获取所有类别
    */
   static getCategories(): string[] {
-    const categories = new Set<string>();
-    for (const preset of this.presets.values()) {
-      categories.add(preset.category);
+    const categories = new Set<string>()
+    for (const preset of ShaderPresets.presets.values()) {
+      categories.add(preset.category)
     }
-    return Array.from(categories);
+    return Array.from(categories)
   }
 
   /**
    * 搜索预设
    */
   static searchPresets(query: string): ShaderPreset[] {
-    const lowerQuery = query.toLowerCase();
-    return Array.from(this.presets.values()).filter(preset => 
-      preset.name.toLowerCase().includes(lowerQuery) ||
-      preset.description.toLowerCase().includes(lowerQuery) ||
-      preset.category.toLowerCase().includes(lowerQuery)
-    );
+    const lowerQuery = query.toLowerCase()
+    return Array.from(ShaderPresets.presets.values()).filter(
+      (preset) =>
+        preset.name.toLowerCase().includes(lowerQuery) ||
+        preset.description.toLowerCase().includes(lowerQuery) ||
+        preset.category.toLowerCase().includes(lowerQuery)
+    )
   }
 
   /**
    * 移除预设
    */
   static removePreset(id: string): boolean {
-    return this.presets.delete(id);
+    return ShaderPresets.presets.delete(id)
   }
 
   /**
    * 清除所有预设
    */
   static clear(): void {
-    this.presets.clear();
+    ShaderPresets.presets.clear()
   }
 }
 
 // 初始化预设
-ShaderPresets.initialize();
+ShaderPresets.initialize()

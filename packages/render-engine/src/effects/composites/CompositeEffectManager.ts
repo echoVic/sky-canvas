@@ -3,15 +3,15 @@
  * 提供复合效果的统一管理和应用
  */
 
-import { CompositeConfig, CompositeOperation } from '../types/CompositeTypes';
-import { CompositeManager } from './CompositeManager';
+import { type CompositeConfig, CompositeOperation } from '../types/CompositeTypes'
+import { CompositeManager } from './CompositeManager'
 
 export class CompositeEffectManager {
-  private static instance: CompositeEffectManager;
-  private compositeManager: CompositeManager;
+  private static instance: CompositeEffectManager
+  private compositeManager: CompositeManager
 
   private constructor() {
-    this.compositeManager = new CompositeManager();
+    this.compositeManager = new CompositeManager()
   }
 
   /**
@@ -19,16 +19,16 @@ export class CompositeEffectManager {
    */
   static getInstance(): CompositeEffectManager {
     if (!CompositeEffectManager.instance) {
-      CompositeEffectManager.instance = new CompositeEffectManager();
+      CompositeEffectManager.instance = new CompositeEffectManager()
     }
-    return CompositeEffectManager.instance;
+    return CompositeEffectManager.instance
   }
 
   /**
    * 获取复合管理器
    */
   getCompositeManager(): CompositeManager {
-    return this.compositeManager;
+    return this.compositeManager
   }
 
   /**
@@ -38,13 +38,15 @@ export class CompositeEffectManager {
     canvas: HTMLCanvasElement,
     config: CompositeConfig
   ): Promise<HTMLCanvasElement> {
-    return this.compositeManager.composite([{
-      id: 'main',
-      canvas,
-      operation: config.operation,
-      globalAlpha: config.globalAlpha,
-      visible: config.enabled
-    }]);
+    return this.compositeManager.composite([
+      {
+        id: 'main',
+        canvas,
+        operation: config.operation,
+        globalAlpha: config.globalAlpha,
+        visible: config.enabled,
+      },
+    ])
   }
 
   /**
@@ -54,14 +56,14 @@ export class CompositeEffectManager {
     canvases: HTMLCanvasElement[],
     configs: CompositeConfig[]
   ): Promise<HTMLCanvasElement[]> {
-    const results: HTMLCanvasElement[] = [];
-    
+    const results: HTMLCanvasElement[] = []
+
     for (let i = 0; i < canvases.length; i++) {
-      const result = await this.applyCompositeEffect(canvases[i], configs[i]);
-      results.push(result);
+      const result = await this.applyCompositeEffect(canvases[i], configs[i])
+      results.push(result)
     }
-    
-    return results;
+
+    return results
   }
 
   /**
@@ -75,8 +77,8 @@ export class CompositeEffectManager {
     return {
       operation,
       globalAlpha,
-      enabled
-    };
+      enabled,
+    }
   }
 
   /**
@@ -84,14 +86,14 @@ export class CompositeEffectManager {
    */
   validateCompositeConfig(config: CompositeConfig): boolean {
     if (!config.enabled) {
-      return true;
+      return true
     }
 
     if (config.globalAlpha < 0 || config.globalAlpha > 1) {
-      return false;
+      return false
     }
 
-    return true;
+    return true
   }
 
   /**
@@ -110,14 +112,14 @@ export class CompositeEffectManager {
       CompositeOperation.DARKEN,
       CompositeOperation.LIGHTEN,
       CompositeOperation.DIFFERENCE,
-      CompositeOperation.EXCLUSION
-    ];
+      CompositeOperation.EXCLUSION,
+    ]
   }
 
   /**
    * 清理资源
    */
   dispose(): void {
-    this.compositeManager.dispose();
+    this.compositeManager.dispose()
   }
 }

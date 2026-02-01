@@ -4,55 +4,39 @@
  */
 
 // 引入 reflect-metadata 支持
-import 'reflect-metadata';
+import 'reflect-metadata'
 
-// 核心服务标识符和装饰器
-export {
-  _util, createDecorator,
-  refineServiceDecorator
-} from './instantiation';
-
-export type {
-  BrandedService, ServiceIdentifier, ServicesAccessor
-} from './instantiation';
-
+export type { SyncDescriptor0 } from './descriptors'
 // 依赖描述符
+export { SyncDescriptor } from './descriptors'
+// 服务扩展
 export {
-  SyncDescriptor
-} from './descriptors';
-
-export type {
-  SyncDescriptor0
-} from './descriptors';
-
+  getSingletonServiceDescriptors,
+  InstantiationType,
+  registerSingleton,
+} from './extensions'
 // 依赖关系图
 export {
   Graph,
-  type Node
-} from './graph';
-
-// 服务扩展
-export {
-  registerSingleton,
-  getSingletonServiceDescriptors,
-  InstantiationType
-} from './extensions';
-
+  type Node,
+} from './graph'
+// 实例化服务
+export { InstantiationService } from './InstantiationService'
+export type {
+  BrandedService,
+  GetLeadingNonServiceArgs,
+  IConstructorSignature,
+  IInstantiationService as IInstantiationServiceType,
+  ServiceIdentifier,
+  ServicesAccessor,
+} from './instantiation'
+// 核心服务标识符和装饰器
 // 依赖注入核心接口
 export {
-  IInstantiationService
-} from './instantiation';
-
-export type {
-  GetLeadingNonServiceArgs, IConstructorSignature, IInstantiationService as IInstantiationServiceType
-} from './instantiation';
-
+  _util,
+  createDecorator,
+  IInstantiationService,
+  refineServiceDecorator,
+} from './instantiation'
 // 服务集合
-export {
-  ServiceCollection
-} from './ServiceCollection';
-
-// 实例化服务
-export {
-  InstantiationService
-} from './InstantiationService';
+export { ServiceCollection } from './ServiceCollection'

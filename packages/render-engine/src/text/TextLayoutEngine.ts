@@ -2,31 +2,31 @@
  * 文本布局引擎
  */
 
+import type { TextMeasurement } from './TextMeasurement'
 import type {
   RichTextDocument,
   TextFragment,
+  TextLayoutOptions,
   TextLine,
-  TextLayoutOptions
-} from './types/RichTextTypes';
-import { TextMeasurement } from './TextMeasurement';
+} from './types/RichTextTypes'
 
 /**
  * 文本布局引擎
  */
 export class TextLayoutEngine {
-  private measurement: TextMeasurement;
+  private measurement: TextMeasurement
 
   constructor(measurement: TextMeasurement) {
-    this.measurement = measurement;
+    this.measurement = measurement
   }
 
   /**
    * 布局文本，返回文本行
    */
   layoutText(document: RichTextDocument, options: TextLayoutOptions): TextLine[] {
-    const lines: TextLine[] = [];
-    const maxWidth = options.maxWidth || Infinity;
-    const wordWrap = options.wordWrap !== false;
+    const lines: TextLine[] = []
+    const maxWidth = options.maxWidth || Infinity
+    const wordWrap = options.wordWrap !== false
 
     let currentLine: TextLine = {
       fragments: [],
@@ -34,22 +34,22 @@ export class TextLayoutEngine {
       height: 0,
       baselineY: 0,
       startIndex: 0,
-      endIndex: 0
-    };
+      endIndex: 0,
+    }
 
-    let currentX = 0;
-    let currentIndex = 0;
+    let currentX = 0
+    let currentIndex = 0
 
     for (const fragment of document.fragments) {
-      const words = wordWrap ? this.splitIntoWords(fragment) : [fragment];
+      const words = wordWrap ? this.splitIntoWords(fragment) : [fragment]
 
       for (const word of words) {
-        const wordWidth = this.measurement.measureFragmentWidth(word);
-        const wordHeight = this.measurement.getFragmentHeight(word);
+        const wordWidth = this.measurement.measureFragmentWidth(word)
+        const wordHeight = this.measurement.getFragmentHeight(word)
 
         if (wordWrap && currentX + wordWidth > maxWidth && currentLine.fragments.length > 0) {
-          this.finalizeLine(currentLine, currentIndex);
-          lines.push(currentLine);
+          this.finalizeLine(currentLine, currentIndex)
+          lines.push(currentLine)
 
           currentLine = {
             fragments: [],
@@ -57,43 +57,43 @@ export class TextLayoutEngine {
             height: 0,
             baselineY: 0,
             startIndex: currentIndex,
-            endIndex: currentIndex
-          };
-          currentX = 0;
+            endIndex: currentIndex,
+          }
+          currentX = 0
         }
 
-        currentLine.fragments.push(word);
-        currentLine.width = Math.max(currentLine.width, currentX + wordWidth);
-        currentLine.height = Math.max(currentLine.height, wordHeight);
+        currentLine.fragments.push(word)
+        currentLine.width = Math.max(currentLine.width, currentX + wordWidth)
+        currentLine.height = Math.max(currentLine.height, wordHeight)
 
-        currentX += wordWidth;
-        currentIndex += word.text.length;
+        currentX += wordWidth
+        currentIndex += word.text.length
 
         if (options.maxLines && lines.length >= options.maxLines - 1) {
-          break;
+          break
         }
       }
 
       if (options.maxLines && lines.length >= options.maxLines) {
-        break;
+        break
       }
     }
 
     if (currentLine.fragments.length > 0) {
-      this.finalizeLine(currentLine, currentIndex);
-      lines.push(currentLine);
+      this.finalizeLine(currentLine, currentIndex)
+      lines.push(currentLine)
     }
 
-    return lines;
+    return lines
   }
 
   /**
    * 将文本片段分割为单词
    */
   private splitIntoWords(fragment: TextFragment): TextFragment[] {
-    const words = fragment.text.split(/(\s+)/);
-    const result: TextFragment[] = [];
-    let currentIndex = fragment.startIndex;
+    const words = fragment.text.split(/(\s+)/)
+    const result: TextFragment[] = []
+    let currentIndex = fragment.startIndex
 
     for (const word of words) {
       if (word) {
@@ -101,31 +101,31 @@ export class TextLayoutEngine {
           text: word,
           style: fragment.style,
           startIndex: currentIndex,
-          endIndex: currentIndex + word.length
-        });
+          endIndex: currentIndex + word.length,
+        })
       }
-      currentIndex += word.length;
+      currentIndex += word.length
     }
 
-    return result;
+    return result
   }
 
   /**
    * 完成文本行的布局
    */
   private finalizeLine(line: TextLine, endIndex: number): void {
-    line.endIndex = endIndex;
+    line.endIndex = endIndex
 
-    let maxAscent = 0;
-    let maxDescent = 0;
+    let maxAscent = 0
+    let maxDescent = 0
 
     for (const fragment of line.fragments) {
-      const metrics = this.measurement.getFragmentMetrics(fragment);
-      maxAscent = Math.max(maxAscent, metrics.ascent);
-      maxDescent = Math.max(maxDescent, metrics.descent);
+      const metrics = this.measurement.getFragmentMetrics(fragment)
+      maxAscent = Math.max(maxAscent, metrics.ascent)
+      maxDescent = Math.max(maxDescent, metrics.descent)
     }
 
-    line.height = maxAscent + maxDescent;
-    line.baselineY = maxAscent;
+    line.height = maxAscent + maxDescent
+    line.baselineY = maxAscent
   }
 }

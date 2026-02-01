@@ -3,100 +3,98 @@
  * 为所有滤镜提供通用功能和接口实现
  */
 
-import {
-    FilterContext,
-    FilterParameters,
-    FilterResult,
-    FilterType,
-    IFilter
-} from '../types/FilterTypes';
+import type {
+  FilterContext,
+  FilterParameters,
+  FilterResult,
+  FilterType,
+  IFilter,
+} from '../types/FilterTypes'
 
 export abstract class BaseFilter<T extends FilterParameters = FilterParameters> implements IFilter {
-  abstract readonly type: FilterType;
-  abstract readonly name: string;
-  abstract readonly description: string;
-  abstract readonly supportedInputFormats: string[];
-  abstract readonly requiresWebGL: boolean;
+  abstract readonly type: FilterType
+  abstract readonly name: string
+  abstract readonly description: string
+  abstract readonly supportedInputFormats: string[]
+  abstract readonly requiresWebGL: boolean
 
   protected performanceStats = {
     totalExecutions: 0,
     totalProcessingTime: 0,
     successfulExecutions: 0,
-    errors: 0
-  };
+    errors: 0,
+  }
 
   /**
    * 应用滤镜的通用入口点
    */
   async apply(context: FilterContext, parameters: FilterParameters): Promise<FilterResult> {
-    const startTime = performance.now();
-    this.performanceStats.totalExecutions++;
+    const startTime = performance.now()
+    this.performanceStats.totalExecutions++
 
     try {
       // 验证参数
       if (!this.validateParameters(parameters)) {
-        throw new Error(`Invalid parameters for filter ${this.type}`);
+        throw new Error(`Invalid parameters for filter ${this.type}`)
       }
 
       // 检查上下文有效性
       if (!this.validateContext(context)) {
-        throw new Error(`Invalid context for filter ${this.type}`);
+        throw new Error(`Invalid context for filter ${this.type}`)
       }
 
       // 执行具体的滤镜处理
-      const processedImageData = await this.processFilter(context, parameters as T);
-      
-      const endTime = performance.now();
-      const processingTime = endTime - startTime;
-      
-      this.performanceStats.totalProcessingTime += processingTime;
-      this.performanceStats.successfulExecutions++;
+      const processedImageData = await this.processFilter(context, parameters as T)
+
+      const endTime = performance.now()
+      const processingTime = endTime - startTime
+
+      this.performanceStats.totalProcessingTime += processingTime
+      this.performanceStats.successfulExecutions++
 
       return {
         success: true,
         processedImageData,
         processingTime,
-        memoryUsage: this.estimateMemoryUsage(context.width, context.height)
-      };
-
+        memoryUsage: this.estimateMemoryUsage(context.width, context.height),
+      }
     } catch (error) {
-      this.performanceStats.errors++;
-      const endTime = performance.now();
-      
+      this.performanceStats.errors++
+      const endTime = performance.now()
+
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        processingTime: endTime - startTime
-      };
+        processingTime: endTime - startTime,
+      }
     }
   }
 
   /**
    * 抽象方法：具体的滤镜处理逻辑
    */
-  protected abstract processFilter(
-    context: FilterContext, 
-    parameters: T
-  ): Promise<ImageData>;
+  protected abstract processFilter(context: FilterContext, parameters: T): Promise<ImageData>
 
   /**
    * 验证滤镜上下文
    */
   protected validateContext(context: FilterContext): boolean {
     if (!context.sourceImageData) {
-      return false;
+      return false
     }
 
     if (context.width <= 0 || context.height <= 0) {
-      return false;
+      return false
     }
 
-    if (context.sourceImageData.width !== context.width || 
-        context.sourceImageData.height !== context.height) {
-      return false;
+    if (
+      context.sourceImageData.width !== context.width ||
+      context.sourceImageData.height !== context.height
+    ) {
+      return false
     }
 
-    return true;
+    return true
   }
 
   /**
@@ -104,51 +102,51 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
    */
   validateParameters(parameters: FilterParameters): boolean {
     if (parameters.type !== this.type) {
-      return false;
+      return false
     }
 
     if (parameters.opacity !== undefined) {
       if (parameters.opacity < 0 || parameters.opacity > 1) {
-        return false;
+        return false
       }
     }
 
-    return this.validateSpecificParameters(parameters as T);
+    return this.validateSpecificParameters(parameters as T)
   }
 
   /**
    * 验证特定滤镜的参数（子类实现）
    */
-  protected abstract validateSpecificParameters(parameters: T): boolean;
+  protected abstract validateSpecificParameters(parameters: T): boolean
 
   /**
    * 获取默认参数（子类实现）
    */
-  abstract getDefaultParameters(): T;
+  abstract getDefaultParameters(): T
 
   /**
    * 预估处理时间
    */
   estimateProcessingTime(width: number, height: number, parameters: FilterParameters): number {
-    const pixelCount = width * height;
-    const baseTimePerPixel = this.getBaseProcessingTimePerPixel();
-    const complexityFactor = this.getComplexityFactor(parameters);
-    
-    return pixelCount * baseTimePerPixel * complexityFactor;
+    const pixelCount = width * height
+    const baseTimePerPixel = this.getBaseProcessingTimePerPixel()
+    const complexityFactor = this.getComplexityFactor(parameters)
+
+    return pixelCount * baseTimePerPixel * complexityFactor
   }
 
   /**
    * 获取基础处理时间（每像素，毫秒）
    */
   protected getBaseProcessingTimePerPixel(): number {
-    return 0.001; // 默认每像素1微秒
+    return 0.001 // 默认每像素1微秒
   }
 
   /**
    * 获取复杂度因子
    */
   protected getComplexityFactor(parameters: FilterParameters): number {
-    return 1; // 默认复杂度因子
+    return 1 // 默认复杂度因子
   }
 
   /**
@@ -156,16 +154,16 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
    */
   protected estimateMemoryUsage(width: number, height: number): number {
     // 基本计算：原图 + 处理图 + 临时缓冲区
-    const bytesPerPixel = 4; // RGBA
-    const baseMemory = width * height * bytesPerPixel;
-    return baseMemory * 3; // 3倍内存使用（原图+结果+临时）
+    const bytesPerPixel = 4 // RGBA
+    const baseMemory = width * height * bytesPerPixel
+    return baseMemory * 3 // 3倍内存使用（原图+结果+临时）
   }
 
   /**
    * 检查硬件加速支持
    */
   supportsAcceleration(): boolean {
-    return false; // 基础实现不支持硬件加速
+    return false // 基础实现不支持硬件加速
   }
 
   /**
@@ -173,15 +171,15 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
    */
   protected createOutputImageData(width: number, height: number): ImageData {
     try {
-      return new ImageData(width, height);
+      return new ImageData(width, height)
     } catch (error) {
       // 备用方法
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
       if (!ctx) {
-        throw new Error('Cannot create 2D context');
+        throw new Error('Cannot create 2D context')
       }
-      return ctx.createImageData(width, height);
+      return ctx.createImageData(width, height)
     }
   }
 
@@ -189,9 +187,9 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
    * 复制ImageData
    */
   protected cloneImageData(source: ImageData): ImageData {
-    const output = this.createOutputImageData(source.width, source.height);
-    output.data.set(source.data);
-    return output;
+    const output = this.createOutputImageData(source.width, source.height)
+    output.data.set(source.data)
+    return output
   }
 
   /**
@@ -199,84 +197,86 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
    */
   protected applyOpacity(imageData: ImageData, opacity: number): ImageData {
     if (opacity >= 1) {
-      return imageData;
+      return imageData
     }
 
-    const data = imageData.data;
+    const data = imageData.data
     for (let i = 3; i < data.length; i += 4) {
-      data[i] = Math.round(data[i] * opacity);
+      data[i] = Math.round(data[i] * opacity)
     }
-    
-    return imageData;
+
+    return imageData
   }
 
   /**
    * 混合两个ImageData
    */
   protected blendImageData(
-    base: ImageData, 
-    overlay: ImageData, 
+    base: ImageData,
+    overlay: ImageData,
     mode: string = 'normal'
   ): ImageData {
     if (base.width !== overlay.width || base.height !== overlay.height) {
-      throw new Error('Image dimensions must match for blending');
+      throw new Error('Image dimensions must match for blending')
     }
 
-    const result = this.cloneImageData(base);
-    const resultData = result.data;
-    const baseData = base.data;
-    const overlayData = overlay.data;
+    const result = this.cloneImageData(base)
+    const resultData = result.data
+    const baseData = base.data
+    const overlayData = overlay.data
 
     for (let i = 0; i < resultData.length; i += 4) {
-      const baseR = baseData[i];
-      const baseG = baseData[i + 1];
-      const baseB = baseData[i + 2];
-      const baseA = baseData[i + 3] / 255;
+      const baseR = baseData[i]
+      const baseG = baseData[i + 1]
+      const baseB = baseData[i + 2]
+      const baseA = baseData[i + 3] / 255
 
-      const overlayR = overlayData[i];
-      const overlayG = overlayData[i + 1];
-      const overlayB = overlayData[i + 2];
-      const overlayA = overlayData[i + 3] / 255;
+      const overlayR = overlayData[i]
+      const overlayG = overlayData[i + 1]
+      const overlayB = overlayData[i + 2]
+      const overlayA = overlayData[i + 3] / 255
 
       // 简化的混合实现（正常模式）
-      const alpha = overlayA;
-      const invAlpha = 1 - alpha;
+      const alpha = overlayA
+      const invAlpha = 1 - alpha
 
-      resultData[i] = Math.round(overlayR * alpha + baseR * invAlpha);
-      resultData[i + 1] = Math.round(overlayG * alpha + baseG * invAlpha);
-      resultData[i + 2] = Math.round(overlayB * alpha + baseB * invAlpha);
-      resultData[i + 3] = Math.round((overlayA + baseA * invAlpha) * 255);
+      resultData[i] = Math.round(overlayR * alpha + baseR * invAlpha)
+      resultData[i + 1] = Math.round(overlayG * alpha + baseG * invAlpha)
+      resultData[i + 2] = Math.round(overlayB * alpha + baseB * invAlpha)
+      resultData[i + 3] = Math.round((overlayA + baseA * invAlpha) * 255)
     }
 
-    return result;
+    return result
   }
 
   /**
    * 限制值在指定范围内
    */
   protected clamp(value: number, min: number = 0, max: number = 255): number {
-    return Math.max(min, Math.min(max, value));
+    return Math.max(min, Math.min(max, value))
   }
 
   /**
    * 获取性能统计
    */
   getPerformanceStats() {
-    const avgProcessingTime = this.performanceStats.totalExecutions > 0 
-      ? this.performanceStats.totalProcessingTime / this.performanceStats.totalExecutions 
-      : 0;
-    
-    const successRate = this.performanceStats.totalExecutions > 0
-      ? this.performanceStats.successfulExecutions / this.performanceStats.totalExecutions
-      : 0;
+    const avgProcessingTime =
+      this.performanceStats.totalExecutions > 0
+        ? this.performanceStats.totalProcessingTime / this.performanceStats.totalExecutions
+        : 0
+
+    const successRate =
+      this.performanceStats.totalExecutions > 0
+        ? this.performanceStats.successfulExecutions / this.performanceStats.totalExecutions
+        : 0
 
     return {
       filterType: this.type,
       averageProcessingTime: avgProcessingTime,
       totalExecutions: this.performanceStats.totalExecutions,
       successRate: successRate,
-      memoryPeakUsage: 0 // 简化实现
-    };
+      memoryPeakUsage: 0, // 简化实现
+    }
   }
 
   /**
@@ -287,14 +287,14 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
       totalExecutions: 0,
       totalProcessingTime: 0,
       successfulExecutions: 0,
-      errors: 0
-    };
+      errors: 0,
+    }
   }
 
   /**
    * 清理资源
    */
   dispose(): void {
-    this.resetPerformanceStats();
+    this.resetPerformanceStats()
   }
 }

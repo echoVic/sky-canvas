@@ -4,65 +4,87 @@
  * @packageDocumentation
  */
 
-export { createCanvasSDK } from './main';
+export type { ICanvasSDKConfig } from './CanvasSDK'
 
-export { CanvasSDK } from './CanvasSDK';
-
-export type { ICanvasSDKConfig } from './CanvasSDK';
-export type { SDKConfig } from './main';
-
+export { CanvasSDK } from './CanvasSDK'
 export type {
-  ICircleEntity,
-  IPathEntity,
-  IRectangleEntity,
-  IShapeEntity,
-  ITextEntity,
-  ShapeEntity
-} from './models/entities/Shape';
-
+  BrandedService,
+  ServiceIdentifier,
+  ServicesAccessor,
+} from './di'
 export {
-  ICanvasRenderingService, IClipboardService, IConfigurationService, IHistoryService, IInteractionService, ILogService, ISelectionService,
-  IShapeService, IShortcutService,
-  IThemeService,
-  IZIndexService,
-  IZoomService
-} from './services';
-
-export type {
-  IZIndexChangeEvent, LogLevel, ZIndexOperation
-} from './services';
-
-export { ICanvasManager } from './managers';
-
+  createDecorator,
+  IInstantiationService,
+  InstantiationType,
+  registerSingleton,
+  ServiceCollection,
+  SyncDescriptor,
+} from './di'
+export type { SDKConfig } from './main'
+export { createCanvasSDK } from './main'
 export type {
   CanvasStats,
-  ILayerInfo, ISceneManager, ISceneManagerState, IToolManager, ITransactionManager
-} from './managers';
+  ILayerInfo,
+  ISceneManager,
+  ISceneManagerState,
+  IToolManager,
+  ITransactionManager,
+} from './managers'
 
-export {
-  createDecorator, IInstantiationService, InstantiationType, registerSingleton, ServiceCollection,
-  SyncDescriptor
-} from './di';
-
+export { ICanvasManager } from './managers'
 export type {
-  BrandedService, ServiceIdentifier,
-  ServicesAccessor
-} from './di';
-
-export {
-  ExtensionManager, PermissionManager, PluginContextImpl as PluginContext, PluginManager
-} from './plugins';
-
+  ICircleEntity,
+  IEllipseEntity,
+  IGroupEntity,
+  IImageDataLike,
+  IImageEntity,
+  IPathEntity,
+  IPolygonEntity,
+  IRectangleEntity,
+  IShapeEntity,
+  IStarEntity,
+  ITextEntity,
+  ShapeEntity,
+} from './models/entities/Shape'
+export type {
+  IInteractionTool,
+  IMouseEvent,
+  InteractionMode,
+} from './models/types/ToolTypes'
 export type {
   ExtensionPoint,
-  ExtensionProvider, PluginManifest, PluginPermission, PluginStatus
-} from './plugins';
+  ExtensionProvider,
+  PluginManifest,
+  PluginPermission,
+  PluginStatus,
+} from './plugins'
 
+export {
+  ExtensionManager,
+  PermissionManager,
+  PluginContextImpl as PluginContext,
+  PluginManager,
+} from './plugins'
 export type {
-  ICanvasMouseEvent, IToolViewModel
-} from './viewmodels/interfaces/IViewModel';
-
+  IZIndexChangeEvent,
+  LogLevel,
+  ZIndexOperation,
+} from './services'
+export {
+  ICanvasRenderingService,
+  IClipboardService,
+  IConfigurationService,
+  IHistoryService,
+  IInteractionService,
+  ILogService,
+  ISelectionService,
+  IShapeService,
+  IShortcutService,
+  IThemeService,
+  IZIndexService,
+  IZoomService,
+} from './services'
 export type {
-  IInteractionTool, IMouseEvent, InteractionMode
-} from './models/types/ToolTypes';
-
+  ICanvasMouseEvent,
+  IToolViewModel,
+} from './viewmodels/interfaces/IViewModel'

@@ -40,7 +40,7 @@ export enum UnifiedMetricType {
   // 交互性能
   INPUT_LATENCY = 'inputLatency',
   EVENT_PROCESSING_TIME = 'eventProcessingTime',
-  GESTURE_RECOGNITION_TIME = 'gestureRecognitionTime'
+  GESTURE_RECOGNITION_TIME = 'gestureRecognitionTime',
 }
 
 /**
@@ -50,71 +50,71 @@ export enum DataSourceType {
   RENDER_ENGINE = 'render-engine',
   CANVAS_SDK = 'canvas-sdk',
   FRONTEND_UI = 'frontend-ui',
-  PLUGIN_SYSTEM = 'plugin-system'
+  PLUGIN_SYSTEM = 'plugin-system',
 }
 
 /**
  * 统一性能数据点
  */
 export interface UnifiedMetricDataPoint {
-  timestamp: number;
-  value: number;
-  source: DataSourceType;
-  metadata?: Record<string, unknown>;
+  timestamp: number
+  value: number
+  source: DataSourceType
+  metadata?: Record<string, unknown>
 }
 
 /**
  * 统一性能统计
  */
 export interface UnifiedMetricStats {
-  min: number;
-  max: number;
-  avg: number;
-  current: number;
-  samples: number;
-  trend: 'increasing' | 'decreasing' | 'stable';
-  sources: DataSourceType[];
+  min: number
+  max: number
+  avg: number
+  current: number
+  samples: number
+  trend: 'increasing' | 'decreasing' | 'stable'
+  sources: DataSourceType[]
 }
 
 /**
  * 性能警告配置
  */
 export interface UnifiedPerformanceThresholds {
-  [UnifiedMetricType.FPS]: { min: number; max: number };
-  [UnifiedMetricType.FRAME_TIME]: { max: number };
-  [UnifiedMetricType.DRAW_CALLS]: { max: number };
-  [UnifiedMetricType.MEMORY_USAGE]: { max: number };
-  [UnifiedMetricType.GPU_MEMORY]: { max: number };
-  [UnifiedMetricType.CACHE_HIT_RATE]: { min: number };
-  [UnifiedMetricType.INPUT_LATENCY]: { max: number };
-  [UnifiedMetricType.PLUGIN_LOAD_TIME]: { max: number };
+  [UnifiedMetricType.FPS]: { min: number; max: number }
+  [UnifiedMetricType.FRAME_TIME]: { max: number }
+  [UnifiedMetricType.DRAW_CALLS]: { max: number }
+  [UnifiedMetricType.MEMORY_USAGE]: { max: number }
+  [UnifiedMetricType.GPU_MEMORY]: { max: number }
+  [UnifiedMetricType.CACHE_HIT_RATE]: { min: number }
+  [UnifiedMetricType.INPUT_LATENCY]: { max: number }
+  [UnifiedMetricType.PLUGIN_LOAD_TIME]: { max: number }
 }
 
 /**
  * 统一性能警告
  */
 export interface UnifiedPerformanceWarning {
-  type: UnifiedMetricType;
-  message: string;
-  severity: 'low' | 'medium' | 'high';
-  timestamp: number;
-  value: number;
-  threshold: number;
-  source: DataSourceType;
-  suggestions: string[];
+  type: UnifiedMetricType
+  message: string
+  severity: 'low' | 'medium' | 'high'
+  timestamp: number
+  value: number
+  threshold: number
+  source: DataSourceType
+  suggestions: string[]
 }
 
 /**
  * 性能监控配置
  */
 export interface UnifiedPerformanceConfig {
-  sampleInterval: number;
-  historyRetention: number;
-  enableAutoAnalysis: boolean;
-  enableWarnings: boolean;
-  enableCrossSourcceCorrelation: boolean;
-  thresholds: Partial<UnifiedPerformanceThresholds>;
-  sources: DataSourceType[];
+  sampleInterval: number
+  historyRetention: number
+  enableAutoAnalysis: boolean
+  enableWarnings: boolean
+  enableCrossSourcceCorrelation: boolean
+  thresholds: Partial<UnifiedPerformanceThresholds>
+  sources: DataSourceType[]
 }
 
 /**
@@ -122,57 +122,57 @@ export interface UnifiedPerformanceConfig {
  */
 export interface UnifiedPerformanceEvents {
   'metric-updated': {
-    type: UnifiedMetricType;
-    value: number;
-    timestamp: number;
-    source: DataSourceType;
-  };
-  'warning-triggered': UnifiedPerformanceWarning;
+    type: UnifiedMetricType
+    value: number
+    timestamp: number
+    source: DataSourceType
+  }
+  'warning-triggered': UnifiedPerformanceWarning
   'bottleneck-detected': {
-    type: 'cpu' | 'gpu' | 'memory' | 'io' | 'network';
-    confidence: number;
-    description: string;
-    affectedSources: DataSourceType[];
-    suggestions: string[];
-  };
+    type: 'cpu' | 'gpu' | 'memory' | 'io' | 'network'
+    confidence: number
+    description: string
+    affectedSources: DataSourceType[]
+    suggestions: string[]
+  }
   'correlation-found': {
-    metrics: UnifiedMetricType[];
-    correlation: number;
-    description: string;
-  };
+    metrics: UnifiedMetricType[]
+    correlation: number
+    description: string
+  }
 }
 
 /**
  * 数据源适配器接口
  */
 export interface IDataSourceAdapter {
-  readonly sourceType: DataSourceType;
-  readonly supportedMetrics: UnifiedMetricType[];
+  readonly sourceType: DataSourceType
+  readonly supportedMetrics: UnifiedMetricType[]
 
-  initialize(): Promise<void>;
-  collect(): Promise<Map<UnifiedMetricType, number>>;
-  dispose(): void;
+  initialize(): Promise<void>
+  collect(): Promise<Map<UnifiedMetricType, number>>
+  dispose(): void
 }
 
 /**
  * 瓶颈分析结果
  */
 export interface BottleneckAnalysis {
-  type: 'cpu' | 'gpu' | 'memory' | 'io' | 'network' | 'none';
-  confidence: number;
-  description: string;
-  affectedMetrics: UnifiedMetricType[];
-  affectedSources: DataSourceType[];
-  suggestions: string[];
-  severity: 'low' | 'medium' | 'high';
+  type: 'cpu' | 'gpu' | 'memory' | 'io' | 'network' | 'none'
+  confidence: number
+  description: string
+  affectedMetrics: UnifiedMetricType[]
+  affectedSources: DataSourceType[]
+  suggestions: string[]
+  severity: 'low' | 'medium' | 'high'
 }
 
 /**
  * 关联分析结果
  */
 export interface CorrelationResult {
-  metric1: UnifiedMetricType;
-  metric2: UnifiedMetricType;
-  correlation: number;
-  description: string;
+  metric1: UnifiedMetricType
+  metric2: UnifiedMetricType
+  correlation: number
+  description: string
 }

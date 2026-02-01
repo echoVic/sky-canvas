@@ -4,7 +4,7 @@
 
 export {
   BatchOptimizer,
-  OptimizationType,
   type OptimizationSuggestion,
-  type PerformanceAnalysis
-} from './BatchOptimizer';
+  OptimizationType,
+  type PerformanceAnalysis,
+} from './BatchOptimizer'

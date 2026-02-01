@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom'
 import { render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useSDKStore } from '../../../store/sdkStore'
 import { useCanvasStore } from '../../../store/canvasStore'
+import { useSDKStore } from '../../../store/sdkStore'
 import Canvas from '../Canvas'
 
 vi.mock('../../../store/sdkStore')
@@ -17,7 +17,7 @@ const createSDKState = (overrides: Partial<ReturnType<typeof useSDKStore>> = {})
   canRedo: false,
   initialize: vi.fn(),
   setTool: vi.fn(),
-  ...overrides
+  ...overrides,
 })
 
 describe('Canvas', () => {
@@ -37,7 +37,14 @@ describe('Canvas', () => {
   it('应该设置正确的样式', () => {
     render(<Canvas />)
     const canvasContainer = document.querySelector('canvas')?.parentElement
-    expect(canvasContainer).toHaveClass('relative', 'w-full', 'h-full', 'overflow-hidden', 'bg-white', 'dark:bg-gray-900')
+    expect(canvasContainer).toHaveClass(
+      'relative',
+      'w-full',
+      'h-full',
+      'overflow-hidden',
+      'bg-white',
+      'dark:bg-gray-900'
+    )
     const canvas = document.querySelector('canvas')
     expect(canvas).toHaveClass('absolute', 'inset-0', 'w-full', 'h-full')
   })
@@ -84,7 +91,7 @@ describe('Canvas', () => {
     vi.mocked(useCanvasStore).mockReturnValue({ selectedTool: 'hand' } as any)
     render(<Canvas />)
     await waitFor(() => {
-      expect(state.setTool).toHaveBeenCalledWith('pan')
+      expect(state.setTool).toHaveBeenCalledWith('hand')
     })
   })
 })

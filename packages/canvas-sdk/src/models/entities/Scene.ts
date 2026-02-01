@@ -3,50 +3,59 @@
  * MVVM架构中的Model层 - 场景数据实体
  */
 
-import { ShapeEntity } from './Shape';
-import { IViewportState } from '../../viewmodels/interfaces/IViewModel';
+import type { IViewportState } from '../../viewmodels/interfaces/IViewModel'
+import type { ShapeEntity } from './Shape'
 
 /**
  * 场景配置
  */
 export interface ISceneConfig {
-  backgroundColor?: string;
-  gridColor?: string;
-  gridSize?: number;
-  showGrid?: boolean;
-  snapToGrid?: boolean;
-  allowZoom?: boolean;
-  allowPan?: boolean;
-  minZoom?: number;
-  maxZoom?: number;
+  backgroundColor?: string
+  gridColor?: string
+  gridSize?: number
+  showGrid?: boolean
+  snapToGrid?: boolean
+  allowZoom?: boolean
+  allowPan?: boolean
+  minZoom?: number
+  maxZoom?: number
 }
 
 /**
  * 场景元数据
  */
 export interface ISceneMetadata {
-  name: string;
-  description?: string;
-  author?: string;
-  version: string;
-  tags?: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  lastAccessedAt?: Date;
+  name: string
+  description?: string
+  author?: string
+  version: string
+  tags?: string[]
+  createdAt: Date
+  updatedAt: Date
+  lastAccessedAt?: Date
 }
 
 /**
  * 场景实体
  */
 export interface ISceneEntity {
-  id: string;
-  metadata: ISceneMetadata;
-  config: ISceneConfig;
-  shapes: ShapeEntity[];
-  viewport: IViewportState;
-  isModified: boolean;
-  shapeCount: number;
-  selectedShapeIds: string[];
+  id: string
+  metadata: ISceneMetadata
+  config: ISceneConfig
+  shapes: ShapeEntity[]
+  viewport: IViewportState
+  isModified: boolean
+  shapeCount: number
+  selectedShapeIds: string[]
+}
+
+type SceneJSON = Omit<ISceneEntity, 'metadata' | 'shapes'> & {
+  metadata: Omit<ISceneMetadata, 'createdAt' | 'updatedAt' | 'lastAccessedAt'> & {
+    createdAt: string
+    updatedAt: string
+    lastAccessedAt?: string
+  }
+  shapes: Array<ShapeEntity & { createdAt: string; updatedAt: string }>
 }
 
 /**
@@ -54,26 +63,23 @@ export interface ISceneEntity {
  */
 export class SceneEntityFactory {
   private static generateId(): string {
-    return `scene_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    return `scene_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
   }
 
   /**
    * 创建新场景
    */
-  static createScene(
-    name: string = '新场景',
-    config: Partial<ISceneConfig> = {}
-  ): ISceneEntity {
-    const now = new Date();
-    
+  static createScene(name: string = '新场景', config: Partial<ISceneConfig> = {}): ISceneEntity {
+    const now = new Date()
+
     return {
-      id: this.generateId(),
+      id: SceneEntityFactory.generateId(),
       metadata: {
         name,
         version: '1.0.0',
         createdAt: now,
         updatedAt: now,
-        lastAccessedAt: now
+        lastAccessedAt: now,
       },
       config: {
         backgroundColor: '#FFFFFF',
@@ -85,7 +91,7 @@ export class SceneEntityFactory {
         allowPan: true,
         minZoom: 0.1,
         maxZoom: 10,
-        ...config
+        ...config,
       },
       shapes: [],
       viewport: {
@@ -93,49 +99,49 @@ export class SceneEntityFactory {
         y: 0,
         width: 800,
         height: 600,
-        zoom: 1
+        zoom: 1,
       },
       isModified: false,
       shapeCount: 0,
-      selectedShapeIds: []
-    };
+      selectedShapeIds: [],
+    }
   }
 
   /**
    * 从 JSON 数据创建场景
    */
-  static fromJSON(jsonData: any): ISceneEntity {
+  static fromJSON(jsonData: SceneJSON): ISceneEntity {
     return {
       ...jsonData,
       metadata: {
         ...jsonData.metadata,
         createdAt: new Date(jsonData.metadata.createdAt),
         updatedAt: new Date(jsonData.metadata.updatedAt),
-        lastAccessedAt: jsonData.metadata.lastAccessedAt 
-          ? new Date(jsonData.metadata.lastAccessedAt) 
-          : undefined
-      }
-    };
+        lastAccessedAt: jsonData.metadata.lastAccessedAt
+          ? new Date(jsonData.metadata.lastAccessedAt)
+          : undefined,
+      },
+    }
   }
 
   /**
    * 场景转 JSON
    */
-  static toJSON(scene: ISceneEntity): any {
+  static toJSON(scene: ISceneEntity): SceneJSON {
     return {
       ...scene,
-      shapes: scene.shapes.map(shape => ({
+      shapes: scene.shapes.map((shape) => ({
         ...shape,
         createdAt: shape.createdAt.toISOString(),
-        updatedAt: shape.updatedAt.toISOString()
+        updatedAt: shape.updatedAt.toISOString(),
       })),
       metadata: {
         ...scene.metadata,
         createdAt: scene.metadata.createdAt.toISOString(),
         updatedAt: scene.metadata.updatedAt.toISOString(),
-        lastAccessedAt: scene.metadata.lastAccessedAt?.toISOString()
-      }
-    };
+        lastAccessedAt: scene.metadata.lastAccessedAt?.toISOString(),
+      },
+    }
   }
 
   /**
@@ -144,19 +150,19 @@ export class SceneEntityFactory {
   static clone(scene: ISceneEntity, newName?: string): ISceneEntity {
     const cloned = {
       ...scene,
-      id: this.generateId(),
+      id: SceneEntityFactory.generateId(),
       metadata: {
         ...scene.metadata,
         name: newName || `${scene.metadata.name} (副本)`,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastAccessedAt: new Date()
+        lastAccessedAt: new Date(),
       },
       shapes: [...scene.shapes], // 浅复制，如果需要深复制形状需要另外处理
       selectedShapeIds: [],
-      isModified: false
-    };
-    
-    return cloned;
+      isModified: false,
+    }
+
+    return cloned
   }
 }

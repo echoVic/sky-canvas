@@ -3,153 +3,152 @@
  * 基于 EventEmitter3 提供类型安全的事件处理
  */
 
-import { EventEmitter as EventEmitter3 } from 'eventemitter3';
+import { EventEmitter as EventEmitter3 } from 'eventemitter3'
 
 /**
  * 可释放资源的接口
  */
 export interface IDisposable {
-  dispose(): void;
+  dispose(): void
 }
 
 /**
  * 事件监听器类型
  */
-export type EventListener<T = any> = (event: T) => void;
+export type EventListener<T = any> = (event: T) => void
 
 /**
  * 事件总线接口
  */
 export interface IEventBus {
-  on<T = any>(eventType: string, listener: EventListener<T>): IDisposable;
-  off<T = any>(eventType: string, listener: EventListener<T>): void;
-  emit<T = any>(eventType: string, event: T): void;
-  dispose(): void;
+  on<T = any>(eventType: string, listener: EventListener<T>): IDisposable
+  off<T = any>(eventType: string, listener: EventListener<T>): void
+  emit<T = any>(eventType: string, event: T): void
+  dispose(): void
 }
 
 /**
  * 基于 EventEmitter3 的事件总线类
  */
 export class EventBus implements IEventBus, IDisposable {
-  private emitter: EventEmitter3;
+  private emitter: EventEmitter3
 
   constructor() {
-    this.emitter = new EventEmitter3();
+    this.emitter = new EventEmitter3()
   }
 
   /**
    * 添加事件监听器
    */
   on<T = any>(eventType: string, listener: EventListener<T>): IDisposable {
-    this.emitter.on(eventType, listener);
-    
+    this.emitter.on(eventType, listener)
+
     // 返回可释放的对象
     return {
       dispose: () => {
-        this.off(eventType, listener);
-      }
-    };
+        this.off(eventType, listener)
+      },
+    }
   }
 
   /**
    * 移除事件监听器
    */
   off<T = any>(eventType: string, listener: EventListener<T>): void {
-    this.emitter.off(eventType, listener);
+    this.emitter.off(eventType, listener)
   }
 
   /**
    * 触发事件
    */
   emit<T = any>(eventType: string, event: T): void {
-    this.emitter.emit(eventType, event);
+    this.emitter.emit(eventType, event)
   }
 
   /**
    * 一次性事件监听器
    */
   once<T = any>(eventType: string, listener: EventListener<T>): IDisposable {
-    this.emitter.once(eventType, listener);
-    
+    this.emitter.once(eventType, listener)
+
     return {
       dispose: () => {
-        this.off(eventType, listener);
-      }
-    };
+        this.off(eventType, listener)
+      },
+    }
   }
 
   /**
    * 清理所有监听器
    */
   dispose(): void {
-    this.emitter.removeAllListeners();
+    this.emitter.removeAllListeners()
   }
 
   /**
    * 获取事件类型列表
    */
   getEventTypes(): string[] {
-    return this.emitter.eventNames() as string[];
+    return this.emitter.eventNames() as string[]
   }
 
   /**
    * 获取指定事件的监听器数量
    */
   getListenerCount(eventType: string): number {
-    return this.emitter.listenerCount(eventType);
+    return this.emitter.listenerCount(eventType)
   }
 }
-
 
 /**
  * 类型安全的事件发射器
  * 基于 EventEmitter3，提供更强的类型支持
  */
 export class EventEmitter<TEvents extends Record<string, any>> {
-  private emitter: EventEmitter3;
+  private emitter: EventEmitter3
 
   constructor() {
-    this.emitter = new EventEmitter3();
+    this.emitter = new EventEmitter3()
   }
 
   /**
    * 添加类型安全的事件监听器
    */
   on<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): IDisposable {
-    this.emitter.on(event as string, listener);
-    
+    this.emitter.on(event as string, listener)
+
     return {
       dispose: () => {
-        this.off(event, listener);
-      }
-    };
+        this.off(event, listener)
+      },
+    }
   }
 
   /**
    * 移除类型安全的事件监听器
    */
   off<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): void {
-    this.emitter.off(event as string, listener);
+    this.emitter.off(event as string, listener)
   }
 
   /**
    * 发射类型安全的事件
    */
   emit<K extends keyof TEvents>(event: K, data: TEvents[K]): void {
-    this.emitter.emit(event as string, data);
+    this.emitter.emit(event as string, data)
   }
 
   /**
    * 添加类型安全的一次性事件监听器
    */
   once<K extends keyof TEvents>(event: K, listener: EventListener<TEvents[K]>): IDisposable {
-    this.emitter.once(event as string, listener);
-    
+    this.emitter.once(event as string, listener)
+
     return {
       dispose: () => {
-        this.off(event, listener);
-      }
-    };
+        this.off(event, listener)
+      },
+    }
   }
 
   /**
@@ -157,9 +156,9 @@ export class EventEmitter<TEvents extends Record<string, any>> {
    */
   removeAllListeners<K extends keyof TEvents>(event?: K): void {
     if (event) {
-      this.emitter.removeAllListeners(event as string);
+      this.emitter.removeAllListeners(event as string)
     } else {
-      this.emitter.removeAllListeners();
+      this.emitter.removeAllListeners()
     }
   }
 
@@ -167,21 +166,21 @@ export class EventEmitter<TEvents extends Record<string, any>> {
    * 获取事件监听器数量
    */
   listenerCount<K extends keyof TEvents>(event: K): number {
-    return this.emitter.listenerCount(event as string);
+    return this.emitter.listenerCount(event as string)
   }
 
   /**
    * 获取所有事件名称
    */
   eventNames(): (keyof TEvents)[] {
-    return this.emitter.eventNames() as (keyof TEvents)[];
+    return this.emitter.eventNames() as (keyof TEvents)[]
   }
 
   /**
    * 清理所有监听器
    */
   dispose(): void {
-    this.emitter.removeAllListeners();
+    this.emitter.removeAllListeners()
   }
 }
 
@@ -198,25 +197,25 @@ export enum InputEventType {
   MOUSE_WHEEL = 'mousewheel',
   CLICK = 'click',
   DOUBLE_CLICK = 'doubleclick',
-  
+
   // 触摸事件
   TOUCH_START = 'touchstart',
   TOUCH_END = 'touchend',
   TOUCH_MOVE = 'touchmove',
   TOUCH_CANCEL = 'touchcancel',
-  
+
   // 手势事件
   GESTURE_START = 'gesturestart',
   GESTURE_END = 'gestureend',
   GESTURE_CHANGE = 'gesturechange',
-  
+
   // 自定义事件
   SELECTION_CHANGE = 'selectionchange',
   VIEWPORT_CHANGE = 'viewportchange',
-  SCENE_CHANGE = 'scenechange'
+  SCENE_CHANGE = 'scenechange',
 }
 
 /**
  * 默认事件总线实例
  */
-export const eventBus = new EventBus();
+export const eventBus = new EventBus()

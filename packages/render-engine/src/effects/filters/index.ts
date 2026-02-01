@@ -3,32 +3,30 @@
  */
 
 // 类型导出
-export * from '../types/FilterTypes';
+export * from '../types/FilterTypes'
 
 // 基础类导出
-export { BaseFilter } from './BaseFilter';
-
-// 具体滤镜导出
-export { GaussianBlurFilter } from './GaussianBlurFilter';
-export { BrightnessFilter } from './BrightnessFilter';
-
+export { BaseFilter } from './BaseFilter'
+export { BrightnessFilter } from './BrightnessFilter'
 // 管理器导出
-export { FilterManager } from './FilterManager';
+export { FilterManager } from './FilterManager'
+// 具体滤镜导出
+export { GaussianBlurFilter } from './GaussianBlurFilter'
 
-// 便捷创建函数
-import { FilterManager } from './FilterManager';
 import {
+  type BrightnessParameters,
+  type FilterContext,
   FilterType,
-  GaussianBlurParameters,
-  BrightnessParameters,
-  FilterContext
-} from '../types/FilterTypes';
+  type GaussianBlurParameters,
+} from '../types/FilterTypes'
+// 便捷创建函数
+import { FilterManager } from './FilterManager'
 
 /**
  * 创建滤镜管理器实例
  */
 export function createFilterManager(): FilterManager {
-  return new FilterManager();
+  return new FilterManager()
 }
 
 /**
@@ -39,54 +37,51 @@ export async function applyGaussianBlur(
   radius: number = 5,
   quality: 'low' | 'medium' | 'high' = 'medium'
 ) {
-  const manager = new FilterManager();
+  const manager = new FilterManager()
   const context: FilterContext = {
     sourceImageData: imageData,
     width: imageData.width,
     height: imageData.height,
-    timestamp: Date.now()
-  };
+    timestamp: Date.now(),
+  }
 
   const parameters: GaussianBlurParameters = {
     type: FilterType.GAUSSIAN_BLUR,
     radius,
     quality,
     enabled: true,
-    opacity: 1
-  };
+    opacity: 1,
+  }
 
-  const result = await manager.applyFilter(context, parameters);
-  manager.dispose();
-  
-  return result;
+  const result = await manager.applyFilter(context, parameters)
+  manager.dispose()
+
+  return result
 }
 
 /**
  * 快速应用亮度调整
  */
-export async function applyBrightness(
-  imageData: ImageData,
-  brightness: number = 0
-) {
-  const manager = new FilterManager();
+export async function applyBrightness(imageData: ImageData, brightness: number = 0) {
+  const manager = new FilterManager()
   const context: FilterContext = {
     sourceImageData: imageData,
     width: imageData.width,
     height: imageData.height,
-    timestamp: Date.now()
-  };
+    timestamp: Date.now(),
+  }
 
   const parameters: BrightnessParameters = {
     type: FilterType.BRIGHTNESS,
     brightness,
     enabled: true,
-    opacity: 1
-  };
+    opacity: 1,
+  }
 
-  const result = await manager.applyFilter(context, parameters);
-  manager.dispose();
-  
-  return result;
+  const result = await manager.applyFilter(context, parameters)
+  manager.dispose()
+
+  return result
 }
 
 /**
@@ -102,21 +97,21 @@ export class FilterPresets {
         type: FilterType.SEPIA,
         amount: 0.8,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.BRIGHTNESS,
         brightness: -10,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.CONTRAST,
         contrast: 20,
         enabled: true,
-        opacity: 1
-      }
-    ];
+        opacity: 1,
+      },
+    ]
   }
 
   /**
@@ -128,15 +123,15 @@ export class FilterPresets {
         type: FilterType.GRAYSCALE,
         amount: 1,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.CONTRAST,
         contrast: 15,
         enabled: true,
-        opacity: 1
-      }
-    ];
+        opacity: 1,
+      },
+    ]
   }
 
   /**
@@ -148,21 +143,21 @@ export class FilterPresets {
         type: FilterType.HUE_ROTATE,
         angle: 10,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.SATURATION,
         saturation: 20,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.BRIGHTNESS,
         brightness: 5,
         enabled: true,
-        opacity: 1
-      }
-    ];
+        opacity: 1,
+      },
+    ]
   }
 
   /**
@@ -174,21 +169,21 @@ export class FilterPresets {
         type: FilterType.HUE_ROTATE,
         angle: 190,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.SATURATION,
         saturation: 10,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       {
         type: FilterType.BRIGHTNESS,
         brightness: -5,
         enabled: true,
-        opacity: 1
-      }
-    ];
+        opacity: 1,
+      },
+    ]
   }
 
   /**
@@ -202,9 +197,9 @@ export class FilterPresets {
         blur: strength,
         strength: strength * 0.1,
         enabled: true,
-        opacity: 1
-      }
-    ];
+        opacity: 1,
+      },
+    ]
   }
 
   /**
@@ -217,8 +212,8 @@ export class FilterPresets {
         radius,
         quality: 'medium',
         enabled: true,
-        opacity: 1
-      }
-    ];
+        opacity: 1,
+      },
+    ]
   }
 }

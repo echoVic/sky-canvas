@@ -2,51 +2,55 @@
  * WebGL 优化器辅助类
  */
 
-import { IShaderManager, IShaderProgram, IShaderSource } from './ShaderManager';
-import { IBufferManager, IBuffer, BufferType, BufferUsage } from './BufferManager';
-import { WebGLState, OptimizedRenderBatch, createInitialWebGLState } from './WebGLOptimizerTypes';
+import { type BufferType, BufferUsage, type IBuffer, type IBufferManager } from './BufferManager'
+import type { IShaderManager, IShaderProgram, IShaderSource } from './ShaderManager'
+import {
+  createInitialWebGLState,
+  type OptimizedRenderBatch,
+  type WebGLState,
+} from './WebGLOptimizerTypes'
 
 /**
  * 着色器缓存系统
  */
 export class ShaderCache {
-  private cache = new Map<string, IShaderProgram>();
-  private compileQueue = new Set<string>();
-  private warmupShaders = new Set<string>();
+  private cache = new Map<string, IShaderProgram>()
+  private compileQueue = new Set<string>()
+  private warmupShaders = new Set<string>()
 
   /**
    * 获取着色器程序（带缓存）
    */
   getProgram(key: string, source: IShaderSource, shaderManager: IShaderManager): IShaderProgram {
-    const cached = this.cache.get(key);
+    const cached = this.cache.get(key)
     if (cached && cached.isValid) {
-      return cached;
+      return cached
     }
 
-    const program = shaderManager.createShader(source);
-    this.cache.set(key, program);
+    const program = shaderManager.createShader(source)
+    this.cache.set(key, program)
 
-    return program;
+    return program
   }
 
   /**
    * 预热着色器（异步编译）
    */
   warmupShader(key: string, source: IShaderSource, shaderManager: IShaderManager): void {
-    if (this.compileQueue.has(key)) return;
+    if (this.compileQueue.has(key)) return
 
-    this.compileQueue.add(key);
-    this.warmupShaders.add(key);
+    this.compileQueue.add(key)
+    this.warmupShaders.add(key)
 
     setTimeout(() => {
       try {
-        this.getProgram(key, source, shaderManager);
+        this.getProgram(key, source, shaderManager)
       } catch (error) {
-        console.warn(`Failed to warmup shader ${key}:`, error);
+        console.warn(`Failed to warmup shader ${key}:`, error)
       } finally {
-        this.compileQueue.delete(key);
+        this.compileQueue.delete(key)
       }
-    }, 0);
+    }, 0)
   }
 
   /**
@@ -55,7 +59,7 @@ export class ShaderCache {
   cleanup(): void {
     for (const [key, program] of this.cache.entries()) {
       if (!program.isValid) {
-        this.cache.delete(key);
+        this.cache.delete(key)
       }
     }
   }
@@ -67,8 +71,8 @@ export class ShaderCache {
     return {
       cached: this.cache.size,
       compiling: this.compileQueue.size,
-      warmedUp: this.warmupShaders.size
-    };
+      warmedUp: this.warmupShaders.size,
+    }
   }
 }
 
@@ -76,8 +80,8 @@ export class ShaderCache {
  * 缓冲区池系统
  */
 export class BufferPool {
-  private pools = new Map<string, IBuffer[]>();
-  private inUse = new Map<string, Set<IBuffer>>();
+  private pools = new Map<string, IBuffer[]>()
+  private inUse = new Map<string, Set<IBuffer>>()
 
   constructor(private bufferManager: IBufferManager) {}
 
@@ -85,30 +89,28 @@ export class BufferPool {
    * 获取缓冲区（从池中复用或创建新的）
    */
   acquireBuffer(type: BufferType, size: number, usage: BufferUsage = BufferUsage.DYNAMIC): IBuffer {
-    const poolKey = `${type}_${usage}`;
-    const pool = this.pools.get(poolKey) || [];
-    const inUseSet = this.inUse.get(poolKey) || new Set();
+    const poolKey = `${type}_${usage}`
+    const pool = this.pools.get(poolKey) || []
+    const inUseSet = this.inUse.get(poolKey) || new Set()
 
-    const suitableBuffer = pool.find(buffer =>
-      buffer.size >= size &&
-      buffer.isValid &&
-      !inUseSet.has(buffer)
-    );
+    const suitableBuffer = pool.find(
+      (buffer) => buffer.size >= size && buffer.isValid && !inUseSet.has(buffer)
+    )
 
     if (suitableBuffer) {
-      inUseSet.add(suitableBuffer);
-      this.inUse.set(poolKey, inUseSet);
-      return suitableBuffer;
+      inUseSet.add(suitableBuffer)
+      this.inUse.set(poolKey, inUseSet)
+      return suitableBuffer
     }
 
-    const newBuffer = this.bufferManager.createBuffer(type, usage);
-    pool.push(newBuffer);
-    this.pools.set(poolKey, pool);
+    const newBuffer = this.bufferManager.createBuffer(type, usage)
+    pool.push(newBuffer)
+    this.pools.set(poolKey, pool)
 
-    inUseSet.add(newBuffer);
-    this.inUse.set(poolKey, inUseSet);
+    inUseSet.add(newBuffer)
+    this.inUse.set(poolKey, inUseSet)
 
-    return newBuffer;
+    return newBuffer
   }
 
   /**
@@ -117,8 +119,8 @@ export class BufferPool {
   releaseBuffer(buffer: IBuffer): void {
     for (const inUseSet of this.inUse.values()) {
       if (inUseSet.has(buffer)) {
-        inUseSet.delete(buffer);
-        break;
+        inUseSet.delete(buffer)
+        break
       }
     }
   }
@@ -128,8 +130,8 @@ export class BufferPool {
    */
   cleanup(): void {
     for (const [poolKey, pool] of this.pools.entries()) {
-      const validBuffers = pool.filter(buffer => buffer.isValid);
-      this.pools.set(poolKey, validBuffers);
+      const validBuffers = pool.filter((buffer) => buffer.isValid)
+      this.pools.set(poolKey, validBuffers)
     }
   }
 
@@ -137,34 +139,39 @@ export class BufferPool {
    * 获取内部缓冲区管理器
    */
   getBufferManager(): IBufferManager {
-    return this.bufferManager;
+    return this.bufferManager
   }
 
   /**
    * 获取池统计
    */
-  getStats(): { totalBuffers: number; inUseBuffers: number; availableBuffers: number; totalMemory: number } {
-    let totalBuffers = 0;
-    let inUseBuffers = 0;
-    let totalMemory = 0;
+  getStats(): {
+    totalBuffers: number
+    inUseBuffers: number
+    availableBuffers: number
+    totalMemory: number
+  } {
+    let totalBuffers = 0
+    let inUseBuffers = 0
+    let totalMemory = 0
 
     for (const pool of this.pools.values()) {
-      totalBuffers += pool.length;
+      totalBuffers += pool.length
       for (const buffer of pool) {
-        totalMemory += buffer.size;
+        totalMemory += buffer.size
       }
     }
 
     for (const inUseSet of this.inUse.values()) {
-      inUseBuffers += inUseSet.size;
+      inUseBuffers += inUseSet.size
     }
 
     return {
       totalBuffers,
       inUseBuffers,
       availableBuffers: totalBuffers - inUseBuffers,
-      totalMemory
-    };
+      totalMemory,
+    }
   }
 }
 
@@ -172,11 +179,11 @@ export class BufferPool {
  * WebGL状态管理器
  */
 export class WebGLStateManager {
-  private currentState: WebGLState;
-  private stateChangeCount = 0;
+  private currentState: WebGLState
+  private stateChangeCount = 0
 
   constructor(private gl: WebGLRenderingContext) {
-    this.currentState = createInitialWebGLState();
+    this.currentState = createInitialWebGLState()
   }
 
   /**
@@ -184,9 +191,9 @@ export class WebGLStateManager {
    */
   useProgram(program: WebGLProgram | null): void {
     if (this.currentState.currentProgram !== program) {
-      this.gl.useProgram(program);
-      this.currentState.currentProgram = program;
-      this.stateChangeCount++;
+      this.gl.useProgram(program)
+      this.currentState.currentProgram = program
+      this.stateChangeCount++
     }
   }
 
@@ -194,23 +201,23 @@ export class WebGLStateManager {
    * 绑定缓冲区（状态跟踪）
    */
   bindBuffer(target: number, buffer: WebGLBuffer | null): void {
-    let currentBuffer: WebGLBuffer | null;
+    let currentBuffer: WebGLBuffer | null
 
     if (target === this.gl.ARRAY_BUFFER) {
-      currentBuffer = this.currentState.currentArrayBuffer;
-      this.currentState.currentArrayBuffer = buffer;
+      currentBuffer = this.currentState.currentArrayBuffer
+      this.currentState.currentArrayBuffer = buffer
     } else if (target === this.gl.ELEMENT_ARRAY_BUFFER) {
-      currentBuffer = this.currentState.currentElementArrayBuffer;
-      this.currentState.currentElementArrayBuffer = buffer;
+      currentBuffer = this.currentState.currentElementArrayBuffer
+      this.currentState.currentElementArrayBuffer = buffer
     } else {
-      this.gl.bindBuffer(target, buffer);
-      this.stateChangeCount++;
-      return;
+      this.gl.bindBuffer(target, buffer)
+      this.stateChangeCount++
+      return
     }
 
     if (currentBuffer !== buffer) {
-      this.gl.bindBuffer(target, buffer);
-      this.stateChangeCount++;
+      this.gl.bindBuffer(target, buffer)
+      this.stateChangeCount++
     }
   }
 
@@ -219,9 +226,9 @@ export class WebGLStateManager {
    */
   bindTexture(target: number, texture: WebGLTexture | null): void {
     if (this.currentState.currentTexture !== texture) {
-      this.gl.bindTexture(target, texture);
-      this.currentState.currentTexture = texture;
-      this.stateChangeCount++;
+      this.gl.bindTexture(target, texture)
+      this.currentState.currentTexture = texture
+      this.stateChangeCount++
     }
   }
 
@@ -229,11 +236,16 @@ export class WebGLStateManager {
    * 设置视口（状态跟踪）
    */
   setViewport(x: number, y: number, width: number, height: number): void {
-    const current = this.currentState.viewport;
-    if (current.x !== x || current.y !== y || current.width !== width || current.height !== height) {
-      this.gl.viewport(x, y, width, height);
-      this.currentState.viewport = { x, y, width, height };
-      this.stateChangeCount++;
+    const current = this.currentState.viewport
+    if (
+      current.x !== x ||
+      current.y !== y ||
+      current.width !== width ||
+      current.height !== height
+    ) {
+      this.gl.viewport(x, y, width, height)
+      this.currentState.viewport = { x, y, width, height }
+      this.stateChangeCount++
     }
   }
 
@@ -243,12 +255,12 @@ export class WebGLStateManager {
   setBlendEnabled(enabled: boolean): void {
     if (this.currentState.blendEnabled !== enabled) {
       if (enabled) {
-        this.gl.enable(this.gl.BLEND);
+        this.gl.enable(this.gl.BLEND)
       } else {
-        this.gl.disable(this.gl.BLEND);
+        this.gl.disable(this.gl.BLEND)
       }
-      this.currentState.blendEnabled = enabled;
-      this.stateChangeCount++;
+      this.currentState.blendEnabled = enabled
+      this.stateChangeCount++
     }
   }
 
@@ -258,12 +270,12 @@ export class WebGLStateManager {
   setDepthTestEnabled(enabled: boolean): void {
     if (this.currentState.depthTestEnabled !== enabled) {
       if (enabled) {
-        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.enable(this.gl.DEPTH_TEST)
       } else {
-        this.gl.disable(this.gl.DEPTH_TEST);
+        this.gl.disable(this.gl.DEPTH_TEST)
       }
-      this.currentState.depthTestEnabled = enabled;
-      this.stateChangeCount++;
+      this.currentState.depthTestEnabled = enabled
+      this.stateChangeCount++
     }
   }
 
@@ -271,16 +283,16 @@ export class WebGLStateManager {
    * 获取当前状态
    */
   getCurrentState(): Readonly<WebGLState> {
-    return this.currentState;
+    return this.currentState
   }
 
   /**
    * 重置状态更改计数
    */
   resetStateChangeCount(): number {
-    const count = this.stateChangeCount;
-    this.stateChangeCount = 0;
-    return count;
+    const count = this.stateChangeCount
+    this.stateChangeCount = 0
+    return count
   }
 }
 
@@ -288,13 +300,13 @@ export class WebGLStateManager {
  * 渲染批次优化器
  */
 export class RenderBatchOptimizer {
-  private batches: OptimizedRenderBatch[] = [];
+  private batches: OptimizedRenderBatch[] = []
 
   /**
    * 添加渲染批次
    */
   addBatch(batch: OptimizedRenderBatch): void {
-    this.batches.push(batch);
+    this.batches.push(batch)
   }
 
   /**
@@ -302,64 +314,69 @@ export class RenderBatchOptimizer {
    */
   optimizeBatches(): OptimizedRenderBatch[] {
     return this.batches.sort((a, b) => {
-      if (a.sortKey < b.sortKey) return -1;
-      if (a.sortKey > b.sortKey) return 1;
-      return 0;
-    });
+      if (a.sortKey < b.sortKey) return -1
+      if (a.sortKey > b.sortKey) return 1
+      return 0
+    })
   }
 
   /**
    * 合并兼容的批次
    */
   mergeBatches(): OptimizedRenderBatch[] {
-    const optimizedBatches = this.optimizeBatches();
-    const mergedBatches: OptimizedRenderBatch[] = [];
+    const optimizedBatches = this.optimizeBatches()
+    const mergedBatches: OptimizedRenderBatch[] = []
 
     for (const batch of optimizedBatches) {
-      const lastBatch = mergedBatches[mergedBatches.length - 1];
+      const lastBatch = mergedBatches[mergedBatches.length - 1]
 
       if (lastBatch && this.canMergeBatches(lastBatch, batch)) {
-        lastBatch.drawCalls.push(...batch.drawCalls);
+        lastBatch.drawCalls.push(...batch.drawCalls)
       } else {
-        mergedBatches.push(batch);
+        mergedBatches.push(batch)
       }
     }
 
-    return mergedBatches;
+    return mergedBatches
   }
 
   private canMergeBatches(a: OptimizedRenderBatch, b: OptimizedRenderBatch): boolean {
-    return a.shader === b.shader &&
-           a.vertexArray === b.vertexArray &&
-           this.textureBindingsEqual(a.textureBindings, b.textureBindings) &&
-           this.uniformsEqual(a.uniforms, b.uniforms);
+    return (
+      a.shader === b.shader &&
+      a.vertexArray === b.vertexArray &&
+      this.textureBindingsEqual(a.textureBindings, b.textureBindings) &&
+      this.uniformsEqual(a.uniforms, b.uniforms)
+    )
   }
 
-  private textureBindingsEqual(a: Map<number, WebGLTexture>, b: Map<number, WebGLTexture>): boolean {
-    if (a.size !== b.size) return false;
+  private textureBindingsEqual(
+    a: Map<number, WebGLTexture>,
+    b: Map<number, WebGLTexture>
+  ): boolean {
+    if (a.size !== b.size) return false
 
     for (const [unit, texture] of a.entries()) {
-      if (b.get(unit) !== texture) return false;
+      if (b.get(unit) !== texture) return false
     }
 
-    return true;
+    return true
   }
 
   private uniformsEqual(a: Map<string, unknown>, b: Map<string, unknown>): boolean {
-    if (a.size !== b.size) return false;
+    if (a.size !== b.size) return false
 
     for (const [name, value] of a.entries()) {
-      if (b.get(name) !== value) return false;
+      if (b.get(name) !== value) return false
     }
 
-    return true;
+    return true
   }
 
   /**
    * 清空批次
    */
   clear(): void {
-    this.batches = [];
+    this.batches = []
   }
 
   /**
@@ -368,7 +385,7 @@ export class RenderBatchOptimizer {
   getStats(): { totalBatches: number; totalDrawCalls: number } {
     return {
       totalBatches: this.batches.length,
-      totalDrawCalls: this.batches.reduce((sum, batch) => sum + batch.drawCalls.length, 0)
-    };
+      totalDrawCalls: this.batches.reduce((sum, batch) => sum + batch.drawCalls.length, 0),
+    }
   }
 }

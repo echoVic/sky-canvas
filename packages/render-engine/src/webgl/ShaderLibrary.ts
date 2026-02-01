@@ -2,7 +2,7 @@
  * 内置着色器库
  * 提供常用的2D图形渲染着色器
  */
-import { IShaderSource } from './ShaderManager';
+import type { IShaderSource } from './ShaderManager'
 
 /**
  * 基础2D形状着色器
@@ -33,8 +33,8 @@ export const BASIC_SHAPE_SHADER: IShaderSource = {
     void main() {
       gl_FragColor = v_color;
     }
-  `
-};
+  `,
+}
 
 /**
  * 纹理着色器
@@ -72,8 +72,8 @@ export const TEXTURE_SHADER: IShaderSource = {
       vec4 texColor = texture2D(u_texture, v_texCoord);
       gl_FragColor = texColor * v_color;
     }
-  `
-};
+  `,
+}
 
 /**
  * 单色着色器 - 用于单一颜色绘制
@@ -100,8 +100,8 @@ export const SOLID_COLOR_SHADER: IShaderSource = {
     void main() {
       gl_FragColor = u_color;
     }
-  `
-};
+  `,
+}
 
 /**
  * SDF（Signed Distance Field）圆形着色器
@@ -167,8 +167,8 @@ export const SDF_CIRCLE_SHADER: IShaderSource = {
       
       gl_FragColor = finalColor * alpha;
     }
-  `
-};
+  `,
+}
 
 /**
  * SDF矩形着色器
@@ -242,8 +242,8 @@ export const SDF_RECT_SHADER: IShaderSource = {
       
       gl_FragColor = finalColor * alpha;
     }
-  `
-};
+  `,
+}
 
 /**
  * 批处理着色器（支持多纹理）
@@ -306,8 +306,8 @@ export const BATCH_SHADER: IShaderSource = {
       vec4 texColor = getTextureColor();
       gl_FragColor = texColor * v_color;
     }
-  `
-};
+  `,
+}
 
 /**
  * 后处理着色器 - 简单的色彩调整
@@ -367,8 +367,8 @@ export const POST_PROCESS_SHADER: IShaderSource = {
       
       gl_FragColor = color;
     }
-  `
-};
+  `,
+}
 
 /**
  * 着色器库
@@ -380,8 +380,8 @@ export const SHADER_LIBRARY = {
   SDF_CIRCLE: SDF_CIRCLE_SHADER,
   SDF_RECT: SDF_RECT_SHADER,
   BATCH: BATCH_SHADER,
-  POST_PROCESS: POST_PROCESS_SHADER
-};
+  POST_PROCESS: POST_PROCESS_SHADER,
+}
 
 /**
  * 获取着色器源码
@@ -389,7 +389,7 @@ export const SHADER_LIBRARY = {
  * @returns 着色器源码或null
  */
 export function getShaderSource(name: keyof typeof SHADER_LIBRARY): IShaderSource | null {
-  return SHADER_LIBRARY[name] || null;
+  return SHADER_LIBRARY[name] || null
 }
 
 /**
@@ -397,5 +397,5 @@ export function getShaderSource(name: keyof typeof SHADER_LIBRARY): IShaderSourc
  * @returns 着色器名称列表
  */
 export function getAllShaderNames(): string[] {
-  return Object.keys(SHADER_LIBRARY);
+  return Object.keys(SHADER_LIBRARY)
 }

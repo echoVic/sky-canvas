@@ -1,5 +1,5 @@
-import { BaseSystem } from './SystemManager';
-import { Extension, ExtensionType } from './ExtensionSystem';
+import { Extension, ExtensionType } from './ExtensionSystem'
+import { BaseSystem } from './SystemManager'
 
 /**
  * 渲染任务类型
@@ -10,104 +10,104 @@ export enum RenderTaskType {
   SHADER_COMPILATION = 'shader_compilation',
   CULLING = 'culling',
   SORTING = 'sorting',
-  BATCHING = 'batching'
+  BATCHING = 'batching',
 }
 
 /**
  * 渲染任务接口
  */
 export interface RenderTask {
-  id: string;
-  type: RenderTaskType;
-  priority: number;
-  data: unknown;
-  dependencies: string[];
-  estimatedTime: number;
-  createdAt: number;
+  id: string
+  type: RenderTaskType
+  priority: number
+  data: unknown
+  dependencies: string[]
+  estimatedTime: number
+  createdAt: number
 }
 
 /**
  * 任务结果接口
  */
 export interface TaskResult {
-  taskId: string;
-  success: boolean;
-  data?: unknown;
-  error?: string;
-  executionTime: number;
+  taskId: string
+  success: boolean
+  data?: unknown
+  error?: string
+  executionTime: number
 }
 
 /**
  * Worker池配置
  */
 interface WorkerPoolConfig {
-  maxWorkers: number;
-  taskQueueSize: number;
-  workerIdleTimeout: number;
-  enableTaskStealing: boolean;
-  enableLoadBalancing: boolean;
+  maxWorkers: number
+  taskQueueSize: number
+  workerIdleTimeout: number
+  enableTaskStealing: boolean
+  enableLoadBalancing: boolean
 }
 
 /**
  * Worker状态
  */
 interface WorkerState {
-  id: string;
-  worker: Worker;
-  busy: boolean;
-  currentTask: string | null;
-  completedTasks: number;
-  totalExecutionTime: number;
-  lastActivity: number;
+  id: string
+  worker: Worker
+  busy: boolean
+  currentTask: string | null
+  completedTasks: number
+  totalExecutionTime: number
+  lastActivity: number
 }
 
 /**
  * 任务队列
  */
 class TaskQueue {
-  private tasks: RenderTask[] = [];
-  private priorityMap = new Map<number, RenderTask[]>();
-  
+  private tasks: RenderTask[] = []
+  private priorityMap = new Map<number, RenderTask[]>()
+
   enqueue(task: RenderTask): void {
-    this.tasks.push(task);
-    
+    this.tasks.push(task)
+
     // 按优先级分组
     if (!this.priorityMap.has(task.priority)) {
-      this.priorityMap.set(task.priority, []);
+      this.priorityMap.set(task.priority, [])
     }
-    this.priorityMap.get(task.priority)!.push(task);
-    
+    this.priorityMap.get(task.priority)!.push(task)
+
     // 保持队列排序
-    this.tasks.sort((a, b) => b.priority - a.priority);
+    this.tasks.sort((a, b) => b.priority - a.priority)
   }
-  
+
   dequeue(): RenderTask | null {
-    const task = this.tasks.shift();
+    const task = this.tasks.shift()
     if (task) {
-      const priorityTasks = this.priorityMap.get(task.priority)!;
-      const index = priorityTasks.indexOf(task);
+      const priorityTasks = this.priorityMap.get(task.priority)!
+      const index = priorityTasks.indexOf(task)
       if (index > -1) {
-        priorityTasks.splice(index, 1);
+        priorityTasks.splice(index, 1)
       }
     }
-    return task || null;
+    return task || null
   }
-  
+
   peek(): RenderTask | null {
-    return this.tasks[0] || null;
+    return this.tasks[0] || null
   }
-  
+
   size(): number {
-    return this.tasks.length;
+    return this.tasks.length
   }
-  
+
   clear(): void {
-    this.tasks = [];
-    this.priorityMap.clear();
+    this.tasks = []
+    this.priorityMap.clear()
   }
-  
+
   getTasksByPriority(priority: number): RenderTask[] {
-    return this.priorityMap.get(priority) || [];
+    return this.priorityMap.get(priority) || []
   }
 }
 
@@ -115,58 +115,58 @@ class TaskQueue {
  * 依赖图管理器
  */
 class DependencyGraph {
-  private graph = new Map<string, Set<string>>();
-  private inDegree = new Map<string, number>();
-  
+  private graph = new Map<string, Set<string>>()
+  private inDegree = new Map<string, number>()
+
   addTask(taskId: string, dependencies: string[]): void {
     if (!this.graph.has(taskId)) {
-      this.graph.set(taskId, new Set());
-      this.inDegree.set(taskId, 0);
+      this.graph.set(taskId, new Set())
+      this.inDegree.set(taskId, 0)
     }
-    
+
     for (const dep of dependencies) {
       if (!this.graph.has(dep)) {
-        this.graph.set(dep, new Set());
-        this.inDegree.set(dep, 0);
+        this.graph.set(dep, new Set())
+        this.inDegree.set(dep, 0)
       }
-      
-      this.graph.get(dep)!.add(taskId);
-      this.inDegree.set(taskId, this.inDegree.get(taskId)! + 1);
+
+      this.graph.get(dep)!.add(taskId)
+      this.inDegree.set(taskId, this.inDegree.get(taskId)! + 1)
     }
   }
-  
+
   getReadyTasks(): string[] {
-    const ready: string[] = [];
+    const ready: string[] = []
     for (const [taskId, degree] of this.inDegree.entries()) {
       if (degree === 0) {
-        ready.push(taskId);
+        ready.push(taskId)
       }
     }
-    return ready;
+    return ready
   }
-  
+
   completeTask(taskId: string): string[] {
-    const dependents = this.graph.get(taskId) || new Set();
-    const newlyReady: string[] = [];
-    
+    const dependents = this.graph.get(taskId) || new Set()
+    const newlyReady: string[] = []
+
     for (const dependent of dependents) {
-      const newDegree = this.inDegree.get(dependent)! - 1;
-      this.inDegree.set(dependent, newDegree);
-      
+      const newDegree = this.inDegree.get(dependent)! - 1
+      this.inDegree.set(dependent, newDegree)
+
       if (newDegree === 0) {
-        newlyReady.push(dependent);
+        newlyReady.push(dependent)
       }
     }
-    
-    this.graph.delete(taskId);
-    this.inDegree.delete(taskId);
-    
-    return newlyReady;
+
+    this.graph.delete(taskId)
+    this.inDegree.delete(taskId)
+
+    return newlyReady
   }
-  
+
   clear(): void {
-    this.graph.clear();
-    this.inDegree.clear();
+    this.graph.clear()
+    this.inDegree.clear()
   }
 }
 
@@ -176,26 +176,26 @@ class DependencyGraph {
 @Extension({
   type: ExtensionType.RenderSystem,
   name: 'multi-thread-render-system',
-  priority: 900
+  priority: 900,
 })
 export class MultiThreadRenderSystem extends BaseSystem {
-  readonly name = 'multi-thread-render-system';
-  readonly priority = 900;
-  
+  readonly name = 'multi-thread-render-system'
+  readonly priority = 900
+
   private config: WorkerPoolConfig = {
     maxWorkers: Math.min(navigator.hardwareConcurrency || 4, 8),
     taskQueueSize: 1000,
     workerIdleTimeout: 30000, // 30秒
     enableTaskStealing: true,
-    enableLoadBalancing: true
-  };
-  
-  private workers: WorkerState[] = [];
-  private taskQueue = new TaskQueue();
-  private dependencyGraph = new DependencyGraph();
-  private pendingTasks = new Map<string, RenderTask>();
-  private completedTasks = new Map<string, TaskResult>();
-  
+    enableLoadBalancing: true,
+  }
+
+  private workers: WorkerState[] = []
+  private taskQueue = new TaskQueue()
+  private dependencyGraph = new DependencyGraph()
+  private pendingTasks = new Map<string, RenderTask>()
+  private completedTasks = new Map<string, TaskResult>()
+
   // 性能统计
   private stats = {
     totalTasks: 0,
@@ -203,27 +203,27 @@ export class MultiThreadRenderSystem extends BaseSystem {
     failedTasks: 0,
     averageExecutionTime: 0,
     workerUtilization: 0,
-    queueLength: 0
-  };
-  
+    queueLength: 0,
+  }
+
   // 负载均衡
   private loadBalancer = {
     lastAssignedWorker: 0,
-    workerLoads: new Map<string, number>()
-  };
-  
-  init(): void {
-    this.initializeWorkers();
-    this.startLoadBalancing();
-    this.startWorkerMonitoring();
+    workerLoads: new Map<string, number>(),
   }
-  
+
+  init(): void {
+    this.initializeWorkers()
+    this.startLoadBalancing()
+    this.startWorkerMonitoring()
+  }
+
   /**
    * 初始化Worker池
    */
   private initializeWorkers(): void {
     for (let i = 0; i < this.config.maxWorkers; i++) {
-      const worker = this.createWorker();
+      const worker = this.createWorker()
       const workerState: WorkerState = {
         id: `worker-${i}`,
         worker,
@@ -231,18 +231,18 @@ export class MultiThreadRenderSystem extends BaseSystem {
         currentTask: null,
         completedTasks: 0,
         totalExecutionTime: 0,
-        lastActivity: Date.now()
-      };
-      
-      this.workers.push(workerState);
-      this.loadBalancer.workerLoads.set(workerState.id, 0);
-      
+        lastActivity: Date.now(),
+      }
+
+      this.workers.push(workerState)
+      this.loadBalancer.workerLoads.set(workerState.id, 0)
+
       // 设置消息处理
-      worker.onmessage = (e) => this.handleWorkerMessage(workerState, e);
-      worker.onerror = (e) => this.handleWorkerError(workerState, e);
+      worker.onmessage = (e) => this.handleWorkerMessage(workerState, e)
+      worker.onerror = (e) => this.handleWorkerError(workerState, e)
     }
   }
-  
+
   /**
    * 创建Worker
    */
@@ -361,299 +361,299 @@ export class MultiThreadRenderSystem extends BaseSystem {
           self.postMessage({ type: 'pong' });
         }
       };
-    `;
-    
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-    return new Worker(URL.createObjectURL(blob));
+    `
+
+    const blob = new Blob([workerCode], { type: 'application/javascript' })
+    return new Worker(URL.createObjectURL(blob))
   }
-  
+
   /**
    * 处理Worker消息
    */
   private handleWorkerMessage(workerState: WorkerState, e: MessageEvent): void {
-    const { type, result } = e.data;
-    
+    const { type, result } = e.data
+
     if (type === 'result') {
-      this.handleTaskResult(workerState, result);
+      this.handleTaskResult(workerState, result)
     } else if (type === 'pong') {
-      workerState.lastActivity = Date.now();
+      workerState.lastActivity = Date.now()
     }
   }
-  
+
   /**
    * 处理Worker错误
    */
   private handleWorkerError(workerState: WorkerState, error: ErrorEvent): void {
-    console.error(`Worker ${workerState.id} error:`, error);
-    
+    console.error(`Worker ${workerState.id} error:`, error)
+
     if (workerState.currentTask) {
       const taskResult: TaskResult = {
         taskId: workerState.currentTask,
         success: false,
         error: error.message,
-        executionTime: 0
-      };
-      
-      this.handleTaskResult(workerState, taskResult);
+        executionTime: 0,
+      }
+
+      this.handleTaskResult(workerState, taskResult)
     }
   }
-  
+
   /**
    * 处理任务结果
    */
   private handleTaskResult(workerState: WorkerState, result: TaskResult): void {
-    workerState.busy = false;
-    workerState.currentTask = null;
-    workerState.completedTasks++;
-    workerState.totalExecutionTime += result.executionTime;
-    workerState.lastActivity = Date.now();
-    
+    workerState.busy = false
+    workerState.currentTask = null
+    workerState.completedTasks++
+    workerState.totalExecutionTime += result.executionTime
+    workerState.lastActivity = Date.now()
+
     // 更新负载
-    const currentLoad = this.loadBalancer.workerLoads.get(workerState.id) || 0;
-    this.loadBalancer.workerLoads.set(workerState.id, Math.max(0, currentLoad - 1));
-    
+    const currentLoad = this.loadBalancer.workerLoads.get(workerState.id) || 0
+    this.loadBalancer.workerLoads.set(workerState.id, Math.max(0, currentLoad - 1))
+
     // 保存结果
-    this.completedTasks.set(result.taskId, result);
-    
+    this.completedTasks.set(result.taskId, result)
+
     // 更新统计
     if (result.success) {
-      this.stats.completedTasks++;
+      this.stats.completedTasks++
     } else {
-      this.stats.failedTasks++;
+      this.stats.failedTasks++
     }
-    
-    this.stats.averageExecutionTime = 
-      (this.stats.averageExecutionTime * (this.stats.completedTasks - 1) + result.executionTime) / 
-      this.stats.completedTasks;
-    
+
+    this.stats.averageExecutionTime =
+      (this.stats.averageExecutionTime * (this.stats.completedTasks - 1) + result.executionTime) /
+      this.stats.completedTasks
+
     // 处理依赖
-    const newlyReady = this.dependencyGraph.completeTask(result.taskId);
+    const newlyReady = this.dependencyGraph.completeTask(result.taskId)
     for (const taskId of newlyReady) {
-      const task = this.pendingTasks.get(taskId);
+      const task = this.pendingTasks.get(taskId)
       if (task) {
-        this.taskQueue.enqueue(task);
-        this.pendingTasks.delete(taskId);
+        this.taskQueue.enqueue(task)
+        this.pendingTasks.delete(taskId)
       }
     }
-    
+
     // 尝试分配新任务
-    this.assignTaskToWorker(workerState);
+    this.assignTaskToWorker(workerState)
   }
-  
+
   /**
    * 提交渲染任务
    */
   submitTask(task: RenderTask): void {
-    this.stats.totalTasks++;
-    
+    this.stats.totalTasks++
+
     // 添加到依赖图
-    this.dependencyGraph.addTask(task.id, task.dependencies);
-    
+    this.dependencyGraph.addTask(task.id, task.dependencies)
+
     // 检查依赖
     if (task.dependencies.length === 0) {
-      this.taskQueue.enqueue(task);
+      this.taskQueue.enqueue(task)
     } else {
-      this.pendingTasks.set(task.id, task);
+      this.pendingTasks.set(task.id, task)
     }
-    
+
     // 尝试分配任务
-    this.tryAssignTasks();
+    this.tryAssignTasks()
   }
-  
+
   /**
    * 尝试分配任务
    */
   private tryAssignTasks(): void {
     for (const worker of this.workers) {
       if (!worker.busy) {
-        this.assignTaskToWorker(worker);
+        this.assignTaskToWorker(worker)
       }
     }
   }
-  
+
   /**
    * 分配任务给Worker
    */
   private assignTaskToWorker(workerState: WorkerState): void {
     if (workerState.busy || this.taskQueue.size() === 0) {
-      return;
+      return
     }
-    
-    const task = this.taskQueue.dequeue();
-    if (!task) return;
-    
-    workerState.busy = true;
-    workerState.currentTask = task.id;
-    workerState.lastActivity = Date.now();
-    
+
+    const task = this.taskQueue.dequeue()
+    if (!task) return
+
+    workerState.busy = true
+    workerState.currentTask = task.id
+    workerState.lastActivity = Date.now()
+
     // 更新负载
-    const currentLoad = this.loadBalancer.workerLoads.get(workerState.id) || 0;
-    this.loadBalancer.workerLoads.set(workerState.id, currentLoad + 1);
-    
+    const currentLoad = this.loadBalancer.workerLoads.get(workerState.id) || 0
+    this.loadBalancer.workerLoads.set(workerState.id, currentLoad + 1)
+
     // 发送任务给Worker
     workerState.worker.postMessage({
       type: 'execute',
-      task
-    });
+      task,
+    })
   }
-  
+
   /**
    * 开始负载均衡
    */
   private startLoadBalancing(): void {
-    if (!this.config.enableLoadBalancing) return;
-    
+    if (!this.config.enableLoadBalancing) return
+
     setInterval(() => {
-      this.performLoadBalancing();
-    }, 5000); // 每5秒执行一次负载均衡
+      this.performLoadBalancing()
+    }, 5000) // 每5秒执行一次负载均衡
   }
-  
+
   /**
    * 执行负载均衡
    */
   private performLoadBalancing(): void {
-    if (!this.config.enableTaskStealing) return;
-    
+    if (!this.config.enableTaskStealing) return
+
     const loads = Array.from(this.loadBalancer.workerLoads.entries())
       .map(([id, load]) => ({ id, load }))
-      .sort((a, b) => a.load - b.load);
-    
-    const lightestWorker = loads[0];
-    const heaviestWorker = loads[loads.length - 1];
-    
+      .sort((a, b) => a.load - b.load)
+
+    const lightestWorker = loads[0]
+    const heaviestWorker = loads[loads.length - 1]
+
     // 如果负载差异超过阈值，尝试任务窃取
     if (heaviestWorker.load - lightestWorker.load > 2) {
-      this.attemptTaskStealing(lightestWorker.id, heaviestWorker.id);
+      this.attemptTaskStealing(lightestWorker.id, heaviestWorker.id)
     }
   }
-  
+
   /**
    * 尝试任务窃取
    */
   private attemptTaskStealing(stealerId: string, victimId: string): void {
     // 简化的任务窃取逻辑
     // 在实际实现中，这里会涉及更复杂的任务重分配
-    console.log(`Worker ${stealerId} attempting to steal task from ${victimId}`);
+    console.log(`Worker ${stealerId} attempting to steal task from ${victimId}`)
   }
-  
+
   /**
    * 开始Worker监控
    */
   private startWorkerMonitoring(): void {
     setInterval(() => {
-      this.monitorWorkers();
-      this.updateStats();
-    }, 1000); // 每秒监控一次
+      this.monitorWorkers()
+      this.updateStats()
+    }, 1000) // 每秒监控一次
   }
-  
+
   /**
    * 监控Worker状态
    */
   private monitorWorkers(): void {
-    const now = Date.now();
-    
+    const now = Date.now()
+
     for (const worker of this.workers) {
       // 检查Worker是否响应
       if (now - worker.lastActivity > this.config.workerIdleTimeout) {
-        this.pingWorker(worker);
+        this.pingWorker(worker)
       }
     }
   }
-  
+
   /**
    * Ping Worker
    */
   private pingWorker(workerState: WorkerState): void {
-    workerState.worker.postMessage({ type: 'ping' });
+    workerState.worker.postMessage({ type: 'ping' })
   }
-  
+
   /**
    * 更新统计信息
    */
   private updateStats(): void {
-    const busyWorkers = this.workers.filter(w => w.busy).length;
-    this.stats.workerUtilization = busyWorkers / this.workers.length;
-    this.stats.queueLength = this.taskQueue.size();
+    const busyWorkers = this.workers.filter((w) => w.busy).length
+    this.stats.workerUtilization = busyWorkers / this.workers.length
+    this.stats.queueLength = this.taskQueue.size()
   }
-  
+
   /**
    * 获取任务结果
    */
   getTaskResult(taskId: string): TaskResult | null {
-    return this.completedTasks.get(taskId) || null;
+    return this.completedTasks.get(taskId) || null
   }
-  
+
   /**
    * 等待任务完成
    */
   async waitForTask(taskId: string, timeout = 10000): Promise<TaskResult> {
     return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-      
+      const startTime = Date.now()
+
       const checkResult = () => {
-        const result = this.completedTasks.get(taskId);
+        const result = this.completedTasks.get(taskId)
         if (result) {
-          resolve(result);
-          return;
+          resolve(result)
+          return
         }
-        
+
         if (Date.now() - startTime > timeout) {
-          reject(new Error(`Task ${taskId} timeout`));
-          return;
+          reject(new Error(`Task ${taskId} timeout`))
+          return
         }
-        
-        setTimeout(checkResult, 100);
-      };
-      
-      checkResult();
-    });
+
+        setTimeout(checkResult, 100)
+      }
+
+      checkResult()
+    })
   }
-  
+
   /**
    * 获取系统统计
    */
   getStats(): typeof this.stats {
-    return { ...this.stats };
+    return { ...this.stats }
   }
-  
+
   /**
    * 获取Worker状态
    */
   getWorkerStates(): WorkerState[] {
-    return this.workers.map(w => ({
+    return this.workers.map((w) => ({
       id: w.id,
       worker: w.worker,
       busy: w.busy,
       currentTask: w.currentTask,
       completedTasks: w.completedTasks,
       totalExecutionTime: w.totalExecutionTime,
-      lastActivity: w.lastActivity
-    }));
+      lastActivity: w.lastActivity,
+    }))
   }
-  
+
   /**
    * 清空任务队列
    */
   clearQueue(): void {
-    this.taskQueue.clear();
-    this.pendingTasks.clear();
-    this.dependencyGraph.clear();
+    this.taskQueue.clear()
+    this.pendingTasks.clear()
+    this.dependencyGraph.clear()
   }
-  
+
   /**
    * 销毁系统
    */
   dispose(): void {
     // 终止所有Worker
     for (const worker of this.workers) {
-      worker.worker.terminate();
+      worker.worker.terminate()
     }
-    
-    this.workers = [];
-    this.taskQueue.clear();
-    this.pendingTasks.clear();
-    this.completedTasks.clear();
-    this.dependencyGraph.clear();
-    this.loadBalancer.workerLoads.clear();
+
+    this.workers = []
+    this.taskQueue.clear()
+    this.pendingTasks.clear()
+    this.completedTasks.clear()
+    this.dependencyGraph.clear()
+    this.loadBalancer.workerLoads.clear()
   }
 }

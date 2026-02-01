@@ -1,19 +1,24 @@
 import { create } from 'zustand'
 
 // 工具类型定义（与Hook中的ToolType保持一致）
-export type UIToolType = 
-  | 'select' 
-  | 'hand' 
-  | 'rectangle' 
-  | 'diamond' 
-  | 'circle' 
-  | 'arrow' 
-  | 'line' 
-  | 'draw' 
-  | 'text' 
-  | 'image' 
-  | 'sticky' 
-  | 'link' 
+export type UIToolType =
+  | 'select'
+  | 'hand'
+  | 'rectangle'
+  | 'diamond'
+  | 'circle'
+  | 'ellipse'
+  | 'polygon'
+  | 'star'
+  | 'arrow'
+  | 'line'
+  | 'draw'
+  | 'text'
+  | 'image'
+  | 'eraser'
+  | 'eyedropper'
+  | 'sticky'
+  | 'link'
   | 'frame'
 
 interface Tool {
@@ -29,7 +34,7 @@ interface CanvasState {
   theme: 'light' | 'dark'
   sidebarOpen: boolean
   zoom: number
-  
+
   setSelectedTool: (tool: UIToolType) => void
   toggleTheme: () => void
   toggleSidebar: () => void
@@ -43,33 +48,42 @@ export const useCanvasStore = create<CanvasState>((set) => ({
     { id: 'rectangle', name: '矩形', icon: 'Square', active: false },
     { id: 'diamond', name: '菱形', icon: 'Diamond', active: false },
     { id: 'circle', name: '圆形', icon: 'Circle', active: false },
+    { id: 'ellipse', name: '椭圆', icon: 'Circle', active: false },
+    { id: 'polygon', name: '多边形', icon: 'Hexagon', active: false },
+    { id: 'star', name: '星形', icon: 'Star', active: false },
     { id: 'arrow', name: '箭头', icon: 'MoveRight', active: false },
     { id: 'line', name: '线条', icon: 'Minus', active: false },
     { id: 'draw', name: '自由绘画', icon: 'Pencil', active: false },
     { id: 'text', name: '文本', icon: 'Type', active: false },
     { id: 'image', name: '图片', icon: 'Image', active: false },
+    { id: 'eraser', name: '橡皮擦', icon: 'Eraser', active: false },
+    { id: 'eyedropper', name: '取色器', icon: 'Pipette', active: false },
     { id: 'sticky', name: '便签', icon: 'StickyNote', active: false },
     { id: 'link', name: '链接', icon: 'Link', active: false },
-    { id: 'frame', name: '框架', icon: 'Frame', active: false }
+    { id: 'frame', name: '框架', icon: 'Frame', active: false },
   ],
   selectedTool: 'select', // 默认选择工具
   theme: 'light',
   sidebarOpen: false, // 默认关闭
   zoom: 100, // 默认100%缩放
 
-  setSelectedTool: (tool: UIToolType) => set(() => ({
-    selectedTool: tool
-  })),
+  setSelectedTool: (tool: UIToolType) =>
+    set(() => ({
+      selectedTool: tool,
+    })),
 
-  toggleTheme: () => set((state) => ({
-    theme: state.theme === 'light' ? 'dark' : 'light'
-  })),
+  toggleTheme: () =>
+    set((state) => ({
+      theme: state.theme === 'light' ? 'dark' : 'light',
+    })),
 
-  toggleSidebar: () => set((state) => ({
-    sidebarOpen: !state.sidebarOpen
-  })),
+  toggleSidebar: () =>
+    set((state) => ({
+      sidebarOpen: !state.sidebarOpen,
+    })),
 
-  setZoom: (zoom: number) => set(() => ({
-    zoom
-  })),
+  setZoom: (zoom: number) =>
+    set(() => ({
+      zoom,
+    })),
 }))

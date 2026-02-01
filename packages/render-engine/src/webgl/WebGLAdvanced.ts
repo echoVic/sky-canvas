@@ -3,43 +3,47 @@
  * 提供便捷的高级功能使用方式
  */
 
-import { AdvancedShaderManager } from './AdvancedShaderManager';
-import { WebGLOptimizer, createGlobalWebGLOptimizer, getGlobalWebGLOptimizer } from './WebGLOptimizer';
-import { WebGLResourceManager } from './WebGLResourceManager';
-import { IShaderManager } from './ShaderManager';
-import { IBufferManager } from './BufferManager';
+import { AdvancedShaderManager } from './AdvancedShaderManager'
+import type { IBufferManager } from './BufferManager'
+import type { IShaderManager } from './ShaderManager'
+import {
+  createGlobalWebGLOptimizer,
+  getGlobalWebGLOptimizer,
+  WebGLOptimizer,
+} from './WebGLOptimizer'
+import { WebGLResourceManager } from './WebGLResourceManager'
 
 /**
  * WebGL高级功能管理器
  * 整合所有高级功能模块的便捷接口
  */
 export class WebGLAdvancedManager {
-  private gl: WebGLRenderingContext;
-  private advancedShaderManager?: AdvancedShaderManager;
-  private optimizer?: WebGLOptimizer;
-  private resourceManager?: WebGLResourceManager;
+  private gl: WebGLRenderingContext
+  private advancedShaderManager?: AdvancedShaderManager
+  private optimizer?: WebGLOptimizer
+  private resourceManager?: WebGLResourceManager
 
   constructor(
     gl: WebGLRenderingContext,
     shaderManager: IShaderManager,
     bufferManager: IBufferManager
   ) {
-    this.gl = gl;
+    this.gl = gl
   }
 
   /**
    * 启用高级着色器管理
    */
   enableAdvancedShaders(config?: {
-    enableHotReload?: boolean;
-    precompileCommonVariants?: boolean;
-    enableAsyncCompilation?: boolean;
-    cacheMemoryLimit?: number;
+    enableHotReload?: boolean
+    precompileCommonVariants?: boolean
+    enableAsyncCompilation?: boolean
+    cacheMemoryLimit?: number
   }): AdvancedShaderManager {
     if (!this.advancedShaderManager) {
-      this.advancedShaderManager = new AdvancedShaderManager(this.gl, config);
+      this.advancedShaderManager = new AdvancedShaderManager(this.gl, config)
     }
-    return this.advancedShaderManager;
+    return this.advancedShaderManager
   }
 
   /**
@@ -49,16 +53,16 @@ export class WebGLAdvancedManager {
     shaderManager: IShaderManager,
     bufferManager: IBufferManager,
     config?: {
-      enableStateTracking?: boolean;
-      enableBatchOptimization?: boolean;
-      enableShaderWarmup?: boolean;
-      enableBufferPooling?: boolean;
+      enableStateTracking?: boolean
+      enableBatchOptimization?: boolean
+      enableShaderWarmup?: boolean
+      enableBufferPooling?: boolean
     }
   ): WebGLOptimizer {
     if (!this.optimizer) {
-      this.optimizer = new WebGLOptimizer(this.gl, shaderManager, bufferManager, config);
+      this.optimizer = new WebGLOptimizer(this.gl, shaderManager, bufferManager, config)
     }
-    return this.optimizer;
+    return this.optimizer
   }
 
   /**
@@ -66,30 +70,30 @@ export class WebGLAdvancedManager {
    */
   enableResourceManager(config?: any): WebGLResourceManager {
     if (!this.resourceManager) {
-      this.resourceManager = new WebGLResourceManager(this.gl, config);
+      this.resourceManager = new WebGLResourceManager(this.gl, config)
     }
-    return this.resourceManager;
+    return this.resourceManager
   }
 
   /**
    * 获取高级着色器管理器
    */
   getAdvancedShaderManager(): AdvancedShaderManager | undefined {
-    return this.advancedShaderManager;
+    return this.advancedShaderManager
   }
 
   /**
    * 获取优化器
    */
   getOptimizer(): WebGLOptimizer | undefined {
-    return this.optimizer;
+    return this.optimizer
   }
 
   /**
    * 获取资源管理器
    */
   getResourceManager(): WebGLResourceManager | undefined {
-    return this.resourceManager;
+    return this.resourceManager
   }
 
   /**
@@ -99,8 +103,8 @@ export class WebGLAdvancedManager {
     return {
       advancedShaders: this.advancedShaderManager?.getCacheStats(),
       optimizer: this.optimizer?.getDetailedStats(),
-      resourceManager: this.resourceManager ? {} : undefined // 简化实现
-    };
+      resourceManager: this.resourceManager ? {} : undefined, // 简化实现
+    }
   }
 
   /**
@@ -108,18 +112,18 @@ export class WebGLAdvancedManager {
    */
   dispose(): void {
     if (this.advancedShaderManager) {
-      this.advancedShaderManager.dispose();
-      this.advancedShaderManager = undefined;
+      this.advancedShaderManager.dispose()
+      this.advancedShaderManager = undefined
     }
 
     if (this.optimizer) {
-      this.optimizer.dispose();
-      this.optimizer = undefined;
+      this.optimizer.dispose()
+      this.optimizer = undefined
     }
 
     if (this.resourceManager) {
-      this.resourceManager.dispose();
-      this.resourceManager = undefined;
+      this.resourceManager.dispose()
+      this.resourceManager = undefined
     }
   }
 }
@@ -130,7 +134,7 @@ export function createWebGLAdvancedManager(
   shaderManager: IShaderManager,
   bufferManager: IBufferManager
 ): WebGLAdvancedManager {
-  return new WebGLAdvancedManager(gl, shaderManager, bufferManager);
+  return new WebGLAdvancedManager(gl, shaderManager, bufferManager)
 }
 
 // 导出高级功能预设配置
@@ -143,20 +147,20 @@ export const WebGLAdvancedPresets = {
       enableHotReload: false,
       precompileCommonVariants: true,
       enableAsyncCompilation: true,
-      cacheMemoryLimit: 100 * 1024 * 1024 // 100MB
+      cacheMemoryLimit: 100 * 1024 * 1024, // 100MB
     },
     optimizer: {
       enableStateTracking: true,
       enableBatchOptimization: true,
       enableShaderWarmup: true,
-      enableBufferPooling: true
+      enableBufferPooling: true,
     },
     resourceManager: {
       maxTextureMemory: 200 * 1024 * 1024, // 200MB
       maxBufferMemory: 50 * 1024 * 1024, // 50MB
       enableAutoCleanup: true,
-      cleanupInterval: 30000 // 30秒
-    }
+      cleanupInterval: 30000, // 30秒
+    },
   },
 
   /**
@@ -167,20 +171,20 @@ export const WebGLAdvancedPresets = {
       enableHotReload: true,
       precompileCommonVariants: false,
       enableAsyncCompilation: false,
-      cacheMemoryLimit: 50 * 1024 * 1024 // 50MB
+      cacheMemoryLimit: 50 * 1024 * 1024, // 50MB
     },
     optimizer: {
       enableStateTracking: true,
       enableBatchOptimization: false, // 便于调试
       enableShaderWarmup: false,
-      enableBufferPooling: false
+      enableBufferPooling: false,
     },
     resourceManager: {
       maxTextureMemory: 100 * 1024 * 1024, // 100MB
       maxBufferMemory: 25 * 1024 * 1024, // 25MB
       enableAutoCleanup: false, // 便于调试
-      cleanupInterval: 60000
-    }
+      cleanupInterval: 60000,
+    },
   },
 
   /**
@@ -191,24 +195,28 @@ export const WebGLAdvancedPresets = {
       enableHotReload: false,
       precompileCommonVariants: true,
       enableAsyncCompilation: true,
-      cacheMemoryLimit: 75 * 1024 * 1024 // 75MB
+      cacheMemoryLimit: 75 * 1024 * 1024, // 75MB
     },
     optimizer: {
       enableStateTracking: true,
       enableBatchOptimization: true,
       enableShaderWarmup: true,
-      enableBufferPooling: true
+      enableBufferPooling: true,
     },
     resourceManager: {
       maxTextureMemory: 150 * 1024 * 1024, // 150MB
       maxBufferMemory: 40 * 1024 * 1024, // 40MB
       enableAutoCleanup: true,
-      cleanupInterval: 45000 // 45秒
-    }
-  }
-};
+      cleanupInterval: 45000, // 45秒
+    },
+  },
+}
 
 // 重新导出主要类
-export { AdvancedShaderManager } from './AdvancedShaderManager';
-export { WebGLOptimizer, createGlobalWebGLOptimizer, getGlobalWebGLOptimizer } from './WebGLOptimizer';
-export { WebGLResourceManager } from './WebGLResourceManager';
+export { AdvancedShaderManager } from './AdvancedShaderManager'
+export {
+  createGlobalWebGLOptimizer,
+  getGlobalWebGLOptimizer,
+  WebGLOptimizer,
+} from './WebGLOptimizer'
+export { WebGLResourceManager } from './WebGLResourceManager'

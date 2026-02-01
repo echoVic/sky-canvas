@@ -3,70 +3,71 @@
  * 提供不同渲染后端的适配器实现
  */
 
-import { IGraphicsContextFactory } from '../IGraphicsContext';
-import { WebGLGraphicsContextFactory } from './WebGLAdapter';
-import { WebGPUGraphicsContextFactory } from './WebGPUAdapter';
-export { WebGLGraphicsContext, WebGLGraphicsContextFactory } from './WebGLAdapter';
-export { WebGPUGraphicsContext, WebGPUGraphicsContextFactory } from './WebGPUAdapter';
+import type { IGraphicsContextFactory } from '../IGraphicsContext'
+import { WebGLGraphicsContextFactory } from './WebGLAdapter'
+import { WebGPUGraphicsContextFactory } from './WebGPUAdapter'
+
+export { WebGLGraphicsContext, WebGLGraphicsContextFactory } from './WebGLAdapter'
+export { WebGPUGraphicsContext, WebGPUGraphicsContextFactory } from './WebGPUAdapter'
 
 // 适配器类型枚举
 export enum GraphicsAdapterType {
   WEBGL = 'webgl',
-  WEBGPU = 'webgpu' // 预留
+  WEBGPU = 'webgpu', // 预留
 }
 
 // 适配器工厂映射
 const ADAPTER_FACTORIES = {
   [GraphicsAdapterType.WEBGL]: () => new WebGLGraphicsContextFactory(),
   [GraphicsAdapterType.WEBGPU]: () => new WebGPUGraphicsContextFactory(),
-} as const;
+} as const
 
 /**
  * 创建图形适配器工厂
  */
 export function createGraphicsAdapterFactory(type: GraphicsAdapterType): IGraphicsContextFactory {
-  const factory = ADAPTER_FACTORIES[type];
+  const factory = ADAPTER_FACTORIES[type]
   if (!factory) {
-    throw new Error(`Unsupported graphics adapter type: ${type}`);
+    throw new Error(`Unsupported graphics adapter type: ${type}`)
   }
-  return factory();
+  return factory()
 }
 
 /**
  * 获取支持的适配器类型
  */
 export async function getSupportedAdapterTypes(): Promise<GraphicsAdapterType[]> {
-  const supported: GraphicsAdapterType[] = [];
-  
+  const supported: GraphicsAdapterType[] = []
+
   // Canvas 2D现在直接通过Canvas2DContext支持
-  
+
   // 检查WebGL支持
   try {
-    const webglFactory = new WebGLGraphicsContextFactory();
+    const webglFactory = new WebGLGraphicsContextFactory()
     if (webglFactory.isSupported()) {
-      supported.push(GraphicsAdapterType.WEBGL);
+      supported.push(GraphicsAdapterType.WEBGL)
     }
   } catch {
     // WebGL不支持
   }
-  
-  return supported;
+
+  return supported
 }
 
 /**
  * 自动选择最佳适配器类型
  */
 export async function selectBestAdapterType(): Promise<GraphicsAdapterType> {
-  const supported = await getSupportedAdapterTypes();
-  
+  const supported = await getSupportedAdapterTypes()
+
   if (supported.length === 0) {
-    throw new Error('No supported graphics adapters found');
+    throw new Error('No supported graphics adapters found')
   }
-  
+
   // 优先级：WebGL
   if (supported.includes(GraphicsAdapterType.WEBGL)) {
-    return GraphicsAdapterType.WEBGL;
+    return GraphicsAdapterType.WEBGL
   }
-  
-  return supported[0];
+
+  return supported[0]
 }

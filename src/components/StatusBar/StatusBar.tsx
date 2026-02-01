@@ -1,5 +1,5 @@
-import React from 'react'
 import { Minus, Plus, Redo, Undo } from 'lucide-react'
+import type React from 'react'
 import { useCanvasStore } from '../../store/canvasStore'
 import { useSDKStore } from '../../store/sdkStore'
 
@@ -10,14 +10,14 @@ const StatusBar: React.FC = () => {
   const zoomPresets = [25, 50, 75, 100, 125, 150, 200, 300, 400]
 
   const handleZoomIn = () => {
-    const currentIndex = zoomPresets.findIndex(z => z >= zoom)
+    const currentIndex = zoomPresets.findIndex((z) => z >= zoom)
     if (currentIndex < zoomPresets.length - 1) {
       setZoom(zoomPresets[currentIndex + 1])
     }
   }
 
   const handleZoomOut = () => {
-    const currentIndex = zoomPresets.findIndex(z => z >= zoom)
+    const currentIndex = zoomPresets.findIndex((z) => z >= zoom)
     if (currentIndex > 0) {
       setZoom(zoomPresets[currentIndex - 1])
     }
@@ -66,9 +66,7 @@ const StatusBar: React.FC = () => {
 
       {/* 右侧：状态信息 */}
       <div className="flex items-center gap-3">
-        <span>
-          {isInitialized ? `${shapes.length} 个形状` : '加载中...'}
-        </span>
+        <span>{isInitialized ? `${shapes.length} 个形状` : '加载中...'}</span>
         {selectedShapes.length > 0 && (
           <span className="text-blue-500">已选 {selectedShapes.length}</span>
         )}

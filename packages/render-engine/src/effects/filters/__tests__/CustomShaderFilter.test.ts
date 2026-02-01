@@ -2,11 +2,11 @@
  * 自定义着色器滤镜测试
  */
 
-import { vi } from 'vitest';
-import '../../__tests__/setup';
-import { FilterType } from '../../types/FilterTypes';
-import { WebGLShaderManager } from '../../webgl/WebGLShaderManager';
-import { CustomShaderFilter } from '../CustomShaderFilter';
+import { vi } from 'vitest'
+import '../../__tests__/setup'
+import { FilterType } from '../../types/FilterTypes'
+import { WebGLShaderManager } from '../../webgl/WebGLShaderManager'
+import { CustomShaderFilter } from '../CustomShaderFilter'
 
 // 模拟WebGL支持
 const mockWebGLContext = {
@@ -66,43 +66,43 @@ const mockWebGLContext = {
   COMPILE_STATUS: 35713,
   LINK_STATUS: 35714,
   ACTIVE_UNIFORMS: 35718,
-  ACTIVE_ATTRIBUTES: 35721
-};
+  ACTIVE_ATTRIBUTES: 35721,
+}
 
 // 模拟HTMLCanvasElement的getContext方法
 global.HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((type: string) => {
   if (type === 'webgl' || type === 'experimental-webgl') {
-    return mockWebGLContext;
+    return mockWebGLContext
   }
-  return null;
-});
+  return null
+})
 
 describe('CustomShaderFilter', () => {
-  let filter: CustomShaderFilter;
-  
+  let filter: CustomShaderFilter
+
   beforeEach(() => {
-    filter = new CustomShaderFilter();
-    vi.clearAllMocks();
-  });
+    filter = new CustomShaderFilter()
+    vi.clearAllMocks()
+  })
 
   afterEach(() => {
-    filter.dispose();
-  });
+    filter.dispose()
+  })
 
   it('应该正确初始化', () => {
-    expect(filter.type).toBe(FilterType.CUSTOM_SHADER);
-    expect(filter.name).toBe('Custom Shader');
-    expect(filter.requiresWebGL).toBe(true);
-  });
+    expect(filter.type).toBe(FilterType.CUSTOM_SHADER)
+    expect(filter.name).toBe('Custom Shader')
+    expect(filter.requiresWebGL).toBe(true)
+  })
 
   it('应该返回默认参数', () => {
-    const defaultParams = filter.getDefaultParameters();
-    expect(defaultParams.type).toBe(FilterType.CUSTOM_SHADER);
-    expect(defaultParams.vertexShader).toBe(WebGLShaderManager.DEFAULT_VERTEX_SHADER);
-    expect(defaultParams.fragmentShader).toBeDefined();
-    expect(defaultParams.uniforms).toEqual({});
-    expect(defaultParams.enabled).toBe(true);
-  });
+    const defaultParams = filter.getDefaultParameters()
+    expect(defaultParams.type).toBe(FilterType.CUSTOM_SHADER)
+    expect(defaultParams.vertexShader).toBe(WebGLShaderManager.DEFAULT_VERTEX_SHADER)
+    expect(defaultParams.fragmentShader).toBeDefined()
+    expect(defaultParams.uniforms).toEqual({})
+    expect(defaultParams.enabled).toBe(true)
+  })
 
   it('应该验证有效的着色器参数', () => {
     const validParams = {
@@ -121,11 +121,11 @@ describe('CustomShaderFilter', () => {
       `,
       uniforms: {},
       enabled: true,
-      opacity: 1
-    };
-    
-    expect(filter.validateParameters(validParams)).toBe(true);
-  });
+      opacity: 1,
+    }
+
+    expect(filter.validateParameters(validParams)).toBe(true)
+  })
 
   it('应该拒绝空的着色器代码', () => {
     const invalidParams = {
@@ -139,11 +139,11 @@ describe('CustomShaderFilter', () => {
       `,
       uniforms: {},
       enabled: true,
-      opacity: 1
-    };
-    
-    expect(filter.validateParameters(invalidParams)).toBe(false);
-  });
+      opacity: 1,
+    }
+
+    expect(filter.validateParameters(invalidParams)).toBe(false)
+  })
 
   it('应该拒绝无效的着色器类型', () => {
     const invalidParams = {
@@ -157,11 +157,11 @@ describe('CustomShaderFilter', () => {
       `,
       uniforms: {},
       enabled: true,
-      opacity: 1
-    };
-    
-    expect(filter.validateParameters(invalidParams as any)).toBe(false);
-  });
+      opacity: 1,
+    }
+
+    expect(filter.validateParameters(invalidParams as any)).toBe(false)
+  })
 
   it('应该估算处理时间', () => {
     const params = {
@@ -177,12 +177,12 @@ describe('CustomShaderFilter', () => {
       `,
       uniforms: {},
       enabled: true,
-      opacity: 1
-    };
+      opacity: 1,
+    }
 
-    const time = filter.estimateProcessingTime(100, 100, params);
-    expect(time).toBeGreaterThan(0);
-  });
+    const time = filter.estimateProcessingTime(100, 100, params)
+    expect(time).toBeGreaterThan(0)
+  })
 
   it('应该正确处理uniforms对象', () => {
     const params = {
@@ -201,14 +201,14 @@ describe('CustomShaderFilter', () => {
       `,
       uniforms: {
         u_brightness: 1.5,
-        u_color: [1.0, 0.8, 0.6]
+        u_color: [1.0, 0.8, 0.6],
       },
       enabled: true,
-      opacity: 1
-    };
-    
-    expect(filter.validateParameters(params)).toBe(true);
-  });
+      opacity: 1,
+    }
+
+    expect(filter.validateParameters(params)).toBe(true)
+  })
 
   it('应该处理着色器验证错误', () => {
     const invalidShaderParams = {
@@ -227,11 +227,11 @@ describe('CustomShaderFilter', () => {
       `,
       uniforms: {},
       enabled: true,
-      opacity: 1
-    };
-    
-    expect(filter.validateParameters(invalidShaderParams)).toBe(false);
-  });
+      opacity: 1,
+    }
+
+    expect(filter.validateParameters(invalidShaderParams)).toBe(false)
+  })
 
   describe('WebGLShaderManager静态方法', () => {
     it('应该验证顶点着色器', () => {
@@ -240,11 +240,11 @@ describe('CustomShaderFilter', () => {
         void main() {
           gl_Position = vec4(a_position, 0.0, 1.0);
         }
-      `;
-      
-      const errors = WebGLShaderManager.validateShaderCode('vertex', validVertexShader);
-      expect(errors).toHaveLength(0);
-    });
+      `
+
+      const errors = WebGLShaderManager.validateShaderCode('vertex', validVertexShader)
+      expect(errors).toHaveLength(0)
+    })
 
     it('应该检测顶点着色器错误', () => {
       const invalidVertexShader = `
@@ -252,12 +252,12 @@ describe('CustomShaderFilter', () => {
         void main() {
           // 缺少gl_Position设置
         }
-      `;
-      
-      const errors = WebGLShaderManager.validateShaderCode('vertex', invalidVertexShader);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors.some(error => error.includes('gl_Position'))).toBe(true);
-    });
+      `
+
+      const errors = WebGLShaderManager.validateShaderCode('vertex', invalidVertexShader)
+      expect(errors.length).toBeGreaterThan(0)
+      expect(errors.some((error) => error.includes('gl_Position'))).toBe(true)
+    })
 
     it('应该验证片段着色器', () => {
       const validFragmentShader = `
@@ -265,11 +265,11 @@ describe('CustomShaderFilter', () => {
         void main() {
           gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }
-      `;
-      
-      const errors = WebGLShaderManager.validateShaderCode('fragment', validFragmentShader);
-      expect(errors).toHaveLength(0);
-    });
+      `
+
+      const errors = WebGLShaderManager.validateShaderCode('fragment', validFragmentShader)
+      expect(errors).toHaveLength(0)
+    })
 
     it('应该检测片段着色器错误', () => {
       const invalidFragmentShader = `
@@ -277,93 +277,98 @@ describe('CustomShaderFilter', () => {
         void main() {
           // 缺少gl_FragColor设置
         }
-      `;
-      
-      const errors = WebGLShaderManager.validateShaderCode('fragment', invalidFragmentShader);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors.some(error => error.includes('gl_FragColor'))).toBe(true);
-    });
+      `
+
+      const errors = WebGLShaderManager.validateShaderCode('fragment', invalidFragmentShader)
+      expect(errors.length).toBeGreaterThan(0)
+      expect(errors.some((error) => error.includes('gl_FragColor'))).toBe(true)
+    })
 
     it('应该检测空着色器', () => {
-      const errors = WebGLShaderManager.validateShaderCode('vertex', '');
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0]).toContain('empty');
-    });
+      const errors = WebGLShaderManager.validateShaderCode('vertex', '')
+      expect(errors.length).toBeGreaterThan(0)
+      expect(errors[0]).toContain('empty')
+    })
 
     it('应该创建用户友好的片段着色器', () => {
       const userFunction = `
         vec4 applyEffect(vec4 color, vec2 texCoord) {
           return vec4(1.0 - color.rgb, color.a);
         }
-      `;
-      
-      const shader = WebGLShaderManager.createUserFragmentShader(userFunction);
-      expect(shader).toContain(userFunction);
-      expect(shader).toContain('precision mediump float');
-      expect(shader).toContain('void main()');
-    });
-  });
+      `
+
+      const shader = WebGLShaderManager.createUserFragmentShader(userFunction)
+      expect(shader).toContain(userFunction)
+      expect(shader).toContain('precision mediump float')
+      expect(shader).toContain('void main()')
+    })
+  })
 
   describe('预设着色器', () => {
     it('应该创建预设着色器', () => {
-      const presets = CustomShaderFilter.createPresetShaders();
-      
-      expect(presets).toHaveProperty('edgeDetection');
-      expect(presets).toHaveProperty('invert');
-      expect(presets).toHaveProperty('swirl');
-      expect(presets).toHaveProperty('pixelate');
-      
+      const presets = CustomShaderFilter.createPresetShaders()
+
+      expect(presets).toHaveProperty('edgeDetection')
+      expect(presets).toHaveProperty('invert')
+      expect(presets).toHaveProperty('swirl')
+      expect(presets).toHaveProperty('pixelate')
+
       // 验证边缘检测预设
-      const edgeDetection = presets.edgeDetection;
-      expect(edgeDetection.type).toBe(FilterType.CUSTOM_SHADER);
-      expect(edgeDetection.fragmentShader).toContain('Sobel');
-      expect(edgeDetection.enabled).toBe(true);
-    });
+      const edgeDetection = presets.edgeDetection
+      expect(edgeDetection.type).toBe(FilterType.CUSTOM_SHADER)
+      expect(edgeDetection.fragmentShader).toContain('Sobel')
+      expect(edgeDetection.enabled).toBe(true)
+    })
 
     it('预设着色器应该包含核心GLSL要素', () => {
-      const presets = CustomShaderFilter.createPresetShaders();
-      
+      const presets = CustomShaderFilter.createPresetShaders()
+
       for (const [name, preset] of Object.entries(presets)) {
         // 检查顶点着色器
-        expect(preset.vertexShader).toContain('gl_Position');
-        expect(preset.vertexShader).toContain('void main()');
-        
+        expect(preset.vertexShader).toContain('gl_Position')
+        expect(preset.vertexShader).toContain('void main()')
+
         // 检查片段着色器
-        expect(preset.fragmentShader).toContain('gl_FragColor');
-        expect(preset.fragmentShader).toContain('void main()');
-        expect(preset.fragmentShader).toContain('precision mediump float');
-        
+        expect(preset.fragmentShader).toContain('gl_FragColor')
+        expect(preset.fragmentShader).toContain('void main()')
+        expect(preset.fragmentShader).toContain('precision mediump float')
+
         // 验证不会有严重错误（空着色器等）
-        const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', preset.vertexShader);
-        const fragmentErrors = WebGLShaderManager.validateShaderCode('fragment', preset.fragmentShader);
-        
+        const vertexErrors = WebGLShaderManager.validateShaderCode('vertex', preset.vertexShader)
+        const fragmentErrors = WebGLShaderManager.validateShaderCode(
+          'fragment',
+          preset.fragmentShader
+        )
+
         // 检查没有严重错误（比如空着色器、缺少main函数等）
-        const hasSeriousVertexErrors = vertexErrors.some(error => 
-          error.includes('empty') || error.includes('main') || error.includes('gl_Position')
-        );
-        const hasSeriousFragmentErrors = fragmentErrors.some(error => 
-          error.includes('empty') || error.includes('main') || error.includes('gl_FragColor')
-        );
-        
-        expect(hasSeriousVertexErrors).toBe(false);
-        expect(hasSeriousFragmentErrors).toBe(false);
+        const hasSeriousVertexErrors = vertexErrors.some(
+          (error) =>
+            error.includes('empty') || error.includes('main') || error.includes('gl_Position')
+        )
+        const hasSeriousFragmentErrors = fragmentErrors.some(
+          (error) =>
+            error.includes('empty') || error.includes('main') || error.includes('gl_FragColor')
+        )
+
+        expect(hasSeriousVertexErrors).toBe(false)
+        expect(hasSeriousFragmentErrors).toBe(false)
       }
-    });
+    })
 
     it('旋涡效果应该使用时间uniform', () => {
-      const presets = CustomShaderFilter.createPresetShaders();
-      const swirl = presets.swirl;
-      
-      expect(swirl.fragmentShader).toContain('u_time');
-      expect(swirl.fragmentShader).toContain('sin(u_time)');
-    });
+      const presets = CustomShaderFilter.createPresetShaders()
+      const swirl = presets.swirl
+
+      expect(swirl.fragmentShader).toContain('u_time')
+      expect(swirl.fragmentShader).toContain('sin(u_time)')
+    })
 
     it('像素化效果应该使用尺寸uniform', () => {
-      const presets = CustomShaderFilter.createPresetShaders();
-      const pixelate = presets.pixelate;
-      
-      expect(pixelate.fragmentShader).toContain('u_pixelSize');
-      expect(pixelate.uniforms).toHaveProperty('u_pixelSize');
-    });
-  });
-});
+      const presets = CustomShaderFilter.createPresetShaders()
+      const pixelate = presets.pixelate
+
+      expect(pixelate.fragmentShader).toContain('u_pixelSize')
+      expect(pixelate.uniforms).toHaveProperty('u_pixelSize')
+    })
+  })
+})

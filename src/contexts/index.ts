@@ -3,11 +3,11 @@
  */
 
 export {
-  CanvasProvider,
   CanvasContext,
+  CanvasProvider,
   useCanvas,
   useCanvasRef,
+  useSDKStatus,
   useSelectedShapes,
   useShapes,
-  useSDKStatus
-} from './CanvasSDKContext';
+} from './CanvasSDKContext'

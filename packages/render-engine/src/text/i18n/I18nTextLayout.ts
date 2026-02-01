@@ -2,15 +2,20 @@
  * 国际化文本布局引擎
  */
 
-import { TextStyle } from '../types/RichTextTypes';
-import { I18nTextOptions, ComplexTextLayout, TextRun, TextDirection, CharacterClass } from '../types/I18nTextTypes';
-import { TextAlign } from '../types/RichTextTypes';
+import {
+  CharacterClass,
+  type ComplexTextLayout,
+  type I18nTextOptions,
+  TextDirection,
+  type TextRun,
+} from '../types/I18nTextTypes'
+import type { TextAlign, TextStyle } from '../types/RichTextTypes'
 
 export interface I18nTextLayoutOptions {
-  language: string;
-  direction: 'ltr' | 'rtl' | 'ttb';
-  wordWrap: boolean;
-  maxWidth?: number;
+  language: string
+  direction: 'ltr' | 'rtl' | 'ttb'
+  wordWrap: boolean
+  maxWidth?: number
 }
 
 export class I18nTextLayout {
@@ -23,8 +28,8 @@ export class I18nTextLayout {
     return {
       lines: [text],
       width: text.length * 10, // 简化计算
-      height: 20
-    };
+      height: 20,
+    }
   }
 
   layoutText(
@@ -34,35 +39,33 @@ export class I18nTextLayout {
     i18nOptions: I18nTextOptions
   ): ComplexTextLayout {
     // 简化的布局实现
-    const runs: TextRun[] = [{
-      text,
-      startIndex: 0,
-      endIndex: text.length,
-      direction: i18nOptions.direction || TextDirection.LTR,
-      characterClass: CharacterClass.NEUTRAL,
-      level: 0
-    }];
+    const runs: TextRun[] = [
+      {
+        text,
+        startIndex: 0,
+        endIndex: text.length,
+        direction: i18nOptions.direction || TextDirection.LTR,
+        characterClass: CharacterClass.NEUTRAL,
+        level: 0,
+      },
+    ]
 
     return {
       runs,
       lineBreaks: [],
       glyphs: [],
       totalWidth: text.length * 10,
-      totalHeight: 20
-    };
+      totalHeight: 20,
+    }
   }
 
-  applyTextAlignment(
-    layout: ComplexTextLayout,
-    align: TextAlign,
-    maxWidth: number
-  ): void {
+  applyTextAlignment(layout: ComplexTextLayout, align: TextAlign, maxWidth: number): void {
     // 简化的对齐实现
     // 对于简化实现，暂不做处理
   }
 
   getVisualOrder(layout: ComplexTextLayout): string {
     // 简化实现，返回所有 runs 的文本
-    return layout.runs.map(run => run.text).join('');
+    return layout.runs.map((run) => run.text).join('')
   }
 }

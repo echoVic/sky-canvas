@@ -3,7 +3,7 @@
  * 提供常用的滤镜效果预设
  */
 
-import { FilterParameters, FilterType } from '../types/FilterTypes';
+import { type FilterParameters, FilterType } from '../types/FilterTypes'
 
 export class FilterPresets {
   /**
@@ -15,27 +15,27 @@ export class FilterPresets {
         type: FilterType.BRIGHTNESS,
         brightness: 10,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       moderate: {
         type: FilterType.BRIGHTNESS,
         brightness: 25,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       strong: {
         type: FilterType.BRIGHTNESS,
         brightness: 50,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       dark: {
         type: FilterType.BRIGHTNESS,
         brightness: -30,
         enabled: true,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   /**
@@ -47,27 +47,27 @@ export class FilterPresets {
         type: FilterType.CONTRAST,
         contrast: 10,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       moderate: {
         type: FilterType.CONTRAST,
         contrast: 25,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       strong: {
         type: FilterType.CONTRAST,
         contrast: 50,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       low: {
         type: FilterType.CONTRAST,
         contrast: -20,
         enabled: true,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   /**
@@ -79,27 +79,27 @@ export class FilterPresets {
         type: FilterType.SATURATION,
         saturation: 15,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       moderate: {
         type: FilterType.SATURATION,
         saturation: 30,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       strong: {
         type: FilterType.SATURATION,
         saturation: 60,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       desaturated: {
         type: FilterType.SATURATION,
         saturation: -40,
         enabled: true,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   /**
@@ -112,30 +112,30 @@ export class FilterPresets {
         radius: 2,
         quality: 'low',
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       moderate: {
         type: FilterType.GAUSSIAN_BLUR,
         radius: 5,
         quality: 'medium',
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       strong: {
         type: FilterType.GAUSSIAN_BLUR,
         radius: 10,
         quality: 'high',
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       heavy: {
         type: FilterType.GAUSSIAN_BLUR,
         radius: 20,
         quality: 'high',
         enabled: true,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   /**
@@ -150,7 +150,7 @@ export class FilterPresets {
         strength: 0.5,
         quality: 'low',
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       moderate: {
         type: FilterType.GLOW,
@@ -159,7 +159,7 @@ export class FilterPresets {
         strength: 1.0,
         quality: 'medium',
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       strong: {
         type: FilterType.GLOW,
@@ -168,7 +168,7 @@ export class FilterPresets {
         strength: 2.0,
         quality: 'high',
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       colored: {
         type: FilterType.GLOW,
@@ -177,9 +177,9 @@ export class FilterPresets {
         strength: 1.5,
         quality: 'medium',
         enabled: true,
-        opacity: 1
-      }
-    };
+        opacity: 1,
+      },
+    }
   }
 
   /**
@@ -194,7 +194,7 @@ export class FilterPresets {
         blur: 4,
         color: '#000000',
         opacity: 0.3,
-        enabled: true
+        enabled: true,
       },
       moderate: {
         type: FilterType.DROP_SHADOW,
@@ -203,7 +203,7 @@ export class FilterPresets {
         blur: 8,
         color: '#000000',
         opacity: 0.5,
-        enabled: true
+        enabled: true,
       },
       strong: {
         type: FilterType.DROP_SHADOW,
@@ -212,7 +212,7 @@ export class FilterPresets {
         blur: 12,
         color: '#000000',
         opacity: 0.7,
-        enabled: true
+        enabled: true,
       },
       colored: {
         type: FilterType.DROP_SHADOW,
@@ -221,9 +221,9 @@ export class FilterPresets {
         blur: 6,
         color: '#ff6b6b',
         opacity: 0.6,
-        enabled: true
-      }
-    };
+        enabled: true,
+      },
+    }
   }
 
   /**
@@ -235,27 +235,27 @@ export class FilterPresets {
         type: FilterType.SEPIA,
         amount: 0.8,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       grayscale: {
         type: FilterType.GRAYSCALE,
         amount: 1.0,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       invert: {
         type: FilterType.INVERT,
         amount: 1.0,
         enabled: true,
-        opacity: 1
+        opacity: 1,
       },
       vintage: {
         type: FilterType.SEPIA,
         amount: 0.6,
         enabled: true,
-        opacity: 0.8
-      }
-    };
+        opacity: 0.8,
+      },
+    }
   }
 
   /**
@@ -263,29 +263,29 @@ export class FilterPresets {
    */
   static getAllPresets(): Record<string, Record<string, FilterParameters>> {
     return {
-      brightness: this.getBrightnessPresets(),
-      contrast: this.getContrastPresets(),
-      saturation: this.getSaturationPresets(),
-      blur: this.getBlurPresets(),
-      glow: this.getGlowPresets(),
-      dropShadow: this.getDropShadowPresets(),
-      artistic: this.getArtisticPresets()
-    };
+      brightness: FilterPresets.getBrightnessPresets(),
+      contrast: FilterPresets.getContrastPresets(),
+      saturation: FilterPresets.getSaturationPresets(),
+      blur: FilterPresets.getBlurPresets(),
+      glow: FilterPresets.getGlowPresets(),
+      dropShadow: FilterPresets.getDropShadowPresets(),
+      artistic: FilterPresets.getArtisticPresets(),
+    }
   }
 
   /**
    * 获取特定类型的预设
    */
   static getPresetsByType(type: string): Record<string, FilterParameters> | undefined {
-    const allPresets = this.getAllPresets();
-    return allPresets[type];
+    const allPresets = FilterPresets.getAllPresets()
+    return allPresets[type]
   }
 
   /**
    * 获取特定预设
    */
   static getPreset(type: string, name: string): FilterParameters | undefined {
-    const typePresets = this.getPresetsByType(type);
-    return typePresets?.[name];
+    const typePresets = FilterPresets.getPresetsByType(type)
+    return typePresets?.[name]
   }
 }

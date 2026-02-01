@@ -1,4 +1,11 @@
-import { AnimationManager, Canvas2DContextFactory, EasingFunctions, EasingType, PropertyAnimation, RenderEngine } from '../src'
+import {
+  AnimationManager,
+  Canvas2DContextFactory,
+  EasingFunctions,
+  EasingType,
+  PropertyAnimation,
+  RenderEngine,
+} from '../src'
 
 const canvas = document.createElement('canvas')
 canvas.width = 800
@@ -6,7 +13,7 @@ canvas.height = 600
 document.body.appendChild(canvas)
 
 const engine = new RenderEngine({
-  targetFPS: 60
+  targetFPS: 60,
 })
 
 const factory = new Canvas2DContextFactory()
@@ -20,7 +27,7 @@ const box = {
   width: 50,
   height: 50,
   rotation: 0,
-  opacity: 1
+  opacity: 1,
 }
 
 const moveAnimation = new PropertyAnimation({
@@ -31,7 +38,7 @@ const moveAnimation = new PropertyAnimation({
   duration: 2000,
   easing: EasingFunctions.get(EasingType.EASE_IN_OUT_CUBIC),
   loop: true,
-  yoyo: true
+  yoyo: true,
 })
 
 const rotateAnimation = new PropertyAnimation({
@@ -41,7 +48,7 @@ const rotateAnimation = new PropertyAnimation({
   to: Math.PI * 2,
   duration: 2000,
   easing: EasingFunctions.get(EasingType.LINEAR),
-  loop: true
+  loop: true,
 })
 
 animationManager.registerAnimation(moveAnimation)
@@ -68,7 +75,7 @@ const renderable = {
   },
   hitTest: () => false,
   getBounds: () => ({ x: box.x, y: box.y, width: box.width, height: box.height }),
-  dispose: () => {}
+  dispose: () => {},
 }
 
 layer.addRenderable(renderable)
@@ -81,9 +88,9 @@ let lastTime = 0
 const animate = (time: number) => {
   const deltaTime = time - lastTime
   lastTime = time
-  
+
   engine.render()
-  
+
   requestAnimationFrame(animate)
 }
 

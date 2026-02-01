@@ -3,16 +3,19 @@
  * 提供图形渲染基础抽象层
  */
 
-// 核心接口和类型
-export * from './IGraphicsContext';
-export * from './RenderCommand';
-
 // 适配器实现
-export * from './adapters';
+export * from './adapters'
+// 核心接口和类型
+export * from './IGraphicsContext'
+export * from './RenderCommand'
 
 // 便捷创建函数
-import { GraphicsAdapterType, createGraphicsAdapterFactory, selectBestAdapterType } from './adapters';
-import { IGraphicsContext } from './IGraphicsContext';
+import {
+  createGraphicsAdapterFactory,
+  type GraphicsAdapterType,
+  selectBestAdapterType,
+} from './adapters'
+import type { IGraphicsContext } from './IGraphicsContext'
 
 /**
  * 创建图形上下文
@@ -21,9 +24,9 @@ export async function createGraphicsContext<TCanvas>(
   canvas: TCanvas,
   adapterType?: GraphicsAdapterType
 ): Promise<IGraphicsContext> {
-  const selectedAdapterType = adapterType || await selectBestAdapterType();
-  const factory = createGraphicsAdapterFactory(selectedAdapterType);
-  return factory.createContext(canvas);
+  const selectedAdapterType = adapterType || (await selectBestAdapterType())
+  const factory = createGraphicsAdapterFactory(selectedAdapterType)
+  return factory.createContext(canvas)
 }
 
 /**
@@ -31,9 +34,9 @@ export async function createGraphicsContext<TCanvas>(
  */
 export async function isAdapterSupported(adapterType: GraphicsAdapterType): Promise<boolean> {
   try {
-    const factory = createGraphicsAdapterFactory(adapterType);
-    return factory.isSupported();
+    const factory = createGraphicsAdapterFactory(adapterType)
+    return factory.isSupported()
   } catch {
-    return false;
+    return false
   }
 }

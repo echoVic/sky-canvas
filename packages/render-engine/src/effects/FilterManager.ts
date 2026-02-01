@@ -3,39 +3,38 @@
  * 统一管理和执行各种图像滤镜
  */
 
-import { EventEmitter } from 'eventemitter3';
-import {
-  FilterType,
-  FilterParameters,
-  FilterResult,
-  FilterContext,
-  FilterChainConfig,
-  FilterProcessingOptions,
-  FilterEvents,
-  IFilter
-} from './types/FilterTypes';
-
+import { EventEmitter } from 'eventemitter3'
+import { BrightnessFilter } from './filters/BrightnessFilter'
+import { ContrastFilter } from './filters/ContrastFilter'
+import { CustomShaderFilter } from './filters/CustomShaderFilter'
+import { DropShadowFilter } from './filters/DropShadowFilter'
 // 导入具体的滤镜实现
-import { GaussianBlurFilter } from './filters/GaussianBlurFilter';
-import { BrightnessFilter } from './filters/BrightnessFilter';
-import { ContrastFilter } from './filters/ContrastFilter';
-import { SaturationFilter } from './filters/SaturationFilter';
-import { HueRotateFilter } from './filters/HueRotateFilter';
-import { GrayscaleFilter } from './filters/GrayscaleFilter';
-import { DropShadowFilter } from './filters/DropShadowFilter';
-import { InnerShadowFilter } from './filters/InnerShadowFilter';
-import { GlowFilter } from './filters/GlowFilter';
-import { CustomShaderFilter } from './filters/CustomShaderFilter';
+import { GaussianBlurFilter } from './filters/GaussianBlurFilter'
+import { GlowFilter } from './filters/GlowFilter'
+import { GrayscaleFilter } from './filters/GrayscaleFilter'
+import { HueRotateFilter } from './filters/HueRotateFilter'
+import { InnerShadowFilter } from './filters/InnerShadowFilter'
+import { SaturationFilter } from './filters/SaturationFilter'
+import {
+  type FilterChainConfig,
+  type FilterContext,
+  FilterEvents,
+  type FilterParameters,
+  type FilterProcessingOptions,
+  type FilterResult,
+  type FilterType,
+  type IFilter,
+} from './types/FilterTypes'
 
 export class FilterManager extends EventEmitter {
-  private filters = new Map<FilterType, IFilter>();
-  private resultCache = new Map<string, ImageData>();
-  private maxCacheSize = 50; // 最大缓存数量
-  private processingQueue: Array<{ id: string; promise: Promise<FilterResult> }> = [];
+  private filters = new Map<FilterType, IFilter>()
+  private resultCache = new Map<string, ImageData>()
+  private maxCacheSize = 50 // 最大缓存数量
+  private processingQueue: Array<{ id: string; promise: Promise<FilterResult> }> = []
 
   constructor() {
-    super();
-    this.initializeFilters();
+    super()
+    this.initializeFilters()
   }
 
   /**
@@ -43,41 +42,41 @@ export class FilterManager extends EventEmitter {
    */
   private initializeFilters(): void {
     // 注册基础滤镜
-    this.registerFilter(new GaussianBlurFilter());
-    this.registerFilter(new BrightnessFilter());
-    this.registerFilter(new ContrastFilter());
-    this.registerFilter(new SaturationFilter());
-    this.registerFilter(new HueRotateFilter());
-    this.registerFilter(new GrayscaleFilter());
-    
+    this.registerFilter(new GaussianBlurFilter())
+    this.registerFilter(new BrightnessFilter())
+    this.registerFilter(new ContrastFilter())
+    this.registerFilter(new SaturationFilter())
+    this.registerFilter(new HueRotateFilter())
+    this.registerFilter(new GrayscaleFilter())
+
     // 注册阴影和发光滤镜
-    this.registerFilter(new DropShadowFilter());
-    this.registerFilter(new InnerShadowFilter());
-    this.registerFilter(new GlowFilter());
-    
+    this.registerFilter(new DropShadowFilter())
+    this.registerFilter(new InnerShadowFilter())
+    this.registerFilter(new GlowFilter())
+
     // 注册自定义着色器滤镜
-    this.registerFilter(new CustomShaderFilter());
+    this.registerFilter(new CustomShaderFilter())
   }
 
   /**
    * 注册新的滤镜
    */
   registerFilter(filter: IFilter): void {
-    this.filters.set(filter.type, filter);
+    this.filters.set(filter.type, filter)
   }
 
   /**
    * 获取滤镜实例
    */
   getFilter(type: FilterType): IFilter | undefined {
-    return this.filters.get(type);
+    return this.filters.get(type)
   }
 
   /**
    * 获取所有已注册的滤镜类型
    */
   getAvailableFilters(): FilterType[] {
-    return Array.from(this.filters.keys());
+    return Array.from(this.filters.keys())
   }
 
   /**
@@ -88,12 +87,12 @@ export class FilterManager extends EventEmitter {
     parameters: FilterParameters,
     options?: FilterProcessingOptions
   ): Promise<FilterResult> {
-    const filter = this.filters.get(parameters.type);
+    const filter = this.filters.get(parameters.type)
     if (!filter) {
       return {
         success: false,
-        error: `Filter type ${parameters.type} not found`
-      };
+        error: `Filter type ${parameters.type} not found`,
+      }
     }
 
     // 检查滤镜是否启用
@@ -101,8 +100,8 @@ export class FilterManager extends EventEmitter {
       return {
         success: true,
         processedImageData: imageData,
-        processingTime: 0
-      };
+        processingTime: 0,
+      }
     }
 
     // 创建滤镜上下文
@@ -110,79 +109,78 @@ export class FilterManager extends EventEmitter {
       sourceImageData: imageData,
       width: imageData.width,
       height: imageData.height,
-      timestamp: Date.now()
-    };
+      timestamp: Date.now(),
+    }
 
     // 触发开始事件
-    this.emit('filter-start', parameters.type, context);
+    this.emit('filter-start', parameters.type, context)
 
     try {
-      const result = await filter.apply(context, parameters);
-      
+      const result = await filter.apply(context, parameters)
+
       // 触发完成事件
-      this.emit('filter-complete', parameters.type, result);
-      
-      return result;
+      this.emit('filter-complete', parameters.type, result)
+
+      return result
     } catch (error) {
       const errorResult: FilterResult = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-      
-      this.emit('filter-error', parameters.type, error as Error);
-      return errorResult;
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }
+
+      this.emit('filter-error', parameters.type, error as Error)
+      return errorResult
     }
   }
 
   /**
    * 应用滤镜链
    */
-  async applyFilterChain(
-    imageData: ImageData,
-    config: FilterChainConfig
-  ): Promise<FilterResult[]> {
+  async applyFilterChain(imageData: ImageData, config: FilterChainConfig): Promise<FilterResult[]> {
     if (config.filters.length === 0) {
-      return [{
-        success: true,
-        processedImageData: imageData,
-        processingTime: 0
-      }];
+      return [
+        {
+          success: true,
+          processedImageData: imageData,
+          processingTime: 0,
+        },
+      ]
     }
 
     // 触发链开始事件
-    this.emit('chain-start', config.filters);
+    this.emit('chain-start', config.filters)
 
-    const results: FilterResult[] = [];
-    let currentImageData = imageData;
+    const results: FilterResult[] = []
+    let currentImageData = imageData
 
     // 按优先级排序滤镜
     const sortedFilters = [...config.filters].sort((a, b) => {
-      const priorityA = a.priority || 1;
-      const priorityB = b.priority || 1;
-      return priorityB - priorityA; // 高优先级先执行
-    });
+      const priorityA = a.priority || 1
+      const priorityB = b.priority || 1
+      return priorityB - priorityA // 高优先级先执行
+    })
 
     for (const filterParams of sortedFilters) {
       const result = await this.applyFilter(
         currentImageData,
         filterParams,
         config.processingOptions
-      );
-      
-      results.push(result);
-      
+      )
+
+      results.push(result)
+
       if (result.success && result.processedImageData) {
-        currentImageData = result.processedImageData;
+        currentImageData = result.processedImageData
       } else {
         // 如果某个滤镜失败，停止处理链
-        break;
+        break
       }
     }
 
     // 触发链完成事件
-    this.emit('chain-complete', results);
-    
-    return results;
+    this.emit('chain-complete', results)
+
+    return results
   }
 
   /**
@@ -194,79 +192,80 @@ export class FilterManager extends EventEmitter {
     previewSize: { width: number; height: number } = { width: 200, height: 200 }
   ): Promise<FilterResult> {
     // 缩放图像到预览尺寸
-    const scaledImageData = this.scaleImageData(imageData, previewSize.width, previewSize.height);
-    
+    const scaledImageData = this.scaleImageData(imageData, previewSize.width, previewSize.height)
+
     // 应用滤镜
-    return this.applyFilter(scaledImageData, parameters);
+    return this.applyFilter(scaledImageData, parameters)
   }
 
   /**
    * 缩放ImageData
    */
-  private scaleImageData(imageData: ImageData, targetWidth: number, targetHeight: number): ImageData {
+  private scaleImageData(
+    imageData: ImageData,
+    targetWidth: number,
+    targetHeight: number
+  ): ImageData {
     if (imageData.width === targetWidth && imageData.height === targetHeight) {
-      return imageData;
+      return imageData
     }
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
     if (!ctx) {
-      throw new Error('Cannot create 2D context');
+      throw new Error('Cannot create 2D context')
     }
 
     // 设置原始尺寸
-    canvas.width = imageData.width;
-    canvas.height = imageData.height;
-    ctx.putImageData(imageData, 0, 0);
+    canvas.width = imageData.width
+    canvas.height = imageData.height
+    ctx.putImageData(imageData, 0, 0)
 
     // 创建目标画布
-    const targetCanvas = document.createElement('canvas');
-    const targetCtx = targetCanvas.getContext('2d');
+    const targetCanvas = document.createElement('canvas')
+    const targetCtx = targetCanvas.getContext('2d')
     if (!targetCtx) {
-      throw new Error('Cannot create target 2D context');
+      throw new Error('Cannot create target 2D context')
     }
 
-    targetCanvas.width = targetWidth;
-    targetCanvas.height = targetHeight;
+    targetCanvas.width = targetWidth
+    targetCanvas.height = targetHeight
 
     // 缩放绘制
-    targetCtx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+    targetCtx.drawImage(canvas, 0, 0, targetWidth, targetHeight)
 
-    return targetCtx.getImageData(0, 0, targetWidth, targetHeight);
+    return targetCtx.getImageData(0, 0, targetWidth, targetHeight)
   }
 
   /**
    * 估算滤镜处理时间
    */
-  estimateProcessingTime(
-    imageData: ImageData,
-    parameters: FilterParameters[]
-  ): number {
-    let totalTime = 0;
-    
+  estimateProcessingTime(imageData: ImageData, parameters: FilterParameters[]): number {
+    let totalTime = 0
+
     for (const params of parameters) {
-      const filter = this.filters.get(params.type);
+      const filter = this.filters.get(params.type)
       if (filter) {
-        totalTime += filter.estimateProcessingTime(imageData.width, imageData.height, params);
+        totalTime += filter.estimateProcessingTime(imageData.width, imageData.height, params)
       }
     }
-    
-    return totalTime;
+
+    return totalTime
   }
 
   /**
    * 获取滤镜性能统计
    */
   getPerformanceStats() {
-    const stats: Array<any> = [];
-    
+    const stats: Array<any> = []
+
     for (const [type, filter] of this.filters) {
       if ('getPerformanceStats' in filter && typeof filter.getPerformanceStats === 'function') {
-        stats.push(filter.getPerformanceStats());
+        stats.push(filter.getPerformanceStats())
       }
     }
-    
-    return stats;
+
+    return stats
   }
 
   /**
@@ -275,7 +274,7 @@ export class FilterManager extends EventEmitter {
   resetPerformanceStats(): void {
     for (const filter of this.filters.values()) {
       if ('resetPerformanceStats' in filter && typeof filter.resetPerformanceStats === 'function') {
-        filter.resetPerformanceStats();
+        filter.resetPerformanceStats()
       }
     }
   }
@@ -284,33 +283,33 @@ export class FilterManager extends EventEmitter {
    * 生成缓存键
    */
   private generateCacheKey(imageData: ImageData, parameters: FilterParameters): string {
-    const imageHash = this.hashImageData(imageData);
-    const paramsHash = JSON.stringify(parameters);
-    return `${imageHash}_${paramsHash}`;
+    const imageHash = this.hashImageData(imageData)
+    const paramsHash = JSON.stringify(parameters)
+    return `${imageHash}_${paramsHash}`
   }
 
   /**
    * 简单的图像数据哈希
    */
   private hashImageData(imageData: ImageData): string {
-    let hash = 0;
-    const data = imageData.data;
-    
+    let hash = 0
+    const data = imageData.data
+
     // 采样部分像素来生成哈希
-    const step = Math.max(1, Math.floor(data.length / 1000));
-    
+    const step = Math.max(1, Math.floor(data.length / 1000))
+
     for (let i = 0; i < data.length; i += step) {
-      hash = ((hash << 5) - hash + data[i]) & 0xffffffff;
+      hash = ((hash << 5) - hash + data[i]) & 0xffffffff
     }
-    
-    return hash.toString(36);
+
+    return hash.toString(36)
   }
 
   /**
    * 清理缓存
    */
   clearCache(): void {
-    this.resultCache.clear();
+    this.resultCache.clear()
   }
 
   /**
@@ -320,8 +319,8 @@ export class FilterManager extends EventEmitter {
     return {
       size: this.resultCache.size,
       maxSize: this.maxCacheSize,
-      hitRate: 0 // 简化实现，实际应该跟踪缓存命中率
-    };
+      hitRate: 0, // 简化实现，实际应该跟踪缓存命中率
+    }
   }
 
   /**
@@ -329,10 +328,10 @@ export class FilterManager extends EventEmitter {
    */
   static supportsWebGL(): boolean {
     try {
-      const canvas = document.createElement('canvas');
-      return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+      const canvas = document.createElement('canvas')
+      return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
     } catch {
-      return false;
+      return false
     }
   }
 
@@ -342,12 +341,12 @@ export class FilterManager extends EventEmitter {
   static async supportsWebGPU(): Promise<boolean> {
     try {
       if (!('gpu' in navigator)) {
-        return false;
+        return false
       }
-      const adapter = await (navigator as any).gpu.requestAdapter();
-      return !!adapter;
+      const adapter = await (navigator as any).gpu.requestAdapter()
+      return !!adapter
     } catch {
-      return false;
+      return false
     }
   }
 
@@ -357,13 +356,13 @@ export class FilterManager extends EventEmitter {
   dispose(): void {
     // 清理所有滤镜
     for (const filter of this.filters.values()) {
-      filter.dispose();
+      filter.dispose()
     }
-    
-    this.filters.clear();
-    this.resultCache.clear();
-    this.processingQueue = [];
-    this.removeAllListeners();
+
+    this.filters.clear()
+    this.resultCache.clear()
+    this.processingQueue = []
+    this.removeAllListeners()
   }
 }
 
@@ -371,5 +370,5 @@ export class FilterManager extends EventEmitter {
  * 创建默认滤镜管理器
  */
 export function createFilterManager(): FilterManager {
-  return new FilterManager();
+  return new FilterManager()
 }

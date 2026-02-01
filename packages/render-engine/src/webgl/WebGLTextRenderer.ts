@@ -1,40 +1,40 @@
-import { IRenderable } from '../batch';
-import { TextureManager } from './TextureManager';
-import { TextureConfig } from './WebGLResourceTypes';
+import type { IRenderable } from '../batch'
+import type { TextureManager } from './TextureManager'
+import { TextureConfig } from './WebGLResourceTypes'
 
-export type TextAlign = 'left' | 'center' | 'right';
-export type TextBaseline = 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging';
+export type TextAlign = 'left' | 'center' | 'right'
+export type TextBaseline = 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'
 
 export interface TextStyle {
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: string | number;
-  fontStyle?: 'normal' | 'italic' | 'oblique';
-  color?: string;
-  textAlign?: TextAlign;
-  textBaseline?: TextBaseline;
-  letterSpacing?: number;
-  lineHeight?: number;
+  fontFamily?: string
+  fontSize?: number
+  fontWeight?: string | number
+  fontStyle?: 'normal' | 'italic' | 'oblique'
+  color?: string
+  textAlign?: TextAlign
+  textBaseline?: TextBaseline
+  letterSpacing?: number
+  lineHeight?: number
 }
 
 export interface TextRenderOptions extends TextStyle {
-  maxWidth?: number;
-  wordWrap?: boolean;
+  maxWidth?: number
+  wordWrap?: boolean
 }
 
 interface TextCacheEntry {
-  texture: WebGLTexture;
-  width: number;
-  height: number;
-  textureWidth: number;
-  textureHeight: number;
-  lastUsed: number;
+  texture: WebGLTexture
+  width: number
+  height: number
+  textureWidth: number
+  textureHeight: number
+  lastUsed: number
 }
 
 interface TextMeasureResult {
-  width: number;
-  height: number;
-  lines: string[];
+  width: number
+  height: number
+  lines: string[]
 }
 
 const DEFAULT_STYLE: Required<TextStyle> = {
@@ -46,66 +46,66 @@ const DEFAULT_STYLE: Required<TextStyle> = {
   textAlign: 'left',
   textBaseline: 'alphabetic',
   letterSpacing: 0,
-  lineHeight: 1.2
-};
+  lineHeight: 1.2,
+}
 
 export class WebGLTextRenderer {
-  private gl: WebGLRenderingContext;
-  private textureManager: TextureManager;
-  private measureCanvas: HTMLCanvasElement;
-  private measureContext: CanvasRenderingContext2D;
-  private textCache: Map<string, TextCacheEntry> = new Map();
-  private maxCacheSize: number;
-  private cacheCleanupInterval: number;
-  private lastCleanupTime: number = 0;
+  private gl: WebGLRenderingContext
+  private textureManager: TextureManager
+  private measureCanvas: HTMLCanvasElement
+  private measureContext: CanvasRenderingContext2D
+  private textCache: Map<string, TextCacheEntry> = new Map()
+  private maxCacheSize: number
+  private cacheCleanupInterval: number
+  private lastCleanupTime: number = 0
 
   constructor(
     gl: WebGLRenderingContext,
     textureManager: TextureManager,
     options?: { maxCacheSize?: number; cacheCleanupInterval?: number }
   ) {
-    this.gl = gl;
-    this.textureManager = textureManager;
-    this.maxCacheSize = options?.maxCacheSize ?? 100;
-    this.cacheCleanupInterval = options?.cacheCleanupInterval ?? 5000;
+    this.gl = gl
+    this.textureManager = textureManager
+    this.maxCacheSize = options?.maxCacheSize ?? 100
+    this.cacheCleanupInterval = options?.cacheCleanupInterval ?? 5000
 
-    this.measureCanvas = document.createElement('canvas');
-    this.measureCanvas.width = 1;
-    this.measureCanvas.height = 1;
-    const ctx = this.measureCanvas.getContext('2d');
+    this.measureCanvas = document.createElement('canvas')
+    this.measureCanvas.width = 1
+    this.measureCanvas.height = 1
+    const ctx = this.measureCanvas.getContext('2d')
     if (!ctx) {
-      throw new Error('Failed to create 2D context for text measurement');
+      throw new Error('Failed to create 2D context for text measurement')
     }
-    this.measureContext = ctx;
+    this.measureContext = ctx
   }
 
-  drawText(
-    text: string,
-    x: number,
-    y: number,
-    options?: TextRenderOptions
-  ): IRenderable | null {
+  drawText(text: string, x: number, y: number, options?: TextRenderOptions): IRenderable | null {
     if (!text || text.length === 0) {
-      return null;
+      return null
     }
 
-    const style = this.mergeStyle(options);
-    const cacheKey = this.generateCacheKey(text, style, options?.maxWidth);
+    const style = this.mergeStyle(options)
+    const cacheKey = this.generateCacheKey(text, style, options?.maxWidth)
 
-    let cacheEntry: TextCacheEntry | undefined = this.textCache.get(cacheKey);
+    let cacheEntry: TextCacheEntry | undefined = this.textCache.get(cacheKey)
     if (!cacheEntry) {
-      const newEntry = this.createTextTexture(text, style, options?.maxWidth);
+      const newEntry = this.createTextTexture(text, style, options?.maxWidth)
       if (!newEntry) {
-        return null;
+        return null
       }
-      cacheEntry = newEntry;
-      this.addToCache(cacheKey, cacheEntry);
+      cacheEntry = newEntry
+      this.addToCache(cacheKey, cacheEntry)
     } else {
-      cacheEntry.lastUsed = performance.now();
+      cacheEntry.lastUsed = performance.now()
     }
 
-    const alignedX = this.calculateAlignedX(x, cacheEntry.width, style.textAlign);
-    const alignedY = this.calculateAlignedY(y, cacheEntry.height, style.textBaseline, style.fontSize);
+    const alignedX = this.calculateAlignedX(x, cacheEntry.width, style.textAlign)
+    const alignedY = this.calculateAlignedY(
+      y,
+      cacheEntry.height,
+      style.textBaseline,
+      style.fontSize
+    )
 
     return this.createTextRenderable(
       alignedX,
@@ -115,80 +115,80 @@ export class WebGLTextRenderer {
       cacheEntry.texture,
       cacheEntry.textureWidth,
       cacheEntry.textureHeight
-    );
+    )
   }
 
   measureText(text: string, style?: TextStyle): TextMeasureResult {
-    const mergedStyle = this.mergeStyle(style);
-    this.applyStyleToContext(this.measureContext, mergedStyle);
+    const mergedStyle = this.mergeStyle(style)
+    this.applyStyleToContext(this.measureContext, mergedStyle)
 
-    const lines = text.split('\n');
-    let maxWidth = 0;
+    const lines = text.split('\n')
+    let maxWidth = 0
 
     for (const line of lines) {
-      const metrics = this.measureContext.measureText(line);
-      maxWidth = Math.max(maxWidth, metrics.width);
+      const metrics = this.measureContext.measureText(line)
+      maxWidth = Math.max(maxWidth, metrics.width)
     }
 
-    const lineHeight = mergedStyle.fontSize * mergedStyle.lineHeight;
-    const height = lines.length * lineHeight;
+    const lineHeight = mergedStyle.fontSize * mergedStyle.lineHeight
+    const height = lines.length * lineHeight
 
     return {
       width: maxWidth,
       height,
-      lines
-    };
+      lines,
+    }
   }
 
   measureTextWithWrap(text: string, maxWidth: number, style?: TextStyle): TextMeasureResult {
-    const mergedStyle = this.mergeStyle(style);
-    this.applyStyleToContext(this.measureContext, mergedStyle);
+    const mergedStyle = this.mergeStyle(style)
+    this.applyStyleToContext(this.measureContext, mergedStyle)
 
-    const words = text.split(/\s+/);
-    const lines: string[] = [];
-    let currentLine = '';
+    const words = text.split(/\s+/)
+    const lines: string[] = []
+    let currentLine = ''
 
     for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const metrics = this.measureContext.measureText(testLine);
+      const testLine = currentLine ? `${currentLine} ${word}` : word
+      const metrics = this.measureContext.measureText(testLine)
 
       if (metrics.width > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
+        lines.push(currentLine)
+        currentLine = word
       } else {
-        currentLine = testLine;
+        currentLine = testLine
       }
     }
 
     if (currentLine) {
-      lines.push(currentLine);
+      lines.push(currentLine)
     }
 
-    let actualMaxWidth = 0;
+    let actualMaxWidth = 0
     for (const line of lines) {
-      const metrics = this.measureContext.measureText(line);
-      actualMaxWidth = Math.max(actualMaxWidth, metrics.width);
+      const metrics = this.measureContext.measureText(line)
+      actualMaxWidth = Math.max(actualMaxWidth, metrics.width)
     }
 
-    const lineHeight = mergedStyle.fontSize * mergedStyle.lineHeight;
-    const height = lines.length * lineHeight;
+    const lineHeight = mergedStyle.fontSize * mergedStyle.lineHeight
+    const height = lines.length * lineHeight
 
     return {
       width: Math.min(actualMaxWidth, maxWidth),
       height,
-      lines
-    };
+      lines,
+    }
   }
 
   clearCache(): void {
     for (const entry of this.textCache.values()) {
-      this.gl.deleteTexture(entry.texture);
+      this.gl.deleteTexture(entry.texture)
     }
-    this.textCache.clear();
+    this.textCache.clear()
   }
 
   dispose(): void {
-    this.clearCache();
+    this.clearCache()
   }
 
   private mergeStyle(style?: TextStyle): Required<TextStyle> {
@@ -201,8 +201,8 @@ export class WebGLTextRenderer {
       textAlign: style?.textAlign ?? DEFAULT_STYLE.textAlign,
       textBaseline: style?.textBaseline ?? DEFAULT_STYLE.textBaseline,
       letterSpacing: style?.letterSpacing ?? DEFAULT_STYLE.letterSpacing,
-      lineHeight: style?.lineHeight ?? DEFAULT_STYLE.lineHeight
-    };
+      lineHeight: style?.lineHeight ?? DEFAULT_STYLE.lineHeight,
+    }
   }
 
   private generateCacheKey(text: string, style: Required<TextStyle>, maxWidth?: number): string {
@@ -215,8 +215,8 @@ export class WebGLTextRenderer {
       style.color,
       style.letterSpacing,
       style.lineHeight,
-      maxWidth ?? 'none'
-    ].join('|');
+      maxWidth ?? 'none',
+    ].join('|')
   }
 
   private createTextTexture(
@@ -226,51 +226,51 @@ export class WebGLTextRenderer {
   ): TextCacheEntry | null {
     const measurement = maxWidth
       ? this.measureTextWithWrap(text, maxWidth, style)
-      : this.measureText(text, style);
+      : this.measureText(text, style)
 
     if (measurement.width <= 0 || measurement.height <= 0) {
-      return null;
+      return null
     }
 
-    const padding = 2;
-    const canvasWidth = this.nextPowerOfTwo(Math.ceil(measurement.width) + padding * 2);
-    const canvasHeight = this.nextPowerOfTwo(Math.ceil(measurement.height) + padding * 2);
+    const padding = 2
+    const canvasWidth = this.nextPowerOfTwo(Math.ceil(measurement.width) + padding * 2)
+    const canvasHeight = this.nextPowerOfTwo(Math.ceil(measurement.height) + padding * 2)
 
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement('canvas')
+    canvas.width = canvasWidth
+    canvas.height = canvasHeight
+    const ctx = canvas.getContext('2d')
     if (!ctx) {
-      return null;
+      return null
     }
 
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    this.applyStyleToContext(ctx, style);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+    this.applyStyleToContext(ctx, style)
 
-    const lineHeight = style.fontSize * style.lineHeight;
-    let y = padding + style.fontSize * 0.8;
+    const lineHeight = style.fontSize * style.lineHeight
+    let y = padding + style.fontSize * 0.8
 
     for (const line of measurement.lines) {
-      let x = padding;
+      let x = padding
       if (style.textAlign === 'center') {
-        const lineWidth = ctx.measureText(line).width;
-        x = padding + (measurement.width - lineWidth) / 2;
+        const lineWidth = ctx.measureText(line).width
+        x = padding + (measurement.width - lineWidth) / 2
       } else if (style.textAlign === 'right') {
-        const lineWidth = ctx.measureText(line).width;
-        x = padding + measurement.width - lineWidth;
+        const lineWidth = ctx.measureText(line).width
+        x = padding + measurement.width - lineWidth
       }
 
       if (style.letterSpacing !== 0) {
-        this.drawTextWithLetterSpacing(ctx, line, x, y, style.letterSpacing);
+        this.drawTextWithLetterSpacing(ctx, line, x, y, style.letterSpacing)
       } else {
-        ctx.fillText(line, x, y);
+        ctx.fillText(line, x, y)
       }
-      y += lineHeight;
+      y += lineHeight
     }
 
-    const texture = this.createTextureFromCanvas(canvas);
+    const texture = this.createTextureFromCanvas(canvas)
     if (!texture) {
-      return null;
+      return null
     }
 
     return {
@@ -279,19 +279,22 @@ export class WebGLTextRenderer {
       height: measurement.height,
       textureWidth: canvasWidth,
       textureHeight: canvasHeight,
-      lastUsed: performance.now()
-    };
+      lastUsed: performance.now(),
+    }
   }
 
   private applyStyleToContext(ctx: CanvasRenderingContext2D, style: Required<TextStyle>): void {
-    const fontWeight = typeof style.fontWeight === 'number'
-      ? style.fontWeight >= 700 ? 'bold' : 'normal'
-      : style.fontWeight;
+    const fontWeight =
+      typeof style.fontWeight === 'number'
+        ? style.fontWeight >= 700
+          ? 'bold'
+          : 'normal'
+        : style.fontWeight
 
-    ctx.font = `${style.fontStyle} ${fontWeight} ${style.fontSize}px ${style.fontFamily}`;
-    ctx.fillStyle = style.color;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
+    ctx.font = `${style.fontStyle} ${fontWeight} ${style.fontSize}px ${style.fontFamily}`
+    ctx.fillStyle = style.color
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
   }
 
   private drawTextWithLetterSpacing(
@@ -301,20 +304,20 @@ export class WebGLTextRenderer {
     y: number,
     letterSpacing: number
   ): void {
-    let currentX = x;
+    let currentX = x
     for (const char of text) {
-      ctx.fillText(char, currentX, y);
-      currentX += ctx.measureText(char).width + letterSpacing;
+      ctx.fillText(char, currentX, y)
+      currentX += ctx.measureText(char).width + letterSpacing
     }
   }
 
   private createTextureFromCanvas(canvas: HTMLCanvasElement): WebGLTexture | null {
-    const texture = this.gl.createTexture();
+    const texture = this.gl.createTexture()
     if (!texture) {
-      return null;
+      return null
     }
 
-    this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
     this.gl.texImage2D(
       this.gl.TEXTURE_2D,
       0,
@@ -322,26 +325,26 @@ export class WebGLTextRenderer {
       this.gl.RGBA,
       this.gl.UNSIGNED_BYTE,
       canvas
-    );
+    )
 
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR)
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR)
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
 
-    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, null)
 
-    return texture;
+    return texture
   }
 
   private calculateAlignedX(x: number, width: number, align: TextAlign): number {
     switch (align) {
       case 'center':
-        return x - width / 2;
+        return x - width / 2
       case 'right':
-        return x - width;
+        return x - width
       default:
-        return x;
+        return x
     }
   }
 
@@ -353,16 +356,16 @@ export class WebGLTextRenderer {
   ): number {
     switch (baseline) {
       case 'top':
-        return y;
+        return y
       case 'middle':
-        return y - height / 2;
+        return y - height / 2
       case 'bottom':
-        return y - height;
+        return y - height
       case 'hanging':
-        return y - fontSize * 0.1;
+        return y - fontSize * 0.1
       case 'alphabetic':
       default:
-        return y - fontSize * 0.8;
+        return y - fontSize * 0.8
     }
   }
 
@@ -375,19 +378,47 @@ export class WebGLTextRenderer {
     textureWidth: number,
     textureHeight: number
   ): IRenderable {
-    const u1 = 0;
-    const v1 = 0;
-    const u2 = width / textureWidth;
-    const v2 = height / textureHeight;
+    const u1 = 0
+    const v1 = 0
+    const u2 = width / textureWidth
+    const v2 = height / textureHeight
 
     const vertices = new Float32Array([
-      x, y, 1, 1, 1, 1, u1, v1,
-      x + width, y, 1, 1, 1, 1, u2, v1,
-      x + width, y + height, 1, 1, 1, 1, u2, v2,
-      x, y + height, 1, 1, 1, 1, u1, v2
-    ]);
+      x,
+      y,
+      1,
+      1,
+      1,
+      1,
+      u1,
+      v1,
+      x + width,
+      y,
+      1,
+      1,
+      1,
+      1,
+      u2,
+      v1,
+      x + width,
+      y + height,
+      1,
+      1,
+      1,
+      1,
+      u2,
+      v2,
+      x,
+      y + height,
+      1,
+      1,
+      1,
+      1,
+      u1,
+      v2,
+    ])
 
-    const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3])
 
     return {
       getVertices: () => vertices,
@@ -395,69 +426,69 @@ export class WebGLTextRenderer {
       getTexture: () => texture,
       getShader: () => 'texture',
       getBlendMode: () => 0,
-      getZIndex: () => 0
-    };
+      getZIndex: () => 0,
+    }
   }
 
   private addToCache(key: string, entry: TextCacheEntry): void {
-    const now = performance.now();
+    const now = performance.now()
     if (now - this.lastCleanupTime > this.cacheCleanupInterval) {
-      this.cleanupCache();
-      this.lastCleanupTime = now;
+      this.cleanupCache()
+      this.lastCleanupTime = now
     }
 
     if (this.textCache.size >= this.maxCacheSize) {
-      this.evictOldestEntry();
+      this.evictOldestEntry()
     }
 
-    this.textCache.set(key, entry);
+    this.textCache.set(key, entry)
   }
 
   private cleanupCache(): void {
-    const now = performance.now();
-    const maxAge = 30000;
+    const now = performance.now()
+    const maxAge = 30000
 
-    const keysToDelete: string[] = [];
+    const keysToDelete: string[] = []
     for (const [key, entry] of this.textCache.entries()) {
       if (now - entry.lastUsed > maxAge) {
-        keysToDelete.push(key);
+        keysToDelete.push(key)
       }
     }
 
     for (const key of keysToDelete) {
-      const entry = this.textCache.get(key);
+      const entry = this.textCache.get(key)
       if (entry) {
-        this.gl.deleteTexture(entry.texture);
-        this.textCache.delete(key);
+        this.gl.deleteTexture(entry.texture)
+        this.textCache.delete(key)
       }
     }
   }
 
   private evictOldestEntry(): void {
-    let oldestKey: string | null = null;
-    let oldestTime = Infinity;
+    let oldestKey: string | null = null
+    let oldestTime = Infinity
 
     for (const [key, entry] of this.textCache.entries()) {
       if (entry.lastUsed < oldestTime) {
-        oldestTime = entry.lastUsed;
-        oldestKey = key;
+        oldestTime = entry.lastUsed
+        oldestKey = key
       }
     }
 
     if (oldestKey) {
-      const entry = this.textCache.get(oldestKey);
+      const entry = this.textCache.get(oldestKey)
       if (entry) {
-        this.gl.deleteTexture(entry.texture);
-        this.textCache.delete(oldestKey);
+        this.gl.deleteTexture(entry.texture)
+        this.textCache.delete(oldestKey)
       }
     }
   }
 
   private nextPowerOfTwo(value: number): number {
-    let power = 1;
+    let power = 1
     while (power < value) {
-      power *= 2;
+      power *= 2
     }
-    return power;
+    return power
   }
 }

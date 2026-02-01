@@ -2,16 +2,15 @@
  * 测试工具和帮助函数
  */
 
-import { vi } from 'vitest';
-
+import { vi } from 'vitest'
 
 // Mock Canvas Element
 export const createMockCanvas = (width = 800, height = 600): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
-};
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  return canvas
+}
 
 // Mock Shape
 export const createMockShape = (id?: string) => ({
@@ -20,13 +19,13 @@ export const createMockShape = (id?: string) => ({
   transform: {
     position: { x: 10, y: 10 },
     rotation: 0,
-    scale: { x: 1, y: 1 }
+    scale: { x: 1, y: 1 },
   },
   style: {
     fillColor: '#ffffff',
     strokeColor: '#000000',
     strokeWidth: 1,
-    opacity: 1
+    opacity: 1,
   },
   visible: true,
   zIndex: 0,
@@ -46,4 +45,4 @@ export const createMockShape = (id?: string) => ({
   deserialize: vi.fn(),
   hitTest: vi.fn().mockReturnValue(false),
   getBounds: vi.fn().mockReturnValue({ x: 10, y: 10, width: 100, height: 50 }),
-});
+})

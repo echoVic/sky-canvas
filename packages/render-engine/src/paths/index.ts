@@ -3,22 +3,20 @@
  * 提供路径布尔运算、简化和编辑功能
  */
 
-export { PathBooleanOperations } from './PathBooleanOperations';
-export { PathSimplification } from './PathSimplification';
-
 export type {
+  BooleanOperation,
+  BooleanOperationResult,
+  Path,
+  PathBooleanEvents,
   PathPoint,
   PathSegment,
-  Path,
-  BooleanOperationResult,
-  BooleanOperation,
-  PathBooleanEvents
-} from './PathBooleanOperations';
-
+} from './PathBooleanOperations'
+export { PathBooleanOperations } from './PathBooleanOperations'
 export type {
-  SimplificationOptions,
-  SimplificationResult,
   CurvePoint,
   PathEditOperation,
-  PathSimplificationEvents
-} from './PathSimplification';
+  PathSimplificationEvents,
+  SimplificationOptions,
+  SimplificationResult,
+} from './PathSimplification'
+export { PathSimplification } from './PathSimplification'

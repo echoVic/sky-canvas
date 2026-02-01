@@ -3,18 +3,17 @@
  * 提供完整的物理引擎集成功能
  */
 
-export { PhysicsWorld } from './PhysicsWorld';
-export { PhysicsSync } from './PhysicsSync';
-
 export type {
-  PhysicsConfig,
-  PhysicsBodyOptions,
-  PhysicsBody,
-  PhysicsEvents
-} from './PhysicsWorld';
-
-export type {
-  RenderObject,
+  PhysicsRenderMapping,
   PhysicsSyncEvents,
-  PhysicsRenderMapping
-} from './PhysicsSync';
+  RenderObject,
+} from './PhysicsSync'
+export { PhysicsSync } from './PhysicsSync'
+
+export type {
+  PhysicsBody,
+  PhysicsBodyOptions,
+  PhysicsConfig,
+  PhysicsEvents,
+} from './PhysicsWorld'
+export { PhysicsWorld } from './PhysicsWorld'

@@ -3,4 +3,4 @@
  */
 
 // 空间分割和剔除系统
-export * from './SpatialPartitioning';
+export * from './SpatialPartitioning'

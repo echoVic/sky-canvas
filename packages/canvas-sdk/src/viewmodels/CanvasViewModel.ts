@@ -3,81 +3,79 @@
  * 使用 CanvasManager 协调复杂的画布业务逻辑
  */
 
-import { proxy, snapshot, subscribe } from 'valtio/vanilla';
-import { ICanvasManager } from '../managers/CanvasManager';
-import { ShapeEntity } from '../models/entities/Shape';
-import { IViewModel } from './interfaces/IViewModel';
+import { proxy, snapshot, subscribe } from 'valtio/vanilla'
+import type { ICanvasManager } from '../managers/CanvasManager'
+import type { ShapeEntity } from '../models/entities/Shape'
+import type { IViewModel } from './interfaces/IViewModel'
 
 /**
  * Canvas 状态
  */
 export interface ICanvasState {
   // 形状管理
-  shapes: ShapeEntity[];
-  selectedShapes: ShapeEntity[];
-  
+  shapes: ShapeEntity[]
+  selectedShapes: ShapeEntity[]
+
   // 画布状态
-  isDrawing: boolean;
-  isDragging: boolean;
-  currentTool: string;
-  
+  isDrawing: boolean
+  isDragging: boolean
+  currentTool: string
+
   // 剪贴板状态
-  canPaste: boolean;
-  clipboardCount: number;
-  
+  canPaste: boolean
+  clipboardCount: number
+
   // 历史状态
-  canUndo: boolean;
-  canRedo: boolean;
-  
+  canUndo: boolean
+  canRedo: boolean
+
   // 统计信息
-  totalShapes: number;
-  selectedCount: number;
+  totalShapes: number
+  selectedCount: number
 }
 
 /**
  * Canvas ViewModel 接口
  */
 export interface ICanvasViewModel extends IViewModel {
-  state: ICanvasState;
-  
+  state: ICanvasState
+
   // 形状操作
-  addShape(shape: ShapeEntity): void;
-  removeShape(id: string): void;
-  updateShape(id: string, updates: Partial<ShapeEntity>): void;
-  
+  addShape(shape: ShapeEntity): void
+  removeShape(id: string): void
+  updateShape(id: string, updates: Partial<ShapeEntity>): void
+
   // 选择操作
-  selectShape(id: string): void;
-  deselectShape(id: string): void;
-  clearSelection(): void;
-  selectAll(): void;
-  
+  selectShape(id: string): void
+  deselectShape(id: string): void
+  clearSelection(): void
+  selectAll(): void
+
   // 剪贴板操作
-  copy(): void;
-  cut(): void;
-  paste(): void;
-  
+  copy(): void
+  cut(): void
+  paste(): Promise<void>
+
   // 历史操作
-  undo(): void;
-  redo(): void;
-  
+  undo(): void
+  redo(): void
+
   // 点击测试
-  hitTest(x: number, y: number): string | null;
-  
+  hitTest(x: number, y: number): string | null
+
   // 状态查询
-  getSelectedShapes(): ShapeEntity[];
-  canPerformAction(action: string): boolean;
+  getSelectedShapes(): ShapeEntity[]
+  canPerformAction(action: string): boolean
 }
 
 /**
  * Canvas ViewModel 实现
  */
 export class CanvasViewModel implements ICanvasViewModel {
-  private readonly _state: ICanvasState;
-  private unsubscribe?: () => void;
+  private readonly _state: ICanvasState
+  private unsubscribe?: () => void
 
-  constructor(
-    private canvasManager: ICanvasManager
-  ) {
+  constructor(private canvasManager: ICanvasManager) {
     this._state = proxy<ICanvasState>({
       shapes: [],
       selectedShapes: [],
@@ -89,123 +87,123 @@ export class CanvasViewModel implements ICanvasViewModel {
       canUndo: false,
       canRedo: false,
       totalShapes: 0,
-      selectedCount: 0
-    });
+      selectedCount: 0,
+    })
   }
 
   get state(): ICanvasState {
-    return this._state;
+    return this._state
   }
 
   async initialize(): Promise<void> {
-    this.updateState();
-    this.subscribeToCanvasManager();
+    this.updateState()
+    this.subscribeToCanvasManager()
   }
 
   getSnapshot() {
-    return snapshot(this._state);
+    return snapshot(this._state)
   }
 
   dispose(): void {
     if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = undefined;
+      this.unsubscribe()
+      this.unsubscribe = undefined
     }
   }
 
   private subscribeToCanvasManager(): void {
     this.unsubscribe = subscribe(this.canvasManager.state, () => {
-      this.updateState();
-    });
+      this.updateState()
+    })
   }
 
   // === 形状操作 ===
 
   addShape(shape: ShapeEntity): void {
-    this.canvasManager.addShape(shape);
+    this.canvasManager.addShape(shape)
   }
 
   removeShape(id: string): void {
-    this.canvasManager.removeShape(id);
+    this.canvasManager.removeShape(id)
   }
 
   updateShape(id: string, updates: Partial<ShapeEntity>): void {
-    this.canvasManager.updateShape(id, updates);
+    this.canvasManager.updateShape(id, updates)
   }
 
   // === 选择操作 ===
 
   selectShape(id: string): void {
-    this.canvasManager.selectShape(id);
+    this.canvasManager.selectShape(id)
   }
 
   deselectShape(id: string): void {
-    this.canvasManager.deselectShape(id);
+    this.canvasManager.deselectShape(id)
   }
 
   clearSelection(): void {
-    this.canvasManager.clearSelection();
+    this.canvasManager.clearSelection()
   }
 
   selectAll(): void {
-    const renderables = this.canvasManager.getRenderables();
-    renderables.forEach(renderable => {
-      const id = (renderable as any).id;
-      if (id) this.canvasManager.selectShape(id);
-    });
+    const renderables = this.canvasManager.getRenderables()
+    renderables.forEach((renderable) => {
+      const id = (renderable as any).id
+      if (id) this.canvasManager.selectShape(id)
+    })
   }
 
   // === 剪贴板操作 ===
 
   copy(): void {
-    this.canvasManager.copySelectedShapes();
+    this.canvasManager.copySelectedShapes()
   }
 
   cut(): void {
-    this.canvasManager.cutSelectedShapes();
+    this.canvasManager.cutSelectedShapes()
   }
 
-  paste(): void {
-    this.canvasManager.paste();
+  async paste(): Promise<void> {
+    await this.canvasManager.paste()
   }
 
   // === 历史操作 ===
 
   undo(): void {
-    this.canvasManager.undo();
+    this.canvasManager.undo()
   }
 
   redo(): void {
-    this.canvasManager.redo();
+    this.canvasManager.redo()
   }
 
   // === 其他操作 ===
 
   hitTest(x: number, y: number): string | null {
-    return this.canvasManager.hitTest(x, y);
+    return this.canvasManager.hitTest(x, y)
   }
 
   getSelectedShapes(): ShapeEntity[] {
-    return this.canvasManager.getSelectedShapes();
+    return this.canvasManager.getSelectedShapes()
   }
 
   canPerformAction(action: string): boolean {
     switch (action) {
       case 'copy':
       case 'cut':
-        return this._state.selectedCount > 0;
+        return this._state.selectedCount > 0
       case 'paste':
-        return this._state.canPaste;
+        return this._state.canPaste
       case 'undo':
-        return this._state.canUndo;
+        return this._state.canUndo
       case 'redo':
-        return this._state.canRedo;
+        return this._state.canRedo
       case 'delete':
-        return this._state.selectedCount > 0;
+        return this._state.selectedCount > 0
       case 'selectAll':
-        return this._state.totalShapes > 0;
+        return this._state.totalShapes > 0
       default:
-        return false;
+        return false
     }
   }
 
@@ -215,42 +213,42 @@ export class CanvasViewModel implements ICanvasViewModel {
    * 更新完整状态
    */
   private updateState(): void {
-    this.updateShapesState();
-    this.updateSelectionState();
-    this.updateClipboardState();
-    this.updateHistoryState();
+    this.updateShapesState()
+    this.updateSelectionState()
+    this.updateClipboardState()
+    this.updateHistoryState()
   }
 
   /**
    * 更新形状相关状态
    */
   private updateShapesState(): void {
-    const stats = this.canvasManager.getStats();
-    this._state.totalShapes = stats.shapes.totalShapes;
+    const stats = this.canvasManager.getStats()
+    this._state.totalShapes = stats.shapes.totalShapes
   }
 
   /**
    * 更新选择相关状态
    */
   private updateSelectionState(): void {
-    const selectedShapes = this.canvasManager.getSelectedShapes();
-    this._state.selectedShapes = selectedShapes;
-    this._state.selectedCount = selectedShapes.length;
+    const selectedShapes = this.canvasManager.getSelectedShapes()
+    this._state.selectedShapes = selectedShapes
+    this._state.selectedCount = selectedShapes.length
   }
 
   /**
    * 更新剪贴板相关状态
    */
   private updateClipboardState(): void {
-    this._state.canPaste = this.canvasManager.state.hasClipboardData;
+    this._state.canPaste = this.canvasManager.state.hasClipboardData
   }
 
   /**
    * 更新历史相关状态
    */
   private updateHistoryState(): void {
-    const stats = this.canvasManager.getStats();
-    this._state.canUndo = stats.history.canUndo;
-    this._state.canRedo = stats.history.canRedo;
+    const stats = this.canvasManager.getStats()
+    this._state.canUndo = stats.history.canUndo
+    this._state.canRedo = stats.history.canRedo
   }
 }

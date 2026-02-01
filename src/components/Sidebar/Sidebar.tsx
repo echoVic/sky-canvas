@@ -1,26 +1,26 @@
-import React from 'react'
 import { Button, Tooltip } from '@heroui/react'
-import { 
-  Menu,
-  X,
-  FolderOpen, 
-  Save, 
-  Download, 
-  Users, 
-  Terminal, 
-  Search, 
-  HelpCircle, 
-  RotateCcw,
+import {
+  Download,
+  Folder,
+  FolderOpen,
   Github,
+  HelpCircle,
+  Menu,
   MessageCircle,
-  UserPlus,
-  Sun,
-  Moon,
   Monitor,
+  Moon,
   Palette,
+  RotateCcw,
+  Save,
+  Search,
   Share,
-  Folder
+  Sun,
+  Terminal,
+  UserPlus,
+  Users,
+  X,
 } from 'lucide-react'
+import type React from 'react'
 import { useCanvasStore } from '../../store/canvasStore'
 
 const Sidebar: React.FC = () => {

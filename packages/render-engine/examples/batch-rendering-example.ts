@@ -1,7 +1,4 @@
-import { 
-  RenderEngine, 
-  Canvas2DContextFactory
-} from '../src'
+import { Canvas2DContextFactory, RenderEngine } from '../src'
 
 const canvas = document.createElement('canvas')
 canvas.width = 800
@@ -10,7 +7,7 @@ document.body.appendChild(canvas)
 
 const engine = new RenderEngine({
   targetFPS: 60,
-  enableCulling: true
+  enableCulling: true,
 })
 
 const factory = new Canvas2DContextFactory()
@@ -32,7 +29,7 @@ for (let i = 0; i < spriteCount; i++) {
     vx: (Math.random() - 0.5) * 2,
     vy: (Math.random() - 0.5) * 2,
     visible: true,
-    zIndex: 0
+    zIndex: 0,
   })
 }
 
@@ -44,20 +41,20 @@ const renderable = {
   visible: true,
   zIndex: 0,
   render(context: any) {
-    sprites.forEach(sprite => {
+    sprites.forEach((sprite) => {
       sprite.x += sprite.vx
       sprite.y += sprite.vy
-      
+
       if (sprite.x < 0 || sprite.x > canvas.width) sprite.vx *= -1
       if (sprite.y < 0 || sprite.y > canvas.height) sprite.vy *= -1
-      
+
       context.fillStyle = sprite.color
       context.fillRect(sprite.x, sprite.y, sprite.width, sprite.height)
     })
   },
   hitTest: () => false,
   getBounds: () => ({ x: 0, y: 0, width: canvas.width, height: canvas.height }),
-  dispose: () => {}
+  dispose: () => {},
 }
 
 layer.addRenderable(renderable)
@@ -68,7 +65,7 @@ let lastFpsUpdate = Date.now()
 
 const animate = () => {
   engine.render()
-  
+
   frameCount++
   const now = Date.now()
   if (now - lastFpsUpdate >= 1000) {
@@ -76,7 +73,7 @@ const animate = () => {
     frameCount = 0
     lastFpsUpdate = now
   }
-  
+
   requestAnimationFrame(animate)
 }
 

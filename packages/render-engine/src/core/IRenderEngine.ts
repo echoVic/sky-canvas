@@ -1,47 +1,47 @@
 /**
  * 渲染引擎核心接口定义
  */
-import { IPoint, IRect, IGraphicsContext } from '../graphics/IGraphicsContext';
+import type { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext'
 
 /**
  * 可渲染对象接口
  */
 export interface IRenderable {
   /** 唯一标识符 */
-  readonly id: string;
-  
+  readonly id: string
+
   /** 边界框 */
-  readonly bounds: IRect;
-  
+  readonly bounds: IRect
+
   /** 是否可见 */
-  readonly visible: boolean;
-  
+  readonly visible: boolean
+
   /** Z轴层级 */
-  readonly zIndex: number;
-  
+  readonly zIndex: number
+
   /**
    * 渲染对象
    * @param context 图形上下文
    */
-  render(context: IGraphicsContext): void;
-  
+  render(context: IGraphicsContext): void
+
   /**
    * 点击测试
    * @param point 测试点
    * @returns 是否命中
    */
-  hitTest(point: IPoint): boolean;
-  
+  hitTest(point: IPoint): boolean
+
   /**
    * 获取边界框
    * @returns 边界框
    */
-  getBounds(): IRect;
-  
+  getBounds(): IRect
+
   /**
    * 销毁对象
    */
-  dispose(): void;
+  dispose(): void
 }
 
 /**
@@ -49,39 +49,39 @@ export interface IRenderable {
  */
 export interface IRenderLayer {
   /** 层ID */
-  readonly id: string;
-  
+  readonly id: string
+
   /** 是否可见 */
-  visible: boolean;
-  
+  visible: boolean
+
   /** 透明度 */
-  opacity: number;
-  
+  opacity: number
+
   /** Z轴层级 */
-  zIndex: number;
-  
+  zIndex: number
+
   /**
    * 添加可渲染对象
    * @param renderable 可渲染对象
    */
-  addRenderable(renderable: IRenderable): void;
-  
+  addRenderable(renderable: IRenderable): void
+
   /**
    * 移除可渲染对象
    * @param id 对象ID
    */
-  removeRenderable(id: string): void;
-  
+  removeRenderable(id: string): void
+
   /**
    * 获取所有可渲染对象
    * @returns 可渲染对象数组
    */
-  getRenderables(): IRenderable[];
-  
+  getRenderables(): IRenderable[]
+
   /**
    * 清空层
    */
-  clear(): void;
+  clear(): void
 }
 
 /**
@@ -89,19 +89,19 @@ export interface IRenderLayer {
  */
 export interface IViewport {
   /** X偏移 */
-  x: number;
-  
+  x: number
+
   /** Y偏移 */
-  y: number;
-  
+  y: number
+
   /** 视口宽度 */
-  width: number;
-  
+  width: number
+
   /** 视口高度 */
-  height: number;
-  
+  height: number
+
   /** 缩放倍数 */
-  zoom: number;
+  zoom: number
 }
 
 /**
@@ -109,16 +109,16 @@ export interface IViewport {
  */
 export interface IRenderStats {
   /** 帧计数 */
-  frameCount: number;
-  
+  frameCount: number
+
   /** 每秒帧数 */
-  fps: number;
-  
+  fps: number
+
   /** 渲染时间 */
-  renderTime: number;
-  
+  renderTime: number
+
   /** 已渲染对象数 */
-  objectsRendered: number;
+  objectsRendered: number
 }
 
 /**
@@ -126,16 +126,16 @@ export interface IRenderStats {
  */
 export interface IRenderEngineConfig {
   /** 目标FPS */
-  targetFPS?: number;
-  
+  targetFPS?: number
+
   /** 是否启用垂直同步 */
-  enableVSync?: boolean;
-  
+  enableVSync?: boolean
+
   /** 是否启用视锥剔除 */
-  enableCulling?: boolean;
-  
+  enableCulling?: boolean
+
   /** 剔除边距 */
-  cullMargin?: number;
+  cullMargin?: number
 }
 
 /**
@@ -147,95 +147,95 @@ export interface IRenderEngine {
    * @param factory 图形上下文工厂
    * @param canvas 画布元素
    */
-  initialize<TCanvas>(factory: any, canvas: TCanvas): Promise<void>;
-  
+  initialize<TCanvas>(factory: any, canvas: TCanvas): Promise<void>
+
   /**
    * 启动渲染循环
    */
-  start(): void;
-  
+  start(): void
+
   /**
    * 停止渲染循环
    */
-  stop(): void;
-  
+  stop(): void
+
   /**
    * 手动渲染一帧
    */
-  render(): void;
-  
+  render(): void
+
   /**
    * 是否正在运行
    */
-  isRunning(): boolean;
-  
+  isRunning(): boolean
+
   /**
    * 获取图形上下文
    */
-  getContext(): any | null;
-  
+  getContext(): any | null
+
   /**
    * 设置视口
    * @param viewport 视口配置
    */
-  setViewport(viewport: Partial<IViewport>): void;
-  
+  setViewport(viewport: Partial<IViewport>): void
+
   /**
    * 获取视口
    */
-  getViewport(): IViewport;
-  
+  getViewport(): IViewport
+
   /**
    * 创建渲染层
    * @param id 层ID
    * @param zIndex Z轴层级
    */
-  createLayer(id: string, zIndex?: number): IRenderLayer;
-  
+  createLayer(id: string, zIndex?: number): IRenderLayer
+
   /**
    * 获取渲染层
    * @param id 层ID
    */
-  getLayer(id: string): IRenderLayer | undefined;
-  
+  getLayer(id: string): IRenderLayer | undefined
+
   /**
    * 移除渲染层
    * @param id 层ID
    */
-  removeLayer(id: string): void;
-  
+  removeLayer(id: string): void
+
   /**
    * 屏幕坐标转世界坐标
    * @param point 屏幕坐标点
    */
-  screenToWorld(point: IPoint): IPoint;
-  
+  screenToWorld(point: IPoint): IPoint
+
   /**
    * 世界坐标转屏幕坐标
    * @param point 世界坐标点
    */
-  worldToScreen(point: IPoint): IPoint;
-  
+  worldToScreen(point: IPoint): IPoint
+
   /**
    * 获取渲染统计信息
    */
-  getStats(): IRenderStats;
-  
+  getStats(): IRenderStats
+
   /**
    * 点击测试 - 查找指定位置的可渲染对象
    * @param point 屏幕坐标点
    * @returns 命中的可渲染对象，如果没有则返回null
    */
-  hitTest(point: IPoint): IRenderable | null;
-  
+  hitTest(point: IPoint): IRenderable | null
+
   /**
    * 获取视口内的对象
    * @returns 视口范围内的所有可渲染对象
    */
-  getObjectsInViewport(): IRenderable[];
-  
+  getObjectsInViewport(): IRenderable[]
+
   /**
    * 销毁渲染引擎
    */
-  dispose(): void;
+  dispose(): void
 }

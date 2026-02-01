@@ -39,7 +39,7 @@ fn main(input: VertexInput) -> VertexOutput {
 
   return output;
 }
-`;
+`
 
 /**
  * 基础片段着色器
@@ -54,7 +54,7 @@ struct FragmentInput {
 fn main(input: FragmentInput) -> @location(0) vec4<f32> {
   return input.color;
 }
-`;
+`
 
 /**
  * 带纹理的顶点着色器
@@ -92,7 +92,7 @@ fn main(input: VertexInput) -> VertexOutput {
 
   return output;
 }
-`;
+`
 
 /**
  * 带纹理的片段着色器
@@ -111,7 +111,7 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
   let texColor = textureSample(tex, texSampler, input.texCoord);
   return texColor * input.color;
 }
-`;
+`
 
 /**
  * 圆形着色器（使用 SDF）
@@ -156,7 +156,7 @@ fn main(input: VertexInput) -> VertexOutput {
 
   return output;
 }
-`;
+`
 
 export const CIRCLE_FRAGMENT_SHADER = /* wgsl */ `
 struct CircleParams {
@@ -201,7 +201,7 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
 
   return color;
 }
-`;
+`
 
 /**
  * 线段着色器
@@ -245,7 +245,7 @@ fn main(input: VertexInput) -> VertexOutput {
 
   return output;
 }
-`;
+`
 
 export const LINE_FRAGMENT_SHADER = /* wgsl */ `
 struct LineParams {
@@ -267,7 +267,7 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
 
   return vec4<f32>(lineParams.color.rgb, lineParams.color.a * alpha);
 }
-`;
+`
 
 /**
  * 着色器类型枚举
@@ -276,7 +276,7 @@ export enum ShaderType {
   BASIC_2D = 'basic2d',
   TEXTURED = 'textured',
   CIRCLE = 'circle',
-  LINE = 'line'
+  LINE = 'line',
 }
 
 /**
@@ -285,18 +285,18 @@ export enum ShaderType {
 export const SHADER_SOURCES: Record<ShaderType, { vertex: string; fragment: string }> = {
   [ShaderType.BASIC_2D]: {
     vertex: BASIC_2D_VERTEX_SHADER,
-    fragment: BASIC_FRAGMENT_SHADER
+    fragment: BASIC_FRAGMENT_SHADER,
   },
   [ShaderType.TEXTURED]: {
     vertex: TEXTURED_VERTEX_SHADER,
-    fragment: TEXTURED_FRAGMENT_SHADER
+    fragment: TEXTURED_FRAGMENT_SHADER,
   },
   [ShaderType.CIRCLE]: {
     vertex: CIRCLE_VERTEX_SHADER,
-    fragment: CIRCLE_FRAGMENT_SHADER
+    fragment: CIRCLE_FRAGMENT_SHADER,
   },
   [ShaderType.LINE]: {
     vertex: LINE_VERTEX_SHADER,
-    fragment: LINE_FRAGMENT_SHADER
-  }
-};
+    fragment: LINE_FRAGMENT_SHADER,
+  },
+}

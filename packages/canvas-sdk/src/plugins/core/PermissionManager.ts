@@ -2,29 +2,29 @@
  * 权限管理器 - 负责插件API访问权限控制
  */
 
-import { PluginPermission } from '../types/PluginTypes';
+import { PluginPermission } from '../types/PluginTypes'
 
 export interface PermissionRequest {
-  permission: PluginPermission;
-  reason: string;
-  pluginId: string;
+  permission: PluginPermission
+  reason: string
+  pluginId: string
 }
 
 export interface PermissionGrant {
-  permission: PluginPermission;
-  granted: boolean;
-  timestamp: number;
-  permanent: boolean;
+  permission: PluginPermission
+  granted: boolean
+  timestamp: number
+  permanent: boolean
 }
 
 export class PermissionManager {
-  private grantedPermissions = new Map<string, Map<PluginPermission, PermissionGrant>>();
-  private permissionCallbacks = new Map<PluginPermission, Set<Function>>();
-  private securityPolicies = new Map<PluginPermission, SecurityPolicy>();
-  private eventListeners = new Map<string, Set<Function>>();
+  private grantedPermissions = new Map<string, Map<PluginPermission, PermissionGrant>>()
+  private permissionCallbacks = new Map<PluginPermission, Set<Function>>()
+  private securityPolicies = new Map<PluginPermission, SecurityPolicy>()
+  private eventListeners = new Map<string, Set<Function>>()
 
   constructor() {
-    this.initializeDefaultPolicies();
+    this.initializeDefaultPolicies()
   }
 
   /**
@@ -35,43 +35,43 @@ export class PermissionManager {
     this.securityPolicies.set(PluginPermission.READ_ONLY, {
       autoGrant: true,
       requiresUserConsent: false,
-      riskLevel: 'low'
-    });
+      riskLevel: 'low',
+    })
 
     // 画布修改权限 - 需要用户确认
     this.securityPolicies.set(PluginPermission.CANVAS_MODIFY, {
       autoGrant: false,
       requiresUserConsent: true,
-      riskLevel: 'medium'
-    });
+      riskLevel: 'medium',
+    })
 
     // UI修改权限 - 需要用户确认
     this.securityPolicies.set(PluginPermission.UI_MODIFY, {
       autoGrant: false,
       requiresUserConsent: true,
-      riskLevel: 'medium'
-    });
+      riskLevel: 'medium',
+    })
 
     // 文件访问权限 - 需要用户确认
     this.securityPolicies.set(PluginPermission.FILE_ACCESS, {
       autoGrant: false,
       requiresUserConsent: true,
-      riskLevel: 'high'
-    });
+      riskLevel: 'high',
+    })
 
     // 网络访问权限 - 需要用户确认
     this.securityPolicies.set(PluginPermission.NETWORK_ACCESS, {
       autoGrant: false,
       requiresUserConsent: true,
-      riskLevel: 'high'
-    });
+      riskLevel: 'high',
+    })
 
     // 系统访问权限 - 严格控制
     this.securityPolicies.set(PluginPermission.SYSTEM_ACCESS, {
       autoGrant: false,
       requiresUserConsent: true,
-      riskLevel: 'critical'
-    });
+      riskLevel: 'critical',
+    })
   }
 
   /**
@@ -80,23 +80,23 @@ export class PermissionManager {
   async checkPermissions(permissions: PluginPermission[]): Promise<boolean> {
     try {
       for (const permission of permissions) {
-        const policy = this.securityPolicies.get(permission);
+        const policy = this.securityPolicies.get(permission)
         if (!policy) {
-          this.emit('permission:checked', permissions, false);
-          return false;
+          this.emit('permission:checked', permissions, false)
+          return false
         }
 
         if (policy.riskLevel === 'critical') {
-          this.emit('permission:checked', permissions, false);
-          return false;
+          this.emit('permission:checked', permissions, false)
+          return false
         }
       }
-      
-      this.emit('permission:checked', permissions, true);
-      return true;
+
+      this.emit('permission:checked', permissions, true)
+      return true
     } catch (error) {
-      this.emit('permission:checked', permissions, false);
-      return false;
+      this.emit('permission:checked', permissions, false)
+      return false
     }
   }
 
@@ -104,24 +104,24 @@ export class PermissionManager {
    * 请求权限
    */
   async requestPermission(
-    pluginId: string, 
-    permission: PluginPermission, 
+    pluginId: string,
+    permission: PluginPermission,
     reason: string
   ): Promise<boolean> {
     // 检查是否已经授予权限
     if (this.hasPermission(pluginId, permission)) {
-      return true;
+      return true
     }
 
-    const policy = this.securityPolicies.get(permission);
+    const policy = this.securityPolicies.get(permission)
     if (!policy) {
-      throw new Error(`Unknown permission: ${permission}`);
+      throw new Error(`Unknown permission: ${permission}`)
     }
 
     // 自动授予的权限
     if (policy.autoGrant) {
-      this.grantPermission(pluginId, permission, true);
-      return true;
+      this.grantPermission(pluginId, permission, true)
+      return true
     }
 
     // 需要用户确认的权限
@@ -129,86 +129,86 @@ export class PermissionManager {
       const granted = await this.requestUserConsent({
         permission,
         reason,
-        pluginId
-      });
+        pluginId,
+      })
 
       if (granted) {
-        this.grantPermission(pluginId, permission, true);
+        this.grantPermission(pluginId, permission, true)
       }
 
-      return granted;
+      return granted
     }
 
-    return false;
+    return false
   }
 
   /**
    * 批量请求权限
    */
   async requestPermissions(
-    pluginId: string, 
-    permissions: PluginPermission[], 
+    pluginId: string,
+    permissions: PluginPermission[],
     reason: string
   ): Promise<Map<PluginPermission, boolean>> {
-    const results = new Map<PluginPermission, boolean>();
+    const results = new Map<PluginPermission, boolean>()
 
     for (const permission of permissions) {
       try {
-        const granted = await this.requestPermission(pluginId, permission, reason);
-        results.set(permission, granted);
+        const granted = await this.requestPermission(pluginId, permission, reason)
+        results.set(permission, granted)
       } catch {
-        results.set(permission, false);
+        results.set(permission, false)
       }
     }
 
-    return results;
+    return results
   }
 
   /**
    * 授予权限
    */
   grantPermission(
-    pluginId: string, 
-    permission: PluginPermission, 
+    pluginId: string,
+    permission: PluginPermission,
     permanent: boolean = false
   ): void {
     if (!this.grantedPermissions.has(pluginId)) {
-      this.grantedPermissions.set(pluginId, new Map());
+      this.grantedPermissions.set(pluginId, new Map())
     }
 
-    const pluginPermissions = this.grantedPermissions.get(pluginId)!;
+    const pluginPermissions = this.grantedPermissions.get(pluginId)!
     pluginPermissions.set(permission, {
       permission,
       granted: true,
       timestamp: Date.now(),
-      permanent
-    });
+      permanent,
+    })
 
     // 触发权限授予回调
-    this.triggerPermissionCallbacks(permission, pluginId, true);
-    
+    this.triggerPermissionCallbacks(permission, pluginId, true)
+
     // 触发权限授予事件
-    this.emit('permission:granted', pluginId, permission);
+    this.emit('permission:granted', pluginId, permission)
   }
 
   /**
    * 撤销权限
    */
   revokePermission(pluginId: string, permission: PluginPermission): void {
-    const pluginPermissions = this.grantedPermissions.get(pluginId);
+    const pluginPermissions = this.grantedPermissions.get(pluginId)
     if (pluginPermissions) {
-      pluginPermissions.delete(permission);
-      
+      pluginPermissions.delete(permission)
+
       // 如果插件没有任何权限了，移除整个条目
       if (pluginPermissions.size === 0) {
-        this.grantedPermissions.delete(pluginId);
+        this.grantedPermissions.delete(pluginId)
       }
-      
+
       // 触发权限撤销回调
-      this.triggerPermissionCallbacks(permission, pluginId, false);
-      
+      this.triggerPermissionCallbacks(permission, pluginId, false)
+
       // 触发权限撤销事件
-      this.emit('permission:revoked', pluginId, permission);
+      this.emit('permission:revoked', pluginId, permission)
     }
   }
 
@@ -216,12 +216,12 @@ export class PermissionManager {
    * 撤销插件的所有权限
    */
   revokeAllPermissions(pluginId: string): void {
-    const pluginPermissions = this.grantedPermissions.get(pluginId);
+    const pluginPermissions = this.grantedPermissions.get(pluginId)
     if (pluginPermissions) {
       for (const permission of pluginPermissions.keys()) {
-        this.triggerPermissionCallbacks(permission, pluginId, false);
+        this.triggerPermissionCallbacks(permission, pluginId, false)
       }
-      this.grantedPermissions.delete(pluginId);
+      this.grantedPermissions.delete(pluginId)
     }
   }
 
@@ -229,43 +229,43 @@ export class PermissionManager {
    * 检查是否有权限
    */
   hasPermission(pluginId: string, permission: PluginPermission): boolean {
-    const pluginPermissions = this.grantedPermissions.get(pluginId);
-    return pluginPermissions?.has(permission) ?? false;
+    const pluginPermissions = this.grantedPermissions.get(pluginId)
+    return pluginPermissions?.has(permission) ?? false
   }
 
   /**
    * 检查是否有所有权限
    */
   hasAllPermissions(pluginId: string, permissions: PluginPermission[]): boolean {
-    return permissions.every(permission => this.hasPermission(pluginId, permission));
+    return permissions.every((permission) => this.hasPermission(pluginId, permission))
   }
 
   /**
    * 获取插件的所有权限
    */
   getPluginPermissions(pluginId: string): PluginPermission[] {
-    const pluginPermissions = this.grantedPermissions.get(pluginId);
-    return pluginPermissions ? Array.from(pluginPermissions.keys()) : [];
+    const pluginPermissions = this.grantedPermissions.get(pluginId)
+    return pluginPermissions ? Array.from(pluginPermissions.keys()) : []
   }
 
   /**
    * 获取权限详情
    */
   getPermissionGrant(pluginId: string, permission: PluginPermission): PermissionGrant | undefined {
-    const pluginPermissions = this.grantedPermissions.get(pluginId);
-    return pluginPermissions?.get(permission);
+    const pluginPermissions = this.grantedPermissions.get(pluginId)
+    return pluginPermissions?.get(permission)
   }
 
   /**
    * 验证API调用权限
    */
   validateAPICall(pluginId: string, apiPath: string): boolean {
-    const requiredPermission = this.getRequiredPermissionForAPI(apiPath);
+    const requiredPermission = this.getRequiredPermissionForAPI(apiPath)
     if (!requiredPermission) {
-      return true; // 不需要特殊权限的API
+      return true // 不需要特殊权限的API
     }
 
-    return this.hasPermission(pluginId, requiredPermission);
+    return this.hasPermission(pluginId, requiredPermission)
   }
 
   /**
@@ -324,10 +324,10 @@ export class PermissionManager {
 
       // 渲染器API
       'renderers.register': PluginPermission.CANVAS_MODIFY,
-      'renderers.unregister': PluginPermission.CANVAS_MODIFY
-    };
+      'renderers.unregister': PluginPermission.CANVAS_MODIFY,
+    }
 
-    return apiPermissionMap[apiPath] || null;
+    return apiPermissionMap[apiPath] || null
   }
 
   /**
@@ -337,35 +337,35 @@ export class PermissionManager {
     return new Promise((resolve) => {
       setTimeout(() => {
         // 对于演示目的，我们自动授予非系统级权限
-        const policy = this.securityPolicies.get(request.permission);
-        resolve(policy?.riskLevel !== 'critical');
-      }, 100);
-    });
+        const policy = this.securityPolicies.get(request.permission)
+        resolve(policy?.riskLevel !== 'critical')
+      }, 100)
+    })
   }
 
   /**
    * 注册权限变更回调
    */
   onPermissionChange(
-    permission: PluginPermission, 
+    permission: PluginPermission,
     callback: (pluginId: string, granted: boolean) => void
   ): void {
     if (!this.permissionCallbacks.has(permission)) {
-      this.permissionCallbacks.set(permission, new Set());
+      this.permissionCallbacks.set(permission, new Set())
     }
-    this.permissionCallbacks.get(permission)!.add(callback);
+    this.permissionCallbacks.get(permission)!.add(callback)
   }
 
   /**
    * 移除权限变更回调
    */
   offPermissionChange(
-    permission: PluginPermission, 
+    permission: PluginPermission,
     callback: (pluginId: string, granted: boolean) => void
   ): void {
-    const callbacks = this.permissionCallbacks.get(permission);
+    const callbacks = this.permissionCallbacks.get(permission)
     if (callbacks) {
-      callbacks.delete(callback);
+      callbacks.delete(callback)
     }
   }
 
@@ -373,17 +373,16 @@ export class PermissionManager {
    * 触发权限变更回调
    */
   private triggerPermissionCallbacks(
-    permission: PluginPermission, 
-    pluginId: string, 
+    permission: PluginPermission,
+    pluginId: string,
     granted: boolean
   ): void {
-    const callbacks = this.permissionCallbacks.get(permission);
+    const callbacks = this.permissionCallbacks.get(permission)
     if (callbacks) {
       for (const callback of callbacks) {
         try {
-          callback(pluginId, granted);
-        } catch {
-        }
+          callback(pluginId, granted)
+        } catch {}
       }
     }
   }
@@ -392,61 +391,61 @@ export class PermissionManager {
    * 设置安全策略
    */
   setSecurityPolicy(permission: PluginPermission, policy: SecurityPolicy): void {
-    this.securityPolicies.set(permission, policy);
+    this.securityPolicies.set(permission, policy)
   }
 
   /**
    * 获取安全策略
    */
   getSecurityPolicy(permission: PluginPermission): SecurityPolicy | undefined {
-    return this.securityPolicies.get(permission);
+    return this.securityPolicies.get(permission)
   }
 
   /**
    * 获取权限统计
    */
   getPermissionStats(): {
-    totalPlugins: number;
-    permissionCounts: Record<PluginPermission, number>;
-    riskDistribution: Record<string, number>;
+    totalPlugins: number
+    permissionCounts: Record<PluginPermission, number>
+    riskDistribution: Record<string, number>
   } {
     const stats = {
       totalPlugins: this.grantedPermissions.size,
       permissionCounts: {} as Record<PluginPermission, number>,
-      riskDistribution: { low: 0, medium: 0, high: 0, critical: 0 }
-    };
+      riskDistribution: { low: 0, medium: 0, high: 0, critical: 0 },
+    }
 
     // 初始化权限计数
     for (const permission of Object.values(PluginPermission)) {
-      stats.permissionCounts[permission] = 0;
+      stats.permissionCounts[permission] = 0
     }
 
     // 统计权限使用情况
     for (const pluginPermissions of this.grantedPermissions.values()) {
       for (const permission of pluginPermissions.keys()) {
-        stats.permissionCounts[permission]++;
-        
-        const policy = this.securityPolicies.get(permission);
+        stats.permissionCounts[permission]++
+
+        const policy = this.securityPolicies.get(permission)
         if (policy) {
-          stats.riskDistribution[policy.riskLevel]++;
+          stats.riskDistribution[policy.riskLevel]++
         }
       }
     }
 
-    return stats;
+    return stats
   }
 
   /**
    * 导出权限配置
    */
   exportPermissions(): Record<string, PluginPermission[]> {
-    const exported: Record<string, PluginPermission[]> = {};
-    
+    const exported: Record<string, PluginPermission[]> = {}
+
     for (const [pluginId, permissions] of this.grantedPermissions) {
-      exported[pluginId] = Array.from(permissions.keys());
+      exported[pluginId] = Array.from(permissions.keys())
     }
-    
-    return exported;
+
+    return exported
   }
 
   /**
@@ -454,12 +453,12 @@ export class PermissionManager {
    */
   importPermissions(permissions: Record<string, PluginPermission[]>): void {
     // 清除现有权限
-    this.grantedPermissions.clear();
-    
+    this.grantedPermissions.clear()
+
     // 导入新权限
     for (const [pluginId, pluginPermissions] of Object.entries(permissions)) {
       for (const permission of pluginPermissions) {
-        this.grantPermission(pluginId, permission, true);
+        this.grantPermission(pluginId, permission, true)
       }
     }
   }
@@ -468,30 +467,30 @@ export class PermissionManager {
    * 重置所有权限
    */
   resetAllPermissions(): void {
-    this.grantedPermissions.clear();
-    this.permissionCallbacks.clear();
+    this.grantedPermissions.clear()
+    this.permissionCallbacks.clear()
   }
 
   /**
    * 获取所有权限
    */
   getAllPermissions(): Record<string, PluginPermission[]> {
-    return this.exportPermissions();
+    return this.exportPermissions()
   }
 
   /**
    * 验证权限
    */
   validatePermission(pluginId: string, permission: PluginPermission): boolean {
-    return this.hasPermission(pluginId, permission);
+    return this.hasPermission(pluginId, permission)
   }
 
   /**
    * 检查是否为高风险权限
    */
   isHighRiskPermission(permission: PluginPermission): boolean {
-    const policy = this.securityPolicies.get(permission);
-    return policy ? (policy.riskLevel === 'high' || policy.riskLevel === 'critical') : false;
+    const policy = this.securityPolicies.get(permission)
+    return policy ? policy.riskLevel === 'high' || policy.riskLevel === 'critical' : false
   }
 
   /**
@@ -499,18 +498,18 @@ export class PermissionManager {
    */
   on(event: string, callback: Function): void {
     if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, new Set());
+      this.eventListeners.set(event, new Set())
     }
-    this.eventListeners.get(event)!.add(callback);
+    this.eventListeners.get(event)!.add(callback)
   }
 
   /**
    * 移除事件监听器
    */
   off(event: string, callback: Function): void {
-    const listeners = this.eventListeners.get(event);
+    const listeners = this.eventListeners.get(event)
     if (listeners) {
-      listeners.delete(callback);
+      listeners.delete(callback)
     }
   }
 
@@ -518,13 +517,12 @@ export class PermissionManager {
    * 触发事件
    */
   private emit(event: string, ...args: any[]): void {
-    const listeners = this.eventListeners.get(event);
+    const listeners = this.eventListeners.get(event)
     if (listeners) {
       for (const listener of listeners) {
         try {
-          listener(...args);
-        } catch {
-        }
+          listener(...args)
+        } catch {}
       }
     }
   }
@@ -533,14 +531,14 @@ export class PermissionManager {
    * 清理所有权限
    */
   clear(): void {
-    this.grantedPermissions.clear();
-    this.permissionCallbacks.clear();
-    this.eventListeners.clear();
+    this.grantedPermissions.clear()
+    this.permissionCallbacks.clear()
+    this.eventListeners.clear()
   }
 }
 
 interface SecurityPolicy {
-  autoGrant: boolean;
-  requiresUserConsent: boolean;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  autoGrant: boolean
+  requiresUserConsent: boolean
+  riskLevel: 'low' | 'medium' | 'high' | 'critical'
 }

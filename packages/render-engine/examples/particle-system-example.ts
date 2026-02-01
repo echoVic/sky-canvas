@@ -1,7 +1,4 @@
-import { 
-  RenderEngine, 
-  Canvas2DContextFactory
-} from '../src'
+import { Canvas2DContextFactory, RenderEngine } from '../src'
 import { ParticleSystem } from '../src/animation/particles/ParticleSystem'
 
 const canvas = document.createElement('canvas')
@@ -10,7 +7,7 @@ canvas.height = 600
 document.body.appendChild(canvas)
 
 const engine = new RenderEngine({
-  targetFPS: 60
+  targetFPS: 60,
 })
 
 const factory = new Canvas2DContextFactory()
@@ -26,11 +23,11 @@ const particleSystem = new ParticleSystem({
     alpha: { min: 1, max: 1 },
     color: ['#e74c3c'],
     life: { min: 2000, max: 4000 },
-    rate: 50
+    rate: 50,
   },
   maxParticles: 1000,
   gravity: { x: 0, y: 100 },
-  autoStart: true
+  autoStart: true,
 })
 
 const renderable = {
@@ -42,10 +39,10 @@ const renderable = {
   zIndex: 0,
   render(context: any) {
     const particles = particleSystem.particles
-    
-    particles.forEach(particle => {
+
+    particles.forEach((particle) => {
       if (!particle.isAlive()) return
-      
+
       context.save()
       context.globalAlpha = particle.alpha
       context.fillStyle = particle.color
@@ -57,7 +54,7 @@ const renderable = {
   },
   hitTest: () => false,
   getBounds: () => ({ x: 0, y: 0, width: canvas.width, height: canvas.height }),
-  dispose: () => {}
+  dispose: () => {},
 }
 
 layer.addRenderable(renderable)
@@ -67,10 +64,10 @@ let lastTime = 0
 const animate = (time: number) => {
   const deltaTime = time - lastTime
   lastTime = time
-  
+
   particleSystem.update(deltaTime)
   engine.render()
-  
+
   requestAnimationFrame(animate)
 }
 
@@ -80,11 +77,11 @@ canvas.addEventListener('click', (e) => {
   const rect = canvas.getBoundingClientRect()
   const x = e.clientX - rect.left
   const y = e.clientY - rect.top
-  
+
   particleSystem.updateConfig({
     emission: {
       ...particleSystem.config.emission,
-      position: { min: { x, y }, max: { x, y } }
-    }
+      position: { min: { x, y }, max: { x, y } },
+    },
   })
 })

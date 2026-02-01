@@ -10,72 +10,78 @@ export enum GPUResourceType {
   BUFFER = 'buffer',
   FRAMEBUFFER = 'framebuffer',
   SHADER = 'shader',
-  VAO = 'vao'
+  VAO = 'vao',
 }
 
 /**
  * GPU资源接口
  */
 export interface GPUResource {
-  id: string;
-  type: GPUResourceType;
-  size: number;
-  lastUsed: number;
-  useCount: number;
-  priority: number;
-  persistent: boolean;
-  webglObject: WebGLTexture | WebGLBuffer | WebGLFramebuffer | WebGLProgram | WebGLVertexArrayObject | null;
+  id: string
+  type: GPUResourceType
+  size: number
+  lastUsed: number
+  useCount: number
+  priority: number
+  persistent: boolean
+  webglObject:
+    | WebGLTexture
+    | WebGLBuffer
+    | WebGLFramebuffer
+    | WebGLProgram
+    | WebGLVertexArrayObject
+    | null
 }
 
 /**
  * 纹理配置
  */
 export interface TextureConfig {
-  width: number;
-  height: number;
-  format: number;
-  type: number;
-  minFilter: number;
-  magFilter: number;
-  wrapS: number;
-  wrapT: number;
-  generateMipmaps: boolean;
+  width: number
+  height: number
+  format: number
+  type: number
+  minFilter: number
+  magFilter: number
+  wrapS: number
+  wrapT: number
+  generateMipmaps: boolean
 }
 
 /**
  * 缓冲区配置
  */
 export interface BufferConfig {
-  target: number;
-  usage: number;
-  size: number;
+  target: number
+  usage: number
+  size: number
 }
 
 /**
  * GPU内存统计
  */
 export interface GPUMemoryStats {
-  totalAllocated: number;
-  totalUsed: number;
-  textureMemory: number;
-  bufferMemory: number;
-  framebufferMemory: number;
-  availableMemory: number;
-  fragmentationRatio: number;
-  allocationCount: number;
-  deallocationCount: number;
+  totalAllocated: number
+  totalUsed: number
+  textureMemory: number
+  bufferMemory: number
+  framebufferMemory: number
+  availableMemory: number
+  fragmentationRatio: number
+  allocationCount: number
+  deallocationCount: number
 }
 
 /**
  * GPU优化器配置
  */
 export interface GPUOptimizerConfig {
-  memoryBudget: number;
-  textureCompressionEnabled: boolean;
-  automaticMipmapGeneration: boolean;
-  resourceTimeoutMs: number;
-  enableResourceStreaming: boolean;
-  maxTextureSize: number;
+  memoryBudget: number
+  textureCompressionEnabled: boolean
+  automaticMipmapGeneration: boolean
+  resourceTimeoutMs: number
+  enableResourceStreaming: boolean
+  maxTextureSize: number
 }
 
 /**
@@ -88,8 +94,8 @@ export function createDefaultGPUConfig(): GPUOptimizerConfig {
     automaticMipmapGeneration: true,
     resourceTimeoutMs: 300000, // 5分钟
     enableResourceStreaming: true,
-    maxTextureSize: 2048
-  };
+    maxTextureSize: 2048,
+  }
 }
 
 /**
@@ -105,6 +111,6 @@ export function createDefaultMemoryStats(): GPUMemoryStats {
     availableMemory: 0,
     fragmentationRatio: 0,
     allocationCount: 0,
-    deallocationCount: 0
-  };
+    deallocationCount: 0,
+  }
 }

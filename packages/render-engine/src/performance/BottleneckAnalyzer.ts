@@ -4,12 +4,12 @@
  */
 
 import {
+  type BottleneckAnalysis,
+  type DataSourceType,
+  type UnifiedMetricDataPoint,
   UnifiedMetricType,
-  UnifiedMetricDataPoint,
-  DataSourceType,
-  BottleneckAnalysis,
-  UnifiedPerformanceThresholds
-} from './PerformanceTypes';
+  type UnifiedPerformanceThresholds,
+} from './PerformanceTypes'
 
 /**
  * 瓶颈分析器类
@@ -21,28 +21,28 @@ export class BottleneckAnalyzer {
    * 更新阈值配置
    */
   updateThresholds(thresholds: Partial<UnifiedPerformanceThresholds>): void {
-    this.thresholds = { ...this.thresholds, ...thresholds };
+    this.thresholds = { ...this.thresholds, ...thresholds }
   }
 
   /**
    * 执行瓶颈分析
    */
   analyze(recentData: Map<UnifiedMetricType, UnifiedMetricDataPoint[]>): BottleneckAnalysis {
-    const avgMetrics = this.calculateAverageMetrics(recentData);
+    const avgMetrics = this.calculateAverageMetrics(recentData)
 
     // CPU瓶颈检测
-    const cpuBottleneck = this.detectCPUBottleneck(avgMetrics, recentData);
-    if (cpuBottleneck) return cpuBottleneck;
+    const cpuBottleneck = this.detectCPUBottleneck(avgMetrics, recentData)
+    if (cpuBottleneck) return cpuBottleneck
 
     // GPU瓶颈检测
-    const gpuBottleneck = this.detectGPUBottleneck(avgMetrics, recentData);
-    if (gpuBottleneck) return gpuBottleneck;
+    const gpuBottleneck = this.detectGPUBottleneck(avgMetrics, recentData)
+    if (gpuBottleneck) return gpuBottleneck
 
     // 内存瓶颈检测
-    const memoryBottleneck = this.detectMemoryBottleneck(avgMetrics, recentData);
-    if (memoryBottleneck) return memoryBottleneck;
+    const memoryBottleneck = this.detectMemoryBottleneck(avgMetrics, recentData)
+    if (memoryBottleneck) return memoryBottleneck
 
-    return this.createNoBottleneckResult();
+    return this.createNoBottleneckResult()
   }
 
   /**
@@ -52,9 +52,9 @@ export class BottleneckAnalyzer {
     avgMetrics: Record<string, number>,
     recentData: Map<UnifiedMetricType, UnifiedMetricDataPoint[]>
   ): BottleneckAnalysis | null {
-    const frameTime = avgMetrics[UnifiedMetricType.FRAME_TIME] || 0;
-    const updateTime = avgMetrics[UnifiedMetricType.UPDATE_TIME] || 0;
-    const renderTime = avgMetrics[UnifiedMetricType.RENDER_TIME] || 0;
+    const frameTime = avgMetrics[UnifiedMetricType.FRAME_TIME] || 0
+    const updateTime = avgMetrics[UnifiedMetricType.UPDATE_TIME] || 0
+    const renderTime = avgMetrics[UnifiedMetricType.RENDER_TIME] || 0
 
     if (frameTime > 16.67 && updateTime > renderTime) {
       return {
@@ -67,13 +67,13 @@ export class BottleneckAnalyzer {
           '优化更新逻辑算法',
           '减少JavaScript计算复杂度',
           '使用Web Workers进行并行处理',
-          '启用对象池减少GC压力'
+          '启用对象池减少GC压力',
         ],
-        severity: frameTime > 33.33 ? 'high' : 'medium'
-      };
+        severity: frameTime > 33.33 ? 'high' : 'medium',
+      }
     }
 
-    return null;
+    return null
   }
 
   /**
@@ -83,8 +83,8 @@ export class BottleneckAnalyzer {
     avgMetrics: Record<string, number>,
     recentData: Map<UnifiedMetricType, UnifiedMetricDataPoint[]>
   ): BottleneckAnalysis | null {
-    const drawCalls = avgMetrics[UnifiedMetricType.DRAW_CALLS] || 0;
-    const triangles = avgMetrics[UnifiedMetricType.TRIANGLES] || 0;
+    const drawCalls = avgMetrics[UnifiedMetricType.DRAW_CALLS] || 0
+    const triangles = avgMetrics[UnifiedMetricType.TRIANGLES] || 0
 
     if (drawCalls > 500 || triangles > 100000) {
       return {
@@ -94,24 +94,24 @@ export class BottleneckAnalyzer {
         affectedMetrics: [
           UnifiedMetricType.DRAW_CALLS,
           UnifiedMetricType.TRIANGLES,
-          UnifiedMetricType.RENDER_TIME
+          UnifiedMetricType.RENDER_TIME,
         ],
-        affectedSources: this.getAffectedSources(
-          recentData,
-          [UnifiedMetricType.DRAW_CALLS, UnifiedMetricType.RENDER_TIME]
-        ),
+        affectedSources: this.getAffectedSources(recentData, [
+          UnifiedMetricType.DRAW_CALLS,
+          UnifiedMetricType.RENDER_TIME,
+        ]),
         suggestions: [
           '减少绘制调用数量',
           '优化着色器性能',
           '使用LOD系统',
           '启用视锥剔除',
-          '合并批处理'
+          '合并批处理',
         ],
-        severity: drawCalls > 1000 ? 'high' : 'medium'
-      };
+        severity: drawCalls > 1000 ? 'high' : 'medium',
+      }
     }
 
-    return null;
+    return null
   }
 
   /**
@@ -121,8 +121,8 @@ export class BottleneckAnalyzer {
     avgMetrics: Record<string, number>,
     recentData: Map<UnifiedMetricType, UnifiedMetricDataPoint[]>
   ): BottleneckAnalysis | null {
-    const memoryUsage = avgMetrics[UnifiedMetricType.MEMORY_USAGE] || 0;
-    const memoryThreshold = this.thresholds[UnifiedMetricType.MEMORY_USAGE]?.max || 0;
+    const memoryUsage = avgMetrics[UnifiedMetricType.MEMORY_USAGE] || 0
+    const memoryThreshold = this.thresholds[UnifiedMetricType.MEMORY_USAGE]?.max || 0
 
     if (memoryUsage > memoryThreshold * 0.8) {
       return {
@@ -131,17 +131,12 @@ export class BottleneckAnalyzer {
         description: '内存使用率过高，可能影响性能',
         affectedMetrics: [UnifiedMetricType.MEMORY_USAGE, UnifiedMetricType.TEXTURE_MEMORY],
         affectedSources: this.getAffectedSources(recentData, [UnifiedMetricType.MEMORY_USAGE]),
-        suggestions: [
-          '优化资源管理策略',
-          '启用纹理压缩',
-          '清理未使用资源',
-          '实现资源懒加载'
-        ],
-        severity: 'medium'
-      };
+        suggestions: ['优化资源管理策略', '启用纹理压缩', '清理未使用资源', '实现资源懒加载'],
+        severity: 'medium',
+      }
     }
 
-    return null;
+    return null
   }
 
   /**
@@ -150,15 +145,15 @@ export class BottleneckAnalyzer {
   private calculateAverageMetrics(
     recentData: Map<UnifiedMetricType, UnifiedMetricDataPoint[]>
   ): Record<string, number> {
-    const avgMetrics: Record<string, number> = {};
+    const avgMetrics: Record<string, number> = {}
 
     for (const [type, data] of recentData) {
       if (data.length > 0) {
-        avgMetrics[type] = data.reduce((sum, point) => sum + point.value, 0) / data.length;
+        avgMetrics[type] = data.reduce((sum, point) => sum + point.value, 0) / data.length
       }
     }
 
-    return avgMetrics;
+    return avgMetrics
   }
 
   /**
@@ -168,16 +163,16 @@ export class BottleneckAnalyzer {
     recentData: Map<UnifiedMetricType, UnifiedMetricDataPoint[]>,
     metrics: UnifiedMetricType[]
   ): DataSourceType[] {
-    const sources = new Set<DataSourceType>();
+    const sources = new Set<DataSourceType>()
 
     for (const metric of metrics) {
-      const data = recentData.get(metric) || [];
+      const data = recentData.get(metric) || []
       for (const point of data) {
-        sources.add(point.source);
+        sources.add(point.source)
       }
     }
 
-    return [...sources];
+    return [...sources]
   }
 
   /**
@@ -191,7 +186,7 @@ export class BottleneckAnalyzer {
       affectedMetrics: [],
       affectedSources: [],
       suggestions: [],
-      severity: 'low'
-    };
+      severity: 'low',
+    }
   }
 }

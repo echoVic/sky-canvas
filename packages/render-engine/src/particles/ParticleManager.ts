@@ -3,29 +3,29 @@
  * 统一管理多个粒子系统和发射器
  */
 
-import { GPUParticleSystem, ParticleConfig } from './GPUParticleSystem';
-import { ParticleEmitter, EmitterConfig } from './ParticleEmitter';
-import { IEventBus } from '../events/EventBus';
+import type { IEventBus } from '../events/EventBus'
+import { GPUParticleSystem, type ParticleConfig } from './GPUParticleSystem'
+import { type EmitterConfig, ParticleEmitter } from './ParticleEmitter'
 
 export interface ParticleManagerEvents {
-  'system-created': { systemId: string };
-  'system-removed': { systemId: string };
-  'emitter-created': { emitterId: string; systemId: string };
-  'emitter-removed': { emitterId: string; systemId: string };
-  'all-systems-updated': { systemCount: number; totalParticles: number };
+  'system-created': { systemId: string }
+  'system-removed': { systemId: string }
+  'emitter-created': { emitterId: string; systemId: string }
+  'emitter-removed': { emitterId: string; systemId: string }
+  'all-systems-updated': { systemCount: number; totalParticles: number }
 }
 
 /**
  * 粒子系统管理器
  */
 export class ParticleManager {
-  private systems: Map<string, GPUParticleSystem> = new Map();
-  private emitters: Map<string, { emitter: ParticleEmitter; systemId: string }> = new Map();
-  private eventBus?: IEventBus;
-  
+  private systems: Map<string, GPUParticleSystem> = new Map()
+  private emitters: Map<string, { emitter: ParticleEmitter; systemId: string }> = new Map()
+  private eventBus?: IEventBus
+
   // 全局设置
-  private isRunning = false;
-  private lastUpdateTime = 0;
+  private isRunning = false
+  private lastUpdateTime = 0
 
   constructor() {}
 
@@ -33,15 +33,15 @@ export class ParticleManager {
    * 设置事件总线
    */
   setEventBus(eventBus: IEventBus): void {
-    this.eventBus = eventBus;
-    
+    this.eventBus = eventBus
+
     // 为所有现有的系统和发射器设置事件总线
     for (const system of this.systems.values()) {
-      system.setEventBus(eventBus);
+      system.setEventBus(eventBus)
     }
-    
+
     for (const { emitter } of this.emitters.values()) {
-      emitter.setEventBus(eventBus);
+      emitter.setEventBus(eventBus)
     }
   }
 
@@ -54,55 +54,55 @@ export class ParticleManager {
     config: ParticleConfig
   ): GPUParticleSystem {
     if (this.systems.has(systemId)) {
-      throw new Error(`Particle system with id '${systemId}' already exists`);
+      throw new Error(`Particle system with id '${systemId}' already exists`)
     }
 
-    const system = new GPUParticleSystem(canvas, config);
-    
+    const system = new GPUParticleSystem(canvas, config)
+
     if (this.eventBus) {
-      system.setEventBus(this.eventBus);
+      system.setEventBus(this.eventBus)
     }
 
-    this.systems.set(systemId, system);
+    this.systems.set(systemId, system)
 
-    this.eventBus?.emit('system-created', { systemId });
+    this.eventBus?.emit('system-created', { systemId })
 
-    return system;
+    return system
   }
 
   /**
    * 获取粒子系统
    */
   getParticleSystem(systemId: string): GPUParticleSystem | undefined {
-    return this.systems.get(systemId);
+    return this.systems.get(systemId)
   }
 
   /**
    * 移除粒子系统
    */
   removeParticleSystem(systemId: string): boolean {
-    const system = this.systems.get(systemId);
-    if (!system) return false;
+    const system = this.systems.get(systemId)
+    if (!system) return false
 
     // 移除关联的发射器
-    const emittersToRemove = [];
+    const emittersToRemove = []
     for (const [emitterId, emitterData] of this.emitters) {
       if (emitterData.systemId === systemId) {
-        emittersToRemove.push(emitterId);
+        emittersToRemove.push(emitterId)
       }
     }
 
-    emittersToRemove.forEach(emitterId => {
-      this.removeEmitter(emitterId);
-    });
+    emittersToRemove.forEach((emitterId) => {
+      this.removeEmitter(emitterId)
+    })
 
     // 销毁系统
-    system.dispose();
-    this.systems.delete(systemId);
+    system.dispose()
+    this.systems.delete(systemId)
 
-    this.eventBus?.emit('system-removed', { systemId });
+    this.eventBus?.emit('system-removed', { systemId })
 
-    return true;
+    return true
   }
 
   /**
@@ -114,104 +114,104 @@ export class ParticleManager {
     config: Partial<EmitterConfig> = {}
   ): ParticleEmitter {
     if (this.emitters.has(emitterId)) {
-      throw new Error(`Emitter with id '${emitterId}' already exists`);
+      throw new Error(`Emitter with id '${emitterId}' already exists`)
     }
 
-    const system = this.systems.get(systemId);
+    const system = this.systems.get(systemId)
     if (!system) {
-      throw new Error(`Particle system '${systemId}' not found`);
+      throw new Error(`Particle system '${systemId}' not found`)
     }
 
-    const emitter = new ParticleEmitter(emitterId, system, config);
-    
+    const emitter = new ParticleEmitter(emitterId, system, config)
+
     if (this.eventBus) {
-      emitter.setEventBus(this.eventBus);
+      emitter.setEventBus(this.eventBus)
     }
 
-    this.emitters.set(emitterId, { emitter, systemId });
+    this.emitters.set(emitterId, { emitter, systemId })
 
-    this.eventBus?.emit('emitter-created', { emitterId, systemId });
+    this.eventBus?.emit('emitter-created', { emitterId, systemId })
 
-    return emitter;
+    return emitter
   }
 
   /**
    * 获取粒子发射器
    */
   getEmitter(emitterId: string): ParticleEmitter | undefined {
-    const emitterData = this.emitters.get(emitterId);
-    return emitterData?.emitter;
+    const emitterData = this.emitters.get(emitterId)
+    return emitterData?.emitter
   }
 
   /**
    * 移除粒子发射器
    */
   removeEmitter(emitterId: string): boolean {
-    const emitterData = this.emitters.get(emitterId);
-    if (!emitterData) return false;
+    const emitterData = this.emitters.get(emitterId)
+    if (!emitterData) return false
 
-    emitterData.emitter.dispose();
-    this.emitters.delete(emitterId);
+    emitterData.emitter.dispose()
+    this.emitters.delete(emitterId)
 
-    this.eventBus?.emit('emitter-removed', { 
-      emitterId, 
-      systemId: emitterData.systemId 
-    });
+    this.eventBus?.emit('emitter-removed', {
+      emitterId,
+      systemId: emitterData.systemId,
+    })
 
-    return true;
+    return true
   }
 
   /**
    * 获取系统的所有发射器
    */
   getEmittersBySystem(systemId: string): ParticleEmitter[] {
-    const emitters = [];
+    const emitters = []
     for (const [, emitterData] of this.emitters) {
       if (emitterData.systemId === systemId) {
-        emitters.push(emitterData.emitter);
+        emitters.push(emitterData.emitter)
       }
     }
-    return emitters;
+    return emitters
   }
 
   /**
    * 启动所有系统
    */
   start(): void {
-    if (this.isRunning) return;
+    if (this.isRunning) return
 
-    this.isRunning = true;
-    this.lastUpdateTime = Date.now();
+    this.isRunning = true
+    this.lastUpdateTime = Date.now()
 
     // 启动所有粒子系统
     for (const system of this.systems.values()) {
-      system.start();
+      system.start()
     }
 
     // 启动所有发射器
     for (const { emitter } of this.emitters.values()) {
-      emitter.start();
+      emitter.start()
     }
 
-    this.updateLoop();
+    this.updateLoop()
   }
 
   /**
    * 停止所有系统
    */
   stop(): void {
-    if (!this.isRunning) return;
+    if (!this.isRunning) return
 
-    this.isRunning = false;
+    this.isRunning = false
 
     // 停止所有粒子系统
     for (const system of this.systems.values()) {
-      system.stop();
+      system.stop()
     }
 
     // 停止所有发射器
     for (const { emitter } of this.emitters.values()) {
-      emitter.stop();
+      emitter.stop()
     }
   }
 
@@ -220,7 +220,7 @@ export class ParticleManager {
    */
   pause(): void {
     for (const { emitter } of this.emitters.values()) {
-      emitter.pause();
+      emitter.pause()
     }
   }
 
@@ -229,7 +229,7 @@ export class ParticleManager {
    */
   resume(): void {
     for (const { emitter } of this.emitters.values()) {
-      emitter.resume();
+      emitter.resume()
     }
   }
 
@@ -237,38 +237,38 @@ export class ParticleManager {
    * 更新循环
    */
   private updateLoop(): void {
-    if (!this.isRunning) return;
+    if (!this.isRunning) return
 
-    const currentTime = Date.now();
-    const deltaTime = (currentTime - this.lastUpdateTime) / 1000; // 转换为秒
-    this.lastUpdateTime = currentTime;
+    const currentTime = Date.now()
+    const deltaTime = (currentTime - this.lastUpdateTime) / 1000 // 转换为秒
+    this.lastUpdateTime = currentTime
 
-    this.update(deltaTime);
+    this.update(deltaTime)
 
-    requestAnimationFrame(() => this.updateLoop());
+    requestAnimationFrame(() => this.updateLoop())
   }
 
   /**
    * 更新所有系统和发射器
    */
   update(deltaTime: number): void {
-    let totalParticles = 0;
+    let totalParticles = 0
 
     // 更新所有发射器
     for (const { emitter } of this.emitters.values()) {
-      emitter.update(deltaTime);
+      emitter.update(deltaTime)
     }
 
     // 更新所有粒子系统
     for (const system of this.systems.values()) {
-      system.update(deltaTime);
-      totalParticles += system.getAliveParticleCount();
+      system.update(deltaTime)
+      totalParticles += system.getAliveParticleCount()
     }
 
     this.eventBus?.emit('all-systems-updated', {
       systemCount: this.systems.size,
-      totalParticles
-    });
+      totalParticles,
+    })
   }
 
   /**
@@ -276,7 +276,7 @@ export class ParticleManager {
    */
   render(mvpMatrix: Float32Array): void {
     for (const system of this.systems.values()) {
-      system.render(mvpMatrix);
+      system.render(mvpMatrix)
     }
   }
 
@@ -285,7 +285,7 @@ export class ParticleManager {
    */
   clear(): void {
     for (const system of this.systems.values()) {
-      system.clear();
+      system.clear()
     }
   }
 
@@ -293,24 +293,24 @@ export class ParticleManager {
    * 获取统计信息
    */
   getStats(): {
-    systemCount: number;
-    emitterCount: number;
-    totalParticles: number;
-    maxParticles: number;
-    activeEmitters: number;
+    systemCount: number
+    emitterCount: number
+    totalParticles: number
+    maxParticles: number
+    activeEmitters: number
   } {
-    let totalParticles = 0;
-    let maxParticles = 0;
-    let activeEmitters = 0;
+    let totalParticles = 0
+    let maxParticles = 0
+    let activeEmitters = 0
 
     for (const system of this.systems.values()) {
-      totalParticles += system.getAliveParticleCount();
-      maxParticles += system.getMaxParticleCount();
+      totalParticles += system.getAliveParticleCount()
+      maxParticles += system.getMaxParticleCount()
     }
 
     for (const { emitter } of this.emitters.values()) {
       if (emitter.isEmitting()) {
-        activeEmitters++;
+        activeEmitters++
       }
     }
 
@@ -319,8 +319,8 @@ export class ParticleManager {
       emitterCount: this.emitters.size,
       totalParticles,
       maxParticles,
-      activeEmitters
-    };
+      activeEmitters,
+    }
   }
 
   /**
@@ -331,41 +331,41 @@ export class ParticleManager {
     systemId: string,
     emitterConfigs: Array<{ id: string; config: Partial<EmitterConfig> }>
   ): ParticleEmitter[] {
-    const emitters = [];
+    const emitters = []
 
     for (const { id, config } of emitterConfigs) {
-      const fullId = `${groupId}_${id}`;
+      const fullId = `${groupId}_${id}`
       try {
-        const emitter = this.createEmitter(fullId, systemId, config);
-        emitters.push(emitter);
+        const emitter = this.createEmitter(fullId, systemId, config)
+        emitters.push(emitter)
       } catch (error) {
-        console.warn(`Failed to create emitter ${fullId}:`, error);
+        console.warn(`Failed to create emitter ${fullId}:`, error)
       }
     }
 
-    return emitters;
+    return emitters
   }
 
   /**
    * 移除发射器组
    */
   removeEmitterGroup(groupId: string): number {
-    let removedCount = 0;
-    const emittersToRemove = [];
+    let removedCount = 0
+    const emittersToRemove = []
 
     for (const emitterId of this.emitters.keys()) {
       if (emitterId.startsWith(`${groupId}_`)) {
-        emittersToRemove.push(emitterId);
+        emittersToRemove.push(emitterId)
       }
     }
 
-    emittersToRemove.forEach(emitterId => {
+    emittersToRemove.forEach((emitterId) => {
       if (this.removeEmitter(emitterId)) {
-        removedCount++;
+        removedCount++
       }
-    });
+    })
 
-    return removedCount;
+    return removedCount
   }
 
   /**
@@ -378,11 +378,11 @@ export class ParticleManager {
     position: { x: number; y: number; z: number },
     scale: number = 1
   ): ParticleEmitter[] {
-    const presets = this.getPresetConfigs();
-    const preset = presets[presetName];
+    const presets = this.getPresetConfigs()
+    const preset = presets[presetName]
 
     if (!preset) {
-      throw new Error(`Unknown preset effect: ${presetName}`);
+      throw new Error(`Unknown preset effect: ${presetName}`)
     }
 
     const emitterConfigs = preset.map((config, index) => ({
@@ -395,12 +395,12 @@ export class ParticleManager {
         velocity: {
           x: (config.velocity?.x || 0) * scale,
           y: (config.velocity?.y || 0) * scale,
-          z: (config.velocity?.z || 0) * scale
-        }
-      }
-    }));
+          z: (config.velocity?.z || 0) * scale,
+        },
+      },
+    }))
 
-    return this.createEmitterGroup(effectId, systemId, emitterConfigs);
+    return this.createEmitterGroup(effectId, systemId, emitterConfigs)
   }
 
   /**
@@ -421,8 +421,8 @@ export class ParticleManager {
           startColor: { r: 1, g: 0.8, b: 0.2, a: 1 },
           endColor: { r: 1, g: 0.2, b: 0.1, a: 0 },
           emissionShape: 'circle',
-          shapeParams: { radius: 10 }
-        }
+          shapeParams: { radius: 10 },
+        },
       ],
 
       // 烟火效果
@@ -438,8 +438,8 @@ export class ParticleManager {
           endSize: 1,
           startColor: { r: 1, g: 0.3, b: 0.8, a: 1 },
           endColor: { r: 0.2, g: 0.1, b: 1, a: 0 },
-          emissionShape: 'point'
-        }
+          emissionShape: 'point',
+        },
       ],
 
       // 星星效果
@@ -457,8 +457,8 @@ export class ParticleManager {
           startColor: { r: 1, g: 1, b: 0.8, a: 0.8 },
           endColor: { r: 1, g: 1, b: 0.8, a: 0 },
           emissionShape: 'line',
-          shapeParams: { length: 400, direction: { x: 1, y: 0, z: 0 } }
-        }
+          shapeParams: { length: 400, direction: { x: 1, y: 0, z: 0 } },
+        },
       ],
 
       // 雨滴效果
@@ -475,29 +475,29 @@ export class ParticleManager {
           startColor: { r: 0.7, g: 0.8, b: 1, a: 0.8 },
           endColor: { r: 0.7, g: 0.8, b: 1, a: 0.2 },
           emissionShape: 'line',
-          shapeParams: { length: 800, direction: { x: 1, y: 0, z: 0 } }
-        }
-      ]
-    };
+          shapeParams: { length: 800, direction: { x: 1, y: 0, z: 0 } },
+        },
+      ],
+    }
   }
 
   /**
    * 销毁管理器
    */
   dispose(): void {
-    this.stop();
+    this.stop()
 
     // 销毁所有发射器
     for (const emitterId of Array.from(this.emitters.keys())) {
-      this.removeEmitter(emitterId);
+      this.removeEmitter(emitterId)
     }
 
     // 销毁所有系统
     for (const systemId of Array.from(this.systems.keys())) {
-      this.removeParticleSystem(systemId);
+      this.removeParticleSystem(systemId)
     }
 
-    this.systems.clear();
-    this.emitters.clear();
+    this.systems.clear()
+    this.emitters.clear()
   }
 }

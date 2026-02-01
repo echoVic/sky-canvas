@@ -3,37 +3,31 @@
  * 提供完整的字体管理和文本渲染功能
  */
 
+// 字体加载器
+export { createFontLoader, FontLoader, FontLoadingUtils } from './FontLoader'
+// 字体管理器
+export { createFontManager, FontManager, globalFontManager } from './FontManager'
+// 富文本解析器
+export { createRichTextParser, RichTextParser } from './RichTextParser'
+// 富文本渲染器
+export { createRichTextRenderer, RichTextRenderer } from './RichTextRenderer'
 // 字体类型定义
-export * from './types/FontTypes';
-
-// 富文本类型定义  
-export type { 
-  TextStyle,
-  TextLine,
-  TextDecoration,
-  TextTransform,
-  TextAlign,
-  FontWeight,
-  FontStyle
-} from './types/RichTextTypes';
-
+export * from './types/FontTypes'
 // 国际化文本类型定义
 export type {
+  CharacterMetrics as I18nCharacterMetrics,
   TextDirection,
-  CharacterMetrics as I18nCharacterMetrics
-} from './types/I18nTextTypes';
-
-// 字体加载器
-export { FontLoader, createFontLoader, FontLoadingUtils } from './FontLoader';
-
-// 字体管理器
-export { FontManager, createFontManager, globalFontManager } from './FontManager';
-
-// 富文本解析器
-export { RichTextParser, createRichTextParser } from './RichTextParser';
-
-// 富文本渲染器
-export { RichTextRenderer, createRichTextRenderer } from './RichTextRenderer';
+} from './types/I18nTextTypes'
+// 富文本类型定义
+export type {
+  FontStyle,
+  FontWeight,
+  TextAlign,
+  TextDecoration,
+  TextLine,
+  TextStyle,
+  TextTransform,
+} from './types/RichTextTypes'
 
 // 国际化文本系统
 // TODO: 修复国际化模块的语法错误后启用

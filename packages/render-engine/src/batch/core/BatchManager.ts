@@ -3,28 +3,28 @@
  * 管理不同的批处理策略，提供统一的批处理接口
  */
 
-import { Matrix3 } from '../../math/Matrix3';
-import { IBatchRenderer, IRenderable, BatchStats } from './IBatchRenderer';
-import { IBatchStrategy, BatchContext } from './IBatchStrategy';
+import type { Matrix3 } from '../../math/Matrix3'
+import type { BatchStats, IBatchRenderer, IRenderable } from './IBatchRenderer'
+import type { BatchContext, IBatchStrategy } from './IBatchStrategy'
 
 /**
  * 批处理管理器配置
  */
 export interface BatchManagerConfig {
-  maxBatchSize: number;
-  enableProfiling: boolean;
-  defaultStrategy: string;
+  maxBatchSize: number
+  enableProfiling: boolean
+  defaultStrategy: string
 }
 
 /**
  * 统一批处理管理器
  */
 export class BatchManager implements IBatchRenderer {
-  private gl: WebGLRenderingContext;
-  private strategies: Map<string, IBatchStrategy> = new Map();
-  private currentStrategy: IBatchStrategy | null = null;
-  private config: BatchManagerConfig;
-  
+  private gl: WebGLRenderingContext
+  private strategies: Map<string, IBatchStrategy> = new Map()
+  private currentStrategy: IBatchStrategy | null = null
+  private config: BatchManagerConfig
+
   // 性能统计
   private frameStats: BatchStats = {
     drawCalls: 0,
@@ -33,31 +33,31 @@ export class BatchManager implements IBatchRenderer {
     batches: 0,
     textureBinds: 0,
     shaderSwitches: 0,
-    frameTime: 0
-  };
-  
-  private frameStartTime = 0;
-  private frameNumber = 0;
+    frameTime: 0,
+  }
+
+  private frameStartTime = 0
+  private frameNumber = 0
 
   constructor(gl: WebGLRenderingContext, config: Partial<BatchManagerConfig> = {}) {
-    this.gl = gl;
+    this.gl = gl
     this.config = {
       maxBatchSize: 65536,
       enableProfiling: true,
       defaultStrategy: 'basic',
-      ...config
-    };
+      ...config,
+    }
   }
 
   /**
    * 注册批处理策略
    */
   registerStrategy(strategy: IBatchStrategy): void {
-    this.strategies.set(strategy.name, strategy);
-    
+    this.strategies.set(strategy.name, strategy)
+
     // 如果没有当前策略，使用第一个注册的策略
     if (!this.currentStrategy) {
-      this.currentStrategy = strategy;
+      this.currentStrategy = strategy
     }
   }
 
@@ -65,35 +65,35 @@ export class BatchManager implements IBatchRenderer {
    * 设置当前批处理策略
    */
   setStrategy(name: string): boolean {
-    const strategy = this.strategies.get(name);
+    const strategy = this.strategies.get(name)
     if (!strategy) {
-      console.warn(`Batch strategy '${name}' not found`);
-      return false;
+      console.warn(`Batch strategy '${name}' not found`)
+      return false
     }
 
     if (this.currentStrategy !== strategy) {
       // 切换前先清空当前策略
       if (this.currentStrategy) {
-        this.currentStrategy.clear();
+        this.currentStrategy.clear()
       }
-      this.currentStrategy = strategy;
+      this.currentStrategy = strategy
     }
 
-    return true;
+    return true
   }
 
   /**
    * 获取当前策略名称
    */
   getCurrentStrategy(): string {
-    return this.currentStrategy?.name || 'none';
+    return this.currentStrategy?.name || 'none'
   }
 
   /**
    * 获取所有可用策略
    */
   getAvailableStrategies(): string[] {
-    return Array.from(this.strategies.keys());
+    return Array.from(this.strategies.keys())
   }
 
   /**
@@ -101,11 +101,11 @@ export class BatchManager implements IBatchRenderer {
    */
   addRenderable(renderable: IRenderable): void {
     if (!this.currentStrategy) {
-      console.warn('No batch strategy set');
-      return;
+      console.warn('No batch strategy set')
+      return
     }
 
-    this.currentStrategy.process(renderable);
+    this.currentStrategy.process(renderable)
   }
 
   /**
@@ -113,25 +113,25 @@ export class BatchManager implements IBatchRenderer {
    */
   flush(projectionMatrix: Matrix3): void {
     if (!this.currentStrategy) {
-      return;
+      return
     }
 
-    this.frameStartTime = performance.now();
-    this.frameNumber++;
+    this.frameStartTime = performance.now()
+    this.frameNumber++
 
     // 创建批处理上下文
     const context: BatchContext = {
       gl: this.gl,
       maxBatchSize: this.config.maxBatchSize,
-      currentFrame: this.frameNumber
-    };
+      currentFrame: this.frameNumber,
+    }
 
     // 执行策略渲染
-    this.currentStrategy.flush(projectionMatrix, context);
+    this.currentStrategy.flush(projectionMatrix, context)
 
     // 更新统计信息
     if (this.config.enableProfiling) {
-      this.updateStats();
+      this.updateStats()
     }
   }
 
@@ -140,9 +140,9 @@ export class BatchManager implements IBatchRenderer {
    */
   clear(): void {
     if (this.currentStrategy) {
-      this.currentStrategy.clear();
+      this.currentStrategy.clear()
     }
-    this.resetStats();
+    this.resetStats()
   }
 
   /**
@@ -150,31 +150,31 @@ export class BatchManager implements IBatchRenderer {
    */
   getStats(): BatchStats {
     if (!this.currentStrategy) {
-      return this.frameStats;
+      return this.frameStats
     }
 
-    const strategyStats = this.currentStrategy.getStats();
-    
+    const strategyStats = this.currentStrategy.getStats()
+
     // 合并统计信息
     return {
       ...strategyStats,
-      frameTime: this.frameStats.frameTime
-    };
+      frameTime: this.frameStats.frameTime,
+    }
   }
 
   /**
    * 获取详细的性能信息
    */
   getDetailedStats(): {
-    manager: BatchStats;
-    strategy: BatchStats;
-    strategyName: string;
+    manager: BatchStats
+    strategy: BatchStats
+    strategyName: string
   } {
     return {
       manager: { ...this.frameStats },
       strategy: this.currentStrategy?.getStats() || this.getEmptyStats(),
-      strategyName: this.getCurrentStrategy()
-    };
+      strategyName: this.getCurrentStrategy(),
+    }
   }
 
   /**
@@ -182,17 +182,17 @@ export class BatchManager implements IBatchRenderer {
    */
   dispose(): void {
     for (const strategy of this.strategies.values()) {
-      strategy.dispose();
+      strategy.dispose()
     }
-    this.strategies.clear();
-    this.currentStrategy = null;
+    this.strategies.clear()
+    this.currentStrategy = null
   }
 
   /**
    * 更新性能统计
    */
   private updateStats(): void {
-    this.frameStats.frameTime = performance.now() - this.frameStartTime;
+    this.frameStats.frameTime = performance.now() - this.frameStartTime
   }
 
   /**
@@ -206,8 +206,8 @@ export class BatchManager implements IBatchRenderer {
       batches: 0,
       textureBinds: 0,
       shaderSwitches: 0,
-      frameTime: 0
-    };
+      frameTime: 0,
+    }
   }
 
   /**
@@ -221,21 +221,21 @@ export class BatchManager implements IBatchRenderer {
       batches: 0,
       textureBinds: 0,
       shaderSwitches: 0,
-      frameTime: 0
-    };
+      frameTime: 0,
+    }
   }
 
   /**
    * 自动优化策略选择
    */
   autoOptimize(): void {
-    const stats = this.getStats();
-    const batchEfficiency = stats.vertices / Math.max(stats.drawCalls, 1);
+    const stats = this.getStats()
+    const batchEfficiency = stats.vertices / Math.max(stats.drawCalls, 1)
 
     if (batchEfficiency < 100 && this.strategies.has('enhanced')) {
-      this.setStrategy('enhanced');
+      this.setStrategy('enhanced')
     } else if (batchEfficiency > 1000 && this.strategies.has('instanced')) {
-      this.setStrategy('instanced');
+      this.setStrategy('instanced')
     }
   }
 }
@@ -244,8 +244,8 @@ export class BatchManager implements IBatchRenderer {
  * 创建默认的批处理管理器
  */
 export function createBatchManager(
-  gl: WebGLRenderingContext, 
+  gl: WebGLRenderingContext,
   config?: Partial<BatchManagerConfig>
 ): BatchManager {
-  return new BatchManager(gl, config);
+  return new BatchManager(gl, config)
 }

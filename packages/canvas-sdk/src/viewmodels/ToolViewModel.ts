@@ -3,64 +3,62 @@
  * 使用 ToolManager 协调工具、快捷键、历史等复杂交互逻辑
  */
 
-import { proxy, snapshot } from 'valtio';
-import { IToolManager } from '../managers/ToolManager';
-import { IViewModel } from './interfaces/IViewModel';
+import { proxy, snapshot } from 'valtio'
+import type { IToolManager } from '../managers/ToolManager'
+import type { IViewModel } from './interfaces/IViewModel'
 
 /**
  * 工具 UI 状态（区别于 IToolState 基础接口）
  */
 export interface IToolUIState {
-  currentTool: string;
-  availableTools: string[];
-  toolMode: string;
-  cursor: string;
-  isInteracting: boolean;
+  currentTool: string
+  availableTools: string[]
+  toolMode: string
+  cursor: string
+  isInteracting: boolean
 
   // 工具特定状态
-  isDrawing: boolean;
-  isDragging: boolean;
-  startPoint: { x: number; y: number } | null;
+  isDrawing: boolean
+  isDragging: boolean
+  startPoint: { x: number; y: number } | null
 
   // 快捷键状态
-  shortcutsEnabled: boolean;
+  shortcutsEnabled: boolean
 }
 
 /**
  * 工具 UI ViewModel 接口（区别于 IToolViewModel 基础接口）
  */
 export interface IToolUIViewModel extends IViewModel {
-  state: IToolUIState;
+  state: IToolUIState
 
   // 工具管理
-  activateTool(toolName: string): boolean;
-  getCurrentTool(): string;
-  getAvailableTools(): string[];
+  activateTool(toolName: string): boolean
+  getCurrentTool(): string
+  getAvailableTools(): string[]
 
   // 鼠标事件处理
-  handleMouseDown(x: number, y: number, event?: MouseEvent): void;
-  handleMouseMove(x: number, y: number, event?: MouseEvent): void;
-  handleMouseUp(x: number, y: number, event?: MouseEvent): void;
+  handleMouseDown(x: number, y: number, event?: MouseEvent): void
+  handleMouseMove(x: number, y: number, event?: MouseEvent): void
+  handleMouseUp(x: number, y: number, event?: MouseEvent): void
 
   // 键盘事件处理
-  handleKeyDown(event: KeyboardEvent): void;
-  handleKeyUp(event: KeyboardEvent): void;
+  handleKeyDown(event: KeyboardEvent): void
+  handleKeyUp(event: KeyboardEvent): void
 
   // 状态查询
-  isToolActive(toolName: string): boolean;
-  getCurrentCursor(): string;
-  canUseTool(toolName: string): boolean;
+  isToolActive(toolName: string): boolean
+  getCurrentCursor(): string
+  canUseTool(toolName: string): boolean
 }
 
 /**
  * 工具 ViewModel 实现
  */
 export class ToolViewModel implements IToolUIViewModel {
-  private readonly _state: IToolUIState;
+  private readonly _state: IToolUIState
 
-  constructor(
-    private toolManager: IToolManager
-  ) {
+  constructor(private toolManager: IToolManager) {
     this._state = proxy<IToolUIState>({
       currentTool: 'select',
       availableTools: [],
@@ -70,48 +68,47 @@ export class ToolViewModel implements IToolUIViewModel {
       isDrawing: false,
       isDragging: false,
       startPoint: null,
-      shortcutsEnabled: true
-    });
+      shortcutsEnabled: true,
+    })
   }
 
   get state(): IToolUIState {
-    return this._state;
+    return this._state
   }
 
   async initialize(): Promise<void> {
-    this.updateState();
+    this.updateState()
   }
 
   getSnapshot() {
-    return snapshot(this._state);
+    return snapshot(this._state)
   }
 
-  dispose(): void {
-  }
+  dispose(): void {}
 
   // === 工具管理 ===
 
   activateTool(toolName: string): boolean {
-    const success = this.toolManager.activateTool(toolName);
+    const success = this.toolManager.activateTool(toolName)
     if (success) {
-      this.updateToolState();
+      this.updateToolState()
     }
-    return success;
+    return success
   }
 
   getCurrentTool(): string {
-    return this._state.currentTool;
+    return this._state.currentTool
   }
 
   getAvailableTools(): string[] {
-    return this.toolManager.getAvailableTools();
+    return this.toolManager.getAvailableTools()
   }
 
   // === 事件处理 ===
 
   handleMouseDown(x: number, y: number, event?: MouseEvent): void {
-    this._state.isInteracting = true;
-    this._state.startPoint = { x, y };
+    this._state.isInteracting = true
+    this._state.startPoint = { x, y }
 
     this.toolManager.handleMouseDown({
       point: { x, y },
@@ -120,14 +117,14 @@ export class ToolViewModel implements IToolUIViewModel {
       ctrlKey: event?.ctrlKey ?? false,
       metaKey: event?.metaKey ?? false,
       altKey: event?.altKey ?? false,
-      originalEvent: event
-    });
+      originalEvent: event,
+    })
 
-    this.updateInteractionState();
+    this.updateInteractionState()
   }
 
   handleMouseMove(x: number, y: number, event?: MouseEvent): void {
-    if (!this._state.isInteracting) return;
+    if (!this._state.isInteracting) return
 
     this.toolManager.handleMouseMove({
       point: { x, y },
@@ -136,15 +133,15 @@ export class ToolViewModel implements IToolUIViewModel {
       ctrlKey: event?.ctrlKey ?? false,
       metaKey: event?.metaKey ?? false,
       altKey: event?.altKey ?? false,
-      originalEvent: event
-    });
+      originalEvent: event,
+    })
 
-    this.updateInteractionState();
+    this.updateInteractionState()
   }
 
   handleMouseUp(x: number, y: number, event?: MouseEvent): void {
-    this._state.isInteracting = false;
-    this._state.startPoint = null;
+    this._state.isInteracting = false
+    this._state.startPoint = null
 
     this.toolManager.handleMouseUp({
       point: { x, y },
@@ -153,36 +150,36 @@ export class ToolViewModel implements IToolUIViewModel {
       ctrlKey: event?.ctrlKey ?? false,
       metaKey: event?.metaKey ?? false,
       altKey: event?.altKey ?? false,
-      originalEvent: event
-    });
+      originalEvent: event,
+    })
 
-    this.updateInteractionState();
+    this.updateInteractionState()
   }
 
   handleKeyDown(event: KeyboardEvent): void {
-    if (!this._state.shortcutsEnabled) return;
-    
-    this.toolManager.handleKeyDown(event);
+    if (!this._state.shortcutsEnabled) return
+
+    this.toolManager.handleKeyDown(event)
   }
 
   handleKeyUp(event: KeyboardEvent): void {
-    if (!this._state.shortcutsEnabled) return;
-    
-    this.toolManager.handleKeyUp(event);
+    if (!this._state.shortcutsEnabled) return
+
+    this.toolManager.handleKeyUp(event)
   }
 
   // === 状态查询 ===
 
   isToolActive(toolName: string): boolean {
-    return this._state.currentTool === toolName;
+    return this._state.currentTool === toolName
   }
 
   getCurrentCursor(): string {
-    return this.toolManager.getCurrentCursor();
+    return this.toolManager.getCurrentCursor()
   }
 
   canUseTool(toolName: string): boolean {
-    return this._state.availableTools.includes(toolName);
+    return this._state.availableTools.includes(toolName)
   }
 
   // === 私有方法 ===
@@ -191,25 +188,25 @@ export class ToolViewModel implements IToolUIViewModel {
    * 更新完整状态
    */
   private updateState(): void {
-    this.updateToolState();
-    this.updateInteractionState();
+    this.updateToolState()
+    this.updateInteractionState()
   }
 
   /**
    * 更新工具相关状态
    */
   private updateToolState(): void {
-    this._state.currentTool = this.toolManager.getCurrentToolName() || 'select';
-    this._state.availableTools = this.toolManager.getAvailableTools();
-    this._state.toolMode = this.toolManager.getCurrentToolName() || 'select';
-    this._state.cursor = this.toolManager.getCurrentCursor();
+    this._state.currentTool = this.toolManager.getCurrentToolName() || 'select'
+    this._state.availableTools = this.toolManager.getAvailableTools()
+    this._state.toolMode = this.toolManager.getCurrentToolName() || 'select'
+    this._state.cursor = this.toolManager.getCurrentCursor()
   }
 
   /**
    * 更新交互状态
    */
   private updateInteractionState(): void {
-    const currentTool = this.toolManager.getCurrentToolName();
+    const currentTool = this.toolManager.getCurrentToolName()
     if (currentTool) {
     }
   }

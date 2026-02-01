@@ -5,15 +5,21 @@
 /**
  * 同步描述符类
  */
-export class SyncDescriptor<T> {
-  readonly ctor: any;
-  readonly staticArguments: any[];
-  readonly supportsDelayedInstantiation: boolean;
+export class SyncDescriptor<T, Args extends unknown[] = unknown[]> {
+  readonly ctor: new (
+    ...args: Args
+  ) => T
+  readonly staticArguments: Args
+  readonly supportsDelayedInstantiation: boolean
 
-  constructor(ctor: new (...args: any[]) => T, staticArguments: any[] = [], supportsDelayedInstantiation: boolean = false) {
-    this.ctor = ctor;
-    this.staticArguments = staticArguments;
-    this.supportsDelayedInstantiation = supportsDelayedInstantiation;
+  constructor(
+    ctor: new (...args: Args) => T,
+    staticArguments: Args = [] as Args,
+    supportsDelayedInstantiation: boolean = false
+  ) {
+    this.ctor = ctor
+    this.staticArguments = staticArguments
+    this.supportsDelayedInstantiation = supportsDelayedInstantiation
   }
 }
 
@@ -21,5 +27,5 @@ export class SyncDescriptor<T> {
  * 简化版同步描述符接口
  */
 export interface SyncDescriptor0<T> {
-  readonly ctor: new () => T;
+  readonly ctor: new () => T
 }

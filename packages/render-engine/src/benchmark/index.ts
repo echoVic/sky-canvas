@@ -2,22 +2,20 @@
  * 性能基准测试模块导出
  */
 
+// 示例和工具
+export { runAllExamples } from './examples/BenchmarkExample'
 // 核心基准测试框架
 export {
-  PerformanceBenchmark,
+  type BenchmarkConfig as GenericBenchmarkConfig,
+  type BenchmarkEvents,
+  type BenchmarkFunction,
+  type BenchmarkResult as GenericBenchmarkResult,
   BenchmarkSuite,
   createBenchmark,
-  type BenchmarkResult as GenericBenchmarkResult,
-  type BenchmarkConfig as GenericBenchmarkConfig,
-  type BenchmarkFunction,
-  type BenchmarkEvents
-} from './PerformanceBenchmark';
-
+  PerformanceBenchmark,
+} from './PerformanceBenchmark'
 // 渲染性能测试
 export {
   RenderingBenchmark,
-  type RenderingBenchmarkConfig
-} from './RenderingBenchmark';
-
-// 示例和工具
-export { runAllExamples } from './examples/BenchmarkExample';
+  type RenderingBenchmarkConfig,
+} from './RenderingBenchmark'

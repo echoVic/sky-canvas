@@ -3,49 +3,49 @@
  */
 
 // 导入服务不需要DI注册，作为工具类使用
-import { createDecorator } from '../../di';
-import { ShapeEntity, ShapeEntityFactory } from '../../models/entities/Shape';
+import { createDecorator } from '../../di'
+import { type ShapeEntity, ShapeEntityFactory } from '../../models/entities/Shape'
 
 /**
  * 导入结果接口
  */
 export interface IImportResult {
-  success: boolean;
-  shapes: ShapeEntity[];
-  errors: string[];
+  success: boolean
+  shapes: ShapeEntity[]
+  errors: string[]
   metadata?: {
-    version?: string;
-    timestamp?: string;
-    originalFormat?: string;
-    fileName?: string;
-  };
+    version?: string
+    timestamp?: string
+    originalFormat?: string
+    fileName?: string
+  }
 }
 
 /**
  * 导入服务接口
  */
 export interface IImportService {
-  readonly _serviceBrand: undefined;
+  readonly _serviceBrand: undefined
 
   // JSON 导入
-  importFromJSON(jsonString: string): Promise<IImportResult>;
-  
-  // 文件导入
-  importFromFile(file: File): Promise<IImportResult>;
-  
-  // SVG 导入 (基础支持)
-  importFromSVG(svgString: string): Promise<IImportResult>;
-  
-  // 图片导入 (转换为背景形状)
-  importImage(file: File): Promise<IImportResult>;
-  
-  // 验证文件格式
-  validateFileFormat(file: File): boolean;
+  importFromJSON(jsonString: string): Promise<IImportResult>
 
-  dispose(): void;
+  // 文件导入
+  importFromFile(file: File): Promise<IImportResult>
+
+  // SVG 导入 (基础支持)
+  importFromSVG(svgString: string): Promise<IImportResult>
+
+  // 图片导入 (转换为背景形状)
+  importImage(file: File): Promise<IImportResult>
+
+  // 验证文件格式
+  validateFileFormat(file: File): boolean
+
+  dispose(): void
 }
 
-export const IImportService = createDecorator<IImportService>('ImportService');
+export const IImportService = createDecorator<IImportService>('ImportService')
 
 /**
  * 支持的文件格式
@@ -55,46 +55,46 @@ export enum SupportedFormat {
   SVG = 'svg',
   PNG = 'png',
   JPEG = 'jpeg',
-  JPG = 'jpg'
+  JPG = 'jpg',
 }
 
 /**
  * 导入服务实现
  */
 export class ImportService implements IImportService {
-  readonly _serviceBrand: undefined;
+  readonly _serviceBrand: undefined
 
   /**
    * 从JSON导入
    */
   async importFromJSON(jsonString: string): Promise<IImportResult> {
     try {
-      const data = JSON.parse(jsonString);
-      
+      const data = JSON.parse(jsonString)
+
       if (!data.shapes || !Array.isArray(data.shapes)) {
         return {
           success: false,
           shapes: [],
-          errors: ['Invalid JSON format: missing shapes array']
-        };
+          errors: ['Invalid JSON format: missing shapes array'],
+        }
       }
-      
-      const shapes: ShapeEntity[] = [];
-      const errors: string[] = [];
-      
+
+      const shapes: ShapeEntity[] = []
+      const errors: string[] = []
+
       data.shapes.forEach((shapeData: any, index: number) => {
         try {
-          const shape = this.createShapeFromData(shapeData);
+          const shape = this.createShapeFromData(shapeData)
           if (shape) {
-            shapes.push(shape);
+            shapes.push(shape)
           } else {
-            errors.push(`Failed to create shape at index ${index}`);
+            errors.push(`Failed to create shape at index ${index}`)
           }
         } catch (error) {
-          errors.push(`Error processing shape at index ${index}: ${error}`);
+          errors.push(`Error processing shape at index ${index}: ${error}`)
         }
-      });
-      
+      })
+
       return {
         success: errors.length === 0,
         shapes,
@@ -102,15 +102,15 @@ export class ImportService implements IImportService {
         metadata: {
           version: data.version,
           timestamp: data.timestamp,
-          originalFormat: 'json'
-        }
-      };
+          originalFormat: 'json',
+        },
+      }
     } catch (error) {
       return {
         success: false,
         shapes: [],
-        errors: [`JSON parsing error: ${error}`]
-      };
+        errors: [`JSON parsing error: ${error}`],
+      }
     }
   }
 
@@ -122,40 +122,42 @@ export class ImportService implements IImportService {
       return {
         success: false,
         shapes: [],
-        errors: [`Unsupported file format: ${file.type}`]
-      };
+        errors: [`Unsupported file format: ${file.type}`],
+      }
     }
-    
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    
+
+    const extension = file.name.split('.').pop()?.toLowerCase()
+
     try {
       switch (extension) {
-        case 'json':
-          const jsonContent = await this.readFileAsText(file);
-          return this.importFromJSON(jsonContent);
-          
-        case 'svg':
-          const svgContent = await this.readFileAsText(file);
-          return this.importFromSVG(svgContent);
-          
+        case 'json': {
+          const jsonContent = await this.readFileAsText(file)
+          return this.importFromJSON(jsonContent)
+        }
+
+        case 'svg': {
+          const svgContent = await this.readFileAsText(file)
+          return this.importFromSVG(svgContent)
+        }
+
         case 'png':
         case 'jpg':
         case 'jpeg':
-          return this.importImage(file);
-          
+          return this.importImage(file)
+
         default:
           return {
             success: false,
             shapes: [],
-            errors: [`Unsupported file extension: ${extension}`]
-          };
+            errors: [`Unsupported file extension: ${extension}`],
+          }
       }
     } catch (error) {
       return {
         success: false,
         shapes: [],
-        errors: [`File reading error: ${error}`]
-      };
+        errors: [`File reading error: ${error}`],
+      }
     }
   }
 
@@ -165,70 +167,100 @@ export class ImportService implements IImportService {
   async importFromSVG(svgString: string): Promise<IImportResult> {
     try {
       // 基础的SVG解析，可以扩展更复杂的解析逻辑
-      const parser = new DOMParser();
-      const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
-      const svgElement = svgDoc.querySelector('svg');
-      
+      const parser = new DOMParser()
+      const svgDoc = parser.parseFromString(svgString, 'image/svg+xml')
+      const svgElement = svgDoc.querySelector('svg')
+
       if (!svgElement) {
         return {
           success: false,
           shapes: [],
-          errors: ['Invalid SVG format']
-        };
+          errors: ['Invalid SVG format'],
+        }
       }
-      
-      const shapes: ShapeEntity[] = [];
-      const errors: string[] = [];
-      
+
+      const shapes: ShapeEntity[] = []
+      const errors: string[] = []
+
       // 解析基本形状
-      const rects = svgElement.querySelectorAll('rect');
-      const circles = svgElement.querySelectorAll('circle');
-      const paths = svgElement.querySelectorAll('path');
-      
+      const rects = svgElement.querySelectorAll('rect')
+      const circles = svgElement.querySelectorAll('circle')
+      const paths = svgElement.querySelectorAll('path')
+      const ellipses = svgElement.querySelectorAll('ellipse')
+      const polygons = svgElement.querySelectorAll('polygon')
+      const images = svgElement.querySelectorAll('image')
+
       // 转换矩形
       rects.forEach((rect, index) => {
         try {
-          const shape = this.createRectangleFromSVG(rect);
-          if (shape) shapes.push(shape);
+          const shape = this.createRectangleFromSVG(rect)
+          if (shape) shapes.push(shape)
         } catch (error) {
-          errors.push(`Error parsing rectangle ${index}: ${error}`);
+          errors.push(`Error parsing rectangle ${index}: ${error}`)
         }
-      });
-      
+      })
+
       // 转换圆形
       circles.forEach((circle, index) => {
         try {
-          const shape = this.createCircleFromSVG(circle);
-          if (shape) shapes.push(shape);
+          const shape = this.createCircleFromSVG(circle)
+          if (shape) shapes.push(shape)
         } catch (error) {
-          errors.push(`Error parsing circle ${index}: ${error}`);
+          errors.push(`Error parsing circle ${index}: ${error}`)
         }
-      });
-      
+      })
+
+      ellipses.forEach((ellipse, index) => {
+        try {
+          const shape = this.createEllipseFromSVG(ellipse)
+          if (shape) shapes.push(shape)
+        } catch (error) {
+          errors.push(`Error parsing ellipse ${index}: ${error}`)
+        }
+      })
+
+      polygons.forEach((polygon, index) => {
+        try {
+          const shape = this.createPolygonFromSVG(polygon)
+          if (shape) shapes.push(shape)
+        } catch (error) {
+          errors.push(`Error parsing polygon ${index}: ${error}`)
+        }
+      })
+
       // 转换路径
       paths.forEach((path, index) => {
         try {
-          const shape = this.createPathFromSVG(path);
-          if (shape) shapes.push(shape);
+          const shape = this.createPathFromSVG(path)
+          if (shape) shapes.push(shape)
         } catch (error) {
-          errors.push(`Error parsing path ${index}: ${error}`);
+          errors.push(`Error parsing path ${index}: ${error}`)
         }
-      });
-      
+      })
+
+      images.forEach((image, index) => {
+        try {
+          const shape = this.createImageFromSVG(image)
+          if (shape) shapes.push(shape)
+        } catch (error) {
+          errors.push(`Error parsing image ${index}: ${error}`)
+        }
+      })
+
       return {
         success: true,
         shapes,
         errors,
         metadata: {
-          originalFormat: 'svg'
-        }
-      };
+          originalFormat: 'svg',
+        },
+      }
     } catch (error) {
       return {
         success: false,
         shapes: [],
-        errors: [`SVG parsing error: ${error}`]
-      };
+        errors: [`SVG parsing error: ${error}`],
+      }
     }
   }
 
@@ -237,39 +269,32 @@ export class ImportService implements IImportService {
    */
   async importImage(file: File): Promise<IImportResult> {
     try {
-      const imageUrl = URL.createObjectURL(file);
-      
-      // 创建一个表示图片的形状（可以扩展为专门的图片形状类型）
-      const shape = ShapeEntityFactory.createRectangle(
+      const imageUrl = URL.createObjectURL(file)
+      const size = await this.getImageSize(imageUrl)
+      const shape = ShapeEntityFactory.createImage(
+        imageUrl,
         { x: 0, y: 0 },
-        { width: 400, height: 300 }, // 默认尺寸，实际使用时应该获取图片尺寸
+        { width: size.width, height: size.height },
         {
-          fillColor: 'transparent'
+          opacity: 1,
         }
-      );
-      
-      // 添加图片数据到 metadata 中
-      shape.metadata = {
-        ...shape.metadata,
-        imageUrl: imageUrl,
-        fileName: file.name
-      };
-      
+      )
+
       return {
         success: true,
         shapes: [shape],
         errors: [],
         metadata: {
           originalFormat: file.type,
-          fileName: file.name
-        }
-      };
+          fileName: file.name,
+        },
+      }
     } catch (error) {
       return {
         success: false,
         shapes: [],
-        errors: [`Image import error: ${error}`]
-      };
+        errors: [`Image import error: ${error}`],
+      }
     }
   }
 
@@ -283,13 +308,16 @@ export class ImportService implements IImportService {
       'text/svg+xml',
       'image/png',
       'image/jpeg',
-      'image/jpg'
-    ];
-    
-    const supportedExtensions = ['json', 'svg', 'png', 'jpg', 'jpeg'];
-    const extension = file.name.split('.').pop()?.toLowerCase();
-    
-    return supportedTypes.includes(file.type) || (extension ? supportedExtensions.includes(extension) : false);
+      'image/jpg',
+    ]
+
+    const supportedExtensions = ['json', 'svg', 'png', 'jpg', 'jpeg']
+    const extension = file.name.split('.').pop()?.toLowerCase()
+
+    return (
+      supportedTypes.includes(file.type) ||
+      (extension ? supportedExtensions.includes(extension) : false)
+    )
   }
 
   // === 私有方法 ===
@@ -298,8 +326,8 @@ export class ImportService implements IImportService {
    * 从数据创建形状
    */
   private createShapeFromData(data: any): ShapeEntity | null {
-    if (!data.type || !data.id) return null;
-    
+    if (!data.type || !data.id) return null
+
     try {
       switch (data.type) {
         case 'rectangle':
@@ -307,34 +335,76 @@ export class ImportService implements IImportService {
             data.transform?.position || { x: 0, y: 0 },
             data.size || { width: 100, height: 100 },
             data.style || {}
-          );
-          
+          )
+
         case 'circle':
           return ShapeEntityFactory.createCircle(
             data.transform?.position || { x: 0, y: 0 },
             data.radius || 50,
             data.style || {}
-          );
-          
+          )
+
+        case 'ellipse':
+          return ShapeEntityFactory.createEllipse(
+            data.transform?.position || { x: 0, y: 0 },
+            data.radiusX || 50,
+            data.radiusY || 30,
+            data.style || {}
+          )
+
+        case 'polygon':
+          return ShapeEntityFactory.createPolygon(
+            data.points || [],
+            data.transform?.position || { x: 0, y: 0 },
+            data.style || {},
+            data.closed !== false
+          )
+
+        case 'star':
+          return ShapeEntityFactory.createStar(
+            data.transform?.position || { x: 0, y: 0 },
+            data.points || 5,
+            data.outerRadius || 50,
+            data.innerRadius || 25,
+            data.style || {},
+            data.startAngle || -Math.PI / 2
+          )
+
         case 'path':
           return ShapeEntityFactory.createPath(
             data.pathData || 'M 0 0',
             data.transform?.position || { x: 0, y: 0 },
             data.style || {}
-          );
-          
+          )
+
         case 'text':
           return ShapeEntityFactory.createText(
             data.content || '',
             data.transform?.position || { x: 0, y: 0 },
             data.style || {}
-          );
-          
+          )
+
+        case 'image':
+          return ShapeEntityFactory.createImage(
+            data.src || '',
+            data.transform?.position || { x: 0, y: 0 },
+            data.size || { width: 100, height: 100 },
+            data.style || {}
+          )
+
+        case 'group':
+          return ShapeEntityFactory.createGroup(
+            data.childrenIds || [],
+            data.transform?.position || { x: 0, y: 0 },
+            data.size || { width: 100, height: 100 },
+            data.style || {}
+          )
+
         default:
-          return null;
+          return null
       }
     } catch {
-      return null;
+      return null
     }
   }
 
@@ -342,65 +412,119 @@ export class ImportService implements IImportService {
    * 从SVG矩形创建形状
    */
   private createRectangleFromSVG(rect: SVGRectElement): ShapeEntity | null {
-    const x = parseFloat(rect.getAttribute('x') || '0');
-    const y = parseFloat(rect.getAttribute('y') || '0');
-    const width = parseFloat(rect.getAttribute('width') || '100');
-    const height = parseFloat(rect.getAttribute('height') || '100');
-    const fill = rect.getAttribute('fill') || 'black';
-    const stroke = rect.getAttribute('stroke') || 'none';
-    const strokeWidth = parseFloat(rect.getAttribute('stroke-width') || '0');
-    
+    const x = parseFloat(rect.getAttribute('x') || '0')
+    const y = parseFloat(rect.getAttribute('y') || '0')
+    const width = parseFloat(rect.getAttribute('width') || '100')
+    const height = parseFloat(rect.getAttribute('height') || '100')
+    const fill = rect.getAttribute('fill') || 'black'
+    const stroke = rect.getAttribute('stroke') || 'none'
+    const strokeWidth = parseFloat(rect.getAttribute('stroke-width') || '0')
+
     return ShapeEntityFactory.createRectangle(
       { x, y },
       { width, height },
       {
         fillColor: fill,
         strokeColor: stroke,
-        strokeWidth
+        strokeWidth,
       }
-    );
+    )
   }
 
   /**
    * 从SVG圆形创建形状
    */
   private createCircleFromSVG(circle: SVGCircleElement): ShapeEntity | null {
-    const cx = parseFloat(circle.getAttribute('cx') || '0');
-    const cy = parseFloat(circle.getAttribute('cy') || '0');
-    const r = parseFloat(circle.getAttribute('r') || '50');
-    const fill = circle.getAttribute('fill') || 'black';
-    const stroke = circle.getAttribute('stroke') || 'none';
-    const strokeWidth = parseFloat(circle.getAttribute('stroke-width') || '0');
-    
-    return ShapeEntityFactory.createCircle(
-      { x: cx - r, y: cy - r },
-      r,
-      {
-        fillColor: fill,
-        strokeColor: stroke,
-        strokeWidth
-      }
-    );
+    const cx = parseFloat(circle.getAttribute('cx') || '0')
+    const cy = parseFloat(circle.getAttribute('cy') || '0')
+    const r = parseFloat(circle.getAttribute('r') || '50')
+    const fill = circle.getAttribute('fill') || 'black'
+    const stroke = circle.getAttribute('stroke') || 'none'
+    const strokeWidth = parseFloat(circle.getAttribute('stroke-width') || '0')
+
+    return ShapeEntityFactory.createCircle({ x: cx, y: cy }, r, {
+      fillColor: fill,
+      strokeColor: stroke,
+      strokeWidth,
+    })
   }
 
   /**
    * 从SVG路径创建形状
    */
   private createPathFromSVG(path: SVGPathElement): ShapeEntity | null {
-    const pathData = path.getAttribute('d') || 'M 0 0';
-    const fill = path.getAttribute('fill') || 'none';
-    const stroke = path.getAttribute('stroke') || 'black';
-    const strokeWidth = parseFloat(path.getAttribute('stroke-width') || '1');
-    
+    const pathData = path.getAttribute('d') || 'M 0 0'
+    const fill = path.getAttribute('fill') || 'none'
+    const stroke = path.getAttribute('stroke') || 'black'
+    const strokeWidth = parseFloat(path.getAttribute('stroke-width') || '1')
+
     return ShapeEntityFactory.createPath(
       pathData,
       { x: 0, y: 0 },
       {
         fillColor: fill,
         strokeColor: stroke,
-        strokeWidth
+        strokeWidth,
       }
-    );
+    )
+  }
+
+  private createEllipseFromSVG(ellipse: SVGEllipseElement): ShapeEntity | null {
+    const cx = parseFloat(ellipse.getAttribute('cx') || '0')
+    const cy = parseFloat(ellipse.getAttribute('cy') || '0')
+    const rx = parseFloat(ellipse.getAttribute('rx') || '50')
+    const ry = parseFloat(ellipse.getAttribute('ry') || '30')
+    const fill = ellipse.getAttribute('fill') || 'black'
+    const stroke = ellipse.getAttribute('stroke') || 'none'
+    const strokeWidth = parseFloat(ellipse.getAttribute('stroke-width') || '0')
+    return ShapeEntityFactory.createEllipse({ x: cx, y: cy }, rx, ry, {
+      fillColor: fill,
+      strokeColor: stroke,
+      strokeWidth,
+    })
+  }
+
+  private createPolygonFromSVG(polygon: SVGPolygonElement): ShapeEntity | null {
+    const pointsAttr = polygon.getAttribute('points') || ''
+    const points = pointsAttr
+      .trim()
+      .split(/\s+/)
+      .map((pair) => pair.split(',').map(Number))
+      .filter((arr) => arr.length === 2 && !Number.isNaN(arr[0]) && !Number.isNaN(arr[1]))
+      .map(([x, y]) => ({ x, y }))
+    if (points.length < 3) return null
+    const bounds = this.getPointsBounds(points)
+    const normalized = points.map((p) => ({ x: p.x - bounds.x, y: p.y - bounds.y }))
+    const fill = polygon.getAttribute('fill') || 'black'
+    const stroke = polygon.getAttribute('stroke') || 'none'
+    const strokeWidth = parseFloat(polygon.getAttribute('stroke-width') || '0')
+    return ShapeEntityFactory.createPolygon(
+      normalized,
+      { x: bounds.x, y: bounds.y },
+      { fillColor: fill, strokeColor: stroke, strokeWidth },
+      true
+    )
+  }
+
+  private createImageFromSVG(image: SVGImageElement): ShapeEntity | null {
+    const x = parseFloat(image.getAttribute('x') || '0')
+    const y = parseFloat(image.getAttribute('y') || '0')
+    const width = parseFloat(image.getAttribute('width') || '100')
+    const height = parseFloat(image.getAttribute('height') || '100')
+    const href = image.getAttribute('href') || image.getAttribute('xlink:href') || ''
+    return ShapeEntityFactory.createImage(href, { x, y }, { width, height }, { opacity: 1 })
+  }
+
+  private getImageSize(url: string): Promise<{ width: number; height: number }> {
+    if (typeof Image === 'undefined') {
+      return Promise.resolve({ width: 400, height: 300 })
+    }
+    return new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve({ width: img.width || 400, height: img.height || 300 })
+      img.onerror = () => resolve({ width: 400, height: 300 })
+      img.src = url
+    })
   }
 
   /**
@@ -408,11 +532,30 @@ export class ImportService implements IImportService {
    */
   private readFileAsText(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
-    });
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsText(file)
+    })
+  }
+
+  private getPointsBounds(points: Array<{ x: number; y: number }>): {
+    x: number
+    y: number
+    width: number
+    height: number
+  } {
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const p of points) {
+      minX = Math.min(minX, p.x)
+      minY = Math.min(minY, p.y)
+      maxX = Math.max(maxX, p.x)
+      maxY = Math.max(maxY, p.y)
+    }
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
   }
 
   dispose(): void {}

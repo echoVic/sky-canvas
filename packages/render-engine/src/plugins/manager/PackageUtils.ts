@@ -2,24 +2,24 @@
  * 包处理工具函数
  */
 
-import { PluginPackage } from './PluginManagerTypes';
+import type { PluginPackage } from './PluginManagerTypes'
 
 /**
  * 去重包列表
  */
 export function deduplicatePackages(packages: PluginPackage[]): PluginPackage[] {
-  const seen = new Set<string>();
-  const unique: PluginPackage[] = [];
+  const seen = new Set<string>()
+  const unique: PluginPackage[] = []
 
   for (const pkg of packages) {
-    const key = `${pkg.metadata.id}@${pkg.metadata.version}`;
+    const key = `${pkg.metadata.id}@${pkg.metadata.version}`
     if (!seen.has(key)) {
-      seen.add(key);
-      unique.push(pkg);
+      seen.add(key)
+      unique.push(pkg)
     }
   }
 
-  return unique;
+  return unique
 }
 
 /**
@@ -30,35 +30,36 @@ export function sortPackages(
   sortBy: string = 'relevance',
   sortOrder: string = 'desc'
 ): PluginPackage[] {
-  const sorted = [...packages];
+  const sorted = [...packages]
 
   sorted.sort((a, b) => {
-    let comparison = 0;
+    let comparison = 0
 
     switch (sortBy) {
       case 'relevance':
-        comparison = a.metadata.name.localeCompare(b.metadata.name);
-        break;
+        comparison = a.metadata.name.localeCompare(b.metadata.name)
+        break
       case 'downloads':
-        comparison = ((a as unknown as Record<string, number>).downloads || 0) -
-                     ((b as unknown as Record<string, number>).downloads || 0);
-        break;
-      case 'rating':
-        comparison = ((a as unknown as Record<string, number>).rating || 0) -
-                     ((b as unknown as Record<string, number>).rating || 0);
-        break;
-      case 'updated':
         comparison =
-          new Date(a.metadata.version).getTime() - new Date(b.metadata.version).getTime();
-        break;
+          ((a as unknown as Record<string, number>).downloads || 0) -
+          ((b as unknown as Record<string, number>).downloads || 0)
+        break
+      case 'rating':
+        comparison =
+          ((a as unknown as Record<string, number>).rating || 0) -
+          ((b as unknown as Record<string, number>).rating || 0)
+        break
+      case 'updated':
+        comparison = new Date(a.metadata.version).getTime() - new Date(b.metadata.version).getTime()
+        break
       default:
-        comparison = a.metadata.name.localeCompare(b.metadata.name);
+        comparison = a.metadata.name.localeCompare(b.metadata.name)
     }
 
-    return sortOrder === 'asc' ? comparison : -comparison;
-  });
+    return sortOrder === 'asc' ? comparison : -comparison
+  })
 
-  return sorted;
+  return sorted
 }
 
 /**
@@ -68,18 +69,18 @@ export function findDependentPackages(
   packageId: string,
   installedPackages: Map<string, PluginPackage>
 ): string[] {
-  const dependents: string[] = [];
+  const dependents: string[] = []
 
   for (const [id, packageInfo] of installedPackages) {
-    if (id === packageId) continue;
+    if (id === packageId) continue
 
-    const dependencies = packageInfo.metadata.dependencies || {};
-    const peerDependencies = packageInfo.metadata.peerDependencies || {};
+    const dependencies = packageInfo.metadata.dependencies || {}
+    const peerDependencies = packageInfo.metadata.peerDependencies || {}
 
     if (dependencies[packageId] || peerDependencies[packageId]) {
-      dependents.push(id);
+      dependents.push(id)
     }
   }
 
-  return dependents;
+  return dependents
 }

@@ -3,72 +3,74 @@
  */
 
 export interface IDisposable {
-  dispose(): void;
+  dispose(): void
 }
 
-export function isDisposable(thing: any): thing is IDisposable {
-  return typeof thing?.dispose === 'function';
+export function isDisposable(thing: unknown): thing is IDisposable {
+  return typeof thing?.dispose === 'function'
 }
 
-export function dispose<T extends IDisposable>(disposable: T): T;
-export function dispose<T extends IDisposable>(disposable: T | undefined): T | undefined;
-export function dispose<T extends IDisposable>(disposables: T[]): T[];
-export function dispose<T extends IDisposable>(disposables: Set<T>): Set<T>;
-export function dispose<T extends IDisposable>(arg: T | T[] | Set<T> | undefined): T | T[] | Set<T> | undefined {
+export function dispose<T extends IDisposable>(disposable: T): T
+export function dispose<T extends IDisposable>(disposable: T | undefined): T | undefined
+export function dispose<T extends IDisposable>(disposables: T[]): T[]
+export function dispose<T extends IDisposable>(disposables: Set<T>): Set<T>
+export function dispose<T extends IDisposable>(
+  arg: T | T[] | Set<T> | undefined
+): T | T[] | Set<T> | undefined {
   if (arg === undefined) {
-    return undefined;
+    return undefined
   }
-  
+
   if (Array.isArray(arg)) {
     for (const item of arg) {
       if (isDisposable(item)) {
-        item.dispose();
+        item.dispose()
       }
     }
-    return arg;
+    return arg
   }
-  
+
   if (arg instanceof Set) {
     for (const item of arg) {
       if (isDisposable(item)) {
-        item.dispose();
+        item.dispose()
       }
     }
-    return arg;
+    return arg
   }
-  
+
   if (isDisposable(arg)) {
-    arg.dispose();
+    arg.dispose()
   }
-  return arg;
+  return arg
 }
 
 export class DisposableStore implements IDisposable {
-  private _disposables = new Set<IDisposable>();
-  private _isDisposed = false;
+  private _disposables = new Set<IDisposable>()
+  private _isDisposed = false
 
   dispose(): void {
     if (this._isDisposed) {
-      return;
+      return
     }
-    
-    this._isDisposed = true;
-    this.clear();
+
+    this._isDisposed = true
+    this.clear()
   }
 
   clear(): void {
     for (const disposable of this._disposables) {
-      disposable.dispose();
+      disposable.dispose()
     }
-    this._disposables.clear();
+    this._disposables.clear()
   }
 
   add<T extends IDisposable>(disposable: T): T {
     if (this._isDisposed) {
-      disposable.dispose();
+      disposable.dispose()
     } else {
-      this._disposables.add(disposable);
+      this._disposables.add(disposable)
     }
-    return disposable;
+    return disposable
   }
 }

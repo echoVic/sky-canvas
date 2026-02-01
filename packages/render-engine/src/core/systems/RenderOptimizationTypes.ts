@@ -10,22 +10,22 @@ export enum OptimizationState {
   INITIALIZING = 'initializing',
   ACTIVE = 'active',
   OPTIMIZING = 'optimizing',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 /**
  * 系统状态
  */
 export interface SystemStatus {
-  name: string;
-  state: OptimizationState;
-  lastUpdate: number;
-  errorCount: number;
+  name: string
+  state: OptimizationState
+  lastUpdate: number
+  errorCount: number
   performance: {
-    averageTime: number;
-    maxTime: number;
-    minTime: number;
-  };
+    averageTime: number
+    maxTime: number
+    minTime: number
+  }
 }
 
 /**
@@ -33,53 +33,53 @@ export interface SystemStatus {
  */
 export interface OptimizationMetrics {
   frameRate: {
-    current: number;
-    average: number;
-    target: number;
-    stability: number;
-  };
+    current: number
+    average: number
+    target: number
+    stability: number
+  }
   memory: {
-    used: number;
-    budget: number;
-    efficiency: number;
-  };
+    used: number
+    budget: number
+    efficiency: number
+  }
   rendering: {
-    drawCalls: number;
-    triangles: number;
-    batches: number;
-    culledObjects: number;
-  };
+    drawCalls: number
+    triangles: number
+    batches: number
+    culledObjects: number
+  }
   cache: {
-    hitRate: number;
-    size: number;
-    efficiency: number;
-  };
+    hitRate: number
+    size: number
+    efficiency: number
+  }
   gpu: {
-    utilization: number;
-    memoryUsage: number;
-    bandwidth: number;
-  };
+    utilization: number
+    memoryUsage: number
+    bandwidth: number
+  }
 }
 
 /**
  * 优化建议
  */
 export interface OptimizationRecommendation {
-  type: 'performance' | 'memory' | 'quality' | 'stability';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  description: string;
-  action: string;
-  estimatedImpact: number;
-  autoApplicable: boolean;
+  type: 'performance' | 'memory' | 'quality' | 'stability'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  description: string
+  action: string
+  estimatedImpact: number
+  autoApplicable: boolean
 }
 
 /**
  * 优化事件监听器
  */
 export interface OptimizationListeners {
-  onStateChange: Array<(state: OptimizationState) => void>;
-  onMetricsUpdate: Array<(metrics: OptimizationMetrics) => void>;
-  onRecommendation: Array<(recommendations: OptimizationRecommendation[]) => void>;
+  onStateChange: Array<(state: OptimizationState) => void>
+  onMetricsUpdate: Array<(metrics: OptimizationMetrics) => void>
+  onRecommendation: Array<(recommendations: OptimizationRecommendation[]) => void>
 }
 
 /**
@@ -91,8 +91,8 @@ export function createInitialMetrics(): OptimizationMetrics {
     memory: { used: 0, budget: 0, efficiency: 0 },
     rendering: { drawCalls: 0, triangles: 0, batches: 0, culledObjects: 0 },
     cache: { hitRate: 0, size: 0, efficiency: 0 },
-    gpu: { utilization: 0, memoryUsage: 0, bandwidth: 0 }
-  };
+    gpu: { utilization: 0, memoryUsage: 0, bandwidth: 0 },
+  }
 }
 
 /**
@@ -102,6 +102,6 @@ export function createInitialListeners(): OptimizationListeners {
   return {
     onStateChange: [],
     onMetricsUpdate: [],
-    onRecommendation: []
-  };
+    onRecommendation: [],
+  }
 }

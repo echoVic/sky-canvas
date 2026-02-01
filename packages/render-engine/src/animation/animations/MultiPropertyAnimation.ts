@@ -3,57 +3,53 @@
  * 同时对多个属性进行补间动画
  */
 
-import { BaseAnimation } from '../core/BaseAnimation';
-import { MultiPropertyAnimationConfig } from '../types/AnimationTypes';
-import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils';
+import { getNestedProperty, setNestedProperty } from '../../utils/ObjectUtils'
+import { BaseAnimation } from '../core/BaseAnimation'
+import type { MultiPropertyAnimationConfig } from '../types/AnimationTypes'
 
 interface PropertyState {
-  property: string;
-  fromValue: number;
-  toValue: number;
-  initialValue: number;
+  property: string
+  fromValue: number
+  toValue: number
+  initialValue: number
 }
 
 export class MultiPropertyAnimation extends BaseAnimation {
-  private target: Record<string, any>;
-  private properties: PropertyState[] = [];
+  private target: Record<string, any>
+  private properties: PropertyState[] = []
 
   constructor(config: MultiPropertyAnimationConfig) {
-    super(config);
-    
-    this.target = config.target;
-    
+    super(config)
+
+    this.target = config.target
+
     // 初始化属性状态
     for (const [property, values] of Object.entries(config.properties)) {
-      const currentValue = this.getCurrentPropertyValue(property);
-      
+      const currentValue = this.getCurrentPropertyValue(property)
+
       this.properties.push({
         property,
         fromValue: values.from !== undefined ? values.from : currentValue,
         toValue: values.to,
-        initialValue: currentValue
-      });
+        initialValue: currentValue,
+      })
     }
   }
 
   protected applyAnimation(progress: number): void {
     if (!this.target || typeof this.target !== 'object') {
-      console.warn(`Animation target is not valid`);
-      return;
+      console.warn(`Animation target is not valid`)
+      return
     }
 
     // 同时更新所有属性
     for (const propState of this.properties) {
-      const currentValue = this.lerp(
-        propState.fromValue,
-        propState.toValue,
-        progress
-      );
-      
+      const currentValue = this.lerp(propState.fromValue, propState.toValue, progress)
+
       try {
-        setNestedProperty(this.target, propState.property, currentValue);
+        setNestedProperty(this.target, propState.property, currentValue)
       } catch (error) {
-        console.error(`Failed to set property ${propState.property}:`, error);
+        console.error(`Failed to set property ${propState.property}:`, error)
       }
     }
   }
@@ -62,7 +58,7 @@ export class MultiPropertyAnimation extends BaseAnimation {
    * 线性插值
    */
   private lerp(from: number, to: number, t: number): number {
-    return from + (to - from) * t;
+    return from + (to - from) * t
   }
 
   /**
@@ -70,125 +66,110 @@ export class MultiPropertyAnimation extends BaseAnimation {
    */
   private getCurrentPropertyValue(property: string): number {
     try {
-      const value = getNestedProperty(this.target, property);
-      return typeof value === 'number' ? value : 0;
+      const value = getNestedProperty(this.target, property)
+      return typeof value === 'number' ? value : 0
     } catch {
-      return 0;
+      return 0
     }
   }
-
 
   /**
    * 重置所有属性到初始值
    */
   reset(): this {
     for (const propState of this.properties) {
-      setNestedProperty(
-        this.target,
-        propState.property,
-        propState.initialValue
-      );
+      setNestedProperty(this.target, propState.property, propState.initialValue)
     }
-    return this;
+    return this
   }
 
   /**
    * 添加新的属性动画
    */
-  addProperty(
-    property: string,
-    to: number,
-    from?: number
-  ): this {
-    const currentValue = this.getCurrentPropertyValue(property);
-    
+  addProperty(property: string, to: number, from?: number): this {
+    const currentValue = this.getCurrentPropertyValue(property)
+
     this.properties.push({
       property,
       fromValue: from !== undefined ? from : currentValue,
       toValue: to,
-      initialValue: currentValue
-    });
-    
-    return this;
+      initialValue: currentValue,
+    })
+
+    return this
   }
 
   /**
    * 移除属性动画
    */
   removeProperty(property: string): this {
-    this.properties = this.properties.filter(
-      prop => prop.property !== property
-    );
-    return this;
+    this.properties = this.properties.filter((prop) => prop.property !== property)
+    return this
   }
 
   /**
    * 更新属性的目标值
    */
-  updateProperty(
-    property: string,
-    to: number,
-    from?: number
-  ): this {
-    const propState = this.properties.find(p => p.property === property);
+  updateProperty(property: string, to: number, from?: number): this {
+    const propState = this.properties.find((p) => p.property === property)
     if (propState) {
-      propState.toValue = to;
+      propState.toValue = to
       if (from !== undefined) {
-        propState.fromValue = from;
+        propState.fromValue = from
       }
     } else {
-      this.addProperty(property, to, from);
+      this.addProperty(property, to, from)
     }
-    return this;
+    return this
   }
 
   /**
    * 获取所有属性信息
    */
   getPropertiesInfo() {
-    return this.properties.map(propState => ({
+    return this.properties.map((propState) => ({
       property: propState.property,
       from: propState.fromValue,
       to: propState.toValue,
-      current: this.getCurrentPropertyValue(propState.property)
-    }));
+      current: this.getCurrentPropertyValue(propState.property),
+    }))
   }
 
   /**
    * 获取特定属性信息
    */
   getPropertyInfo(property: string) {
-    const propState = this.properties.find(p => p.property === property);
+    const propState = this.properties.find((p) => p.property === property)
     if (!propState) {
-      return null;
+      return null
     }
 
     return {
       property: propState.property,
       from: propState.fromValue,
       to: propState.toValue,
-      current: this.getCurrentPropertyValue(propState.property)
-    };
+      current: this.getCurrentPropertyValue(propState.property),
+    }
   }
 
   /**
    * 创建反向动画
    */
   reverse(): MultiPropertyAnimation {
-    const reversedProperties: Record<string, { from?: number; to: number }> = {};
-    
+    const reversedProperties: Record<string, { from?: number; to: number }> = {}
+
     for (const propState of this.properties) {
       reversedProperties[propState.property] = {
         from: propState.toValue,
-        to: propState.fromValue
-      };
+        to: propState.fromValue,
+      }
     }
 
     return new MultiPropertyAnimation({
       duration: this.duration,
       target: this.target,
       properties: reversedProperties,
-      easing: this._easingFunction
-    });
+      easing: this._easingFunction,
+    })
   }
 }

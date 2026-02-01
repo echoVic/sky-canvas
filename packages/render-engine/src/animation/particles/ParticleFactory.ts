@@ -3,22 +3,21 @@
  * 负责根据配置创建粒子
  */
 
-import { 
-  IParticle, 
-  IParticleFactory, 
-  ParticleConfig,
-  ParticleEmissionConfig,
-  ParticleRange,
+import {
   EmitterShape,
-  Point2D,
-  Vector2D
-} from '../types/ParticleTypes';
-import { Particle } from './Particle';
+  type IParticle,
+  type IParticleFactory,
+  type ParticleConfig,
+  type ParticleEmissionConfig,
+  type ParticleRange,
+  type Point2D,
+  type Vector2D,
+} from '../types/ParticleTypes'
+import { Particle } from './Particle'
 
 export class ParticleFactory implements IParticleFactory {
-  
   create(config: ParticleConfig = {}): IParticle {
-    return new Particle(config);
+    return new Particle(config)
   }
 
   createFromEmission(emission: ParticleEmissionConfig): IParticle {
@@ -29,18 +28,20 @@ export class ParticleFactory implements IParticleFactory {
       size: this.randomizeNumber(emission.size),
       scale: emission.scale ? this.randomizeVector(emission.scale) : undefined,
       rotation: emission.rotation ? this.randomizeNumber(emission.rotation) : undefined,
-      angularVelocity: emission.angularVelocity ? this.randomizeNumber(emission.angularVelocity) : undefined,
+      angularVelocity: emission.angularVelocity
+        ? this.randomizeNumber(emission.angularVelocity)
+        : undefined,
       alpha: emission.alpha ? this.randomizeNumber(emission.alpha) : undefined,
       color: this.randomizeColor(emission.color),
       life: this.randomizeNumber(emission.life),
       mass: emission.mass ? this.randomizeNumber(emission.mass) : undefined,
-      userData: emission.userData ? { ...emission.userData } : undefined
-    };
+      userData: emission.userData ? { ...emission.userData } : undefined,
+    }
 
     // 应用发射器形状
-    this.applyEmitterShape(config, emission);
+    this.applyEmitterShape(config, emission)
 
-    return this.create(config);
+    return this.create(config)
   }
 
   /**
@@ -48,72 +49,72 @@ export class ParticleFactory implements IParticleFactory {
    */
   private applyEmitterShape(config: ParticleConfig, emission: ParticleEmissionConfig): void {
     if (!emission.emitterShape || emission.emitterShape === EmitterShape.POINT) {
-      return; // 点发射器不需要特殊处理
+      return // 点发射器不需要特殊处理
     }
 
-    const basePosition = config.position!;
-    let newPosition: Point2D;
+    const basePosition = config.position!
+    let newPosition: Point2D
 
     switch (emission.emitterShape) {
       case EmitterShape.LINE:
-        newPosition = this.generateLinePosition(basePosition, emission.emitterSize);
-        break;
-        
+        newPosition = this.generateLinePosition(basePosition, emission.emitterSize)
+        break
+
       case EmitterShape.CIRCLE:
-        newPosition = this.generateCirclePosition(basePosition, emission.emitterRadius || 50);
-        break;
-        
+        newPosition = this.generateCirclePosition(basePosition, emission.emitterRadius || 50)
+        break
+
       case EmitterShape.RECTANGLE:
-        newPosition = this.generateRectanglePosition(basePosition, emission.emitterSize);
-        break;
-        
+        newPosition = this.generateRectanglePosition(basePosition, emission.emitterSize)
+        break
+
       case EmitterShape.ARC:
-        newPosition = this.generateArcPosition(basePosition, emission.emitterRadius || 50);
-        break;
-        
+        newPosition = this.generateArcPosition(basePosition, emission.emitterRadius || 50)
+        break
+
       default:
-        newPosition = basePosition;
+        newPosition = basePosition
     }
 
-    config.position = newPosition;
+    config.position = newPosition
   }
 
   /**
    * 生成直线上的位置
    */
   private generateLinePosition(center: Point2D, size?: Point2D): Point2D {
-    const lineSize = size || { x: 100, y: 0 };
-    const t = Math.random();
-    
+    const lineSize = size || { x: 100, y: 0 }
+    const t = Math.random()
+
     return {
-      x: center.x + (lineSize.x * (t - 0.5)),
-      y: center.y + (lineSize.y * (t - 0.5))
-    };
+      x: center.x + lineSize.x * (t - 0.5),
+      y: center.y + lineSize.y * (t - 0.5),
+    }
   }
 
   /**
    * 生成圆形内的位置
    */
   private generateCirclePosition(center: Point2D, radius: number): Point2D {
-    const angle = Math.random() * Math.PI * 2;
-    const r = Math.sqrt(Math.random()) * radius;
-    
+    const angle = Math.random() * Math.PI * 2
+    const r = Math.sqrt(Math.random()) * radius
+
     return {
       x: center.x + Math.cos(angle) * r,
-      y: center.y + Math.sin(angle) * r
-    };
+      y: center.y + Math.sin(angle) * r,
+    }
   }
 
   /**
    * 生成矩形内的位置
    */
   private generateRectanglePosition(center: Point2D, size?: Point2D): Point2D {
-    const rectSize = size || { x: 100, y: 100 };
-    
+    const rectSize = size || { x: 100, y: 100 }
+
     return {
       x: center.x + (Math.random() - 0.5) * rectSize.x,
-      y: center.y + (Math.random() - 0.5) * rectSize.y
-    };
+      y: center.y + (Math.random() - 0.5) * rectSize.y,
+    }
   }
 
   /**
@@ -121,12 +122,12 @@ export class ParticleFactory implements IParticleFactory {
    */
   private generateArcPosition(center: Point2D, radius: number): Point2D {
     // 简化实现：生成半圆弧
-    const angle = Math.random() * Math.PI;
-    
+    const angle = Math.random() * Math.PI
+
     return {
       x: center.x + Math.cos(angle) * radius,
-      y: center.y + Math.sin(angle) * radius
-    };
+      y: center.y + Math.sin(angle) * radius,
+    }
   }
 
   /**
@@ -134,9 +135,9 @@ export class ParticleFactory implements IParticleFactory {
    */
   private randomizeNumber(range: ParticleRange<number>): number {
     if (typeof range === 'number') {
-      return range;
+      return range
     }
-    return range.min + Math.random() * (range.max - range.min);
+    return range.min + Math.random() * (range.max - range.min)
   }
 
   /**
@@ -146,13 +147,13 @@ export class ParticleFactory implements IParticleFactory {
     return {
       x: this.randomizeNumber({
         min: range.min.x,
-        max: range.max.x
+        max: range.max.x,
       }),
       y: this.randomizeNumber({
         min: range.min.y,
-        max: range.max.y
-      })
-    };
+        max: range.max.y,
+      }),
+    }
   }
 
   /**
@@ -162,13 +163,13 @@ export class ParticleFactory implements IParticleFactory {
     return {
       x: this.randomizeNumber({
         min: range.min.x,
-        max: range.max.x
+        max: range.max.x,
       }),
       y: this.randomizeNumber({
         min: range.min.y,
-        max: range.max.y
-      })
-    };
+        max: range.max.y,
+      }),
+    }
   }
 
   /**
@@ -176,15 +177,15 @@ export class ParticleFactory implements IParticleFactory {
    */
   private randomizeColor(color?: string[] | ParticleRange<string>): string {
     if (!color) {
-      return '#ffffff';
+      return '#ffffff'
     }
 
     if (Array.isArray(color)) {
-      return color[Math.floor(Math.random() * color.length)];
+      return color[Math.floor(Math.random() * color.length)]
     }
 
     // 简化实现：在两个颜色之间插值（需要颜色插值函数）
-    return color.min; // 暂时返回最小值
+    return color.min // 暂时返回最小值
   }
 
   /**
@@ -201,8 +202,8 @@ export class ParticleFactory implements IParticleFactory {
       life: { min: 500, max: 2000 },
       rate: 50,
       emitterShape: EmitterShape.LINE,
-      emitterSize: { x: 20, y: 0 }
-    };
+      emitterSize: { x: 20, y: 0 },
+    }
   }
 
   static createSmokeEmission(): ParticleEmissionConfig {
@@ -216,8 +217,8 @@ export class ParticleFactory implements IParticleFactory {
       life: { min: 2000, max: 5000 },
       rate: 20,
       emitterShape: EmitterShape.CIRCLE,
-      emitterRadius: 10
-    };
+      emitterRadius: 10,
+    }
   }
 
   static createSparkleEmission(): ParticleEmissionConfig {
@@ -231,8 +232,8 @@ export class ParticleFactory implements IParticleFactory {
       life: { min: 300, max: 1000 },
       rate: 100,
       emitterShape: EmitterShape.CIRCLE,
-      emitterRadius: 5
-    };
+      emitterRadius: 5,
+    }
   }
 
   static createSnowEmission(): ParticleEmissionConfig {
@@ -246,8 +247,8 @@ export class ParticleFactory implements IParticleFactory {
       life: { min: 3000, max: 8000 },
       rate: 30,
       emitterShape: EmitterShape.LINE,
-      emitterSize: { x: 200, y: 0 }
-    };
+      emitterSize: { x: 200, y: 0 },
+    }
   }
 
   static createExplosionEmission(): ParticleEmissionConfig {
@@ -261,7 +262,7 @@ export class ParticleFactory implements IParticleFactory {
       life: { min: 200, max: 800 },
       rate: 0, // 用burst代替
       burst: 100,
-      emitterShape: EmitterShape.POINT
-    };
+      emitterShape: EmitterShape.POINT,
+    }
   }
 }

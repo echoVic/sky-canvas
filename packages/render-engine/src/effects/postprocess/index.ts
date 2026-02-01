@@ -3,105 +3,85 @@
  */
 
 // 类型定义
-export * from '../types/PostProcessTypes';
-
+export * from '../types/PostProcessTypes'
+// 艺术效果
+export {
+  GrayscaleEffect,
+  InvertEffect,
+  PixelateEffect,
+  PosterizeEffect,
+  SepiaEffect,
+  VintageEffect,
+} from './ArtisticEffects'
 // 基础类
-export { BasePostProcessEffect } from './BasePostProcessEffect';
-
+export { BasePostProcessEffect } from './BasePostProcessEffect'
 // 颜色调整效果
 export {
   BrightnessEffect,
+  ColorBalanceEffect,
   ContrastEffect,
-  SaturationEffect,
-  HueShiftEffect,
-  GammaEffect,
   ExposureEffect,
-  ColorBalanceEffect
-} from './ColorAdjustmentEffects';
-
+  GammaEffect,
+  HueShiftEffect,
+  SaturationEffect,
+} from './ColorAdjustmentEffects'
 // 图像增强效果
 export {
-  SharpenEffect,
-  NoiseEffect,
   GrainEffect,
-  VignetteEffect
-} from './ImageEnhancementEffects';
-
+  NoiseEffect,
+  SharpenEffect,
+  VignetteEffect,
+} from './ImageEnhancementEffects'
+// 管理器
+export { PostProcessManager } from './PostProcessManager'
 // 特殊效果
 export {
   BloomEffect,
+  DepthOfFieldEffect,
   GlowEffect,
   HDRTonemapEffect,
-  DepthOfFieldEffect
-} from './SpecialEffects';
-
-// 艺术效果
-export {
-  SepiaEffect,
-  VintageEffect,
-  PixelateEffect,
-  PosterizeEffect,
-  InvertEffect,
-  GrayscaleEffect
-} from './ArtisticEffects';
-
-// 管理器
-export { PostProcessManager } from './PostProcessManager';
+} from './SpecialEffects'
 
 // 导入具体实现
 import {
-  PostProcessType,
-  PostProcessConfig,
-  ColorAdjustmentConfig,
-  ColorBalanceConfig,
-  SharpenConfig,
-  NoiseConfig,
-  GrainConfig,
-  VignetteConfig,
-  BloomConfig,
-  GlowConfig,
-  HDRTonemapConfig,
-  DepthOfFieldConfig,
-  PixelateConfig,
-  PosterizeConfig,
-  VintageConfig,
-  IPostProcessEffect,
+  type BloomConfig,
+  type ColorAdjustmentConfig,
+  type ColorBalanceConfig,
+  type DepthOfFieldConfig,
+  type GlowConfig,
+  type GrainConfig,
+  type HDRTonemapConfig,
+  type IPostProcessEffect,
+  type NoiseConfig,
+  type PixelateConfig,
+  type PosterizeConfig,
   PostProcessCategory,
-  PostProcessEffectInfo
-} from '../types/PostProcessTypes';
-
+  type PostProcessConfig,
+  type PostProcessEffectInfo,
+  PostProcessType,
+  type SharpenConfig,
+  type VignetteConfig,
+  type VintageConfig,
+} from '../types/PostProcessTypes'
 import {
-  BrightnessEffect,
-  ContrastEffect,
-  SaturationEffect,
-  HueShiftEffect,
-  GammaEffect,
-  ExposureEffect,
-  ColorBalanceEffect
-} from './ColorAdjustmentEffects';
-
-import {
-  SharpenEffect,
-  NoiseEffect,
-  GrainEffect,
-  VignetteEffect
-} from './ImageEnhancementEffects';
-
-import {
-  BloomEffect,
-  GlowEffect,
-  HDRTonemapEffect,
-  DepthOfFieldEffect
-} from './SpecialEffects';
-
-import {
-  SepiaEffect,
-  VintageEffect,
+  GrayscaleEffect,
+  InvertEffect,
   PixelateEffect,
   PosterizeEffect,
-  InvertEffect,
-  GrayscaleEffect
-} from './ArtisticEffects';
+  SepiaEffect,
+  VintageEffect,
+} from './ArtisticEffects'
+import {
+  BrightnessEffect,
+  ColorBalanceEffect,
+  ContrastEffect,
+  ExposureEffect,
+  GammaEffect,
+  HueShiftEffect,
+  SaturationEffect,
+} from './ColorAdjustmentEffects'
+import { GrainEffect, NoiseEffect, SharpenEffect, VignetteEffect } from './ImageEnhancementEffects'
+import { BloomEffect, DepthOfFieldEffect, GlowEffect, HDRTonemapEffect } from './SpecialEffects'
 
 /**
  * 后处理效果工厂函数
@@ -112,49 +92,49 @@ export function createPostProcessEffect(
 ): IPostProcessEffect {
   switch (type) {
     case PostProcessType.BRIGHTNESS:
-      return new BrightnessEffect(config as ColorAdjustmentConfig);
+      return new BrightnessEffect(config as ColorAdjustmentConfig)
     case PostProcessType.CONTRAST:
-      return new ContrastEffect(config as ColorAdjustmentConfig);
+      return new ContrastEffect(config as ColorAdjustmentConfig)
     case PostProcessType.SATURATION:
-      return new SaturationEffect(config as ColorAdjustmentConfig);
+      return new SaturationEffect(config as ColorAdjustmentConfig)
     case PostProcessType.HUE_SHIFT:
-      return new HueShiftEffect(config as ColorAdjustmentConfig);
+      return new HueShiftEffect(config as ColorAdjustmentConfig)
     case PostProcessType.GAMMA:
-      return new GammaEffect(config as ColorAdjustmentConfig);
+      return new GammaEffect(config as ColorAdjustmentConfig)
     case PostProcessType.EXPOSURE:
-      return new ExposureEffect(config as ColorAdjustmentConfig);
+      return new ExposureEffect(config as ColorAdjustmentConfig)
     case PostProcessType.COLOR_BALANCE:
-      return new ColorBalanceEffect(config as ColorBalanceConfig);
+      return new ColorBalanceEffect(config as ColorBalanceConfig)
     case PostProcessType.SHARPEN:
-      return new SharpenEffect(config as SharpenConfig);
+      return new SharpenEffect(config as SharpenConfig)
     case PostProcessType.NOISE:
-      return new NoiseEffect(config as NoiseConfig);
+      return new NoiseEffect(config as NoiseConfig)
     case PostProcessType.GRAIN:
-      return new GrainEffect(config as GrainConfig);
+      return new GrainEffect(config as GrainConfig)
     case PostProcessType.VIGNETTE:
-      return new VignetteEffect(config as VignetteConfig);
+      return new VignetteEffect(config as VignetteConfig)
     case PostProcessType.BLOOM:
-      return new BloomEffect(config as BloomConfig);
+      return new BloomEffect(config as BloomConfig)
     case PostProcessType.GLOW:
-      return new GlowEffect(config as GlowConfig);
+      return new GlowEffect(config as GlowConfig)
     case PostProcessType.HDR_TONEMAP:
-      return new HDRTonemapEffect(config as HDRTonemapConfig);
+      return new HDRTonemapEffect(config as HDRTonemapConfig)
     case PostProcessType.DEPTH_OF_FIELD:
-      return new DepthOfFieldEffect(config as DepthOfFieldConfig);
+      return new DepthOfFieldEffect(config as DepthOfFieldConfig)
     case PostProcessType.SEPIA:
-      return new SepiaEffect(config);
+      return new SepiaEffect(config)
     case PostProcessType.VINTAGE:
-      return new VintageEffect(config as VintageConfig);
+      return new VintageEffect(config as VintageConfig)
     case PostProcessType.PIXELATE:
-      return new PixelateEffect(config as PixelateConfig);
+      return new PixelateEffect(config as PixelateConfig)
     case PostProcessType.POSTERIZE:
-      return new PosterizeEffect(config as PosterizeConfig);
+      return new PosterizeEffect(config as PosterizeConfig)
     case PostProcessType.INVERT:
-      return new InvertEffect(config);
+      return new InvertEffect(config)
     case PostProcessType.GRAYSCALE:
-      return new GrayscaleEffect(config);
+      return new GrayscaleEffect(config)
     default:
-      throw new Error(`Unsupported post-process effect type: ${type}`);
+      throw new Error(`Unsupported post-process effect type: ${type}`)
   }
 }
 
@@ -162,14 +142,14 @@ export function createPostProcessEffect(
  * 获取所有支持的后处理效果类型
  */
 export function getSupportedPostProcessTypes(): PostProcessType[] {
-  return Object.values(PostProcessType);
+  return Object.values(PostProcessType)
 }
 
 /**
  * 检查后处理效果类型是否支持
  */
 export function isPostProcessTypeSupported(type: PostProcessType): boolean {
-  return Object.values(PostProcessType).includes(type);
+  return Object.values(PostProcessType).includes(type)
 }
 
 /**
@@ -197,10 +177,10 @@ export function getPostProcessEffectDescription(type: PostProcessType): string {
     [PostProcessType.PIXELATE]: '像素化效果，降低图像分辨率',
     [PostProcessType.POSTERIZE]: '色调分离，减少颜色层次',
     [PostProcessType.INVERT]: '颜色反相效果',
-    [PostProcessType.GRAYSCALE]: '转换为灰度图像'
-  };
+    [PostProcessType.GRAYSCALE]: '转换为灰度图像',
+  }
 
-  return descriptions[type] || '未知后处理效果';
+  return descriptions[type] || '未知后处理效果'
 }
 
 /**
@@ -228,34 +208,37 @@ export function getPostProcessEffectCategory(type: PostProcessType): PostProcess
     [PostProcessType.PIXELATE]: PostProcessCategory.ARTISTIC,
     [PostProcessType.POSTERIZE]: PostProcessCategory.ARTISTIC,
     [PostProcessType.INVERT]: PostProcessCategory.ARTISTIC,
-    [PostProcessType.GRAYSCALE]: PostProcessCategory.ARTISTIC
-  };
+    [PostProcessType.GRAYSCALE]: PostProcessCategory.ARTISTIC,
+  }
 
-  return categories[type] || PostProcessCategory.ARTISTIC;
+  return categories[type] || PostProcessCategory.ARTISTIC
 }
 
 /**
  * 获取后处理效果的完整信息
  */
 export function getPostProcessEffectInfo(type: PostProcessType): PostProcessEffectInfo {
-  const parameterDefinitions: Record<PostProcessType, Record<string, { min: number; max: number; default: number; step?: number }>> = {
+  const parameterDefinitions: Record<
+    PostProcessType,
+    Record<string, { min: number; max: number; default: number; step?: number }>
+  > = {
     [PostProcessType.BRIGHTNESS]: {
-      amount: { min: -100, max: 100, default: 0, step: 1 }
+      amount: { min: -100, max: 100, default: 0, step: 1 },
     },
     [PostProcessType.CONTRAST]: {
-      amount: { min: -100, max: 100, default: 0, step: 1 }
+      amount: { min: -100, max: 100, default: 0, step: 1 },
     },
     [PostProcessType.SATURATION]: {
-      amount: { min: -100, max: 100, default: 0, step: 1 }
+      amount: { min: -100, max: 100, default: 0, step: 1 },
     },
     [PostProcessType.HUE_SHIFT]: {
-      amount: { min: -180, max: 180, default: 0, step: 1 }
+      amount: { min: -180, max: 180, default: 0, step: 1 },
     },
     [PostProcessType.GAMMA]: {
-      amount: { min: 0.1, max: 3, default: 1, step: 0.1 }
+      amount: { min: 0.1, max: 3, default: 1, step: 0.1 },
     },
     [PostProcessType.EXPOSURE]: {
-      amount: { min: -3, max: 3, default: 0, step: 0.1 }
+      amount: { min: -3, max: 3, default: 0, step: 0.1 },
     },
     [PostProcessType.COLOR_BALANCE]: {
       shadowsRed: { min: -100, max: 100, default: 0 },
@@ -266,74 +249,74 @@ export function getPostProcessEffectInfo(type: PostProcessType): PostProcessEffe
       midtonesBlue: { min: -100, max: 100, default: 0 },
       highlightsRed: { min: -100, max: 100, default: 0 },
       highlightsGreen: { min: -100, max: 100, default: 0 },
-      highlightsBlue: { min: -100, max: 100, default: 0 }
+      highlightsBlue: { min: -100, max: 100, default: 0 },
     },
     [PostProcessType.SHARPEN]: {
       strength: { min: 0, max: 2, default: 1, step: 0.1 },
-      radius: { min: 1, max: 10, default: 3, step: 1 }
+      radius: { min: 1, max: 10, default: 3, step: 1 },
     },
     [PostProcessType.NOISE]: {
       amount: { min: 0, max: 1, default: 0.1, step: 0.01 },
       seed: { min: 0, max: 1000, default: 0, step: 1 },
-      monochrome: { min: 0, max: 1, default: 0, step: 1 }
+      monochrome: { min: 0, max: 1, default: 0, step: 1 },
     },
     [PostProcessType.GRAIN]: {
       intensity: { min: 0, max: 1, default: 0.5, step: 0.01 },
       size: { min: 1, max: 10, default: 3, step: 1 },
-      luminance: { min: 0, max: 1, default: 0, step: 1 }
+      luminance: { min: 0, max: 1, default: 0, step: 1 },
     },
     [PostProcessType.VIGNETTE]: {
       strength: { min: 0, max: 1, default: 0.5, step: 0.01 },
       radius: { min: 0.1, max: 1, default: 0.7, step: 0.01 },
       centerX: { min: 0, max: 1, default: 0.5, step: 0.01 },
-      centerY: { min: 0, max: 1, default: 0.5, step: 0.01 }
+      centerY: { min: 0, max: 1, default: 0.5, step: 0.01 },
     },
     [PostProcessType.BLOOM]: {
       threshold: { min: 0, max: 1, default: 0.8, step: 0.01 },
       intensity: { min: 0, max: 2, default: 1, step: 0.1 },
       radius: { min: 1, max: 20, default: 5, step: 1 },
-      passes: { min: 1, max: 10, default: 3, step: 1 }
+      passes: { min: 1, max: 10, default: 3, step: 1 },
     },
     [PostProcessType.GLOW]: {
       intensity: { min: 0, max: 2, default: 1, step: 0.1 },
       radius: { min: 1, max: 20, default: 5, step: 1 },
-      quality: { min: 1, max: 10, default: 3, step: 1 }
+      quality: { min: 1, max: 10, default: 3, step: 1 },
     },
     [PostProcessType.HDR_TONEMAP]: {
       exposure: { min: -3, max: 3, default: 0, step: 0.1 },
       gamma: { min: 0.1, max: 3, default: 2.2, step: 0.1 },
-      whitePoint: { min: 0.1, max: 10, default: 1, step: 0.1 }
+      whitePoint: { min: 0.1, max: 10, default: 1, step: 0.1 },
     },
     [PostProcessType.DEPTH_OF_FIELD]: {
       focusDistance: { min: 0, max: 1, default: 0.5, step: 0.01 },
       focalLength: { min: 10, max: 200, default: 50, step: 1 },
       fstop: { min: 1.4, max: 16, default: 2.8, step: 0.1 },
-      maxBlur: { min: 1, max: 20, default: 5, step: 1 }
+      maxBlur: { min: 1, max: 20, default: 5, step: 1 },
     },
     [PostProcessType.SEPIA]: {},
     [PostProcessType.VINTAGE]: {
       sepia: { min: 0, max: 1, default: 0.8, step: 0.01 },
       vignette: { min: 0, max: 1, default: 0.6, step: 0.01 },
       noise: { min: 0, max: 1, default: 0.3, step: 0.01 },
-      desaturation: { min: 0, max: 1, default: 0.4, step: 0.01 }
+      desaturation: { min: 0, max: 1, default: 0.4, step: 0.01 },
     },
     [PostProcessType.PIXELATE]: {
-      pixelSize: { min: 1, max: 50, default: 8, step: 1 }
+      pixelSize: { min: 1, max: 50, default: 8, step: 1 },
     },
     [PostProcessType.POSTERIZE]: {
-      levels: { min: 2, max: 32, default: 8, step: 1 }
+      levels: { min: 2, max: 32, default: 8, step: 1 },
     },
     [PostProcessType.INVERT]: {},
-    [PostProcessType.GRAYSCALE]: {}
-  };
+    [PostProcessType.GRAYSCALE]: {},
+  }
 
   return {
     type,
     name: getPostProcessEffectName(type),
     description: getPostProcessEffectDescription(type),
     category: getPostProcessEffectCategory(type),
-    parameters: parameterDefinitions[type] || {}
-  };
+    parameters: parameterDefinitions[type] || {},
+  }
 }
 
 /**
@@ -361,10 +344,10 @@ function getPostProcessEffectName(type: PostProcessType): string {
     [PostProcessType.PIXELATE]: '像素化',
     [PostProcessType.POSTERIZE]: '色调分离',
     [PostProcessType.INVERT]: '反相',
-    [PostProcessType.GRAYSCALE]: '灰度'
-  };
+    [PostProcessType.GRAYSCALE]: '灰度',
+  }
 
-  return names[type] || type;
+  return names[type] || type
 }
 
 /**
@@ -372,25 +355,25 @@ function getPostProcessEffectName(type: PostProcessType): string {
  */
 export function getPostProcessTypesByCategory(category: PostProcessCategory): PostProcessType[] {
   return getSupportedPostProcessTypes().filter(
-    type => getPostProcessEffectCategory(type) === category
-  );
+    (type) => getPostProcessEffectCategory(type) === category
+  )
 }
 
 /**
  * 创建默认配置
  */
 export function createDefaultPostProcessConfig(type: PostProcessType): PostProcessConfig {
-  const info = getPostProcessEffectInfo(type);
-  const parameters: Record<string, number> = {};
+  const info = getPostProcessEffectInfo(type)
+  const parameters: Record<string, number> = {}
 
   for (const [key, param] of Object.entries(info.parameters)) {
-    parameters[key] = param.default;
+    parameters[key] = param.default
   }
 
   return {
     type,
     enabled: true,
     intensity: 1.0,
-    parameters
-  };
+    parameters,
+  }
 }

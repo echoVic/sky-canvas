@@ -1,27 +1,38 @@
 import { Button } from '@heroui/react'
 import {
-    Circle,
-    Diamond,
-    Frame,
-    Hand,
-    Image,
-    Link,
-    LucideIcon,
-    Minus,
-    MousePointer2,
-    MoveRight,
-    Pencil,
-    Square,
-    StickyNote,
-    Type
+  Circle,
+  Diamond,
+  Frame,
+  Hand,
+  Image,
+  Link,
+  type LucideIcon,
+  Minus,
+  MousePointer2,
+  MoveRight,
+  Pencil,
+  Square,
+  StickyNote,
+  Type,
 } from 'lucide-react'
-import React from 'react'
+import type React from 'react'
 import { useCanvasStore } from '../../store/canvasStore'
 import { useSDKStore } from '../../store/sdkStore'
 
 const iconMap: Record<string, LucideIcon> = {
-  MousePointer2, Hand, Square, Diamond, Circle, MoveRight, Minus, 
-  Pencil, Type, Image, StickyNote, Link, Frame
+  MousePointer2,
+  Hand,
+  Square,
+  Diamond,
+  Circle,
+  MoveRight,
+  Minus,
+  Pencil,
+  Type,
+  Image,
+  StickyNote,
+  Link,
+  Frame,
 }
 
 const Toolbar: React.FC = () => {
@@ -40,9 +51,10 @@ const Toolbar: React.FC = () => {
             isIconOnly
             className={`
               w-8 h-8 transition-all duration-150 rounded-md flex items-center justify-center
-              ${selectedTool === tool.id
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              ${
+                selectedTool === tool.id
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-800'
               }
             `}
             onPress={() => {

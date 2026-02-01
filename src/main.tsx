@@ -1,8 +1,8 @@
+import { HeroUIProvider } from '@heroui/react'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { HeroUIProvider } from '@heroui/react'
-import { CanvasProvider } from './contexts'
 import App from './App'
+import { CanvasProvider } from './contexts'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -12,5 +12,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <App />
       </CanvasProvider>
     </HeroUIProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 )

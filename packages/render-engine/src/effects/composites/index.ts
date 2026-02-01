@@ -3,155 +3,151 @@
  */
 
 // 类型定义
-export * from '../types/CompositeTypes';
+export * from '../types/CompositeTypes'
 
 // 基础类
-export { BaseCompositeOperation } from './BaseCompositeOperation';
-
-// 标准复合操作
-export {
-  SourceOverComposite,
-  SourceAtopComposite,
-  SourceInComposite,
-  SourceOutComposite,
-  DestinationOverComposite,
-  DestinationAtopComposite,
-  DestinationInComposite,
-  DestinationOutComposite,
-  LighterComposite,
-  CopyComposite,
-  XORComposite
-} from './StandardCompositeOperations';
-
+export { BaseCompositeOperation } from './BaseCompositeOperation'
 // 混合复合操作
 export {
-  MultiplyComposite,
-  ScreenComposite,
-  OverlayComposite,
-  DarkenComposite,
-  LightenComposite,
-  ColorDodgeComposite,
   ColorBurnComposite,
-  HardLightComposite,
-  SoftLightComposite,
+  ColorDodgeComposite,
+  DarkenComposite,
   DifferenceComposite,
-  ExclusionComposite
-} from './BlendCompositeOperations';
-
+  ExclusionComposite,
+  HardLightComposite,
+  LightenComposite,
+  MultiplyComposite,
+  OverlayComposite,
+  ScreenComposite,
+  SoftLightComposite,
+} from './BlendCompositeOperations'
 // 颜色复合操作
 export {
-  HueComposite,
-  SaturationComposite,
   ColorComposite,
-  LuminosityComposite
-} from './ColorCompositeOperations';
-
+  HueComposite,
+  LuminosityComposite,
+  SaturationComposite,
+} from './ColorCompositeOperations'
 // 管理器
-export { CompositeManager } from './CompositeManager';
-
-// 导入具体实现
-import { 
-  CompositeOperation, 
-  CompositeConfig, 
-  ICompositeOperation,
-  CompositeCategory,
-  CompositeModeInfo
-} from '../types/CompositeTypes';
-import {
-  SourceOverComposite,
-  SourceAtopComposite,
-  SourceInComposite,
-  SourceOutComposite,
-  DestinationOverComposite,
+export { CompositeManager } from './CompositeManager'
+// 标准复合操作
+export {
+  CopyComposite,
   DestinationAtopComposite,
   DestinationInComposite,
   DestinationOutComposite,
+  DestinationOverComposite,
   LighterComposite,
-  CopyComposite,
-  XORComposite
-} from './StandardCompositeOperations';
+  SourceAtopComposite,
+  SourceInComposite,
+  SourceOutComposite,
+  SourceOverComposite,
+  XORComposite,
+} from './StandardCompositeOperations'
+
+// 导入具体实现
 import {
-  MultiplyComposite,
-  ScreenComposite,
-  OverlayComposite,
-  DarkenComposite,
-  LightenComposite,
-  ColorDodgeComposite,
+  CompositeCategory,
+  type CompositeConfig,
+  type CompositeModeInfo,
+  CompositeOperation,
+  type ICompositeOperation,
+} from '../types/CompositeTypes'
+import {
   ColorBurnComposite,
-  HardLightComposite,
-  SoftLightComposite,
+  ColorDodgeComposite,
+  DarkenComposite,
   DifferenceComposite,
-  ExclusionComposite
-} from './BlendCompositeOperations';
+  ExclusionComposite,
+  HardLightComposite,
+  LightenComposite,
+  MultiplyComposite,
+  OverlayComposite,
+  ScreenComposite,
+  SoftLightComposite,
+} from './BlendCompositeOperations'
 import {
-  HueComposite,
-  SaturationComposite,
   ColorComposite,
-  LuminosityComposite
-} from './ColorCompositeOperations';
+  HueComposite,
+  LuminosityComposite,
+  SaturationComposite,
+} from './ColorCompositeOperations'
+import {
+  CopyComposite,
+  DestinationAtopComposite,
+  DestinationInComposite,
+  DestinationOutComposite,
+  DestinationOverComposite,
+  LighterComposite,
+  SourceAtopComposite,
+  SourceInComposite,
+  SourceOutComposite,
+  SourceOverComposite,
+  XORComposite,
+} from './StandardCompositeOperations'
 
 /**
  * 复合操作工厂函数
  */
 export function createCompositeOperation(
-  operation: CompositeOperation, 
+  operation: CompositeOperation,
   config: CompositeConfig
 ): ICompositeOperation {
   switch (operation) {
     case CompositeOperation.SOURCE_OVER:
-      return new SourceOverComposite(config);
+      return new SourceOverComposite(config)
     case CompositeOperation.SOURCE_ATOP:
-      return new SourceAtopComposite(config);
+      return new SourceAtopComposite(config)
     case CompositeOperation.SOURCE_IN:
-      return new SourceInComposite(config);
+      return new SourceInComposite(config)
     case CompositeOperation.SOURCE_OUT:
-      return new SourceOutComposite(config);
+      return new SourceOutComposite(config)
     case CompositeOperation.DESTINATION_OVER:
-      return new DestinationOverComposite(config);
+      return new DestinationOverComposite(config)
     case CompositeOperation.DESTINATION_ATOP:
-      return new DestinationAtopComposite(config);
+      return new DestinationAtopComposite(config)
     case CompositeOperation.DESTINATION_IN:
-      return new DestinationInComposite(config);
+      return new DestinationInComposite(config)
     case CompositeOperation.DESTINATION_OUT:
-      return new DestinationOutComposite(config);
+      return new DestinationOutComposite(config)
     case CompositeOperation.LIGHTER:
-      return new LighterComposite(config);
+      return new LighterComposite(config)
     case CompositeOperation.COPY:
-      return new CopyComposite(config);
+      return new CopyComposite(config)
     case CompositeOperation.XOR:
-      return new XORComposite(config);
+      return new XORComposite(config)
     case CompositeOperation.MULTIPLY:
-      return new MultiplyComposite(config);
+      return new MultiplyComposite(config)
     case CompositeOperation.SCREEN:
-      return new ScreenComposite(config);
+      return new ScreenComposite(config)
     case CompositeOperation.OVERLAY:
-      return new OverlayComposite(config);
+      return new OverlayComposite(config)
     case CompositeOperation.DARKEN:
-      return new DarkenComposite(config);
+      return new DarkenComposite(config)
     case CompositeOperation.LIGHTEN:
-      return new LightenComposite(config);
+      return new LightenComposite(config)
     case CompositeOperation.COLOR_DODGE:
-      return new ColorDodgeComposite(config);
+      return new ColorDodgeComposite(config)
     case CompositeOperation.COLOR_BURN:
-      return new ColorBurnComposite(config);
+      return new ColorBurnComposite(config)
     case CompositeOperation.HARD_LIGHT:
-      return new HardLightComposite(config);
+      return new HardLightComposite(config)
     case CompositeOperation.SOFT_LIGHT:
-      return new SoftLightComposite(config);
+      return new SoftLightComposite(config)
     case CompositeOperation.DIFFERENCE:
-      return new DifferenceComposite(config);
+      return new DifferenceComposite(config)
     case CompositeOperation.EXCLUSION:
-      return new ExclusionComposite(config);
+      return new ExclusionComposite(config)
     case CompositeOperation.HUE:
-      return new HueComposite(config);
+      return new HueComposite(config)
     case CompositeOperation.SATURATION:
-      return new SaturationComposite(config);
+      return new SaturationComposite(config)
     case CompositeOperation.COLOR:
-      return new ColorComposite(config);
+      return new ColorComposite(config)
     case CompositeOperation.LUMINOSITY:
-      return new LuminosityComposite(config);
+      return new LuminosityComposite(config)
     default:
-      throw new Error(`Unsupported composite operation: ${operation}`);
+      throw new Error(`Unsupported composite operation: ${operation}`)
   }
 }
 
@@ -159,14 +155,14 @@ export function createCompositeOperation(
  * 获取所有支持的复合操作
  */
 export function getSupportedCompositeOperations(): CompositeOperation[] {
-  return Object.values(CompositeOperation);
+  return Object.values(CompositeOperation)
 }
 
 /**
  * 检查复合操作是否支持
  */
 export function isCompositeOperationSupported(operation: CompositeOperation): boolean {
-  return Object.values(CompositeOperation).includes(operation);
+  return Object.values(CompositeOperation).includes(operation)
 }
 
 /**
@@ -199,10 +195,10 @@ export function getCompositeOperationDescription(operation: CompositeOperation):
     [CompositeOperation.HUE]: '色相 - 保留源的色相',
     [CompositeOperation.SATURATION]: '饱和度 - 保留源的饱和度',
     [CompositeOperation.COLOR]: '颜色 - 保留源的色相和饱和度',
-    [CompositeOperation.LUMINOSITY]: '亮度 - 保留源的亮度'
-  };
+    [CompositeOperation.LUMINOSITY]: '亮度 - 保留源的亮度',
+  }
 
-  return descriptions[operation] || '未知复合操作';
+  return descriptions[operation] || '未知复合操作'
 }
 
 /**
@@ -235,10 +231,10 @@ export function getCompositeOperationCategory(operation: CompositeOperation): Co
     [CompositeOperation.HUE]: CompositeCategory.BLEND,
     [CompositeOperation.SATURATION]: CompositeCategory.BLEND,
     [CompositeOperation.COLOR]: CompositeCategory.BLEND,
-    [CompositeOperation.LUMINOSITY]: CompositeCategory.BLEND
-  };
+    [CompositeOperation.LUMINOSITY]: CompositeCategory.BLEND,
+  }
 
-  return categories[operation] || CompositeCategory.SPECIAL;
+  return categories[operation] || CompositeCategory.SPECIAL
 }
 
 /**
@@ -249,15 +245,17 @@ export function getCompositeOperationInfo(operation: CompositeOperation): Compos
     name: operation,
     description: getCompositeOperationDescription(operation),
     category: getCompositeOperationCategory(operation),
-    supported: isCompositeOperationSupported(operation)
-  };
+    supported: isCompositeOperationSupported(operation),
+  }
 }
 
 /**
  * 按分类获取复合操作
  */
-export function getCompositeOperationsByCategory(category: CompositeCategory): CompositeOperation[] {
+export function getCompositeOperationsByCategory(
+  category: CompositeCategory
+): CompositeOperation[] {
   return getSupportedCompositeOperations().filter(
-    operation => getCompositeOperationCategory(operation) === category
-  );
+    (operation) => getCompositeOperationCategory(operation) === category
+  )
 }

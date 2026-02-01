@@ -3,19 +3,19 @@
  */
 
 export function illegalState(message?: string): Error {
-  return new Error(message || 'Illegal state');
+  return new Error(message || 'Illegal state')
 }
 
 export class NotSupportedError extends Error {
   constructor(message?: string) {
-    super(message || 'Not supported');
-    this.name = 'NotSupportedError';
+    super(message || 'Not supported')
+    this.name = 'NotSupportedError'
   }
 }
 
 export class CancellationError extends Error {
   constructor() {
-    super('Canceled');
-    this.name = 'CancellationError';
+    super('Canceled')
+    this.name = 'CancellationError'
   }
 }

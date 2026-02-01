@@ -7,48 +7,55 @@
  * 性能报告类型
  */
 export interface PerformanceReport {
-  timestamp: string;
-  metrics: Record<string, { current: number; avg: number; min: number; max: number }>;
-  warnings: Array<{ timestamp: string; type: string; value: number; source: string; severity: string; message: string }>;
-  bottlenecks: { type: string; description: string; suggestions: string[] };
+  timestamp: string
+  metrics: Record<string, { current: number; avg: number; min: number; max: number }>
+  warnings: Array<{
+    timestamp: string
+    type: string
+    value: number
+    source: string
+    severity: string
+    message: string
+  }>
+  bottlenecks: { type: string; description: string; suggestions: string[] }
 }
 
 /**
  * 报告数据提供接口
  */
 export interface IReportDataProvider {
-  generateComprehensiveReport(): PerformanceReport;
+  generateComprehensiveReport(): PerformanceReport
 }
 
 /**
  * 性能报告生成器
  */
 export class PerformanceReporter {
-  private dataProvider: IReportDataProvider;
-  private timer: number | null = null;
-  private counter = 0;
-  private autoExport: boolean;
-  private interval: number;
+  private dataProvider: IReportDataProvider
+  private timer: number | null = null
+  private counter = 0
+  private autoExport: boolean
+  private interval: number
 
   constructor(
     dataProvider: IReportDataProvider,
     interval: number = 60000,
     autoExport: boolean = false
   ) {
-    this.dataProvider = dataProvider;
-    this.interval = interval;
-    this.autoExport = autoExport;
+    this.dataProvider = dataProvider
+    this.interval = interval
+    this.autoExport = autoExport
   }
 
   /**
    * 启动定期报告生成
    */
   start(): void {
-    if (this.interval <= 0) return;
+    if (this.interval <= 0) return
 
     this.timer = window.setInterval(() => {
-      this.generateAndProcess();
-    }, this.interval);
+      this.generateAndProcess()
+    }, this.interval)
   }
 
   /**
@@ -56,8 +63,8 @@ export class PerformanceReporter {
    */
   stop(): void {
     if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
+      clearInterval(this.timer)
+      this.timer = null
     }
   }
 
@@ -65,31 +72,31 @@ export class PerformanceReporter {
    * 获取报告计数
    */
   getCounter(): number {
-    return this.counter;
+    return this.counter
   }
 
   /**
    * 生成报告
    */
   generate(): PerformanceReport {
-    return this.dataProvider.generateComprehensiveReport();
+    return this.dataProvider.generateComprehensiveReport()
   }
 
   /**
    * 导出报告
    */
   export(format: 'json' | 'csv' | 'html' = 'json'): string {
-    const report = this.generate();
+    const report = this.generate()
 
     switch (format) {
       case 'json':
-        return JSON.stringify(report, null, 2);
+        return JSON.stringify(report, null, 2)
       case 'csv':
-        return this.toCSV(report);
+        return this.toCSV(report)
       case 'html':
-        return this.toHTML(report);
+        return this.toHTML(report)
       default:
-        return JSON.stringify(report, null, 2);
+        return JSON.stringify(report, null, 2)
     }
   }
 
@@ -97,14 +104,14 @@ export class PerformanceReporter {
    * 生成并处理报告
    */
   private generateAndProcess(): void {
-    this.counter++;
-    const report = this.generate();
+    this.counter++
+    const report = this.generate()
 
     if (this.autoExport) {
-      this.exportToFile(report);
+      this.exportToFile(report)
     }
 
-    this.emitEvent(report);
+    this.emitEvent(report)
   }
 
   /**
@@ -112,22 +119,22 @@ export class PerformanceReporter {
    */
   private exportToFile(report: PerformanceReport): void {
     try {
-      const filename = `performance-report-${this.counter}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
-      const dataStr = JSON.stringify(report, null, 2);
+      const filename = `performance-report-${this.counter}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`
+      const dataStr = JSON.stringify(report, null, 2)
 
       if (typeof window !== 'undefined') {
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        const blob = new Blob([dataStr], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
 
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        link.click()
 
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(url)
       }
     } catch (error) {
-      console.warn('Failed to export performance report:', error);
+      console.warn('Failed to export performance report:', error)
     }
   }
 
@@ -137,9 +144,9 @@ export class PerformanceReporter {
   private emitEvent(report: PerformanceReport): void {
     if (typeof window !== 'undefined') {
       const event = new CustomEvent('performance-report-generated', {
-        detail: { report, counter: this.counter }
-      });
-      window.dispatchEvent(event);
+        detail: { report, counter: this.counter },
+      })
+      window.dispatchEvent(event)
     }
   }
 
@@ -147,17 +154,19 @@ export class PerformanceReporter {
    * 转换为 CSV
    */
   private toCSV(report: PerformanceReport): string {
-    const lines: string[] = ['Timestamp,Metric,Value,Source,Severity'];
+    const lines: string[] = ['Timestamp,Metric,Value,Source,Severity']
 
     for (const [metric, stats] of Object.entries(report.metrics)) {
-      lines.push(`${report.timestamp},${metric},${stats.current},,`);
+      lines.push(`${report.timestamp},${metric},${stats.current},,`)
     }
 
     for (const warning of report.warnings) {
-      lines.push(`${warning.timestamp},${warning.type},${warning.value},${warning.source},${warning.severity}`);
+      lines.push(
+        `${warning.timestamp},${warning.type},${warning.value},${warning.source},${warning.severity}`
+      )
     }
 
-    return lines.join('\n');
+    return lines.join('\n')
   }
 
   /**
@@ -181,7 +190,9 @@ export class PerformanceReporter {
         <p>生成时间: ${report.timestamp}</p>
 
         <h2>性能指标</h2>
-        ${Object.entries(report.metrics).map(([key, stats]) => `
+        ${Object.entries(report.metrics)
+          .map(
+            ([key, stats]) => `
           <div class="metric">
             <h3>${key}</h3>
             <p>当前值: ${stats.current}</p>
@@ -189,12 +200,18 @@ export class PerformanceReporter {
             <p>最小值: ${stats.min}</p>
             <p>最大值: ${stats.max}</p>
           </div>
-        `).join('')}
+        `
+          )
+          .join('')}
 
         <h2>警告信息</h2>
-        ${report.warnings.map((warning) => `
+        ${report.warnings
+          .map(
+            (warning) => `
           <div class="warning">[${warning.severity}] ${warning.message}</div>
-        `).join('')}
+        `
+          )
+          .join('')}
 
         <h2>瓶颈分析</h2>
         <div class="info">
@@ -204,6 +221,6 @@ export class PerformanceReporter {
         </div>
       </body>
       </html>
-    `;
+    `
   }
 }

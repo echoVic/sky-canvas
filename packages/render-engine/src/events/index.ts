@@ -2,50 +2,64 @@
  * 统一事件系统导出
  */
 
-// 基础事件总线和事件发射器
-export {
-  EventBus, eventBus, EventEmitter, InputEventType
-} from './EventBus';
-
 export type {
-  EventListener, IDisposable, IEventBus
-} from './EventBus';
-
+  EventListener,
+  IDisposable,
+  IEventBus,
+} from './EventBus'
+// 基础事件总线和事件发射器
+// 向后兼容的简化接口
+export {
+  EventBus,
+  EventBus as UnifiedEventBus,
+  EventEmitter,
+  eventBus,
+  InputEventType,
+} from './EventBus'
+// 事件分发器
+export {
+  EventDispatcher,
+  EventDispatcher as UnifiedEventDispatcher,
+  GlobalEventDispatcher,
+} from './EventDispatcher'
+export type {
+  GestureState,
+  GestureType,
+  IGestureConfig,
+} from './GestureRecognizer'
+// 手势识别器
+export {
+  GestureRecognizer,
+  GestureRecognizer as UnifiedGestureRecognizer,
+} from './GestureRecognizer'
+export type {
+  EventListener as InputEventListener,
+  IBaseEvent,
+  IGestureEvent,
+  IMouseEvent,
+  IPoint as EventIPoint,
+  IPointerEvent,
+  ITouch,
+  ITouchEvent,
+} from './InputEvents'
 // 输入事件系统
 export {
-  BaseEvent, InputEventFactory, InputState
-} from './InputEvents';
-
+  BaseEvent,
+  InputEventFactory,
+  InputState,
+} from './InputEvents'
 export type {
-  IPoint as EventIPoint, IBaseEvent, IGestureEvent, IMouseEvent, 
-  EventListener as InputEventListener, IPointerEvent, ITouch, ITouchEvent
-} from './InputEvents';
-
-// 事件分发器
-export { EventDispatcher, GlobalEventDispatcher } from './EventDispatcher';
-
-// 手势识别器
-export { GestureRecognizer } from './GestureRecognizer';
-
-export type {
-  GestureState, GestureType, IGestureConfig
-} from './GestureRecognizer';
-
-// 统一输入管理器
-export { InputManager, createInputManager } from './InputManager';
-
-export type {
-  IMouseEvent as InputMouseEvent,
+  IGestureEvent as InputGestureEvent,
   IKeyboardEvent,
+  IMouseEvent as InputMouseEvent,
+  InputManagerConfig,
+  InputManagerEvents,
   ITouchEvent as InputTouchEvent,
   ITouchPoint,
-  IGestureEvent as InputGestureEvent,
-  InputManagerConfig,
-  InputManagerEvents
-} from './InputManager';
-
-// 向后兼容的简化接口
-export { EventBus as UnifiedEventBus } from './EventBus';
-export { EventDispatcher as UnifiedEventDispatcher } from './EventDispatcher';
-export { GestureRecognizer as UnifiedGestureRecognizer } from './GestureRecognizer';
-export { InputManager as UnifiedInputManager } from './InputManager';
+} from './InputManager'
+// 统一输入管理器
+export {
+  createInputManager,
+  InputManager,
+  InputManager as UnifiedInputManager,
+} from './InputManager'

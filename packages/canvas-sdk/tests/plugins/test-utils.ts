@@ -2,21 +2,21 @@
  * 插件系统测试工具和辅助函数
  */
 
-import { vi } from 'vitest';
-import { 
-  Plugin, 
-  PluginManifest, 
-  PluginPermission, 
-  PluginContext,
-  ExtensionPoint,
-  ExtensionProvider
-} from '../../engine/plugins/types/PluginTypes';
+import { vi } from 'vitest'
+import {
+  type ExtensionPoint,
+  type ExtensionProvider,
+  type Plugin,
+  type PluginContext,
+  type PluginManifest,
+  PluginPermission,
+} from '../../engine/plugins/types/PluginTypes'
 
 /**
  * 创建测试插件清单
  */
 export function createTestManifest(
-  id: string, 
+  id: string,
   overrides: Partial<PluginManifest> = {}
 ): PluginManifest {
   return {
@@ -31,8 +31,8 @@ export function createTestManifest(
     permissions: [PluginPermission.READ_ONLY],
     extensionPoints: [],
     keywords: ['test', 'plugin'],
-    ...overrides
-  };
+    ...overrides,
+  }
 }
 
 /**
@@ -48,16 +48,16 @@ export function createTestExtensionPoint(
     name: `Test Extension Point ${id}`,
     description: 'A test extension point',
     providers: [],
-    ...overrides
-  };
+    ...overrides,
+  }
 }
 
 /**
  * Mock插件实现
  */
 export class MockPlugin implements Plugin {
-  private activated = false;
-  private context?: PluginContext;
+  private activated = false
+  private context?: PluginContext
 
   constructor(
     private shouldThrowOnActivate = false,
@@ -66,26 +66,26 @@ export class MockPlugin implements Plugin {
 
   async activate(context: PluginContext): Promise<void> {
     if (this.shouldThrowOnActivate) {
-      throw new Error('Mock activation error');
+      throw new Error('Mock activation error')
     }
-    this.activated = true;
-    this.context = context;
+    this.activated = true
+    this.context = context
   }
 
   async deactivate(): Promise<void> {
     if (this.shouldThrowOnDeactivate) {
-      throw new Error('Mock deactivation error');
+      throw new Error('Mock deactivation error')
     }
-    this.activated = false;
-    this.context = undefined;
+    this.activated = false
+    this.context = undefined
   }
 
   isActivated(): boolean {
-    return this.activated;
+    return this.activated
   }
 
   getContext(): PluginContext | undefined {
-    return this.context;
+    return this.context
   }
 }
 
@@ -93,9 +93,9 @@ export class MockPlugin implements Plugin {
  * Mock扩展提供者
  */
 export class MockExtensionProvider implements ExtensionProvider {
-  public extensionId: string;
-  public implementation: unknown;
-  public config: Record<string, unknown>;
+  public extensionId: string
+  public implementation: unknown
+  public config: Record<string, unknown>
 
   constructor(
     public id: string,
@@ -103,16 +103,16 @@ export class MockExtensionProvider implements ExtensionProvider {
     private data: unknown = {},
     private shouldThrow = false
   ) {
-    this.extensionId = id;
-    this.implementation = data;
-    this.config = {};
+    this.extensionId = id
+    this.implementation = data
+    this.config = {}
   }
 
   provide(): unknown {
     if (this.shouldThrow) {
-      throw new Error('Mock provider error');
+      throw new Error('Mock provider error')
     }
-    return this.data;
+    return this.data
   }
 }
 
@@ -133,8 +133,8 @@ export function createMockCanvasAPI() {
     redo: vi.fn(),
     zoom: vi.fn(),
     pan: vi.fn(),
-    getViewport: vi.fn().mockReturnValue({ x: 0, y: 0, width: 800, height: 600, zoom: 1 })
-  };
+    getViewport: vi.fn().mockReturnValue({ x: 0, y: 0, width: 800, height: 600, zoom: 1 }),
+  }
 }
 
 /**
@@ -149,8 +149,8 @@ export function createMockUIAPI() {
     addMenuItem: vi.fn(),
     removeMenuItem: vi.fn(),
     addToolbarButton: vi.fn(),
-    removeToolbarButton: vi.fn()
-  };
+    removeToolbarButton: vi.fn(),
+  }
 }
 
 /**
@@ -162,8 +162,8 @@ export function createMockFileSystemAPI() {
     writeFile: vi.fn().mockResolvedValue(undefined),
     deleteFile: vi.fn().mockResolvedValue(undefined),
     listFiles: vi.fn().mockResolvedValue(['file1.txt', 'file2.txt']),
-    createDirectory: vi.fn().mockResolvedValue(undefined)
-  };
+    createDirectory: vi.fn().mockResolvedValue(undefined),
+  }
 }
 
 /**
@@ -185,8 +185,8 @@ export function createMockPermissionManager() {
     importPermissions: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
-    emit: vi.fn()
-  };
+    emit: vi.fn(),
+  }
 }
 
 /**
@@ -208,7 +208,7 @@ export function createMockPerformanceMonitor() {
       memoryUsage: 0,
       apiCalls: 0,
       errors: 0,
-      lastError: undefined
+      lastError: undefined,
     }),
     generateReport: vi.fn().mockReturnValue({
       totalPlugins: 0,
@@ -218,7 +218,7 @@ export function createMockPerformanceMonitor() {
       totalErrors: 0,
       averageLoadTime: 0,
       averageActivationTime: 0,
-      plugins: []
+      plugins: [],
     }),
     getPerformanceWarnings: vi.fn().mockReturnValue([]),
     clearPluginMetrics: vi.fn(),
@@ -228,8 +228,8 @@ export function createMockPerformanceMonitor() {
     setBenchmark: vi.fn(),
     exportData: vi.fn().mockReturnValue({ timestamp: Date.now(), plugins: {} }),
     importData: vi.fn(),
-    dispose: vi.fn()
-  };
+    dispose: vi.fn(),
+  }
 }
 
 /**
@@ -246,7 +246,7 @@ export function createMockMemoryManager() {
     getPluginMemoryUsage: vi.fn().mockReturnValue({
       totalSize: 0,
       resourceCount: 0,
-      resources: []
+      resources: [],
     }),
     detectMemoryLeaks: vi.fn().mockReturnValue([]),
     forceGarbageCollection: vi.fn(),
@@ -257,7 +257,7 @@ export function createMockMemoryManager() {
       averageMemoryPerPlugin: 0,
       largestPlugin: '',
       largestPluginSize: 0,
-      plugins: []
+      plugins: [],
     }),
     startMemoryMonitoring: vi.fn(),
     stopMemoryMonitoring: vi.fn(),
@@ -265,7 +265,7 @@ export function createMockMemoryManager() {
     analyzeMemoryTrend: vi.fn().mockReturnValue({
       isGrowing: false,
       isStable: true,
-      growthRate: 0
+      growthRate: 0,
     }),
     getOptimizationSuggestions: vi.fn().mockReturnValue([]),
     clearPluginData: vi.fn(),
@@ -274,17 +274,17 @@ export function createMockMemoryManager() {
     setGlobalMemoryLimit: vi.fn(),
     getMemoryLimits: vi.fn().mockReturnValue({
       global: 0,
-      plugins: {}
+      plugins: {},
     }),
-    dispose: vi.fn()
-  };
+    dispose: vi.fn(),
+  }
 }
 
 /**
  * 等待异步操作完成
  */
 export function waitForAsync(ms = 0): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -292,32 +292,32 @@ export function waitForAsync(ms = 0): Promise<void> {
  */
 export function createTestPluginModule(PluginClass: typeof MockPlugin = MockPlugin) {
   return {
-    default: PluginClass
-  };
+    default: PluginClass,
+  }
 }
 
 /**
  * 模拟localStorage
  */
 export function mockLocalStorage() {
-  const storage: Record<string, string> = {};
-  
+  const storage: Record<string, string> = {}
+
   return {
     getItem: vi.fn((key: string) => storage[key] || null),
     setItem: vi.fn((key: string, value: string) => {
-      storage[key] = value;
+      storage[key] = value
     }),
     removeItem: vi.fn((key: string) => {
-      delete storage[key];
+      delete storage[key]
     }),
     clear: vi.fn(() => {
-      Object.keys(storage).forEach(key => delete storage[key]);
+      Object.keys(storage).forEach((key) => delete storage[key])
     }),
     key: vi.fn((index: number) => Object.keys(storage)[index] || null),
     get length() {
-      return Object.keys(storage).length;
-    }
-  };
+      return Object.keys(storage).length
+    },
+  }
 }
 
 /**
@@ -332,17 +332,17 @@ export function mockPerformanceMemory(
     value: {
       usedJSHeapSize,
       totalJSHeapSize,
-      jsHeapSizeLimit
+      jsHeapSizeLimit,
     },
-    configurable: true
-  });
+    configurable: true,
+  })
 }
 
 /**
  * 模拟window.confirm
  */
 export function mockConfirm(returnValue = true) {
-  return vi.spyOn(window, 'confirm').mockReturnValue(returnValue);
+  return vi.spyOn(window, 'confirm').mockReturnValue(returnValue)
 }
 
 /**
@@ -353,31 +353,31 @@ export function mockConsole() {
     log: vi.spyOn(console, 'log').mockImplementation(() => {}),
     warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
     error: vi.spyOn(console, 'error').mockImplementation(() => {}),
-    debug: vi.spyOn(console, 'debug').mockImplementation(() => {})
-  };
+    debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
+  }
 }
 
 /**
  * 创建测试事件
  */
 export function createTestEvent(type: string, data?: unknown) {
-  return new CustomEvent(type, { detail: data });
+  return new CustomEvent(type, { detail: data })
 }
 
 /**
  * 验证插件清单格式
  */
 export function validatePluginManifest(manifest: unknown): boolean {
-  const requiredFields = ['id', 'name', 'version', 'description'];
-  const manifestObj = manifest as Record<string, any>;
-  return requiredFields.every(field => field in manifestObj && manifestObj[field]);
+  const requiredFields = ['id', 'name', 'version', 'description']
+  const manifestObj = manifest as Record<string, any>
+  return requiredFields.every((field) => field in manifestObj && manifestObj[field])
 }
 
 /**
  * 生成随机插件ID
  */
 export function generateRandomPluginId(): string {
-  return `test-plugin-${Math.random().toString(36).substr(2, 9)}`;
+  return `test-plugin-${Math.random().toString(36).substr(2, 9)}`
 }
 
 /**
@@ -388,8 +388,8 @@ export function createTestResource(id: string, size: number, disposable = true) 
     id,
     size,
     dispose: disposable ? vi.fn() : undefined,
-    data: `test-data-${id}`
-  };
+    data: `test-data-${id}`,
+  }
 }
 
 /**
@@ -400,7 +400,7 @@ export function assertHasPermission(
   pluginId: string,
   permission: PluginPermission
 ) {
-  expect(permissionManager.hasPermission(pluginId, permission)).toBe(true);
+  expect(permissionManager.hasPermission(pluginId, permission)).toBe(true)
 }
 
 /**
@@ -411,7 +411,7 @@ export function assertResourceExists(
   pluginId: string,
   resourceId: string
 ) {
-  expect(memoryManager.hasResource(pluginId, resourceId)).toBe(true);
+  expect(memoryManager.hasResource(pluginId, resourceId)).toBe(true)
 }
 
 /**
@@ -422,5 +422,5 @@ export function assertPluginStatus(
   pluginId: string,
   expectedStatus: string
 ) {
-  expect(pluginManager.getPluginStatus(pluginId)).toBe(expectedStatus);
+  expect(pluginManager.getPluginStatus(pluginId)).toBe(expectedStatus)
 }

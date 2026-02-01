@@ -2,23 +2,23 @@
  * 标准复合操作
  */
 
-import { BaseCompositeOperation } from './BaseCompositeOperation';
 import {
+  type CompositeConfig,
   CompositeOperation,
-  CompositeConfig,
-  ICompositeOperation
-} from '../types/CompositeTypes';
+  type ICompositeOperation,
+} from '../types/CompositeTypes'
+import { BaseCompositeOperation } from './BaseCompositeOperation'
 
 /**
  * Source Over 复合操作
  */
 export class SourceOverComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.SOURCE_OVER, config);
+    super(CompositeOperation.SOURCE_OVER, config)
   }
 
   clone(): ICompositeOperation {
-    return new SourceOverComposite({ ...this._config });
+    return new SourceOverComposite({ ...this._config })
   }
 }
 
@@ -27,11 +27,11 @@ export class SourceOverComposite extends BaseCompositeOperation {
  */
 export class SourceAtopComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.SOURCE_ATOP, config);
+    super(CompositeOperation.SOURCE_ATOP, config)
   }
 
   clone(): ICompositeOperation {
-    return new SourceAtopComposite({ ...this._config });
+    return new SourceAtopComposite({ ...this._config })
   }
 }
 
@@ -40,11 +40,11 @@ export class SourceAtopComposite extends BaseCompositeOperation {
  */
 export class SourceInComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.SOURCE_IN, config);
+    super(CompositeOperation.SOURCE_IN, config)
   }
 
   clone(): ICompositeOperation {
-    return new SourceInComposite({ ...this._config });
+    return new SourceInComposite({ ...this._config })
   }
 }
 
@@ -53,11 +53,11 @@ export class SourceInComposite extends BaseCompositeOperation {
  */
 export class SourceOutComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.SOURCE_OUT, config);
+    super(CompositeOperation.SOURCE_OUT, config)
   }
 
   clone(): ICompositeOperation {
-    return new SourceOutComposite({ ...this._config });
+    return new SourceOutComposite({ ...this._config })
   }
 }
 
@@ -66,11 +66,11 @@ export class SourceOutComposite extends BaseCompositeOperation {
  */
 export class DestinationOverComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.DESTINATION_OVER, config);
+    super(CompositeOperation.DESTINATION_OVER, config)
   }
 
   clone(): ICompositeOperation {
-    return new DestinationOverComposite({ ...this._config });
+    return new DestinationOverComposite({ ...this._config })
   }
 }
 
@@ -79,11 +79,11 @@ export class DestinationOverComposite extends BaseCompositeOperation {
  */
 export class DestinationAtopComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.DESTINATION_ATOP, config);
+    super(CompositeOperation.DESTINATION_ATOP, config)
   }
 
   clone(): ICompositeOperation {
-    return new DestinationAtopComposite({ ...this._config });
+    return new DestinationAtopComposite({ ...this._config })
   }
 }
 
@@ -92,11 +92,11 @@ export class DestinationAtopComposite extends BaseCompositeOperation {
  */
 export class DestinationInComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.DESTINATION_IN, config);
+    super(CompositeOperation.DESTINATION_IN, config)
   }
 
   clone(): ICompositeOperation {
-    return new DestinationInComposite({ ...this._config });
+    return new DestinationInComposite({ ...this._config })
   }
 }
 
@@ -105,11 +105,11 @@ export class DestinationInComposite extends BaseCompositeOperation {
  */
 export class DestinationOutComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.DESTINATION_OUT, config);
+    super(CompositeOperation.DESTINATION_OUT, config)
   }
 
   clone(): ICompositeOperation {
-    return new DestinationOutComposite({ ...this._config });
+    return new DestinationOutComposite({ ...this._config })
   }
 }
 
@@ -118,11 +118,11 @@ export class DestinationOutComposite extends BaseCompositeOperation {
  */
 export class LighterComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.LIGHTER, config);
+    super(CompositeOperation.LIGHTER, config)
   }
 
   clone(): ICompositeOperation {
-    return new LighterComposite({ ...this._config });
+    return new LighterComposite({ ...this._config })
   }
 }
 
@@ -131,11 +131,11 @@ export class LighterComposite extends BaseCompositeOperation {
  */
 export class CopyComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.COPY, config);
+    super(CompositeOperation.COPY, config)
   }
 
   clone(): ICompositeOperation {
-    return new CopyComposite({ ...this._config });
+    return new CopyComposite({ ...this._config })
   }
 }
 
@@ -144,10 +144,10 @@ export class CopyComposite extends BaseCompositeOperation {
  */
 export class XORComposite extends BaseCompositeOperation {
   constructor(config: CompositeConfig) {
-    super(CompositeOperation.XOR, config);
+    super(CompositeOperation.XOR, config)
   }
 
   clone(): ICompositeOperation {
-    return new XORComposite({ ...this._config });
+    return new XORComposite({ ...this._config })
   }
 }

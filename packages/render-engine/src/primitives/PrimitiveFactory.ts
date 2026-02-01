@@ -1,23 +1,23 @@
 /**
  * 图形原语工厂
  */
-import { CirclePrimitive } from './CirclePrimitive';
-import { GraphicPrimitiveType, IGraphicPrimitive } from './IGraphicPrimitive';
-import { PathPrimitive } from './PathPrimitive';
-import { RectanglePrimitive } from './RectanglePrimitive';
+import { CirclePrimitive } from './CirclePrimitive'
+import type { GraphicPrimitiveType, IGraphicPrimitive } from './IGraphicPrimitive'
+import { PathPrimitive } from './PathPrimitive'
+import { RectanglePrimitive } from './RectanglePrimitive'
 
 /**
  * 图形原语创建选项
  */
 export interface PrimitiveCreateOptions {
-  id?: string;
+  id?: string
   // Rectangle 选项
-  width?: number;
-  height?: number;
+  width?: number
+  height?: number
   // Circle 选项
-  radius?: number;
+  radius?: number
   // Path 选项
-  pathData?: string;
+  pathData?: string
 }
 
 /**
@@ -31,31 +31,21 @@ export class PrimitiveFactory {
    * @returns 图形原语实例
    */
   static create(
-    type: GraphicPrimitiveType, 
+    type: GraphicPrimitiveType,
     options: PrimitiveCreateOptions = {}
   ): IGraphicPrimitive {
     switch (type) {
       case 'rectangle':
-        return new RectanglePrimitive(
-          options.width, 
-          options.height, 
-          options.id
-        );
-        
+        return new RectanglePrimitive(options.width, options.height, options.id)
+
       case 'circle':
-        return new CirclePrimitive(
-          options.radius, 
-          options.id
-        );
-        
+        return new CirclePrimitive(options.radius, options.id)
+
       case 'path':
-        return new PathPrimitive(
-          options.pathData, 
-          options.id
-        );
-        
+        return new PathPrimitive(options.pathData, options.id)
+
       default:
-        throw new Error(`Unsupported primitive type: ${type}`);
+        throw new Error(`Unsupported primitive type: ${type}`)
     }
   }
 
@@ -67,7 +57,7 @@ export class PrimitiveFactory {
    * @returns 矩形原语
    */
   static createRectangle(width?: number, height?: number, id?: string): RectanglePrimitive {
-    return new RectanglePrimitive(width, height, id);
+    return new RectanglePrimitive(width, height, id)
   }
 
   /**
@@ -77,7 +67,7 @@ export class PrimitiveFactory {
    * @returns 圆形原语
    */
   static createCircle(radius?: number, id?: string): CirclePrimitive {
-    return new CirclePrimitive(radius, id);
+    return new CirclePrimitive(radius, id)
   }
 
   /**
@@ -87,7 +77,7 @@ export class PrimitiveFactory {
    * @returns 路径原语
    */
   static createPath(pathData?: string, id?: string): PathPrimitive {
-    return new PathPrimitive(pathData, id);
+    return new PathPrimitive(pathData, id)
   }
 
   /**
@@ -96,6 +86,6 @@ export class PrimitiveFactory {
    * @returns 是否支持
    */
   static isSupported(type: string): type is GraphicPrimitiveType {
-    return ['rectangle', 'circle', 'path', 'line'].includes(type);
+    return ['rectangle', 'circle', 'path', 'line'].includes(type)
   }
 }

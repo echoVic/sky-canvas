@@ -1,49 +1,53 @@
 /**
  * 渲染引擎核心实现
  */
-import { BatchManager, createBatchManagerWithDefaultStrategies } from '../batch';
-import { IGraphicsContext, IGraphicsContextFactory, IPoint } from '../graphics/IGraphicsContext';
-import { Matrix3x3 } from '../math/Matrix3';
-import { createLogger } from '../utils/Logger';
-import { DirtyRegionManager } from './DirtyRegionManager';
-import { GeometryAdapter, IBounds } from './GeometryAdapter';
-import {
+import { type BatchManager, createBatchManagerWithDefaultStrategies } from '../batch'
+import type {
+  IGraphicsContext,
+  IGraphicsContextFactory,
+  IPoint,
+} from '../graphics/IGraphicsContext'
+import { Matrix3x3 } from '../math/Matrix3'
+import { createLogger } from '../utils/Logger'
+import { DirtyRegionManager } from './DirtyRegionManager'
+import { GeometryAdapter, type IBounds } from './GeometryAdapter'
+import type {
+  IRenderable,
   IRenderEngine,
   IRenderEngineConfig,
   IRenderLayer,
   IRenderStats,
-  IRenderable,
-  IViewport
-} from './IRenderEngine';
-import { LayerCache } from './LayerCache';
-import { RenderLayer } from './RenderLayer';
+  IViewport,
+} from './IRenderEngine'
+import { LayerCache } from './LayerCache'
+import { RenderLayer } from './RenderLayer'
 
-const logger = createLogger('RenderEngine');
+const logger = createLogger('RenderEngine')
 
 /**
  * 渲染引擎实现
  */
 export class RenderEngine implements IRenderEngine {
-  private context: IGraphicsContext | null = null;
-  private layers: Map<string, IRenderLayer> = new Map();
-  private viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 };
-  private config: IRenderEngineConfig;
+  private context: IGraphicsContext | null = null
+  private layers: Map<string, IRenderLayer> = new Map()
+  private viewport: IViewport = { x: 0, y: 0, width: 800, height: 600, zoom: 1 }
+  private config: IRenderEngineConfig
   private stats: IRenderStats = {
     frameCount: 0,
     fps: 0,
     renderTime: 0,
-    objectsRendered: 0
-  };
+    objectsRendered: 0,
+  }
 
-  private dirtyRegionManager: DirtyRegionManager = new DirtyRegionManager();
-  private layerCache: LayerCache = new LayerCache();
-  private batchManager: BatchManager | null = null;
-  private geometryAdapter: GeometryAdapter = new GeometryAdapter();
+  private dirtyRegionManager: DirtyRegionManager = new DirtyRegionManager()
+  private layerCache: LayerCache = new LayerCache()
+  private batchManager: BatchManager | null = null
+  private geometryAdapter: GeometryAdapter = new GeometryAdapter()
 
-  private isRunningFlag = false;
-  private animationId: number | null = null;
-  private lastFrameTime = 0;
-  private frameTimeHistory: number[] = [];
+  private isRunningFlag = false
+  private animationId: number | null = null
+  private lastFrameTime = 0
+  private frameTimeHistory: number[] = []
 
   constructor(config: IRenderEngineConfig = {}) {
     this.config = {
@@ -51,337 +55,347 @@ export class RenderEngine implements IRenderEngine {
       enableVSync: true,
       enableCulling: true,
       cullMargin: 50,
-      ...config
-    };
+      ...config,
+    }
   }
 
-  async initialize<TCanvas>(factory: IGraphicsContextFactory<TCanvas>, canvas: TCanvas): Promise<void> {
+  async initialize<TCanvas>(
+    factory: IGraphicsContextFactory<TCanvas>,
+    canvas: TCanvas
+  ): Promise<void> {
     if (this.context) {
-      throw new Error('Render engine already initialized');
+      throw new Error('Render engine already initialized')
     }
     if (!factory.isSupported()) {
-      throw new Error('Graphics context not supported');
+      throw new Error('Graphics context not supported')
     }
 
-    this.context = await factory.createContext(canvas);
+    this.context = await factory.createContext(canvas)
 
-    const gl = (this.context as { gl?: WebGLRenderingContext }).gl;
+    const gl = (this.context as { gl?: WebGLRenderingContext }).gl
     if (gl) {
-      this.batchManager = createBatchManagerWithDefaultStrategies(gl);
+      this.batchManager = createBatchManagerWithDefaultStrategies(gl)
     }
 
-    this.viewport.width = this.context.width;
-    this.viewport.height = this.context.height;
+    this.viewport.width = this.context.width
+    this.viewport.height = this.context.height
   }
 
   start(): void {
-    logger.debug('start() called, isRunning:', this.isRunningFlag, 'context:', !!this.context);
+    logger.debug('start() called, isRunning:', this.isRunningFlag, 'context:', !!this.context)
     if (this.isRunningFlag || !this.context) {
-      logger.debug('start() aborted - already running or no context');
-      return;
+      logger.debug('start() aborted - already running or no context')
+      return
     }
 
-    this.isRunningFlag = true;
-    this.lastFrameTime = performance.now();
+    this.isRunningFlag = true
+    this.lastFrameTime = performance.now()
 
-    logger.debug('Starting render loop, enableVSync:', this.config.enableVSync);
+    logger.debug('Starting render loop, enableVSync:', this.config.enableVSync)
     if (this.config.enableVSync) {
-      this.startVSyncLoop();
+      this.startVSyncLoop()
     } else {
-      this.startCustomLoop();
+      this.startCustomLoop()
     }
   }
 
   stop(): void {
-    this.isRunningFlag = false;
+    this.isRunningFlag = false
     if (this.animationId !== null) {
       if (this.config.enableVSync) {
-        cancelAnimationFrame(this.animationId);
+        cancelAnimationFrame(this.animationId)
       } else {
-        clearTimeout(this.animationId);
+        clearTimeout(this.animationId)
       }
-      this.animationId = null;
+      this.animationId = null
     }
   }
 
   render(): void {
     if (!this.context) {
-      logger.debug('render() aborted - no context');
-      return;
+      logger.debug('render() aborted - no context')
+      return
     }
 
-    const startTime = performance.now();
-    const dirtyRegions = this.dirtyRegionManager.optimizeDirtyRegions();
+    const startTime = performance.now()
+    const dirtyRegions = this.dirtyRegionManager.optimizeDirtyRegions()
 
     if (dirtyRegions.length > 0) {
-      dirtyRegions.forEach((region) => this.renderRegion(region));
+      dirtyRegions.forEach((region) => this.renderRegion(region))
     } else {
-      this.context.clear();
-      this.context.save();
-      this.setupViewportTransform();
-      this.renderLayers();
-      this.context.restore();
+      this.context.clear()
+      this.context.save()
+      this.setupViewportTransform()
+      this.renderLayers()
+      this.context.restore()
     }
 
     // 提交渲染命令到 GPU（关键：WebGL batchManager 需要 flush）
-    this.context.present();
+    this.context.present()
 
-    this.dirtyRegionManager.prepareNextFrame();
-    this.updateStats(performance.now() - startTime);
+    this.dirtyRegionManager.prepareNextFrame()
+    this.updateStats(performance.now() - startTime)
   }
 
   isRunning(): boolean {
-    return this.isRunningFlag;
+    return this.isRunningFlag
   }
 
   getContext(): IGraphicsContext | null {
-    return this.context;
+    return this.context
   }
 
   setViewport(viewport: Partial<IViewport>): void {
-    this.viewport = { ...this.viewport, ...viewport };
+    this.viewport = { ...this.viewport, ...viewport }
   }
 
   getViewport(): IViewport {
-    return { ...this.viewport };
+    return { ...this.viewport }
   }
 
   createLayer(id: string, zIndex: number = 0): IRenderLayer {
-    const layer = new RenderLayer(id, true, 1, zIndex);
-    this.layers.set(id, layer);
-    return layer;
+    const layer = new RenderLayer(id, true, 1, zIndex)
+    this.layers.set(id, layer)
+    return layer
   }
 
   getLayer(id: string): IRenderLayer | undefined {
-    return this.layers.get(id);
+    return this.layers.get(id)
   }
 
   removeLayer(id: string): void {
-    this.layers.delete(id);
+    this.layers.delete(id)
   }
 
   screenToWorld(point: IPoint): IPoint {
-    if (!this.context) return point;
-    const screenPoint = this.context.screenToWorld(point);
+    if (!this.context) return point
+    const screenPoint = this.context.screenToWorld(point)
     return {
       x: (screenPoint.x + this.viewport.x) / this.viewport.zoom,
-      y: (screenPoint.y + this.viewport.y) / this.viewport.zoom
-    };
+      y: (screenPoint.y + this.viewport.y) / this.viewport.zoom,
+    }
   }
 
   worldToScreen(point: IPoint): IPoint {
-    if (!this.context) return point;
+    if (!this.context) return point
     const worldPoint = {
       x: point.x * this.viewport.zoom - this.viewport.x,
-      y: point.y * this.viewport.zoom - this.viewport.y
-    };
-    return this.context.worldToScreen(worldPoint);
+      y: point.y * this.viewport.zoom - this.viewport.y,
+    }
+    return this.context.worldToScreen(worldPoint)
   }
 
   getStats(): IRenderStats {
-    return { ...this.stats };
+    return { ...this.stats }
   }
 
   // 性能优化方法
   markRegionDirty(bounds: IBounds): void {
-    this.dirtyRegionManager.markRegionDirty(bounds as unknown as Parameters<typeof this.dirtyRegionManager.markRegionDirty>[0]);
+    this.dirtyRegionManager.markRegionDirty(
+      bounds as unknown as Parameters<typeof this.dirtyRegionManager.markRegionDirty>[0]
+    )
   }
 
   invalidateLayerCache(layerId: string): void {
-    this.layerCache.invalidateCache(layerId);
+    this.layerCache.invalidateCache(layerId)
   }
 
   getCacheMemoryUsage(): number {
-    return this.layerCache.getCacheMemoryUsage();
+    return this.layerCache.getCacheMemoryUsage()
   }
 
   cleanupExpiredCache(): void {
-    this.layerCache.cleanupExpiredCache();
+    this.layerCache.cleanupExpiredCache()
   }
 
   hitTest(point: IPoint): IRenderable | null {
-    const worldPoint = this.screenToWorld(point);
-    const sortedLayers = this.getSortedLayers(true);
+    const worldPoint = this.screenToWorld(point)
+    const sortedLayers = this.getSortedLayers(true)
 
     for (const layer of sortedLayers) {
-      const renderables = layer.getRenderables().reverse();
+      const renderables = layer.getRenderables().reverse()
       for (const renderable of renderables) {
         if (renderable.hitTest(worldPoint)) {
-          return renderable;
+          return renderable
         }
       }
     }
-    return null;
+    return null
   }
 
   getObjectsInViewport(): IRenderable[] {
-    const cullMargin = this.config.cullMargin || 50;
+    const cullMargin = this.config.cullMargin || 50
     const viewportBounds: IBounds = {
       x: this.viewport.x - cullMargin,
       y: this.viewport.y - cullMargin,
       width: this.viewport.width / this.viewport.zoom + cullMargin * 2,
-      height: this.viewport.height / this.viewport.zoom + cullMargin * 2
-    };
+      height: this.viewport.height / this.viewport.zoom + cullMargin * 2,
+    }
 
-    const result: IRenderable[] = [];
+    const result: IRenderable[] = []
     for (const layer of this.layers.values()) {
-      if (!layer.visible) continue;
+      if (!layer.visible) continue
       for (const renderable of layer.getRenderables()) {
         if (this.boundsIntersect(renderable.getBounds(), viewportBounds)) {
-          result.push(renderable);
+          result.push(renderable)
         }
       }
     }
-    return result;
+    return result
   }
 
   dispose(): void {
-    this.stop();
+    this.stop()
     if (this.context) {
-      this.context.dispose();
-      this.context = null;
+      this.context.dispose()
+      this.context = null
     }
-    this.layers.clear();
+    this.layers.clear()
   }
 
   // 私有方法
   private renderRegion(region: IBounds): void {
-    if (!this.context) return;
-    this.context.save();
-    this.context.beginPath();
-    this.context.rect(region.x, region.y, region.width, region.height);
-    this.context.clip();
-    this.renderLayers();
-    this.context.restore();
+    if (!this.context) return
+    this.context.save()
+    this.context.beginPath()
+    this.context.rect(region.x, region.y, region.width, region.height)
+    this.context.clip()
+    this.renderLayers()
+    this.context.restore()
   }
 
   private startVSyncLoop(): void {
     const loop = () => {
-      if (!this.isRunningFlag) return;
-      this.render();
-      this.animationId = requestAnimationFrame(loop);
-    };
-    this.animationId = requestAnimationFrame(loop);
+      if (!this.isRunningFlag) return
+      this.render()
+      this.animationId = requestAnimationFrame(loop)
+    }
+    this.animationId = requestAnimationFrame(loop)
   }
 
   private startCustomLoop(): void {
-    const targetInterval = 1000 / (this.config.targetFPS || 60);
+    const targetInterval = 1000 / (this.config.targetFPS || 60)
     const loop = () => {
-      if (!this.isRunningFlag) return;
-      this.render();
-      this.animationId = setTimeout(loop, targetInterval) as unknown as number;
-    };
-    this.animationId = setTimeout(loop, targetInterval) as unknown as number;
+      if (!this.isRunningFlag) return
+      this.render()
+      this.animationId = setTimeout(loop, targetInterval) as unknown as number
+    }
+    this.animationId = setTimeout(loop, targetInterval) as unknown as number
   }
 
   private setupViewportTransform(): void {
-    if (!this.context) return;
-    this.context.scale(this.viewport.zoom, this.viewport.zoom);
-    this.context.translate(-this.viewport.x, -this.viewport.y);
+    if (!this.context) return
+    this.context.scale(this.viewport.zoom, this.viewport.zoom)
+    this.context.translate(-this.viewport.x, -this.viewport.y)
   }
 
   private getSortedLayers(descending: boolean = false): IRenderLayer[] {
     const sorted = Array.from(this.layers.values())
       .filter((layer) => layer.visible)
-      .sort((a, b) => a.zIndex - b.zIndex);
-    return descending ? sorted.reverse() : sorted;
+      .sort((a, b) => a.zIndex - b.zIndex)
+    return descending ? sorted.reverse() : sorted
   }
 
   private renderLayers(): void {
-    if (!this.context) return;
+    if (!this.context) return
 
-    const sortedLayers = this.getSortedLayers();
-    let objectsRendered = 0;
+    const sortedLayers = this.getSortedLayers()
+    let objectsRendered = 0
 
     for (const layer of sortedLayers) {
-      this.context.save();
-      this.context.setOpacity(layer.opacity);
+      this.context.save()
+      this.context.setOpacity(layer.opacity)
 
-      const renderables = layer.getRenderables();
+      const renderables = layer.getRenderables()
 
       // 直接渲染，跳过缓存逻辑
-      this.renderLayerRenderables(renderables);
-      objectsRendered += renderables.length;
+      this.renderLayerRenderables(renderables)
+      objectsRendered += renderables.length
 
-      this.context.restore();
+      this.context.restore()
     }
 
-    this.stats.objectsRendered = objectsRendered;
+    this.stats.objectsRendered = objectsRendered
   }
 
   private renderLayerRenderables(renderables: IRenderable[]): void {
-    if (!this.context) return;
+    if (!this.context) return
     for (const renderable of renderables) {
-      this.context.save();
-      renderable.render(this.context);
+      this.context.save()
+      renderable.render(this.context)
       // 直接传递 renderable 对象，它有 getBounds 方法
-      this.dirtyRegionManager.updateCurrentFrameShape(renderable);
-      this.context.restore();
+      this.dirtyRegionManager.updateCurrentFrameShape(renderable)
+      this.context.restore()
     }
   }
 
   private renderWithBatching(renderables: IRenderable[]): void {
-    const groups = this.groupRenderablesByType(renderables);
+    const groups = this.groupRenderablesByType(renderables)
 
     for (const [, groupRenderables] of groups.entries()) {
       if (groupRenderables.length > 10 && this.batchManager) {
-        this.batchManager.setStrategy('instanced');
+        this.batchManager.setStrategy('instanced')
         groupRenderables.forEach((renderable) => {
-          const batchRenderable = this.geometryAdapter.adaptRenderable(renderable);
-          this.batchManager!.addRenderable(batchRenderable);
-        });
+          const batchRenderable = this.geometryAdapter.adaptRenderable(renderable)
+          this.batchManager!.addRenderable(batchRenderable)
+        })
       } else {
-        this.renderLayerRenderables(groupRenderables);
+        this.renderLayerRenderables(groupRenderables)
       }
     }
 
     if (this.batchManager) {
       // 创建正投影矩阵
-      const projectionMatrix = new Matrix3x3();
-      this.batchManager.flush(projectionMatrix);
+      const projectionMatrix = new Matrix3x3()
+      this.batchManager.flush(projectionMatrix)
     }
   }
 
   private groupRenderablesByType(renderables: IRenderable[]): Map<string, IRenderable[]> {
-    const groups = new Map<string, IRenderable[]>();
+    const groups = new Map<string, IRenderable[]>()
     renderables.forEach((renderable) => {
-      const type = renderable.constructor.name;
-      const group = groups.get(type) || [];
-      group.push(renderable);
-      groups.set(type, group);
-    });
-    return groups;
+      const type = renderable.constructor.name
+      const group = groups.get(type) || []
+      group.push(renderable)
+      groups.set(type, group)
+    })
+    return groups
   }
 
   private canCacheLayer(renderables: IRenderable[]): boolean {
-    return renderables.every((renderable) => !this.isRenderableAnimating(renderable));
+    return renderables.every((renderable) => !this.isRenderableAnimating(renderable))
   }
 
   private isRenderableAnimating(_renderable: IRenderable): boolean {
-    return false;
+    return false
   }
 
   private boundsIntersect(a: IBounds, b: IBounds): boolean {
-    return !(a.x + a.width < b.x || b.x + b.width < a.x || a.y + a.height < b.y || b.y + b.height < a.y);
+    return !(
+      a.x + a.width < b.x ||
+      b.x + b.width < a.x ||
+      a.y + a.height < b.y ||
+      b.y + b.height < a.y
+    )
   }
 
   private updateStats(renderTime: number): void {
-    this.stats.frameCount++;
-    this.stats.renderTime = renderTime;
+    this.stats.frameCount++
+    this.stats.renderTime = renderTime
 
-    const currentTime = performance.now();
-    this.frameTimeHistory.push(currentTime);
+    const currentTime = performance.now()
+    this.frameTimeHistory.push(currentTime)
 
     while (this.frameTimeHistory.length > 0) {
-      const firstFrameTime = this.frameTimeHistory[0];
+      const firstFrameTime = this.frameTimeHistory[0]
       if (firstFrameTime !== undefined && currentTime - firstFrameTime > 1000) {
-        this.frameTimeHistory.shift();
+        this.frameTimeHistory.shift()
       } else {
-        break;
+        break
       }
     }
 
-    this.stats.fps = this.frameTimeHistory.length;
-    this.lastFrameTime = currentTime;
+    this.stats.fps = this.frameTimeHistory.length
+    this.lastFrameTime = currentTime
   }
 }

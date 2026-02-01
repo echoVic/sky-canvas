@@ -3,54 +3,54 @@
  * 模拟浏览器环境中的动画相关API
  */
 
-import { vi } from 'vitest';
+import { vi } from 'vitest'
 
 // 模拟 performance.now()
 if (!global.performance) {
   global.performance = {
-    now: vi.fn(() => Date.now())
-  } as any;
+    now: vi.fn(() => Date.now()),
+  } as any
 }
 
 // 模拟 requestAnimationFrame 和 cancelAnimationFrame
-let animationId = 1;
-const animationCallbacks = new Map<number, FrameRequestCallback>();
+let animationId = 1
+const animationCallbacks = new Map<number, FrameRequestCallback>()
 
 global.requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
-  const id = animationId++;
-  animationCallbacks.set(id, callback);
-  
+  const id = animationId++
+  animationCallbacks.set(id, callback)
+
   // 异步执行回调以模拟真实的动画帧
   setTimeout(() => {
-    const cb = animationCallbacks.get(id);
+    const cb = animationCallbacks.get(id)
     if (cb) {
-      cb(performance.now());
-      animationCallbacks.delete(id);
+      cb(performance.now())
+      animationCallbacks.delete(id)
     }
-  }, 16); // 模拟 60fps
-  
-  return id;
-});
+  }, 16) // 模拟 60fps
+
+  return id
+})
 
 global.cancelAnimationFrame = vi.fn((id: number) => {
-  animationCallbacks.delete(id);
-});
+  animationCallbacks.delete(id)
+})
 
 // 模拟 setTimeout 和 clearTimeout
-const originalSetTimeout = global.setTimeout;
+const originalSetTimeout = global.setTimeout
 Object.defineProperty(global, 'setTimeout', {
   value: vi.fn((fn: Function, delay?: number) => {
-    const id = Math.random();
-    originalSetTimeout(() => fn(), delay || 0);
-    return id;
+    const id = Math.random()
+    originalSetTimeout(() => fn(), delay || 0)
+    return id
   }),
-  writable: true
-});
+  writable: true,
+})
 
 Object.defineProperty(global, 'clearTimeout', {
   value: vi.fn(),
-  writable: true
-});
+  writable: true,
+})
 
 // 创建测试用的动画目标对象
 export function createTestTarget() {
@@ -66,13 +66,13 @@ export function createTestTarget() {
       x: 0,
       y: 0,
       rotation: 0,
-      scale: 1
+      scale: 1,
     },
     style: {
       backgroundColor: '#ffffff',
-      borderRadius: 0
-    }
-  };
+      borderRadius: 0,
+    },
+  }
 }
 
 // 测试工具函数
@@ -81,22 +81,22 @@ export class TestUtils {
    * 等待指定时间
    */
   static async wait(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   /**
    * 等待下一个动画帧
    */
   static async waitForAnimationFrame(): Promise<void> {
-    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+    return new Promise((resolve) => requestAnimationFrame(() => resolve()))
   }
 
   /**
    * 模拟时间流逝
    */
   static mockTimeElapse(ms: number): void {
-    const now = performance.now();
-    vi.mocked(performance.now).mockReturnValue(now + ms);
+    const now = performance.now()
+    vi.mocked(performance.now).mockReturnValue(now + ms)
   }
 
   /**
@@ -104,7 +104,7 @@ export class TestUtils {
    */
   static async flushAnimationFrames(): Promise<void> {
     // 等待一段时间让所有动画帧回调执行
-    await this.wait(50);
+    await TestUtils.wait(50)
   }
 
   /**
@@ -112,13 +112,13 @@ export class TestUtils {
    */
   static resetTimeMocks(): void {
     if (vi.mocked(performance.now).mockClear) {
-      vi.mocked(performance.now).mockClear();
+      vi.mocked(performance.now).mockClear()
     }
     if (vi.mocked(requestAnimationFrame).mockClear) {
-      vi.mocked(requestAnimationFrame).mockClear();
+      vi.mocked(requestAnimationFrame).mockClear()
     }
     if (vi.mocked(cancelAnimationFrame).mockClear) {
-      vi.mocked(cancelAnimationFrame).mockClear();
+      vi.mocked(cancelAnimationFrame).mockClear()
     }
   }
 }

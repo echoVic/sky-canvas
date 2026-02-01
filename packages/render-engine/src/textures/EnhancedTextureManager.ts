@@ -3,58 +3,58 @@
  * 整合纹理加载、图集管理和缓存功能
  */
 
-import { EventEmitter } from '../events/EventBus';
-import { TextureAtlas, AtlasEntry, TextureInfo, AtlasConfig } from './TextureAtlas';
-import { TextureLoader, LoadOptions, TextureLoadState } from './TextureLoader';
+import { EventEmitter } from '../events/EventBus'
+import { type AtlasConfig, type AtlasEntry, TextureAtlas, TextureInfo } from './TextureAtlas'
+import { type LoadOptions, TextureLoader, TextureLoadState } from './TextureLoader'
 
 // 纹理配置
 export interface TextureConfig {
-  atlas?: Partial<AtlasConfig>;
+  atlas?: Partial<AtlasConfig>
   loader?: {
-    maxConcurrentLoads?: number;
-    defaultTimeout?: number;
-    maxRetries?: number;
-  };
+    maxConcurrentLoads?: number
+    defaultTimeout?: number
+    maxRetries?: number
+  }
   cache?: {
-    maxSize?: number;
-    ttl?: number; // Time to live in milliseconds
-  };
+    maxSize?: number
+    ttl?: number // Time to live in milliseconds
+  }
 }
 
 // 缓存项
 interface CacheEntry {
-  data: AtlasEntry | HTMLImageElement;
-  lastAccessed: number;
-  accessCount: number;
-  size: number; // 估算的内存大小
+  data: AtlasEntry | HTMLImageElement
+  lastAccessed: number
+  accessCount: number
+  size: number // 估算的内存大小
 }
 
 // 管理器事件
 export interface ManagerEvents {
-  textureLoaded: { url: string; entry: AtlasEntry | HTMLImageElement };
-  textureUnloaded: { url: string };
-  atlasOptimized: { atlasId: string; utilization: number };
-  cacheCleared: { freedMemory: number };
-  memoryWarning: { usage: number; limit: number };
+  textureLoaded: { url: string; entry: AtlasEntry | HTMLImageElement }
+  textureUnloaded: { url: string }
+  atlasOptimized: { atlasId: string; utilization: number }
+  cacheCleared: { freedMemory: number }
+  memoryWarning: { usage: number; limit: number }
 }
 
 /**
  * 纹理管理器
  */
 export class TextureManager extends EventEmitter<ManagerEvents> {
-  private atlas: TextureAtlas;
-  private loader: TextureLoader;
-  private cache = new Map<string, CacheEntry>();
-  
-  private config: Required<TextureConfig>;
-  private cacheSize = 0;
-  private lastCleanupTime = 0;
-  
-  private readonly CLEANUP_INTERVAL = 60000; // 1分钟
+  private atlas: TextureAtlas
+  private loader: TextureLoader
+  private cache = new Map<string, CacheEntry>()
+
+  private config: Required<TextureConfig>
+  private cacheSize = 0
+  private lastCleanupTime = 0
+
+  private readonly CLEANUP_INTERVAL = 60000 // 1分钟
 
   constructor(config?: TextureConfig) {
-    super();
-    
+    super()
+
     this.config = {
       atlas: {
         maxWidth: 2048,
@@ -63,26 +63,26 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
         powerOfTwo: true,
         allowRotation: false,
         algorithm: 'maxrects',
-        ...config?.atlas
+        ...config?.atlas,
       },
       loader: {
         maxConcurrentLoads: 6,
         defaultTimeout: 10000,
         maxRetries: 3,
-        ...config?.loader
+        ...config?.loader,
       },
       cache: {
         maxSize: 128 * 1024 * 1024, // 128MB
         ttl: 5 * 60 * 1000, // 5分钟
-        ...config?.cache
-      }
-    };
+        ...config?.cache,
+      },
+    }
 
-    this.atlas = new TextureAtlas(this.config.atlas);
-    this.loader = new TextureLoader(this.atlas);
-    
-    this.setupEventListeners();
-    this.startCleanupTimer();
+    this.atlas = new TextureAtlas(this.config.atlas)
+    this.loader = new TextureLoader(this.atlas)
+
+    this.setupEventListeners()
+    this.startCleanupTimer()
   }
 
   /**
@@ -90,47 +90,50 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    */
   async loadTexture(url: string, options?: LoadOptions): Promise<AtlasEntry | HTMLImageElement> {
     // 检查缓存
-    const cached = this.cache.get(url);
+    const cached = this.cache.get(url)
     if (cached) {
-      cached.lastAccessed = Date.now();
-      cached.accessCount++;
-      return cached.data;
+      cached.lastAccessed = Date.now()
+      cached.accessCount++
+      return cached.data
     }
 
     // 加载纹理
-    const data = await this.loader.loadTexture(url, options);
-    
+    const data = await this.loader.loadTexture(url, options)
+
     // 添加到缓存
-    this.addToCache(url, data);
-    
-    this.emit('textureLoaded', { url, entry: data });
-    
-    return data;
+    this.addToCache(url, data)
+
+    this.emit('textureLoaded', { url, entry: data })
+
+    return data
   }
 
   /**
    * 批量加载纹理
    */
-  async loadTextures(urls: string[], options?: LoadOptions): Promise<Map<string, AtlasEntry | HTMLImageElement>> {
-    const results = new Map<string, AtlasEntry | HTMLImageElement>();
-    
+  async loadTextures(
+    urls: string[],
+    options?: LoadOptions
+  ): Promise<Map<string, AtlasEntry | HTMLImageElement>> {
+    const results = new Map<string, AtlasEntry | HTMLImageElement>()
+
     // 分批加载以避免内存峰值
-    const batchSize = 10;
+    const batchSize = 10
     for (let i = 0; i < urls.length; i += batchSize) {
-      const batch = urls.slice(i, i + batchSize);
+      const batch = urls.slice(i, i + batchSize)
       const batchResults = await Promise.allSettled(
-        batch.map(url => this.loadTexture(url, options))
-      );
-      
+        batch.map((url) => this.loadTexture(url, options))
+      )
+
       batch.forEach((url, index) => {
-        const result = batchResults[index];
+        const result = batchResults[index]
         if (result.status === 'fulfilled') {
-          results.set(url, result.value);
+          results.set(url, result.value)
         }
-      });
+      })
     }
-    
-    return results;
+
+    return results
   }
 
   /**
@@ -138,7 +141,7 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    */
   preloadTextures(urls: string[], options?: LoadOptions): void {
     for (const url of urls) {
-      this.loader.preloadTexture(url, options);
+      this.loader.preloadTexture(url, options)
     }
   }
 
@@ -146,126 +149,126 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    * 获取纹理
    */
   getTexture(url: string): AtlasEntry | HTMLImageElement | null {
-    const cached = this.cache.get(url);
+    const cached = this.cache.get(url)
     if (cached) {
-      cached.lastAccessed = Date.now();
-      cached.accessCount++;
-      return cached.data;
+      cached.lastAccessed = Date.now()
+      cached.accessCount++
+      return cached.data
     }
-    
-    return null;
+
+    return null
   }
 
   /**
    * 卸载纹理
    */
   unloadTexture(url: string): boolean {
-    const cached = this.cache.get(url);
-    if (!cached) return false;
-    
+    const cached = this.cache.get(url)
+    if (!cached) return false
+
     // 从缓存中移除
-    this.cacheSize -= cached.size;
-    this.cache.delete(url);
-    
+    this.cacheSize -= cached.size
+    this.cache.delete(url)
+
     // 如果是图集纹理，从图集中移除
     if (cached.data && typeof cached.data === 'object' && 'atlasId' in cached.data) {
-      const atlasEntry = cached.data as AtlasEntry;
-      this.atlas.removeTexture(atlasEntry.textureId);
+      const atlasEntry = cached.data as AtlasEntry
+      this.atlas.removeTexture(atlasEntry.textureId)
     }
-    
-    this.emit('textureUnloaded', { url });
-    
-    return true;
+
+    this.emit('textureUnloaded', { url })
+
+    return true
   }
 
   /**
    * 批量卸载纹理
    */
   unloadTextures(urls: string[]): number {
-    let unloadedCount = 0;
+    let unloadedCount = 0
     for (const url of urls) {
       if (this.unloadTexture(url)) {
-        unloadedCount++;
+        unloadedCount++
       }
     }
-    return unloadedCount;
+    return unloadedCount
   }
 
   /**
    * 清理未使用的纹理
    */
   cleanup(force = false): number {
-    const now = Date.now();
-    let freedMemory = 0;
-    const toRemove: string[] = [];
-    
+    const now = Date.now()
+    let freedMemory = 0
+    const toRemove: string[] = []
+
     for (const [url, entry] of this.cache) {
-      const isExpired = now - entry.lastAccessed > (this.config.cache?.ttl || 300000);
-      const isLowPriority = entry.accessCount < 2;
-      
+      const isExpired = now - entry.lastAccessed > (this.config.cache?.ttl || 300000)
+      const isLowPriority = entry.accessCount < 2
+
       if (force || (isExpired && isLowPriority)) {
-        toRemove.push(url);
-        freedMemory += entry.size;
+        toRemove.push(url)
+        freedMemory += entry.size
       }
     }
-    
+
     for (const url of toRemove) {
-      this.unloadTexture(url);
+      this.unloadTexture(url)
     }
-    
+
     // 优化图集
-    this.atlas.optimizeAll();
-    
+    this.atlas.optimizeAll()
+
     if (freedMemory > 0) {
-      this.emit('cacheCleared', { freedMemory });
+      this.emit('cacheCleared', { freedMemory })
     }
-    
-    this.lastCleanupTime = now;
-    
-    return freedMemory;
+
+    this.lastCleanupTime = now
+
+    return freedMemory
   }
 
   /**
    * 获取统计信息
    */
   getStats() {
-    const atlasStats = this.atlas.getStats();
-    const loaderProgress = this.loader.getProgress();
-    
+    const atlasStats = this.atlas.getStats()
+    const loaderProgress = this.loader.getProgress()
+
     return {
       cache: {
         entries: this.cache.size,
         totalSize: this.cacheSize,
         maxSize: this.config.cache?.maxSize || 100 * 1024 * 1024,
-        utilization: this.cacheSize / (this.config.cache?.maxSize || 100 * 1024 * 1024)
+        utilization: this.cacheSize / (this.config.cache?.maxSize || 100 * 1024 * 1024),
       },
       atlas: atlasStats,
-      loader: loaderProgress
-    };
+      loader: loaderProgress,
+    }
   }
 
   /**
    * 获取内存使用情况
    */
   getMemoryUsage(): { cache: number; atlas: number; total: number } {
-    const atlasStats = this.atlas.getStats();
-    
+    const atlasStats = this.atlas.getStats()
+
     return {
       cache: this.cacheSize,
       atlas: atlasStats.totalMemoryUsage,
-      total: this.cacheSize + atlasStats.totalMemoryUsage
-    };
+      total: this.cacheSize + atlasStats.totalMemoryUsage,
+    }
   }
 
   /**
    * 设置内存限制
    */
   setMemoryLimit(limit: number): void {
-    this.config.cache.maxSize = limit;
-    
+    this.config.cache.maxSize = limit
+
     // 如果当前使用量超过限制，强制清理
     if (this.cacheSize > limit) {
-      this.cleanup(true);
+      this.cleanup(true)
     }
   }
 
@@ -273,7 +276,7 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    * 优化纹理图集
    */
   optimizeAtlases(): void {
-    this.atlas.optimizeAll();
+    this.atlas.optimizeAll()
   }
 
   /**
@@ -281,53 +284,52 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    */
   private addToCache(url: string, data: AtlasEntry | HTMLImageElement): void {
     // 估算内存大小
-    let size = 0;
+    let size = 0
     if (data instanceof HTMLImageElement) {
-      size = data.width * data.height * 4; // RGBA
+      size = data.width * data.height * 4 // RGBA
     } else if ('width' in data && 'height' in data) {
-      size = data.width * data.height * 4;
+      size = data.width * data.height * 4
     }
-    
+
     // 检查是否需要清理缓存
-    const maxSize = this.config.cache?.maxSize || 100 * 1024 * 1024;
+    const maxSize = this.config.cache?.maxSize || 100 * 1024 * 1024
     if (this.cacheSize + size > maxSize) {
-      this.cleanup();
-      
+      this.cleanup()
+
       // 如果还是超出限制，清理最少使用的纹理
       if (this.cacheSize + size > maxSize) {
-        this.cleanupLRU(size);
+        this.cleanupLRU(size)
       }
     }
-    
+
     const entry: CacheEntry = {
       data,
       lastAccessed: Date.now(),
       accessCount: 1,
-      size
-    };
-    
-    this.cache.set(url, entry);
-    this.cacheSize += size;
+      size,
+    }
+
+    this.cache.set(url, entry)
+    this.cacheSize += size
   }
 
   /**
    * LRU清理
    */
   private cleanupLRU(requiredSpace: number): void {
-    const entries = Array.from(this.cache.entries())
-      .sort(([, a], [, b]) => {
-        // 按最后访问时间和访问次数排序
-        const aScore = a.lastAccessed + a.accessCount * 10000;
-        const bScore = b.lastAccessed + b.accessCount * 10000;
-        return aScore - bScore;
-      });
-    
-    let freedSpace = 0;
+    const entries = Array.from(this.cache.entries()).sort(([, a], [, b]) => {
+      // 按最后访问时间和访问次数排序
+      const aScore = a.lastAccessed + a.accessCount * 10000
+      const bScore = b.lastAccessed + b.accessCount * 10000
+      return aScore - bScore
+    })
+
+    let freedSpace = 0
     for (const [url, entry] of entries) {
-      if (freedSpace >= requiredSpace) break;
-      
-      this.unloadTexture(url);
-      freedSpace += entry.size;
+      if (freedSpace >= requiredSpace) break
+
+      this.unloadTexture(url)
+      freedSpace += entry.size
     }
   }
 
@@ -336,21 +338,21 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    */
   private setupEventListeners(): void {
     this.atlas.on('atlasOptimized', (event) => {
-      this.emit('atlasOptimized', { 
-        atlasId: event.atlasId, 
-        utilization: event.afterUtilization 
-      });
-    });
-    
+      this.emit('atlasOptimized', {
+        atlasId: event.atlasId,
+        utilization: event.afterUtilization,
+      })
+    })
+
     this.atlas.on('memoryPressure', (event) => {
-      this.emit('memoryWarning', { 
-        usage: event.totalMemory, 
-        limit: event.threshold 
-      });
-      
+      this.emit('memoryWarning', {
+        usage: event.totalMemory,
+        limit: event.threshold,
+      })
+
       // 自动清理
-      this.cleanup();
-    });
+      this.cleanup()
+    })
   }
 
   /**
@@ -358,23 +360,23 @@ export class TextureManager extends EventEmitter<ManagerEvents> {
    */
   private startCleanupTimer(): void {
     setInterval(() => {
-      const now = Date.now();
+      const now = Date.now()
       if (now - this.lastCleanupTime > this.CLEANUP_INTERVAL) {
-        this.cleanup();
+        this.cleanup()
       }
-    }, this.CLEANUP_INTERVAL);
+    }, this.CLEANUP_INTERVAL)
   }
 
   /**
    * 销毁管理器
    */
   dispose(): void {
-    this.loader.dispose();
-    this.atlas.dispose();
-    this.cache.clear();
-    this.cacheSize = 0;
+    this.loader.dispose()
+    this.atlas.dispose()
+    this.cache.clear()
+    this.cacheSize = 0
   }
 }
 
 // 全局纹理管理器实例
-export const globalTextureManager = new TextureManager();
+export const globalTextureManager = new TextureManager()

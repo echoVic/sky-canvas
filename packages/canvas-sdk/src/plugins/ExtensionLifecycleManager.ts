@@ -3,73 +3,73 @@
  * 管理扩展的激活、停用和生命周期
  */
 
+import { EventEmitter } from 'eventemitter3'
 import {
-    ExtensionRegistry,
-    ExtensionState,
-    IExtension,
-    IExtensionContext,
-    IExtensionInstance,
-    IMemento,
-    IDisposable,
-    IEvent
-} from './ExtensionRegistry';
-import { EventEmitter } from 'eventemitter3';
+  type ExtensionRegistry,
+  ExtensionState,
+  type IDisposable,
+  type IEvent,
+  type IExtension,
+  type IExtensionContext,
+  type IExtensionInstance,
+  type IMemento,
+} from './ExtensionRegistry'
 
 class Emitter<T> {
-  private emitter = new EventEmitter();
-  
+  private emitter = new EventEmitter()
+
   fire(data: T): void {
-    this.emitter.emit('event', data);
+    this.emitter.emit('event', data)
   }
-  
+
   get event(): IEvent<T> {
-    return (listener: (e: T) => any) => {
-      this.emitter.on('event', listener);
+    return (listener: (e: T) => void) => {
+      this.emitter.on('event', listener)
       return {
-        dispose: () => this.emitter.off('event', listener)
-      };
-    };
+        dispose: () => this.emitter.off('event', listener),
+      }
+    }
   }
-  
+
   dispose(): void {
-    this.emitter.removeAllListeners();
+    this.emitter.removeAllListeners()
   }
 }
 
 export interface IActivationEvent {
-  readonly extensionId: string;
-  readonly activationEvent: string;
+  readonly extensionId: string
+  readonly activationEvent: string
 }
 
 export interface IExtensionActivationResult {
-  readonly extensionId: string;
-  readonly success: boolean;
-  readonly error?: Error;
+  readonly extensionId: string
+  readonly success: boolean
+  readonly error?: Error
 }
 
 /**
  * 内存状态存储
  */
 class MemoryMemento implements IMemento {
-  private _data = new Map<string, any>();
+  private _data = new Map<string, unknown>()
 
-  get<T>(key: string): T | undefined;
-  get<T>(key: string, defaultValue: T): T;
+  get<T>(key: string): T | undefined
+  get<T>(key: string, defaultValue: T): T
   get<T>(key: string, defaultValue?: T): T | undefined {
-    const value = this._data.get(key);
-    return value !== undefined ? value : defaultValue;
+    const value = this._data.get(key)
+    return value !== undefined ? value : defaultValue
   }
 
-  async update(key: string, value: any): Promise<void> {
+  async update(key: string, value: unknown): Promise<void> {
     if (value === undefined) {
-      this._data.delete(key);
+      this._data.delete(key)
     } else {
-      this._data.set(key, value);
+      this._data.set(key, value)
     }
   }
 
   clear(): void {
-    this._data.clear();
+    this._data.clear()
   }
 }
 
@@ -77,29 +77,28 @@ class MemoryMemento implements IMemento {
  * 扩展上下文实现
  */
 class ExtensionContext implements IExtensionContext {
-  readonly subscriptions: IDisposable[] = [];
-  readonly workspaceState: IMemento;
-  readonly globalState: IMemento;
-  readonly extensionPath: string;
+  readonly subscriptions: IDisposable[] = []
+  readonly workspaceState: IMemento
+  readonly globalState: IMemento
+  readonly extensionPath: string
 
   constructor(extension: IExtension) {
-    this.extensionPath = extension.extensionLocation;
-    this.workspaceState = new MemoryMemento();
-    this.globalState = new MemoryMemento();
+    this.extensionPath = extension.extensionLocation
+    this.workspaceState = new MemoryMemento()
+    this.globalState = new MemoryMemento()
   }
 
   asAbsolutePath(relativePath: string): string {
-    return `${this.extensionPath}/${relativePath}`;
+    return `${this.extensionPath}/${relativePath}`
   }
 
   dispose(): void {
-    this.subscriptions.forEach(disposable => {
+    this.subscriptions.forEach((disposable) => {
       try {
-        disposable.dispose();
-      } catch {
-      }
-    });
-    this.subscriptions.length = 0;
+        disposable.dispose()
+      } catch {}
+    })
+    this.subscriptions.length = 0
   }
 }
 
@@ -107,40 +106,43 @@ class ExtensionContext implements IExtensionContext {
  * 激活事件管理器
  */
 class ActivationEventManager {
-  private _activationEvents = new Map<string, Set<string>>();
-  private _onActivationEvent = new Emitter<IActivationEvent>();
+  private _activationEvents = new Map<string, Set<string>>()
+  private _onActivationEvent = new Emitter<IActivationEvent>()
 
-  readonly onActivationEvent: IEvent<IActivationEvent> = this._onActivationEvent.event;
+  readonly onActivationEvent: IEvent<IActivationEvent> = this._onActivationEvent.event
 
   registerActivationEvents(extensionId: string, events: string[]): void {
     if (!this._activationEvents.has(extensionId)) {
-      this._activationEvents.set(extensionId, new Set());
+      this._activationEvents.set(extensionId, new Set())
     }
-    
-    const extensionEvents = this._activationEvents.get(extensionId)!;
-    events.forEach(event => extensionEvents.add(event));
+
+    const extensionEvents = this._activationEvents.get(extensionId)
+    if (!extensionEvents) return
+    for (const event of events) {
+      extensionEvents.add(event)
+    }
   }
 
   unregisterActivationEvents(extensionId: string): void {
-    this._activationEvents.delete(extensionId);
+    this._activationEvents.delete(extensionId)
   }
 
   fireActivationEvent(activationEvent: string): void {
     for (const [extensionId, events] of this._activationEvents.entries()) {
       if (events.has(activationEvent) || events.has('*')) {
-        this._onActivationEvent.fire({ extensionId, activationEvent });
+        this._onActivationEvent.fire({ extensionId, activationEvent })
       }
     }
   }
 
   getActivationEvents(extensionId: string): string[] {
-    const events = this._activationEvents.get(extensionId);
-    return events ? Array.from(events) : [];
+    const events = this._activationEvents.get(extensionId)
+    return events ? Array.from(events) : []
   }
 
   dispose(): void {
-    this._activationEvents.clear();
-    this._onActivationEvent.dispose();
+    this._activationEvents.clear()
+    this._onActivationEvent.dispose()
   }
 }
 
@@ -148,199 +150,200 @@ class ActivationEventManager {
  * 扩展生命周期管理器
  */
 export class ExtensionLifecycleManager {
-  private _extensionRegistry: ExtensionRegistry;
-  private _activationEventManager: ActivationEventManager;
-  private _onExtensionActivated = new Emitter<IExtensionActivationResult>();
-  private _onExtensionDeactivated = new Emitter<string>();
-  private _disposed = false;
+  private _extensionRegistry: ExtensionRegistry
+  private _activationEventManager: ActivationEventManager
+  private _onExtensionActivated = new Emitter<IExtensionActivationResult>()
+  private _onExtensionDeactivated = new Emitter<string>()
+  private _disposed = false
 
-  readonly onExtensionActivated: IEvent<IExtensionActivationResult> = this._onExtensionActivated.event;
-  readonly onExtensionDeactivated: IEvent<string> = this._onExtensionDeactivated.event;
+  readonly onExtensionActivated: IEvent<IExtensionActivationResult> =
+    this._onExtensionActivated.event
+  readonly onExtensionDeactivated: IEvent<string> = this._onExtensionDeactivated.event
 
   constructor(extensionRegistry: ExtensionRegistry) {
-    this._extensionRegistry = extensionRegistry;
-    this._activationEventManager = new ActivationEventManager();
+    this._extensionRegistry = extensionRegistry
+    this._activationEventManager = new ActivationEventManager()
 
     // 监听激活事件
-    this._activationEventManager.onActivationEvent(event => {
-      this.activateExtension(event.extensionId).catch(() => {
-      });
-    });
+    this._activationEventManager.onActivationEvent((event) => {
+      this.activateExtension(event.extensionId).catch(() => {})
+    })
 
     // 监听扩展注册事件
-    this._extensionRegistry.onExtensionRegistered(extension => {
+    this._extensionRegistry.onExtensionRegistered((extension) => {
       this._activationEventManager.registerActivationEvents(
         extension.id,
         extension.manifest.activationEvents
-      );
-    });
+      )
+    })
 
-    this._extensionRegistry.onExtensionUnregistered(extensionId => {
-      this._activationEventManager.unregisterActivationEvents(extensionId);
-      this.deactivateExtension(extensionId).catch(() => {
-      });
-    });
+    this._extensionRegistry.onExtensionUnregistered((extensionId) => {
+      this._activationEventManager.unregisterActivationEvents(extensionId)
+      this.deactivateExtension(extensionId).catch(() => {})
+    })
   }
 
   async activateExtension(extensionId: string): Promise<void> {
     if (this._disposed) {
-      throw new Error('ExtensionLifecycleManager is disposed');
+      throw new Error('ExtensionLifecycleManager is disposed')
     }
 
-    const extensionInstance = this._extensionRegistry.getExtensionInstance(extensionId);
+    const extensionInstance = this._extensionRegistry.getExtensionInstance(extensionId)
     if (!extensionInstance) {
-      throw new Error(`Extension ${extensionId} is not registered`);
+      throw new Error(`Extension ${extensionId} is not registered`)
     }
 
     // 检查扩展状态
     if (extensionInstance.state === ExtensionState.Activated) {
-      return; // 已经激活
+      return // 已经激活
     }
 
     if (extensionInstance.state === ExtensionState.Activating) {
-      return extensionInstance.activationPromise; // 正在激活
+      return extensionInstance.activationPromise // 正在激活
     }
 
-    if (extensionInstance.state !== ExtensionState.Enabled && 
-        extensionInstance.state !== ExtensionState.Installed) {
-      throw new Error(`Extension ${extensionId} cannot be activated (state: ${extensionInstance.state})`);
+    if (
+      extensionInstance.state !== ExtensionState.Enabled &&
+      extensionInstance.state !== ExtensionState.Installed
+    ) {
+      throw new Error(
+        `Extension ${extensionId} cannot be activated (state: ${extensionInstance.state})`
+      )
     }
 
     // 开始激活过程
-    extensionInstance.state = ExtensionState.Activating;
-    extensionInstance.activationPromise = this._doActivateExtension(extensionInstance);
+    extensionInstance.state = ExtensionState.Activating
+    extensionInstance.activationPromise = this._doActivateExtension(extensionInstance)
 
     try {
-      await extensionInstance.activationPromise;
-      extensionInstance.state = ExtensionState.Activated;
-      
+      await extensionInstance.activationPromise
+      extensionInstance.state = ExtensionState.Activated
+
       this._onExtensionActivated.fire({
         extensionId,
-        success: true
-      });
+        success: true,
+      })
     } catch (error) {
-      extensionInstance.state = ExtensionState.Failed;
-      
+      extensionInstance.state = ExtensionState.Failed
+
       this._onExtensionActivated.fire({
         extensionId,
         success: false,
-        error: error as Error
-      });
-      
-      throw error;
+        error: error as Error,
+      })
+
+      throw error
     } finally {
-      extensionInstance.activationPromise = undefined;
+      extensionInstance.activationPromise = undefined
     }
   }
 
   private async _doActivateExtension(extensionInstance: IExtensionInstance): Promise<void> {
-    const { extension } = extensionInstance;
-    
+    const { extension } = extensionInstance
+
     try {
       // 动态加载扩展模块
       if (!extension.manifest?.main) {
-        throw new Error(`Extension ${extension.id} has no main entry point`);
+        throw new Error(`Extension ${extension.id} has no main entry point`)
       }
-      const modulePath = `${extension.extensionLocation}/${extension.manifest.main}`;
-      const extensionModule = await import(modulePath);
+      const modulePath = `${extension.extensionLocation}/${extension.manifest.main}`
+      const extensionModule = await import(modulePath)
 
       // 创建扩展上下文
-      const context = new ExtensionContext(extension);
-      extensionInstance.context = context;
+      const context = new ExtensionContext(extension)
+      extensionInstance.context = context
 
       // 调用激活函数
       if (extensionModule.activate && typeof extensionModule.activate === 'function') {
-        await extensionModule.activate(context);
+        await extensionModule.activate(context)
       }
 
-      extensionInstance.module = extensionModule;
-      
+      extensionInstance.module = extensionModule
     } catch (error) {
       // 清理上下文
       if (extensionInstance.context) {
-        (extensionInstance.context as any).dispose();
-        extensionInstance.context = undefined;
+        ;(extensionInstance.context as any).dispose()
+        extensionInstance.context = undefined
       }
-      
-      throw new Error(`Failed to activate extension ${extension.id}: ${error}`);
+
+      throw new Error(`Failed to activate extension ${extension.id}: ${error}`)
     }
   }
 
   async deactivateExtension(extensionId: string): Promise<void> {
     if (this._disposed) {
-      return;
+      return
     }
 
-    const extensionInstance = this._extensionRegistry.getExtensionInstance(extensionId);
+    const extensionInstance = this._extensionRegistry.getExtensionInstance(extensionId)
     if (!extensionInstance || extensionInstance.state !== ExtensionState.Activated) {
-      return;
+      return
     }
 
     try {
-      extensionInstance.state = ExtensionState.Deactivating;
+      extensionInstance.state = ExtensionState.Deactivating
 
       // 调用停用函数
-      if (extensionInstance.module?.deactivate && 
-          typeof extensionInstance.module.deactivate === 'function') {
-        await extensionInstance.module.deactivate();
+      if (
+        extensionInstance.module?.deactivate &&
+        typeof extensionInstance.module.deactivate === 'function'
+      ) {
+        await extensionInstance.module.deactivate()
       }
 
       // 清理上下文
       if (extensionInstance.context) {
-        (extensionInstance.context as any).dispose();
-        extensionInstance.context = undefined;
+        ;(extensionInstance.context as any).dispose()
+        extensionInstance.context = undefined
       }
 
-      extensionInstance.module = undefined;
-      extensionInstance.state = ExtensionState.Enabled;
+      extensionInstance.module = undefined
+      extensionInstance.state = ExtensionState.Enabled
 
-      this._onExtensionDeactivated.fire(extensionId);
-
+      this._onExtensionDeactivated.fire(extensionId)
     } catch {
-      extensionInstance.state = ExtensionState.Failed;
+      extensionInstance.state = ExtensionState.Failed
     }
   }
 
   async deactivateAllExtensions(): Promise<void> {
-    const extensions = this._extensionRegistry.getAllExtensions();
-    const deactivationPromises = extensions.map(ext => 
-      this.deactivateExtension(ext.id).catch(() => {
-      })
-    );
+    const extensions = this._extensionRegistry.getAllExtensions()
+    const deactivationPromises = extensions.map((ext) =>
+      this.deactivateExtension(ext.id).catch(() => {})
+    )
 
-    await Promise.all(deactivationPromises);
+    await Promise.all(deactivationPromises)
   }
 
   fireActivationEvent(activationEvent: string): void {
     if (!this._disposed) {
-      this._activationEventManager.fireActivationEvent(activationEvent);
+      this._activationEventManager.fireActivationEvent(activationEvent)
     }
   }
 
   getExtensionState(extensionId: string): ExtensionState | undefined {
-    const instance = this._extensionRegistry.getExtensionInstance(extensionId);
-    return instance?.state;
+    const instance = this._extensionRegistry.getExtensionInstance(extensionId)
+    return instance?.state
   }
 
   getActivatedExtensions(): IExtension[] {
-    return this._extensionRegistry.getAllExtensions().filter(ext => {
-      const instance = this._extensionRegistry.getExtensionInstance(ext.id);
-      return instance?.state === ExtensionState.Activated;
-    });
+    return this._extensionRegistry.getAllExtensions().filter((ext) => {
+      const instance = this._extensionRegistry.getExtensionInstance(ext.id)
+      return instance?.state === ExtensionState.Activated
+    })
   }
 
   dispose(): void {
     if (this._disposed) {
-      return;
+      return
     }
 
-    this._disposed = true;
+    this._disposed = true
 
-    this.deactivateAllExtensions().catch(() => {
-    });
+    this.deactivateAllExtensions().catch(() => {})
 
-    this._activationEventManager.dispose();
-    this._onExtensionActivated.dispose();
-    this._onExtensionDeactivated.dispose();
+    this._activationEventManager.dispose()
+    this._onExtensionActivated.dispose()
+    this._onExtensionDeactivated.dispose()
   }
 }
