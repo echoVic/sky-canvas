@@ -25,6 +25,9 @@
     "url": "https://github.com/sky-canvas/sky-canvas.git",
     "directory": "packages/render-engine"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "bugs": {
     "url": "https://github.com/sky-canvas/sky-canvas/issues"
   },
@@ -60,7 +63,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "dependencies": {
     "gl-matrix": "^3.4.4",

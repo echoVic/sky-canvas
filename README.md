@@ -185,6 +185,7 @@ const result = await filterManager.applyFilterChain(
 - [交互系统](./docs/INTERACTION_SYSTEM.md)
 - [数学库设计](./docs/MATH_LIBRARY.md)
 - [Canvas SDK 架构](./packages/canvas-sdk/docs/ARCHITECTURE.md)
+- [发布流程](./docs/RELEASING.md)
 - [示例代码](./packages/render-engine/examples/README.md)
 - [性能优化指南](./packages/render-engine/src/performance/README.md)
 

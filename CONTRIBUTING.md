@@ -52,6 +52,10 @@ pnpm -C packages/canvas-sdk build
 3. 更新相关文档与 CHANGELOG（如果对外行为有变化）
 4. 在 PR 中说明变更内容与验证方式
 
+## 发布流程
+
+发布流程采用 Changesets 管理，请参考 [RELEASING.md](./docs/RELEASING.md)。
+
 ## 行为准则
 
 参与社区请遵守 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)。

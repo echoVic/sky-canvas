@@ -1,6 +1,6 @@
 {
   "name": "@sky-canvas/canvas-sdk",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "框架无关的画布功能SDK，提供完整的画布绘制和交互能力",
   "type": "module",
   "main": "dist/index.js",
@@ -29,6 +29,18 @@
   ],
   "author": "Sky Canvas Team",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sky-canvas/sky-canvas.git",
+    "directory": "packages/canvas-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/sky-canvas/sky-canvas/issues"
+  },
+  "homepage": "https://github.com/sky-canvas/sky-canvas/tree/main/packages/canvas-sdk#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@turf/boolean-point-in-polygon": "^7.3.1",
     "@turf/helpers": "^7.3.1",
@@ -37,10 +49,10 @@
     "reflect-metadata": "^0.1.14"
   },
   "peerDependencies": {
-    "@sky-canvas/render-engine": "workspace:^1.0.0"
+    "@sky-canvas/render-engine": "workspace:^0.0.1"
   },
   "devDependencies": {
-    "@sky-canvas/render-engine": "workspace:^1.0.0",
+    "@sky-canvas/render-engine": "workspace:^0.0.1",
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "jsdom": "^23.0.1",
@@ -53,6 +65,7 @@
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     "examples"
   ]
 }
