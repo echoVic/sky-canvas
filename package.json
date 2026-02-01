@@ -74,7 +74,7 @@
     "paper": "^0.12.18",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "valtio": "^2.1.7",
+    "valtio": "^2.3.0",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
