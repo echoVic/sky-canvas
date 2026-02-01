@@ -15,7 +15,7 @@ interface PropertyState {
 }
 
 export class MultiPropertyAnimation extends BaseAnimation {
-  private target: Record<string, any>
+  private target: Record<string, unknown>
   private properties: PropertyState[] = []
 
   constructor(config: MultiPropertyAnimationConfig) {

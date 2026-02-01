@@ -3,26 +3,20 @@
  * 使用模块化的渲染器、缓冲区管理器和管线管理器
  */
 
-import {
-  type IColor,
-  IGraphicsCapabilities,
-  type IGraphicsContext,
-  type IGraphicsState,
-  type IGraphicsStyle,
-  IImageData,
-  IPoint,
-  ITextStyle,
-  type ITransform,
+import type {
+  IColor,
+  IGraphicsContext,
+  IGraphicsState,
+  IGraphicsStyle,
+  ITransform,
 } from '../../graphics/IGraphicsContext'
 import { Rectangle } from '../../math/Rectangle'
-import { Color } from './WebGPUGeometry'
 import { WebGPURenderer } from './WebGPURenderer'
 import {
   DEFAULT_WEBGPU_CONFIG,
   getGPU,
   type WebGPUContextConfig,
   type WebGPUDeviceInfo,
-  type WebGPURenderState,
 } from './WebGPUTypes'
 
 /**
@@ -32,7 +26,6 @@ export class WebGPUContext implements IGraphicsContext {
   private canvas: HTMLCanvasElement
   private config: Required<WebGPUContextConfig>
   private deviceInfo: WebGPUDeviceInfo
-  private renderState: WebGPURenderState
   private isInitialized = false
   private stateStack: IGraphicsState[] = []
   private currentState: IGraphicsState
@@ -154,7 +147,10 @@ export class WebGPUContext implements IGraphicsContext {
 
   restore(): void {
     if (this.stateStack.length > 0) {
-      this.currentState = this.stateStack.pop()!
+      const state = this.stateStack.pop()
+      if (state) {
+        this.currentState = state
+      }
     }
   }
 

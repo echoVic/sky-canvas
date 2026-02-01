@@ -236,7 +236,7 @@ export class WebGLRenderableFactory {
     }
 
     // 为三角形创建索引（每3个顶点一个三角形）
-    const triangleCount = vertexCount / 3
+    const _triangleCount = vertexCount / 3
     const indices = new Uint16Array(vertexCount)
     for (let i = 0; i < vertexCount; i++) {
       indices[i] = i

@@ -1,8 +1,10 @@
 import {
   type CanvasSDK,
   createCanvasSDK,
+  type ICanvasManager,
   type ICanvasSDKConfig,
   type IShapeEntity,
+  type IToolManager,
   type ShapeEntity,
 } from '@sky-canvas/canvas-sdk'
 import { useMemoizedFn } from 'ahooks'
@@ -33,9 +35,9 @@ export interface CanvasSDKActions {
   /** 初始化SDK */
   initialize: (canvas: HTMLCanvasElement, config?: ICanvasSDKConfig) => Promise<void>
   /** 获取Canvas管理器 */
-  getCanvasManager: () => any
+  getCanvasManager: () => ICanvasManager
   /** 获取Tool管理器 */
-  getToolManager: () => any
+  getToolManager: () => IToolManager
   /** 添加形状 */
   addShape: (entity: ShapeEntity) => void
   /** 移除形状 */
@@ -209,7 +211,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized')
     }
-    return (sdkRef.current as any).getToolManager()
+    return sdkRef.current.getToolManager()
   })
 
   /**
@@ -329,7 +331,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
     if (!sdkRef.current) {
       throw new Error('SDK not initialized')
     }
-    const toolManager = (sdkRef.current as any).getToolManager()
+    const toolManager = sdkRef.current.getToolManager()
     return toolManager.activateTool(toolName)
   })
 
@@ -363,7 +365,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       throw new Error('SDK not initialized')
     }
     const manager = sdkRef.current.getCanvasManager()
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id)
+    const selectedIds = manager.getSelectedShapes().map((shape) => shape.id)
     if (selectedIds.length > 0) {
       manager.bringToFront(selectedIds)
     }
@@ -377,7 +379,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       throw new Error('SDK not initialized')
     }
     const manager = sdkRef.current.getCanvasManager()
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id)
+    const selectedIds = manager.getSelectedShapes().map((shape) => shape.id)
     if (selectedIds.length > 0) {
       manager.sendToBack(selectedIds)
     }
@@ -391,7 +393,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       throw new Error('SDK not initialized')
     }
     const manager = sdkRef.current.getCanvasManager()
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id)
+    const selectedIds = manager.getSelectedShapes().map((shape) => shape.id)
     if (selectedIds.length > 0) {
       manager.bringForward(selectedIds)
     }
@@ -405,7 +407,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
       throw new Error('SDK not initialized')
     }
     const manager = sdkRef.current.getCanvasManager()
-    const selectedIds = manager.getSelectedShapes().map((shape: any) => shape.id)
+    const selectedIds = manager.getSelectedShapes().map((shape) => shape.id)
     if (selectedIds.length > 0) {
       manager.sendBackward(selectedIds)
     }
@@ -474,7 +476,7 @@ export function useCanvasSDK(): UseCanvasSDKResult {
         }
       }, 0)
     }
-  }, []) // 空依赖数组，只在组件卸载时运行
+  }, [dispose])
 
   // 使用useMemo来稳定actions对象，避免无限循环
   const actions = useMemo(

@@ -6,7 +6,7 @@
 import { useMemoizedFn } from 'ahooks'
 import { useCallback, useEffect, useRef } from 'react'
 import { useCanvas } from '../contexts/CanvasSDKContext'
-import { type ToolType, useDrawingTools } from './useDrawingTools'
+import { useDrawingTools } from './useDrawingTools'
 
 /**
  * 快捷键配置

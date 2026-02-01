@@ -11,7 +11,6 @@ import type { BatchConfig } from '../types/BatchTypes'
 export class BatchRenderManager {
   private gl: WebGLRenderingContext
   private shaderManager: WebGLShaderManager
-  private resourceManager: WebGLResourceManager
 
   // 渲染状态
   private currentBlendMode = BlendMode.NORMAL
@@ -32,12 +31,11 @@ export class BatchRenderManager {
   constructor(
     gl: WebGLRenderingContext,
     shaderManager: WebGLShaderManager,
-    resourceManager: WebGLResourceManager,
+    _resourceManager: WebGLResourceManager,
     config: BatchConfig
   ) {
     this.gl = gl
     this.shaderManager = shaderManager
-    this.resourceManager = resourceManager
     this.config = config
   }
 
@@ -111,8 +109,8 @@ export class BatchRenderManager {
    * 检查是否需要刷新批次
    */
   needsFlush(
-    vertexCount: number,
-    indexCount: number,
+    _vertexCount: number,
+    _indexCount: number,
     texture?: WebGLTexture,
     blendMode?: BlendMode
   ): boolean {

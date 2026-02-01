@@ -16,12 +16,13 @@ export { LightingManager } from './LightingManager'
 export { PointLight } from './PointLight'
 
 // 导入具体实现类
+import type { AnyLightConfig, AnyShadowConfig } from '../types/LightingTypes'
 import { DirectionalLight } from './DirectionalLight'
 import { DropShadow } from './DropShadow'
 import { PointLight } from './PointLight'
 
 // 光源工厂函数
-export function createLight(config: any) {
+export function createLight(config: AnyLightConfig) {
   switch (config.type) {
     case 'directional':
       return new DirectionalLight(config)
@@ -33,7 +34,7 @@ export function createLight(config: any) {
 }
 
 // 阴影工厂函数
-export function createShadow(config: any) {
+export function createShadow(config: AnyShadowConfig) {
   switch (config.type) {
     case 'drop-shadow':
       return new DropShadow(config)

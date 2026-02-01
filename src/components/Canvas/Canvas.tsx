@@ -6,7 +6,7 @@ import { useSDKStore } from '../../store/sdkStore'
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  const { isInitialized, shapes, selectedShapes, sdk, initialize, setTool } = useSDKStore()
+  const { isInitialized, initialize, setTool } = useSDKStore()
   const { selectedTool } = useCanvasStore()
 
   useEffect(() => {

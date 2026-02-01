@@ -38,8 +38,11 @@ export abstract class BasePostProcessEffect implements IPostProcessEffect {
     target.width = canvas.width
     target.height = canvas.height
 
-    const ctx = canvas.getContext('2d')!
-    const targetCtx = target.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    const targetCtx = target.getContext('2d')
+    if (!ctx || !targetCtx) {
+      throw new Error('Cannot create 2D context for post process')
+    }
 
     // 获取图像数据
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)

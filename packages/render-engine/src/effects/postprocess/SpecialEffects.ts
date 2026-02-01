@@ -8,7 +8,6 @@ import {
   type GlowConfig,
   type HDRTonemapConfig,
   type IPostProcessEffect,
-  PostProcessConfig,
   PostProcessType,
 } from '../types/PostProcessTypes'
 import { BasePostProcessEffect } from './BasePostProcessEffect'
@@ -222,8 +221,7 @@ export class DepthOfFieldEffect extends BasePostProcessEffect {
     const result = targetData || new ImageData(imageData.width, imageData.height)
     const data = imageData.data
     const resultData = result.data
-    const { focusDistance, focalLength, fstop, maxBlur } = (this._config as DepthOfFieldConfig)
-      .parameters
+    const { focusDistance, maxBlur } = (this._config as DepthOfFieldConfig).parameters
     const intensity = this._config.intensity
     const { width, height } = imageData
 

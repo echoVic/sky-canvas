@@ -107,8 +107,8 @@ describe('GlowFilter', () => {
     expect(result.success).toBe(true)
     expect(result.processedImageData).toBeDefined()
     // 当模糊和强度都为0时,图像尺寸应该保持不变
-    expect(result.processedImageData!.width).toBe(imageData.width)
-    expect(result.processedImageData!.height).toBe(imageData.height)
+    expect(result.processedImageData?.width).toBe(imageData.width)
+    expect(result.processedImageData?.height).toBe(imageData.height)
   })
 
   it('应该创建发光效果', async () => {
@@ -144,8 +144,8 @@ describe('GlowFilter', () => {
     expect(result.processingTime).toBeGreaterThan(0)
 
     // 发光效果应该扩展图像尺寸（包含发光边缘）
-    expect(result.processedImageData!.width).toBeGreaterThanOrEqual(imageData.width)
-    expect(result.processedImageData!.height).toBeGreaterThanOrEqual(imageData.height)
+    expect(result.processedImageData?.width).toBeGreaterThanOrEqual(imageData.width)
+    expect(result.processedImageData?.height).toBeGreaterThanOrEqual(imageData.height)
   })
 
   it('应该正确处理不同质量设置', async () => {

@@ -67,7 +67,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     this.reset()
   }
 
-  handleMouseDown(x: number, y: number, event?: MouseEvent): void {
+  handleMouseDown(x: number, y: number, _event?: MouseEvent): void {
     if (!this._state.enabled) return
 
     this._state.isDrawing = true
@@ -85,7 +85,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     )
   }
 
-  handleMouseMove(x: number, y: number, event?: MouseEvent): void {
+  handleMouseMove(x: number, y: number, _event?: MouseEvent): void {
     if (
       !this._state.enabled ||
       !this._state.isDrawing ||
@@ -111,7 +111,7 @@ export class RectangleToolViewModel implements IRectangleToolViewModel {
     }
   }
 
-  handleMouseUp(x: number, y: number, event?: MouseEvent): void {
+  handleMouseUp(_x: number, _y: number, _event?: MouseEvent): void {
     if (!this._state.enabled || !this._state.isDrawing || !this._state.currentShape) return
 
     this._state.isDrawing = false

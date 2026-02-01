@@ -56,7 +56,7 @@ export interface IParticle {
   maxLife: number
   mass: number
   state: ParticleState
-  userData: Record<string, any>
+  userData: Record<string, unknown>
 
   update(deltaTime: number): void
   reset(): void
@@ -90,7 +90,7 @@ export interface ParticleConfig {
   color?: string
   life?: number
   mass?: number
-  userData?: Record<string, any>
+  userData?: Record<string, unknown>
 }
 
 /**
@@ -132,7 +132,7 @@ export interface ParticleEmissionConfig {
   emitterRadius?: number
 
   // 其他
-  userData?: Record<string, any>
+  userData?: Record<string, unknown>
 }
 
 /**
@@ -297,7 +297,7 @@ export interface ParticleSystemEvents {
   particleSpawn: (particle: IParticle, system: IParticleSystem) => void
   particleDeath: (particle: IParticle, system: IParticleSystem) => void
   complete: (system: IParticleSystem) => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 /**

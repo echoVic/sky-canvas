@@ -25,7 +25,7 @@ export class Particle implements IParticle {
   maxLife: number
   mass: number
   state: ParticleState
-  userData: Record<string, any>
+  userData: Record<string, unknown>
 
   // 初始状态缓存（用于重置）
   private initialConfig: Required<ParticleConfig>

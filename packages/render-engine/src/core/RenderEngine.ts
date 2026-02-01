@@ -1,16 +1,14 @@
 /**
  * 渲染引擎核心实现
  */
-import { type BatchManager, createBatchManagerWithDefaultStrategies } from '../batch'
 import type {
   IGraphicsContext,
   IGraphicsContextFactory,
   IPoint,
 } from '../graphics/IGraphicsContext'
-import { Matrix3x3 } from '../math/Matrix3'
 import { createLogger } from '../utils/Logger'
 import { DirtyRegionManager } from './DirtyRegionManager'
-import { GeometryAdapter, type IBounds } from './GeometryAdapter'
+import type { IBounds } from './GeometryAdapter'
 import type {
   IRenderable,
   IRenderEngine,
@@ -41,12 +39,9 @@ export class RenderEngine implements IRenderEngine {
 
   private dirtyRegionManager: DirtyRegionManager = new DirtyRegionManager()
   private layerCache: LayerCache = new LayerCache()
-  private batchManager: BatchManager | null = null
-  private geometryAdapter: GeometryAdapter = new GeometryAdapter()
 
   private isRunningFlag = false
   private animationId: number | null = null
-  private lastFrameTime = 0
   private frameTimeHistory: number[] = []
 
   constructor(config: IRenderEngineConfig = {}) {
@@ -72,11 +67,6 @@ export class RenderEngine implements IRenderEngine {
 
     this.context = await factory.createContext(canvas)
 
-    const gl = (this.context as { gl?: WebGLRenderingContext }).gl
-    if (gl) {
-      this.batchManager = createBatchManagerWithDefaultStrategies(gl)
-    }
-
     this.viewport.width = this.context.width
     this.viewport.height = this.context.height
   }
@@ -89,8 +79,6 @@ export class RenderEngine implements IRenderEngine {
     }
 
     this.isRunningFlag = true
-    this.lastFrameTime = performance.now()
-
     logger.debug('Starting render loop, enableVSync:', this.config.enableVSync)
     if (this.config.enableVSync) {
       this.startVSyncLoop()
@@ -121,7 +109,9 @@ export class RenderEngine implements IRenderEngine {
     const dirtyRegions = this.dirtyRegionManager.optimizeDirtyRegions()
 
     if (dirtyRegions.length > 0) {
-      dirtyRegions.forEach((region) => this.renderRegion(region))
+      for (const region of dirtyRegions) {
+        this.renderRegion(region)
+      }
     } else {
       this.context.clear()
       this.context.save()
@@ -329,47 +319,6 @@ export class RenderEngine implements IRenderEngine {
     }
   }
 
-  private renderWithBatching(renderables: IRenderable[]): void {
-    const groups = this.groupRenderablesByType(renderables)
-
-    for (const [, groupRenderables] of groups.entries()) {
-      if (groupRenderables.length > 10 && this.batchManager) {
-        this.batchManager.setStrategy('instanced')
-        groupRenderables.forEach((renderable) => {
-          const batchRenderable = this.geometryAdapter.adaptRenderable(renderable)
-          this.batchManager!.addRenderable(batchRenderable)
-        })
-      } else {
-        this.renderLayerRenderables(groupRenderables)
-      }
-    }
-
-    if (this.batchManager) {
-      // 创建正投影矩阵
-      const projectionMatrix = new Matrix3x3()
-      this.batchManager.flush(projectionMatrix)
-    }
-  }
-
-  private groupRenderablesByType(renderables: IRenderable[]): Map<string, IRenderable[]> {
-    const groups = new Map<string, IRenderable[]>()
-    renderables.forEach((renderable) => {
-      const type = renderable.constructor.name
-      const group = groups.get(type) || []
-      group.push(renderable)
-      groups.set(type, group)
-    })
-    return groups
-  }
-
-  private canCacheLayer(renderables: IRenderable[]): boolean {
-    return renderables.every((renderable) => !this.isRenderableAnimating(renderable))
-  }
-
-  private isRenderableAnimating(_renderable: IRenderable): boolean {
-    return false
-  }
-
   private boundsIntersect(a: IBounds, b: IBounds): boolean {
     return !(
       a.x + a.width < b.x ||
@@ -396,6 +345,5 @@ export class RenderEngine implements IRenderEngine {
     }
 
     this.stats.fps = this.frameTimeHistory.length
-    this.lastFrameTime = currentTime
   }
 }

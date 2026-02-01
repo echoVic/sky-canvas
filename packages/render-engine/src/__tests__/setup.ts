@@ -149,7 +149,7 @@ const createWebGLRenderingContext = (): WebGLRenderingContext => {
     getAttribLocation: vi.fn((program: WebGLProgram, name: string) => {
       const programData = programs.get(program)
       if (programData?.attributes.has(name)) {
-        return programData.attributes.get(name)!
+        return programData.attributes.get(name) ?? 0
       }
       return 0
     }),
@@ -371,7 +371,7 @@ if (typeof global.ImageData === 'undefined') {
     constructor(widthOrData: number | Uint8ClampedArray, height?: number) {
       if (typeof widthOrData === 'number') {
         this.width = widthOrData
-        this.height = height!
+        this.height = height ?? widthOrData
         this.data = new Uint8ClampedArray(this.width * this.height * 4)
       } else {
         this.data = widthOrData

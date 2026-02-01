@@ -178,10 +178,10 @@ describe.skip('PerformanceMonitor', () => {
       const plugin1 = report.plugins.find((p) => p.pluginId === 'plugin-1')
 
       expect(plugin1).toBeDefined()
-      expect(plugin1!.loadTime).toBe(100)
-      expect(plugin1!.activationTime).toBe(50)
-      expect(plugin1!.apiCalls).toBe(2)
-      expect(plugin1!.errors).toBe(1)
+      expect(plugin1?.loadTime).toBe(100)
+      expect(plugin1?.activationTime).toBe(50)
+      expect(plugin1?.apiCalls).toBe(2)
+      expect(plugin1?.errors).toBe(1)
     })
 
     it('应该计算平均值', () => {
@@ -200,7 +200,7 @@ describe.skip('PerformanceMonitor', () => {
       const report = performanceMonitor.generateReport()
       const slowPlugin = report.plugins.find((p) => p.pluginId === 'slow-plugin')
 
-      expect(slowPlugin!.loadTime).toBe(2000)
+      expect(slowPlugin?.loadTime).toBe(2000)
       expect(report.slowestLoadTime).toBe(2000)
     })
   })

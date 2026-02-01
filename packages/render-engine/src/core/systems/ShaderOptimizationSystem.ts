@@ -136,9 +136,11 @@ class ShaderPreprocessor {
         stack.push(stack[stack.length - 1] && condition)
       } else if (trimmed.startsWith('#else')) {
         if (stack.length > 1) {
-          const current = stack.pop()!
+          const current = stack.pop()
           const parent = stack[stack.length - 1]
-          stack.push(parent && !current)
+          if (current !== undefined) {
+            stack.push(Boolean(parent) && !current)
+          }
         }
       } else if (trimmed.startsWith('#endif')) {
         if (stack.length > 1) {
@@ -201,8 +203,10 @@ class ShaderCache {
    */
   private evictLRU(): void {
     if (this.accessOrder.length > 0) {
-      const lruHash = this.accessOrder.shift()!
-      this.cache.delete(lruHash)
+      const lruHash = this.accessOrder.shift()
+      if (lruHash) {
+        this.cache.delete(lruHash)
+      }
     }
   }
 
@@ -467,7 +471,10 @@ export class ShaderOptimizationSystem extends BaseSystem {
     this.isCompiling = true
 
     while (this.compilationQueue.length > 0) {
-      const task = this.compilationQueue.shift()!
+      const task = this.compilationQueue.shift()
+      if (!task) {
+        continue
+      }
 
       try {
         const startTime = performance.now()

@@ -4,7 +4,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ParticleSystem } from '../particles/ParticleSystem'
-import { ParticleSystemState } from '../types/ParticleTypes'
+import { type AffectorConfig, ParticleSystemState } from '../types/ParticleTypes'
 
 describe('ParticleSystem', () => {
   let system: ParticleSystem
@@ -161,7 +161,9 @@ describe('ParticleSystem', () => {
 
     it('应该清理死亡粒子', () => {
       // 让所有粒子立即死亡
-      system.particles.forEach((p) => (p.life = 0))
+      for (const particle of system.particles) {
+        particle.life = 0
+      }
 
       system.update(16)
 
@@ -259,7 +261,7 @@ describe('ParticleSystem', () => {
       expect(() => {
         system.addAffector({
           type: 'unknown',
-        } as any)
+        } as unknown as AffectorConfig)
       }).toThrow('Unknown affector type: unknown')
     })
   })

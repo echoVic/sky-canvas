@@ -20,6 +20,7 @@ export * from './types/AnimationTypes'
 
 // 导入 AnimationManager 用于工厂函数
 import { AnimationManager } from './AnimationManager'
+import type { EasingFunction, EasingType } from './types/AnimationTypes'
 
 // 工厂函数和辅助方法
 export class AnimationUtils {
@@ -27,11 +28,11 @@ export class AnimationUtils {
    * 创建简单的属性动画
    */
   static to(
-    target: Record<string, any>,
+    target: Record<string, unknown>,
     duration: number,
     properties: Record<string, number>,
     options?: {
-      easing?: any
+      easing?: EasingType | EasingFunction
       delay?: number
       onComplete?: () => void
     }
@@ -60,12 +61,12 @@ export class AnimationUtils {
    * 创建从指定值开始的属性动画
    */
   static fromTo(
-    target: Record<string, any>,
+    target: Record<string, unknown>,
     duration: number,
     from: Record<string, number>,
     to: Record<string, number>,
     options?: {
-      easing?: any
+      easing?: EasingType | EasingFunction
       delay?: number
       onComplete?: () => void
     }
@@ -107,7 +108,11 @@ export class AnimationUtils {
     const chainableObject = {
       timeline,
       manager,
-      to: (target: any, duration: number, properties: Record<string, number>) => {
+      to: (
+        target: Record<string, unknown>,
+        duration: number,
+        properties: Record<string, number>
+      ) => {
         const animation = manager.createMultiPropertyAnimation({
           target,
           duration,
@@ -115,7 +120,7 @@ export class AnimationUtils {
             Object.entries(properties).map(([key, value]) => [key, { to: value }])
           ),
         })
-        timeline.then(animation)
+        timeline.append(animation)
         return chainableObject
       },
       play: () => {
@@ -149,7 +154,7 @@ export class AnimationUtils {
   /**
    * 循环动画
    */
-  static repeat(animation: any, count: number | true = true) {
+  static repeat(animation: { _loop?: number | true }, count: number | true = true) {
     animation._loop = count
     return animation
   }
@@ -157,7 +162,7 @@ export class AnimationUtils {
   /**
    * 回弹动画
    */
-  static yoyo(animation: any) {
+  static yoyo(animation: { _yoyo?: boolean }) {
     animation._yoyo = true
     return animation
   }

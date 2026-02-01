@@ -193,13 +193,13 @@ export class InputManager extends EventEmitter<InputManagerEvents> {
     }
   }
 
-  private _bindHandler(
-    event: string,
-    handler: EventListener,
-    target: EventTarget = this._element!
-  ): void {
-    target.addEventListener(event, handler, { passive: !this._config.preventDefaultEvents })
-    this._boundHandlers.set(`${event}-${target === window ? 'window' : 'element'}`, handler)
+  private _bindHandler(event: string, handler: EventListener, target?: EventTarget): void {
+    const targetElement = target ?? this._element
+    if (!targetElement) {
+      throw new Error('InputManager target element is not set')
+    }
+    targetElement.addEventListener(event, handler, { passive: !this._config.preventDefaultEvents })
+    this._boundHandlers.set(`${event}-${targetElement === window ? 'window' : 'element'}`, handler)
   }
 
   private _unbindEventListeners(): void {
@@ -207,8 +207,10 @@ export class InputManager extends EventEmitter<InputManagerEvents> {
 
     this._boundHandlers.forEach((handler, key) => {
       const [event, targetType] = key.split('-')
-      const target = targetType === 'window' ? window : this._element!
-      target.removeEventListener(event, handler)
+      const target = targetType === 'window' ? window : this._element
+      if (target) {
+        target.removeEventListener(event, handler)
+      }
     })
 
     this._boundHandlers.clear()

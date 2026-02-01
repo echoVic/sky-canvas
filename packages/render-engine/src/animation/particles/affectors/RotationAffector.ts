@@ -27,14 +27,12 @@ export class RotationAffector extends BaseAffector {
 
   constructor(config: RotationAffectorConfig) {
     super()
+    const extendedConfig = config as RotationAffectorConfigExtended
     this.angularVelocityRange = { ...config.angularVelocity }
-    this.angularAccelerationRange = (config as RotationAffectorConfigExtended)
-      .angularAcceleration || { min: 0, max: 0 }
-    this.curve = (config as RotationAffectorConfigExtended).curve
-      ? [...(config as RotationAffectorConfigExtended).curve!]
-      : null
-    this.easing = (config as RotationAffectorConfigExtended).easing || EasingFunctions.linear
-    this.alignToVelocity = (config as RotationAffectorConfigExtended).alignToVelocity || false
+    this.angularAccelerationRange = extendedConfig.angularAcceleration || { min: 0, max: 0 }
+    this.curve = extendedConfig.curve ? [...extendedConfig.curve] : null
+    this.easing = extendedConfig.easing || EasingFunctions.linear
+    this.alignToVelocity = extendedConfig.alignToVelocity || false
     this._enabled = config.enabled !== false
 
     if (this.curve) {
@@ -64,7 +62,8 @@ export class RotationAffector extends BaseAffector {
       const lifeProgress = particle.getLifeProgress()
       const easedProgress = this.easing(lifeProgress)
       const multiplier = this.evaluateCurve(this.curve, easedProgress)
-      const initialVelocity = this.initialAngularVelocities.get(particle)!
+      const initialVelocity =
+        this.initialAngularVelocities.get(particle) ?? particle.angularVelocity
       particle.angularVelocity = initialVelocity * multiplier
     } else {
       const acceleration = this.randomInRange(this.angularAccelerationRange)

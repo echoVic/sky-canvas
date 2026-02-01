@@ -11,11 +11,9 @@ import {
   getBlendModeCategory,
   getBlendModeDescription,
   getSupportedBlendModes,
-  HueBlend,
   isBlendModeSupported,
   MultiplyBlend,
   NormalBlend,
-  OverlayBlend,
   ScreenBlend,
 } from '../blends'
 

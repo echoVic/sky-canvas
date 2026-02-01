@@ -280,7 +280,10 @@ describe('滤镜系统', () => {
       expect(result.processedImageData).toBeDefined()
 
       // 检查亮度是否增加了
-      const resultData = result.processedImageData!.data
+      if (!result.processedImageData) {
+        throw new Error('processedImageData should be defined')
+      }
+      const resultData = result.processedImageData.data
       expect(resultData[0]).toBeGreaterThan(testImageData.data[0]) // R通道应该更亮
     })
 

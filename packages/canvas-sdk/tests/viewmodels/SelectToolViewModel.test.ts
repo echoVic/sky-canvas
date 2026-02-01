@@ -5,11 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ICanvasManager } from '../../src/managers/CanvasManager'
 import type { ICircleEntity, IRectangleEntity, ShapeEntity } from '../../src/models/entities/Shape'
 import type { ISelectionService } from '../../src/services/selection/selectionService'
-import {
-  HandlePosition,
-  ISelectToolState,
-  SelectToolViewModel,
-} from '../../src/viewmodels/tools/SelectToolViewModel'
+import { SelectToolViewModel } from '../../src/viewmodels/tools/SelectToolViewModel'
 
 function createMockRectangle(
   id: string,

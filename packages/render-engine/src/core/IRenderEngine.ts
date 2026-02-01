@@ -1,7 +1,12 @@
 /**
  * 渲染引擎核心接口定义
  */
-import type { IGraphicsContext, IPoint, IRect } from '../graphics/IGraphicsContext'
+import type {
+  IGraphicsContext,
+  IGraphicsContextFactory,
+  IPoint,
+  IRect,
+} from '../graphics/IGraphicsContext'
 
 /**
  * 可渲染对象接口
@@ -147,7 +152,7 @@ export interface IRenderEngine {
    * @param factory 图形上下文工厂
    * @param canvas 画布元素
    */
-  initialize<TCanvas>(factory: any, canvas: TCanvas): Promise<void>
+  initialize<TCanvas>(factory: IGraphicsContextFactory<TCanvas>, canvas: TCanvas): Promise<void>
 
   /**
    * 启动渲染循环
@@ -172,7 +177,7 @@ export interface IRenderEngine {
   /**
    * 获取图形上下文
    */
-  getContext(): any | null
+  getContext(): IGraphicsContext | null
 
   /**
    * 设置视口

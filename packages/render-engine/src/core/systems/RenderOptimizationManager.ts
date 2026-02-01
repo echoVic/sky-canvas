@@ -186,17 +186,23 @@ export class RenderOptimizationManager extends BaseSystem {
   private setState(newState: OptimizationState): void {
     if (this.state !== newState) {
       this.state = newState
-      this.listeners.onStateChange.forEach((listener) => listener(this.state))
+      for (const listener of this.listeners.onStateChange) {
+        listener(this.state)
+      }
     }
   }
 
   private notifyMetricsUpdate(metrics: OptimizationMetrics): void {
-    this.listeners.onMetricsUpdate.forEach((listener) => listener(metrics))
+    for (const listener of this.listeners.onMetricsUpdate) {
+      listener(metrics)
+    }
   }
 
   private notifyRecommendations(): void {
     const recommendations = this.optimizationEngine.getRecommendations()
-    this.listeners.onRecommendation.forEach((listener) => listener(recommendations))
+    for (const listener of this.listeners.onRecommendation) {
+      listener(recommendations)
+    }
   }
 
   getState(): OptimizationState {

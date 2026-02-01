@@ -327,12 +327,12 @@ export class AnimationManager {
 
   // 强类型事件方法
   on<K extends keyof AnimationManagerEvents>(event: K, listener: AnimationManagerEvents[K]): this {
-    this.emitter.on(event, listener as any)
+    this.emitter.on(event, listener as unknown as (...args: unknown[]) => void)
     return this
   }
 
   off<K extends keyof AnimationManagerEvents>(event: K, listener: AnimationManagerEvents[K]): this {
-    this.emitter.off(event, listener as any)
+    this.emitter.off(event, listener as unknown as (...args: unknown[]) => void)
     return this
   }
 

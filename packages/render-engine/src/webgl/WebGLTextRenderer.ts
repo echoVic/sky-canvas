@@ -1,6 +1,5 @@
 import type { IRenderable } from '../batch'
 import type { TextureManager } from './TextureManager'
-import { TextureConfig } from './WebGLResourceTypes'
 
 export type TextAlign = 'left' | 'center' | 'right'
 export type TextBaseline = 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'
@@ -51,7 +50,6 @@ const DEFAULT_STYLE: Required<TextStyle> = {
 
 export class WebGLTextRenderer {
   private gl: WebGLRenderingContext
-  private textureManager: TextureManager
   private measureCanvas: HTMLCanvasElement
   private measureContext: CanvasRenderingContext2D
   private textCache: Map<string, TextCacheEntry> = new Map()
@@ -61,11 +59,10 @@ export class WebGLTextRenderer {
 
   constructor(
     gl: WebGLRenderingContext,
-    textureManager: TextureManager,
+    _textureManager: TextureManager,
     options?: { maxCacheSize?: number; cacheCleanupInterval?: number }
   ) {
     this.gl = gl
-    this.textureManager = textureManager
     this.maxCacheSize = options?.maxCacheSize ?? 100
     this.cacheCleanupInterval = options?.cacheCleanupInterval ?? 5000
 

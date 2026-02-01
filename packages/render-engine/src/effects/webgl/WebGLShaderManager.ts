@@ -210,7 +210,6 @@ export class WebGLShaderManager {
       return
     }
 
-    const gl = this.gl
     const program = this.currentProgram
 
     for (const [name, value] of Object.entries(uniforms)) {
@@ -227,7 +226,7 @@ export class WebGLShaderManager {
   /**
    * 设置单个uniform值
    */
-  private setUniformValue(location: WebGLUniformLocation, value: any): void {
+  private setUniformValue(location: WebGLUniformLocation, value: unknown): void {
     const gl = this.gl
 
     if (typeof value === 'number') {

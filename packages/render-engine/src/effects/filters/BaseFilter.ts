@@ -145,7 +145,7 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: FilterParameters): number {
+  protected getComplexityFactor(_parameters: FilterParameters): number {
     return 1 // 默认复杂度因子
   }
 
@@ -172,7 +172,7 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
   protected createOutputImageData(width: number, height: number): ImageData {
     try {
       return new ImageData(width, height)
-    } catch (error) {
+    } catch (_error) {
       // 备用方法
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
@@ -214,7 +214,7 @@ export abstract class BaseFilter<T extends FilterParameters = FilterParameters> 
   protected blendImageData(
     base: ImageData,
     overlay: ImageData,
-    mode: string = 'normal'
+    _mode: string = 'normal'
   ): ImageData {
     if (base.width !== overlay.width || base.height !== overlay.height) {
       throw new Error('Image dimensions must match for blending')

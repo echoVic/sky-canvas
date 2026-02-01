@@ -2,12 +2,9 @@
  * 遮罩渲染器
  */
 
-import { type IMask, type IMaskRenderer, MaskBlendMode } from '../types/MaskTypes'
+import type { IMask, IMaskRenderer, MaskBlendMode } from '../types/MaskTypes'
 
 export class MaskRenderer implements IMaskRenderer {
-  private currentBlendMode: MaskBlendMode = MaskBlendMode.NORMAL
-  private maskStack: boolean = false
-
   render(mask: IMask, ctx: CanvasRenderingContext2D | WebGLRenderingContext): void {
     if (!mask.enabled || !(ctx instanceof CanvasRenderingContext2D)) {
       return
@@ -18,16 +15,12 @@ export class MaskRenderer implements IMaskRenderer {
   }
 
   setBlendMode(mode: MaskBlendMode): void {
-    this.currentBlendMode = mode
+    void mode
   }
 
-  beginMask(): void {
-    this.maskStack = true
-  }
+  beginMask(): void {}
 
-  endMask(): void {
-    this.maskStack = false
-  }
+  endMask(): void {}
 
   /**
    * 渲染多个遮罩组合
@@ -104,7 +97,10 @@ export class MaskRenderer implements IMaskRenderer {
   private renderUnion(masks: IMask[], ctx: CanvasRenderingContext2D): void {
     // 并集：任意遮罩通过即可
     const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')!
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) {
+      throw new Error('Cannot create 2D context for mask union')
+    }
 
     tempCanvas.width = ctx.canvas.width
     tempCanvas.height = ctx.canvas.height
@@ -130,14 +126,14 @@ export class MaskRenderer implements IMaskRenderer {
 
     // 应用第一个遮罩
     const firstMask = masks[0]
-    if (firstMask && firstMask.enabled) {
+    if (firstMask?.enabled) {
       firstMask.apply(ctx, ctx.canvas)
     }
 
     // 减去其他遮罩
     for (let i = 1; i < masks.length; i++) {
       const mask = masks[i]
-      if (mask && mask.enabled) {
+      if (mask?.enabled) {
         ctx.save()
         ctx.globalCompositeOperation = 'destination-out'
         mask.apply(ctx, ctx.canvas)
@@ -149,7 +145,10 @@ export class MaskRenderer implements IMaskRenderer {
   private renderXor(masks: IMask[], ctx: CanvasRenderingContext2D): void {
     // 异或：奇数个遮罩覆盖的区域
     const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')!
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) {
+      throw new Error('Cannot create 2D context for mask xor')
+    }
 
     tempCanvas.width = ctx.canvas.width
     tempCanvas.height = ctx.canvas.height
@@ -219,7 +218,10 @@ export class MaskRenderer implements IMaskRenderer {
    */
   createMaskTexture(mask: IMask, width: number, height: number): HTMLCanvasElement {
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cannot create 2D context for mask texture')
+    }
 
     canvas.width = width
     canvas.height = height

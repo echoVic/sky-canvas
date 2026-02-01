@@ -23,10 +23,7 @@ export class SceneView {
   private canvas!: HTMLCanvasElement
   private ctx!: CanvasRenderingContext2D
 
-  constructor(
-    private sceneViewModel: ISceneViewModel,
-    private viewportViewModel: IViewportViewModel
-  ) {}
+  constructor(_sceneViewModel: ISceneViewModel, _viewportViewModel: IViewportViewModel) {}
 
   /**
    * 初始化场景视图
@@ -125,7 +122,6 @@ export class SceneView {
    */
   private renderRulers(viewport: IViewportState): void {
     const rulerSize = 30
-    const { x, y, zoom } = viewport
 
     this.ctx.save()
     this.ctx.fillStyle = this.config.rulerColor || '#CCCCCC'

@@ -58,7 +58,7 @@ export class ContrastFilter extends PixelProcessor<ContrastParameters> {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: ContrastParameters): number {
+  protected getComplexityFactor(_parameters: ContrastParameters): number {
     return 0.6 // 对比度调整比亮度稍复杂
   }
 

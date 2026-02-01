@@ -439,7 +439,9 @@ describe('AsyncResourceLoader', () => {
       ]
 
       // 开始加载
-      configs.forEach((config) => loader.loadResource(config))
+      configs.forEach((config) => {
+        loader.loadResource(config)
+      })
 
       // 取消所有
       loader.cancelAll()

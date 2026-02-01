@@ -24,7 +24,7 @@ export interface ShapeStyle {
   stroke?: string
   strokeWidth?: number
   opacity?: number
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**

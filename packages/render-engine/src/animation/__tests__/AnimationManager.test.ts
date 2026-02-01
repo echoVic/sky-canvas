@@ -11,7 +11,7 @@ import { createTestTarget, TestUtils } from './setup'
 
 describe('AnimationManager', () => {
   let manager: AnimationManager
-  let target: any
+  let target: Record<string, unknown>
 
   beforeEach(() => {
     manager = new AnimationManager()
@@ -180,7 +180,9 @@ describe('AnimationManager', () => {
       ]
 
       // 启动所有动画
-      animations.forEach((anim) => anim.start())
+      for (const anim of animations) {
+        anim.start()
+      }
     })
 
     it('应该暂停所有动画', () => {

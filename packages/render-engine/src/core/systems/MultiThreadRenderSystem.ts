@@ -75,7 +75,10 @@ class TaskQueue {
     if (!this.priorityMap.has(task.priority)) {
       this.priorityMap.set(task.priority, [])
     }
-    this.priorityMap.get(task.priority)!.push(task)
+    const priorityTasks = this.priorityMap.get(task.priority)
+    if (priorityTasks) {
+      priorityTasks.push(task)
+    }
 
     // 保持队列排序
     this.tasks.sort((a, b) => b.priority - a.priority)
@@ -84,10 +87,12 @@ class TaskQueue {
   dequeue(): RenderTask | null {
     const task = this.tasks.shift()
     if (task) {
-      const priorityTasks = this.priorityMap.get(task.priority)!
-      const index = priorityTasks.indexOf(task)
-      if (index > -1) {
-        priorityTasks.splice(index, 1)
+      const priorityTasks = this.priorityMap.get(task.priority)
+      if (priorityTasks) {
+        const index = priorityTasks.indexOf(task)
+        if (index > -1) {
+          priorityTasks.splice(index, 1)
+        }
       }
     }
     return task || null
@@ -130,8 +135,12 @@ class DependencyGraph {
         this.inDegree.set(dep, 0)
       }
 
-      this.graph.get(dep)!.add(taskId)
-      this.inDegree.set(taskId, this.inDegree.get(taskId)! + 1)
+      const dependents = this.graph.get(dep)
+      if (dependents) {
+        dependents.add(taskId)
+      }
+      const currentDegree = this.inDegree.get(taskId) ?? 0
+      this.inDegree.set(taskId, currentDegree + 1)
     }
   }
 
@@ -150,7 +159,7 @@ class DependencyGraph {
     const newlyReady: string[] = []
 
     for (const dependent of dependents) {
-      const newDegree = this.inDegree.get(dependent)! - 1
+      const newDegree = (this.inDegree.get(dependent) ?? 0) - 1
       this.inDegree.set(dependent, newDegree)
 
       if (newDegree === 0) {

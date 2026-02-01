@@ -64,9 +64,12 @@ export class GuideView {
   private renderPermanentGuides(ctx: CanvasRenderingContext2D, viewport: IViewportState): void {
     const permanentGuides = Array.from(this.guides.values()).filter((guide) => !guide.temporary)
 
-    ctx.strokeStyle = this.config.guideColor!
-    ctx.lineWidth = this.config.lineWidth! / viewport.zoom
-    ctx.setLineDash(this.config.dashPattern!)
+    const guideColor = this.config.guideColor ?? '#FF4081'
+    const lineWidth = this.config.lineWidth ?? 1
+    const dashPattern = this.config.dashPattern ?? [5, 5]
+    ctx.strokeStyle = guideColor
+    ctx.lineWidth = lineWidth / viewport.zoom
+    ctx.setLineDash(dashPattern)
 
     for (const guide of permanentGuides) {
       this.drawGuide(ctx, guide, viewport)
@@ -79,8 +82,10 @@ export class GuideView {
   private renderTemporaryGuides(ctx: CanvasRenderingContext2D, viewport: IViewportState): void {
     const temporaryGuides = Array.from(this.guides.values()).filter((guide) => guide.temporary)
 
-    ctx.strokeStyle = this.config.temporaryGuideColor!
-    ctx.lineWidth = this.config.lineWidth! / viewport.zoom
+    const temporaryGuideColor = this.config.temporaryGuideColor ?? '#00E676'
+    const lineWidth = this.config.lineWidth ?? 1
+    ctx.strokeStyle = temporaryGuideColor
+    ctx.lineWidth = lineWidth / viewport.zoom
     ctx.setLineDash([3, 3])
 
     for (const guide of temporaryGuides) {
@@ -184,7 +189,7 @@ export class GuideView {
     snapPoint: { x: number; y: number }
     guides: IGuide[]
   } {
-    const snapDistance = this.config.snapDistance! / viewport.zoom
+    const snapDistance = (this.config.snapDistance ?? 5) / viewport.zoom
     const snappedGuides: IGuide[] = []
     const snapPoint = { ...point }
     let snapped = false

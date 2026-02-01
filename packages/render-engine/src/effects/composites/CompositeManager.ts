@@ -116,7 +116,10 @@ export class CompositeManager extends EventEmitter<CompositeEvents> implements I
     const canvas = document.createElement('canvas')
     canvas.width = bounds.width
     canvas.height = bounds.height
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cannot create 2D context for composite canvas')
+    }
 
     // 清除画布
     ctx.clearRect(0, 0, bounds.width, bounds.height)
@@ -177,7 +180,10 @@ export class CompositeManager extends EventEmitter<CompositeEvents> implements I
       const tempCanvas = document.createElement('canvas')
       tempCanvas.width = layer.canvas.width
       tempCanvas.height = layer.canvas.height
-      const tempCtx = tempCanvas.getContext('2d')!
+      const tempCtx = tempCanvas.getContext('2d')
+      if (!tempCtx) {
+        throw new Error('Cannot create 2D context for composite temp canvas')
+      }
 
       tempCtx.globalAlpha = layer.globalAlpha
 

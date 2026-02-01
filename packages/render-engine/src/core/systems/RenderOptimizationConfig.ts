@@ -142,7 +142,9 @@ export class RenderOptimizationConfigManager {
    * 通知监听器
    */
   private notifyListeners(): void {
-    this.listeners.forEach((listener) => listener(this.config))
+    for (const listener of this.listeners) {
+      listener(this.config)
+    }
   }
 
   /**

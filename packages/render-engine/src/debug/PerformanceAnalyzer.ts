@@ -51,7 +51,7 @@ export interface PerformanceProfile {
   endTime: number
   duration: number
   children: PerformanceProfile[]
-  metadata?: any
+  metadata?: unknown
 }
 
 export interface DebugPerformanceAlert {
@@ -117,7 +117,7 @@ export class PerformanceAnalyzer {
   private analysisStartTime = 0
 
   // 性能分析堆栈
-  private profileStack: Array<{ name: string; startTime: number; metadata?: any }> = []
+  private profileStack: Array<{ name: string; startTime: number; metadata?: unknown }> = []
   private profileResults: PerformanceProfile[] = []
 
   // 警告系统
@@ -126,8 +126,6 @@ export class PerformanceAnalyzer {
 
   // 时间测量
   private frameStartTime = 0
-  private lastFrameTime = 0
-  private frameCount = 0
   private fpsHistory: number[] = []
 
   constructor() {
@@ -174,7 +172,7 @@ export class PerformanceAnalyzer {
   /**
    * 开始性能分析点
    */
-  startProfile(name: string, metadata?: any): void {
+  startProfile(name: string, metadata?: unknown): void {
     const startTime = performance.now()
 
     this.profileStack.push({ name, startTime, metadata })
@@ -263,10 +261,7 @@ export class PerformanceAnalyzer {
 
     if (this.frameStartTime > 0) {
       const frameTime = now - this.frameStartTime
-      this.lastFrameTime = frameTime
-
       // 更新FPS
-      this.frameCount++
       const fps = 1000 / frameTime
       this.fpsHistory.push(fps)
 
@@ -632,7 +627,6 @@ export class PerformanceAnalyzer {
     this.profileResults = []
     this.alertHistory = []
     this.profileStack = []
-    this.frameCount = 0
     this.fpsHistory = []
   }
 

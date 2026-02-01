@@ -5,8 +5,8 @@
 
 import { CommandRendererFactory, type ICommandRenderer } from '../commands/CommandRenderer'
 import type { IRenderCommand } from '../commands/IRenderCommand'
-import { IRenderEngine, type IViewport } from '../core/IRenderEngine'
-import { type IGraphicsContext, IRect } from '../graphics/IGraphicsContext'
+import type { IViewport } from '../core/IRenderEngine'
+import type { IGraphicsContext } from '../graphics/IGraphicsContext'
 import {
   CoordinateSystemManager,
   type IViewportConfig,
@@ -74,12 +74,24 @@ export interface IModernRenderPipeline {
   /**
    * 获取渲染统计
    */
-  getStats(): any
+  getStats(): ModernRenderPipelineStats
 
   /**
    * 销毁管道
    */
   dispose(): void
+}
+
+export interface ModernRenderPipelineStats {
+  initialized: boolean
+  frameId?: number
+  commandRenderer?: ReturnType<ICommandRenderer['getStats']>
+  shaderManager?: ReturnType<IShaderManager['getStats']>
+  bufferManager?: ReturnType<IBufferManager['getStats']>
+  coordinateSystem?: {
+    viewport: IViewportConfig
+    transformStackDepth: number
+  }
 }
 
 /**
@@ -88,8 +100,8 @@ export interface IModernRenderPipeline {
 export class WebGLModernRenderPipeline implements IModernRenderPipeline {
   readonly commandRenderer: ICommandRenderer
   readonly coordinateSystem: CoordinateSystemManager
-  readonly shaderManager!: IShaderManager
-  readonly bufferManager!: IBufferManager
+  private _shaderManager?: IShaderManager
+  private _bufferManager?: IBufferManager
   readonly transformStack: TransformStack
 
   private gl: WebGLRenderingContext | null = null
@@ -109,9 +121,6 @@ export class WebGLModernRenderPipeline implements IModernRenderPipeline {
       flipY: true, // WebGL 需要翻转 Y 轴
     })
 
-    // 占位符，将在初始化时创建
-    this.shaderManager = null as any
-    this.bufferManager = null as any
     this.transformStack = this.coordinateSystem.getTransformStack()
   }
 
@@ -125,8 +134,8 @@ export class WebGLModernRenderPipeline implements IModernRenderPipeline {
       throw new Error('WebGL not supported')
     }
     // 创建管理器
-    ;(this as any).shaderManager = new ShaderManager(this.gl)
-    ;(this as any).bufferManager = new BufferManager(this.gl)
+    this._shaderManager = new ShaderManager(this.gl)
+    this._bufferManager = new BufferManager(this.gl)
 
     // 更新坐标系统配置
     this.coordinateSystem.updateViewport(config)
@@ -210,7 +219,21 @@ export class WebGLModernRenderPipeline implements IModernRenderPipeline {
     }
   }
 
-  getStats(): any {
+  get shaderManager(): IShaderManager {
+    if (!this._shaderManager) {
+      throw new Error('ShaderManager not initialized')
+    }
+    return this._shaderManager
+  }
+
+  get bufferManager(): IBufferManager {
+    if (!this._bufferManager) {
+      throw new Error('BufferManager not initialized')
+    }
+    return this._bufferManager
+  }
+
+  getStats(): ModernRenderPipelineStats {
     if (!this.isInitialized) {
       return { initialized: false }
     }
@@ -223,18 +246,18 @@ export class WebGLModernRenderPipeline implements IModernRenderPipeline {
       bufferManager: this.bufferManager.getStats(),
       coordinateSystem: {
         viewport: this.coordinateSystem.getViewportConfig(),
-        transformStackDepth: (this.transformStack as any).stack?.length || 0,
+        transformStackDepth: this.transformStack.getDepth(),
       },
     }
   }
 
   dispose(): void {
-    if (this.shaderManager) {
-      this.shaderManager.dispose()
+    if (this._shaderManager) {
+      this._shaderManager.dispose()
     }
 
-    if (this.bufferManager) {
-      this.bufferManager.dispose()
+    if (this._bufferManager) {
+      this._bufferManager.dispose()
     }
 
     this.commandRenderer.clear()
@@ -326,7 +349,7 @@ export class WebGLModernRenderPipeline implements IModernRenderPipeline {
     indexBuffer.uploadData(this.gl, quadIndices)
 
     // 创建顶点数组对象
-    const vertexArray = this.bufferManager.createVertexArray(
+    const _vertexArray = this.bufferManager.createVertexArray(
       vertexBuffer,
       {
         stride: 8, // 2 floats * 4 bytes
@@ -354,7 +377,7 @@ export class RenderPipelineFactory {
    * 创建WebGL渲染管道
    * @param config 可选配置
    */
-  static createWebGL(config?: any): IModernRenderPipeline {
+  static createWebGL(_config?: unknown): IModernRenderPipeline {
     return new WebGLModernRenderPipeline()
   }
 
@@ -362,7 +385,7 @@ export class RenderPipelineFactory {
    * 创建Canvas2D渲染管道
    * @param config 可选配置
    */
-  static createCanvas2D(config?: any): IModernRenderPipeline {
+  static createCanvas2D(_config?: unknown): IModernRenderPipeline {
     // 留待未来实现
     throw new Error('Canvas2D render pipeline not implemented yet')
   }

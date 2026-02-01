@@ -15,15 +15,15 @@ export interface IDisposable {
 /**
  * 事件监听器类型
  */
-export type EventListener<T = any> = (event: T) => void
+export type EventListener<T = unknown> = (event: T) => void
 
 /**
  * 事件总线接口
  */
 export interface IEventBus {
-  on<T = any>(eventType: string, listener: EventListener<T>): IDisposable
-  off<T = any>(eventType: string, listener: EventListener<T>): void
-  emit<T = any>(eventType: string, event: T): void
+  on<T = unknown>(eventType: string, listener: EventListener<T>): IDisposable
+  off<T = unknown>(eventType: string, listener: EventListener<T>): void
+  emit<T = unknown>(eventType: string, event: T): void
   dispose(): void
 }
 
@@ -40,7 +40,7 @@ export class EventBus implements IEventBus, IDisposable {
   /**
    * 添加事件监听器
    */
-  on<T = any>(eventType: string, listener: EventListener<T>): IDisposable {
+  on<T = unknown>(eventType: string, listener: EventListener<T>): IDisposable {
     this.emitter.on(eventType, listener)
 
     // 返回可释放的对象
@@ -54,21 +54,21 @@ export class EventBus implements IEventBus, IDisposable {
   /**
    * 移除事件监听器
    */
-  off<T = any>(eventType: string, listener: EventListener<T>): void {
+  off<T = unknown>(eventType: string, listener: EventListener<T>): void {
     this.emitter.off(eventType, listener)
   }
 
   /**
    * 触发事件
    */
-  emit<T = any>(eventType: string, event: T): void {
+  emit<T = unknown>(eventType: string, event: T): void {
     this.emitter.emit(eventType, event)
   }
 
   /**
    * 一次性事件监听器
    */
-  once<T = any>(eventType: string, listener: EventListener<T>): IDisposable {
+  once<T = unknown>(eventType: string, listener: EventListener<T>): IDisposable {
     this.emitter.once(eventType, listener)
 
     return {
@@ -104,7 +104,7 @@ export class EventBus implements IEventBus, IDisposable {
  * 类型安全的事件发射器
  * 基于 EventEmitter3，提供更强的类型支持
  */
-export class EventEmitter<TEvents extends Record<string, any>> {
+export class EventEmitter<TEvents extends Record<string, unknown>> {
   private emitter: EventEmitter3
 
   constructor() {

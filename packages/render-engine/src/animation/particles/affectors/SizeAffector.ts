@@ -24,7 +24,7 @@ export class SizeAffector extends BaseAffector {
     this.curve.sort((a, b) => a.time - b.time)
   }
 
-  affect(particle: IParticle, deltaTime: number): void {
+  affect(particle: IParticle, _deltaTime: number): void {
     if (!this.shouldAffect(particle)) {
       return
     }
@@ -34,7 +34,7 @@ export class SizeAffector extends BaseAffector {
       this.initialSizes.set(particle, particle.size)
     }
 
-    const initialSize = this.initialSizes.get(particle)!
+    const initialSize = this.initialSizes.get(particle) ?? particle.size
     const lifeProgress = particle.getLifeProgress()
 
     // 应用缓动函数

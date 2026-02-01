@@ -14,7 +14,7 @@ import type {
 } from '../types/PathTypes'
 
 export class PathAnimation extends BaseAnimation {
-  private target: Record<string, any>
+  private target: Record<string, unknown>
   private path: IPath
   private autoRotate: boolean
   private rotationOffset: number
@@ -23,7 +23,7 @@ export class PathAnimation extends BaseAnimation {
   private positionProperty: string
   private rotationProperty: string
 
-  constructor(target: Record<string, any>, config: PathAnimationConfig) {
+  constructor(target: Record<string, unknown>, config: PathAnimationConfig) {
     super({
       duration: config.duration,
       easing: config.easing,

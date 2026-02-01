@@ -166,7 +166,7 @@ export class BasicStrategy implements IBatchStrategy {
   /**
    * 设置渲染状态
    */
-  private setupRenderState(batch: RenderBatch, projectionMatrix: Matrix3): void {
+  private setupRenderState(batch: RenderBatch, _projectionMatrix: Matrix3): void {
     // 这里需要根据实际的着色器系统来实现
     // 暂时使用简化的实现
 

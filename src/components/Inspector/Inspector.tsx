@@ -75,6 +75,7 @@ function PropertyGroup({ title, children, defaultOpen = true }: PropertyGroupPro
   return (
     <div className="border-b border-gray-100 dark:border-gray-800">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex gap-1 items-center px-3 py-2 w-full text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
       >
@@ -199,7 +200,9 @@ export function Inspector() {
     <div className="flex overflow-hidden flex-col h-full">
       <div className="flex-shrink-0 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
         <div className="text-sm font-medium text-gray-700 truncate dark:text-gray-300">
-          {selectedShape.metadata?.name || selectedShape.type}
+          {typeof selectedShape.metadata?.name === 'string'
+            ? selectedShape.metadata.name
+            : selectedShape.type}
         </div>
         <div className="text-xs text-gray-400">{selectedShape.id.slice(0, 12)}...</div>
       </div>
@@ -287,24 +290,28 @@ export function Inspector() {
           />
           <div className="flex gap-1 mt-2">
             <button
+              type="button"
               onClick={() => bringToFront()}
               className="flex-1 px-2 py-1 text-xs bg-gray-100 rounded dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               置顶
             </button>
             <button
+              type="button"
               onClick={() => bringForward()}
               className="flex-1 px-2 py-1 text-xs bg-gray-100 rounded dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               上移
             </button>
             <button
+              type="button"
               onClick={() => sendBackward()}
               className="flex-1 px-2 py-1 text-xs bg-gray-100 rounded dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               下移
             </button>
             <button
+              type="button"
               onClick={() => sendToBack()}
               className="flex-1 px-2 py-1 text-xs bg-gray-100 rounded dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
             >

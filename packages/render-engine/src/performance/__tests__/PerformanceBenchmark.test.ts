@@ -155,7 +155,9 @@ describe('PerformanceBenchmarkSuite', () => {
         },
       ]
 
-      mockScenarios.forEach((scenario) => suite.addScenario(scenario))
+      mockScenarios.forEach((scenario) => {
+        suite.addScenario(scenario)
+      })
       await suite.runAll()
 
       const summary = suite.getSummary()

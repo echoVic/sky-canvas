@@ -26,6 +26,7 @@ interface IShape {
 
 export class CustomMask extends BaseMask {
   protected _config: CustomMaskConfig
+  private customBounds: { min: Point2D; max: Point2D } | null = null
 
   constructor(config: CustomMaskConfig) {
     super(config)
@@ -34,7 +35,7 @@ export class CustomMask extends BaseMask {
 
   apply(
     ctx: CanvasRenderingContext2D | WebGLRenderingContext,
-    target: IShape | HTMLCanvasElement
+    _target: IShape | HTMLCanvasElement
   ): void {
     if (!this._enabled || !(ctx instanceof CanvasRenderingContext2D)) {
       return
@@ -134,7 +135,10 @@ export class CustomMask extends BaseMask {
 
     // 创建临时canvas进行点击测试
     const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')!
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) {
+      throw new Error('Cannot create 2D context for custom mask')
+    }
 
     // 设置canvas大小
     tempCanvas.width = 1
@@ -195,14 +199,13 @@ export class CustomMask extends BaseMask {
    * 设置边界（用于优化contains检测）
    */
   setBounds(bounds: { min: Point2D; max: Point2D }): void {
-    // 可以存储自定义边界用于优化
-    ;(this as any)._customBounds = bounds
+    this.customBounds = bounds
   }
 
   /**
    * 获取自定义边界
    */
   getCustomBounds(): { min: Point2D; max: Point2D } | null {
-    return (this as any)._customBounds || null
+    return this.customBounds
   }
 }

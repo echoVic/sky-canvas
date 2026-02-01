@@ -2,16 +2,7 @@
  * 动画系统使用示例
  */
 
-import {
-  AnimationGroup,
-  AnimationManager,
-  AnimationUtils,
-  EasingType,
-  GroupPlayMode,
-  MultiPropertyAnimation,
-  PropertyAnimation,
-  Timeline,
-} from '../index'
+import { AnimationManager, AnimationUtils, EasingType, GroupPlayMode } from '../index'
 
 export class AnimationExamples {
   private manager: AnimationManager

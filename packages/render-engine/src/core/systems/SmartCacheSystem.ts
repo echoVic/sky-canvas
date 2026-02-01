@@ -268,8 +268,10 @@ export class SmartCacheSystem extends BaseSystem {
           size = compressed.byteLength
 
           // 更新压缩统计
-          const stats = this.stats.get(cacheName)!
-          stats.compressionRatio = (stats.compressionRatio + compressionRatio) / 2
+          const stats = this.stats.get(cacheName)
+          if (stats) {
+            stats.compressionRatio = (stats.compressionRatio + compressionRatio) / 2
+          }
         }
       } catch (error) {
         logger.warn('Compression failed:', error)
@@ -380,9 +382,11 @@ export class SmartCacheSystem extends BaseSystem {
     const cache = this.caches.get(cacheName)
     if (cache) {
       cache.clear()
-      const stats = this.stats.get(cacheName)!
-      stats.totalSize = 0
-      stats.itemCount = 0
+      const stats = this.stats.get(cacheName)
+      if (stats) {
+        stats.totalSize = 0
+        stats.itemCount = 0
+      }
     }
   }
 
@@ -409,9 +413,13 @@ export class SmartCacheSystem extends BaseSystem {
    * 确保缓存容量
    */
   private async ensureCapacity(cacheName: string, newItemSize: number): Promise<void> {
-    const cache = this.caches.get(cacheName)!
-    const config = this.configs.get(cacheName)!
-    const stats = this.stats.get(cacheName)!
+    const cache = this.caches.get(cacheName)
+    const config = this.configs.get(cacheName)
+    const stats = this.stats.get(cacheName)
+
+    if (!cache || !config || !stats) {
+      return
+    }
 
     // 检查项目数量限制
     while (cache.size >= config.maxItems) {
@@ -428,9 +436,13 @@ export class SmartCacheSystem extends BaseSystem {
    * 驱逐缓存项
    */
   private async evictItem(cacheName: string): Promise<void> {
-    const cache = this.caches.get(cacheName)!
-    const config = this.configs.get(cacheName)!
-    const stats = this.stats.get(cacheName)!
+    const cache = this.caches.get(cacheName)
+    const config = this.configs.get(cacheName)
+    const stats = this.stats.get(cacheName)
+
+    if (!cache || !config || !stats) {
+      return
+    }
 
     if (cache.size === 0) return
 
@@ -453,7 +465,14 @@ export class SmartCacheSystem extends BaseSystem {
         victimKey = cache.keys().next().value || ''
     }
 
-    const item = cache.get(victimKey)!
+    if (!victimKey) {
+      return
+    }
+
+    const item = cache.get(victimKey)
+    if (!item) {
+      return
+    }
     cache.delete(victimKey)
     stats.evictions++
     this.updateStats(cacheName, 'delete', -item.size)
@@ -652,8 +671,11 @@ export class SmartCacheSystem extends BaseSystem {
    * 更新统计信息
    */
   private updateStats(cacheName: string, operation: 'set' | 'delete', sizeChange: number): void {
-    const stats = this.stats.get(cacheName)!
-    const cache = this.caches.get(cacheName)!
+    const stats = this.stats.get(cacheName)
+    const cache = this.caches.get(cacheName)
+    if (!stats || !cache) {
+      return
+    }
 
     if (operation === 'set') {
       stats.totalSize += sizeChange
@@ -668,7 +690,10 @@ export class SmartCacheSystem extends BaseSystem {
    * 更新命中率
    */
   private updateHitRate(cacheName: string): void {
-    const stats = this.stats.get(cacheName)!
+    const stats = this.stats.get(cacheName)
+    if (!stats) {
+      return
+    }
     const total = stats.hits + stats.misses
     stats.hitRate = total > 0 ? stats.hits / total : 0
   }

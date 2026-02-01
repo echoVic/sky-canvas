@@ -50,13 +50,19 @@ export interface ICommandRenderer {
   /**
    * 获取渲染统计
    */
-  getStats(): any
+  getStats(): CommandRendererStats
 
   /**
    * 更新配置
    * @param config 新配置
    */
   updateConfig(config: Partial<IRenderQueueConfig>): void
+}
+
+export interface CommandRendererStats {
+  enabled: boolean
+  queueStats: ReturnType<IRenderQueue['getStats']>
+  config: IRenderQueueConfig
 }
 
 /**
@@ -108,7 +114,7 @@ export class CommandRenderer implements ICommandRenderer {
     this.queue.clear()
   }
 
-  getStats(): any {
+  getStats(): CommandRendererStats {
     return {
       enabled: this.enabled,
       queueStats: this.queue.getStats(),
@@ -220,7 +226,7 @@ export class CommandUtils {
    * @param shape 形状对象
    * @returns 渲染命令数组
    */
-  static createCommandsFromShape(shape: any): IRenderCommand[] {
+  static createCommandsFromShape(_shape: unknown): IRenderCommand[] {
     // 这个方法将在后续实现中与Shape系统集成
     // 现在返回空数组作为占位符
     return []

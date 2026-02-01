@@ -34,7 +34,7 @@ export class EllipseMask extends BaseMask {
 
   apply(
     ctx: CanvasRenderingContext2D | WebGLRenderingContext,
-    target: IShape | HTMLCanvasElement
+    _target: IShape | HTMLCanvasElement
   ): void {
     if (!this._enabled || !(ctx instanceof CanvasRenderingContext2D)) {
       return

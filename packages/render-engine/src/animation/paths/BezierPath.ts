@@ -345,7 +345,7 @@ class CompositePath extends BasePath {
 
   split(t: number): [IPath, IPath] {
     // 简化实现
-    const splitPoint = this.getPoint(t)
+    const _splitPoint = this.getPoint(t)
     return [this, this] // 实际实现需要更复杂的逻辑
   }
 

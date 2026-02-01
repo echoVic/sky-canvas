@@ -116,7 +116,10 @@ export class DropShadow extends BaseShadow {
     let targetData: ImageData
 
     if (target instanceof HTMLCanvasElement) {
-      const tempCtx = target.getContext('2d')!
+      const tempCtx = target.getContext('2d')
+      if (!tempCtx) {
+        throw new Error('Cannot create 2D context for shadow target')
+      }
       targetData = tempCtx.getImageData(0, 0, target.width, target.height)
     } else {
       targetData = target

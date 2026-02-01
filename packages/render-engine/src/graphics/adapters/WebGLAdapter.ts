@@ -305,7 +305,7 @@ export class WebGLGraphicsContext implements IGraphicsContext {
     this.setStrokeColor(color)
   }
 
-  drawLine(x1: number, y1: number, x2: number, y2: number): void {
+  drawLine(_x1: number, _y1: number, _x2: number, _y2: number): void {
     // WebGL implementation placeholder
     console.warn('drawLine not fully implemented in WebGL context')
   }

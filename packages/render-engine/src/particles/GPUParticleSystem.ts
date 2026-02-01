@@ -771,7 +771,9 @@ export class GPUParticleSystem {
       ...this.feedbackBuffers,
     ].filter(Boolean) as WebGLBuffer[]
 
-    buffers.forEach((buffer) => gl.deleteBuffer(buffer))
+    buffers.forEach((buffer) => {
+      gl.deleteBuffer(buffer)
+    })
 
     if (this.texture) {
       gl.deleteTexture(this.texture)

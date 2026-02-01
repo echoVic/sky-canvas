@@ -105,11 +105,17 @@ export class TextureResource extends BaseResource {
 
       this.image = new Image()
       this.image.crossOrigin = 'anonymous'
+      const image = this.image
+      const url = this.url
 
       await new Promise<void>((resolve, reject) => {
-        this.image!.onload = () => resolve()
-        this.image!.onerror = () => reject(new Error(`Failed to load texture: ${this.url}`))
-        this.image!.src = this.url!
+        if (!image || !url) {
+          reject(new Error('Texture image or URL not available'))
+          return
+        }
+        image.onload = () => resolve()
+        image.onerror = () => reject(new Error(`Failed to load texture: ${url}`))
+        image.src = url
       })
 
       this.state = ResourceState.Loaded
@@ -165,7 +171,10 @@ class ResourcePool<T> {
 
   get(): T {
     if (this.pool.length > 0) {
-      return this.pool.pop()!
+      const item = this.pool.pop()
+      if (item) {
+        return item
+      }
     }
     return this.createFn()
   }
@@ -454,7 +463,10 @@ export class ResourceSystem extends BaseSystem {
       this.currentGpuMemoryUsage + requiredSize > this.gpuMemoryBudget &&
       this.gpuResourceQueue.length > 0
     ) {
-      const oldestId = this.gpuResourceQueue.shift()!
+      const oldestId = this.gpuResourceQueue.shift()
+      if (!oldestId) {
+        break
+      }
       const resource = this.resources.get(oldestId)
       if (resource && resource.refCount === 0) {
         this.currentGpuMemoryUsage -= resource.size
@@ -468,8 +480,10 @@ export class ResourceSystem extends BaseSystem {
    */
   private processLoadingQueue(): void {
     if (this.loadingQueue.length > 0 && this.currentLoadingCount < this.maxConcurrentLoads) {
-      const nextItem = this.loadingQueue.shift()!
-      this.loadResource(nextItem.id, nextItem.factory, nextItem.priority)
+      const nextItem = this.loadingQueue.shift()
+      if (nextItem) {
+        this.loadResource(nextItem.id, nextItem.factory, nextItem.priority)
+      }
     }
   }
 
@@ -481,7 +495,10 @@ export class ResourceSystem extends BaseSystem {
     const pool = this.bufferPools.get(poolKey) || []
 
     if (pool.length > 0) {
-      return pool.pop()!
+      const buffer = pool.pop()
+      if (buffer) {
+        return buffer
+      }
     }
 
     const buffer = gl.createBuffer()

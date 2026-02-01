@@ -60,7 +60,7 @@ export class Timeline extends AnimationGroup implements ITimeline {
   /**
    * 在当前时间轴末尾添加动画
    */
-  then(animation: IAnimation): this {
+  append(animation: IAnimation): this {
     return this.at(this.totalDuration, animation)
   }
 
@@ -244,7 +244,7 @@ export class Timeline extends AnimationGroup implements ITimeline {
     this._duration = this.totalDuration
   }
 
-  protected onChildAnimationComplete(completedAnimation: IAnimation): void {
+  protected onChildAnimationComplete(_completedAnimation: IAnimation): void {
     // 检查是否所有动画都已完成
     const allCompleted = this.timelineItems.every(
       (item) =>

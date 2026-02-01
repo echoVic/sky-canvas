@@ -14,7 +14,10 @@ global.ImageData = class ImageData {
   constructor(widthOrData: number | Uint8ClampedArray, height?: number) {
     if (typeof widthOrData === 'number') {
       this.width = widthOrData
-      this.height = height!
+      if (typeof height !== 'number') {
+        throw new Error('Height must be provided when width is a number')
+      }
+      this.height = height
       this.data = new Uint8ClampedArray(this.width * this.height * 4)
     } else {
       this.data = widthOrData

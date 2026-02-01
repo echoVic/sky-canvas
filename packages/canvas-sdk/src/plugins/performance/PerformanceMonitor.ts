@@ -27,11 +27,24 @@ export interface SystemMetrics {
   totalErrors: number
 }
 
+type PerformanceMemory = {
+  usedJSHeapSize: number
+}
+
+type PerformanceWithMemory = Performance & {
+  memory?: PerformanceMemory
+}
+
+type PerformanceExportData = {
+  timestamp: number
+  plugins: Record<string, PerformanceMetrics>
+}
+
 export class PerformanceMonitor {
   private metrics = new Map<string, PerformanceMetrics>()
   private observers: PerformanceObserver[] = []
   private memoryCheckInterval?: number
-  private listeners = new Map<string, Set<(metrics: PerformanceMetrics | SystemMetrics) => void>>()
+  private listeners = new Map<string, Set<(metrics: unknown) => void>>()
   private loadStartTimes = new Map<string, number>()
   private activationStartTimes = new Map<string, number>()
   private realTimeInterval?: number
@@ -245,17 +258,17 @@ export class PerformanceMonitor {
   /**
    * 监听性能事件
    */
-  on(event: string, listener: (data: any) => void): void {
+  on(event: string, listener: (data: unknown) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }
-    this.listeners.get(event)!.add(listener)
+    this.listeners.get(event)?.add(listener)
   }
 
   /**
    * 移除性能事件监听
    */
-  off(event: string, listener: (data: any) => void): void {
+  off(event: string, listener: (data: unknown) => void): void {
     const listeners = this.listeners.get(event)
     if (listeners) {
       listeners.delete(listener)
@@ -272,7 +285,9 @@ export class PerformanceMonitor {
     }
 
     // 断开性能观察器
-    this.observers.forEach((observer) => observer.disconnect())
+    for (const observer of this.observers) {
+      observer.disconnect()
+    }
     this.observers = []
 
     // 清理数据
@@ -317,9 +332,8 @@ export class PerformanceMonitor {
    * 更新内存指标
    */
   private updateMemoryMetrics(): void {
-    if ('memory' in performance) {
-      const memory = (performance as any).memory
-
+    const memory = (performance as PerformanceWithMemory).memory
+    if (memory) {
       // 估算每个插件的内存使用
       const totalUsed = memory.usedJSHeapSize
       const pluginCount = this.metrics.size
@@ -364,7 +378,7 @@ export class PerformanceMonitor {
   /**
    * 触发事件
    */
-  private emit(event: string, data: any): void {
+  private emit(event: string, data: unknown): void {
     const listeners = this.listeners.get(event)
     if (listeners) {
       for (const listener of listeners) {
@@ -441,8 +455,9 @@ export class PerformanceMonitor {
    */
   recordMemoryUsage(pluginId: string): void {
     const metrics = this.getOrCreateMetrics(pluginId)
-    if ((performance as any).memory) {
-      metrics.memoryUsage = (performance as any).memory.usedJSHeapSize
+    const memory = (performance as PerformanceWithMemory).memory
+    if (memory) {
+      metrics.memoryUsage = memory.usedJSHeapSize
     } else {
       metrics.memoryUsage = 0
     }
@@ -495,7 +510,7 @@ export class PerformanceMonitor {
   /**
    * 开始实时监控
    */
-  startRealTimeMonitoring(callback: (metrics: any) => void, interval: number): void {
+  startRealTimeMonitoring(callback: (metrics: SystemMetrics) => void, interval: number): void {
     this.realTimeInterval = window.setInterval(() => {
       callback(this.getSystemMetrics())
     }, interval)
@@ -514,14 +529,15 @@ export class PerformanceMonitor {
   /**
    * 设置性能基准
    */
-  setBenchmark(benchmark: any): void {
+  setBenchmark(benchmark: unknown): void {
     // 实现基准设置逻辑
+    void benchmark
   }
 
   /**
    * 获取性能警告
    */
-  getPerformanceWarnings(): any[] {
+  getPerformanceWarnings(): unknown[] {
     // 实现警告获取逻辑
     return []
   }
@@ -529,11 +545,8 @@ export class PerformanceMonitor {
   /**
    * 导出数据
    */
-  exportData(): {
-    timestamp: number
-    plugins: Record<string, any>
-  } {
-    const plugins: Record<string, any> = {}
+  exportData(): PerformanceExportData {
+    const plugins: Record<string, PerformanceMetrics> = {}
     for (const [pluginId, metrics] of this.metrics) {
       plugins[pluginId] = {
         loadTime: metrics.loadTime,
@@ -542,6 +555,10 @@ export class PerformanceMonitor {
         apiCalls: metrics.apiCalls || 0,
         errors: metrics.errors || 0,
         lastError: metrics.lastError,
+        pluginId,
+        apiCallCount: metrics.apiCallCount,
+        errorCount: metrics.errorCount,
+        lastActivity: metrics.lastActivity,
       }
     }
     return {
@@ -553,7 +570,7 @@ export class PerformanceMonitor {
   /**
    * 导入数据
    */
-  importData(data: { timestamp: number; plugins: Record<string, any> }): void {
+  importData(data: PerformanceExportData): void {
     for (const [pluginId, pluginData] of Object.entries(data.plugins)) {
       const metrics = this.getOrCreateMetrics(pluginId)
       metrics.loadTime = pluginData.loadTime || 0

@@ -16,12 +16,10 @@ export class GravityAffector extends BaseAffector {
     this._enabled = config.enabled !== false
   }
 
-  affect(particle: IParticle, deltaTime: number): void {
+  affect(particle: IParticle, _deltaTime: number): void {
     if (!this.shouldAffect(particle)) {
       return
     }
-
-    const dt = deltaTime / 1000 // 转换为秒
 
     // 应用重力加速度
     particle.acceleration.x += this.force.x

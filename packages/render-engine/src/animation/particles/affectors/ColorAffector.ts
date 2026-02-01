@@ -127,7 +127,7 @@ export class ColorAffector extends BaseAffector {
     return { ...this.parsedColors[this.parsedColors.length - 1].rgba }
   }
 
-  affect(particle: IParticle, deltaTime: number): void {
+  affect(particle: IParticle, _deltaTime: number): void {
     if (!this.shouldAffect(particle)) {
       return
     }

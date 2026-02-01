@@ -45,6 +45,37 @@ export interface IImportService {
   dispose(): void
 }
 
+type ShapeData = {
+  type: string
+  id: string
+  transform?: { position?: { x: number; y: number } }
+  size?: { width: number; height: number }
+  style?: Record<string, unknown>
+  radius?: number
+  radiusX?: number
+  radiusY?: number
+  points?: Array<{ x: number; y: number }>
+  childrenIds?: string[]
+  closed?: boolean
+  outerRadius?: number
+  innerRadius?: number
+  startAngle?: number
+  pathData?: string
+  content?: string
+  fontSize?: number
+  fontFamily?: string
+  src?: string
+}
+
+type ImportPayload = {
+  shapes?: unknown[]
+  version?: unknown
+  timestamp?: unknown
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
 export const IImportService = createDecorator<IImportService>('ImportService')
 
 /**
@@ -69,7 +100,7 @@ export class ImportService implements IImportService {
    */
   async importFromJSON(jsonString: string): Promise<IImportResult> {
     try {
-      const data = JSON.parse(jsonString)
+      const data = JSON.parse(jsonString) as ImportPayload
 
       if (!data.shapes || !Array.isArray(data.shapes)) {
         return {
@@ -82,9 +113,11 @@ export class ImportService implements IImportService {
       const shapes: ShapeEntity[] = []
       const errors: string[] = []
 
-      data.shapes.forEach((shapeData: any, index: number) => {
+      data.shapes.forEach((shapeData, index: number) => {
         try {
-          const shape = this.createShapeFromData(shapeData)
+          const shape = isRecord(shapeData)
+            ? this.createShapeFromData(shapeData as ShapeData)
+            : null
           if (shape) {
             shapes.push(shape)
           } else {
@@ -100,8 +133,8 @@ export class ImportService implements IImportService {
         shapes,
         errors,
         metadata: {
-          version: data.version,
-          timestamp: data.timestamp,
+          version: typeof data.version === 'string' ? data.version : undefined,
+          timestamp: typeof data.timestamp === 'string' ? data.timestamp : undefined,
           originalFormat: 'json',
         },
       }
@@ -325,7 +358,7 @@ export class ImportService implements IImportService {
   /**
    * 从数据创建形状
    */
-  private createShapeFromData(data: any): ShapeEntity | null {
+  private createShapeFromData(data: ShapeData): ShapeEntity | null {
     if (!data.type || !data.id) return null
 
     try {
@@ -352,23 +385,27 @@ export class ImportService implements IImportService {
             data.style || {}
           )
 
-        case 'polygon':
+        case 'polygon': {
+          const polygonPoints = Array.isArray(data.points) ? data.points : []
           return ShapeEntityFactory.createPolygon(
-            data.points || [],
+            polygonPoints,
             data.transform?.position || { x: 0, y: 0 },
             data.style || {},
             data.closed !== false
           )
+        }
 
-        case 'star':
+        case 'star': {
+          const starPoints = typeof data.points === 'number' ? data.points : 5
           return ShapeEntityFactory.createStar(
             data.transform?.position || { x: 0, y: 0 },
-            data.points || 5,
+            starPoints,
             data.outerRadius || 50,
             data.innerRadius || 25,
             data.style || {},
             data.startAngle || -Math.PI / 2
           )
+        }
 
         case 'path':
           return ShapeEntityFactory.createPath(

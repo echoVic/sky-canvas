@@ -158,7 +158,7 @@ export class RenderPipelineSystem extends BaseSystem {
       if (data.results) {
         tasks.forEach((task, index) => {
           const result = data.results?.[index] as { visible?: boolean }
-          if (result && result.visible) {
+          if (result?.visible) {
             // 任务可见，添加到渲染队列
             this.addToRenderQueue(task)
           }

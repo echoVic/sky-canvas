@@ -79,12 +79,12 @@ export class CirclePath extends BasePath {
     }
   }
 
-  getCurvature(t: number): number {
+  getCurvature(_t: number): number {
     // 圆的曲率是半径的倒数
     return 1 / this.radius
   }
 
-  split(t: number): [IPath, IPath] {
+  split(_t: number): [IPath, IPath] {
     const clamped = this.clampT(t)
     const splitAngle = this.startAngle + (this.clockwise ? 1 : -1) * this.angleSpan * clamped
 
@@ -417,7 +417,7 @@ class CompositePath extends BasePath {
     return this.paths[0]?.getPoint(t) || { x: 0, y: 0 }
   }
 
-  split(t: number): [IPath, IPath] {
+  split(_t: number): [IPath, IPath] {
     return [this, this]
   }
 

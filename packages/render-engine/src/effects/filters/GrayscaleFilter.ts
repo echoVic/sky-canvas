@@ -62,7 +62,7 @@ export class GrayscaleFilter extends PixelProcessor<GrayscaleParameters> {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: GrayscaleParameters): number {
+  protected getComplexityFactor(_parameters: GrayscaleParameters): number {
     return 0.7 // 灰度转换相对简单
   }
 

@@ -4,15 +4,14 @@
  */
 
 import { EventEmitter } from '../../animation/core/EventEmitter'
-import {
-  type FilterChainConfig,
-  type FilterContext,
-  type FilterEvents,
-  type FilterParameters,
-  FilterProcessingOptions,
-  type FilterResult,
-  type FilterType,
-  type IFilter,
+import type {
+  FilterChainConfig,
+  FilterContext,
+  FilterEvents,
+  FilterParameters,
+  FilterResult,
+  FilterType,
+  IFilter,
 } from '../types/FilterTypes'
 
 // 导入滤镜实现
@@ -28,9 +27,6 @@ export class FilterManager extends EventEmitter<FilterEvents> {
     resolve: (result: FilterResult) => void
     reject: (error: Error) => void
   }> = []
-
-  private isProcessing = false
-  private maxConcurrency = 1
 
   constructor() {
     super()
@@ -112,7 +108,7 @@ export class FilterManager extends EventEmitter<FilterEvents> {
     sourceImageData: ImageData,
     chainConfig: FilterChainConfig
   ): Promise<FilterResult[]> {
-    const { filters, processingOptions } = chainConfig
+    const { filters } = chainConfig
     const results: FilterResult[] = []
 
     if (filters.length === 0) {
@@ -215,7 +211,7 @@ export class FilterManager extends EventEmitter<FilterEvents> {
    * 获取所有滤镜的性能统计
    */
   getAllPerformanceStats() {
-    const stats: any[] = []
+    const stats: unknown[] = []
 
     for (const filter of this.filters.values()) {
       if (filter instanceof BaseFilter) {
@@ -305,7 +301,10 @@ export class FilterManager extends EventEmitter<FilterEvents> {
     targetHeight: number
   ): ImageData {
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cannot create 2D context for filter preview')
+    }
 
     // 设置原始尺寸
     canvas.width = imageData.width
@@ -316,7 +315,10 @@ export class FilterManager extends EventEmitter<FilterEvents> {
 
     // 创建目标画布
     const targetCanvas = document.createElement('canvas')
-    const targetCtx = targetCanvas.getContext('2d')!
+    const targetCtx = targetCanvas.getContext('2d')
+    if (!targetCtx) {
+      throw new Error('Cannot create target 2D context for filter preview')
+    }
     targetCanvas.width = targetWidth
     targetCanvas.height = targetHeight
 

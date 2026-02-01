@@ -8,6 +8,7 @@ import {
   BatchOptimizer,
   createBatchManagerWithDefaultStrategies,
 } from '../batch'
+import { Matrix3 } from '../math'
 import type { TextureAtlas } from '../textures/TextureAtlas'
 import { type BenchmarkResult, PerformanceBenchmark } from './PerformanceBenchmark'
 
@@ -76,11 +77,11 @@ export class RenderingBenchmark {
       if (this.batchManager) {
         // 模拟批处理渲染任务
         const mockRenderables = this.createMockRenderables(this.config.objectCount)
-        mockRenderables.forEach((renderable) => {
-          this.batchManager!.addRenderable(renderable)
-        })
+        for (const renderable of mockRenderables) {
+          this.batchManager?.addRenderable(renderable)
+        }
         // 简化的投影矩阵
-        const projectionMatrix = { multiply: (m: any) => m } as any
+        const projectionMatrix = new Matrix3()
         this.batchManager.flush(projectionMatrix)
       }
     })
@@ -110,11 +111,11 @@ export class RenderingBenchmark {
       if (this.batchManager) {
         // 模拟实例化渲染任务
         const mockRenderables = this.createMockRenderables(this.config.objectCount)
-        mockRenderables.forEach((renderable) => {
-          this.batchManager!.addRenderable(renderable)
-        })
+        for (const renderable of mockRenderables) {
+          this.batchManager?.addRenderable(renderable)
+        }
         // 简化的投影矩阵
-        const projectionMatrix = { multiply: (m: any) => m } as any
+        const projectionMatrix = new Matrix3()
         this.batchManager.flush(projectionMatrix)
       }
     })
@@ -126,7 +127,7 @@ export class RenderingBenchmark {
   /**
    * 创建模拟渲染对象
    */
-  private createMockRenderables(count: number): any[] {
+  private createMockRenderables(count: number): unknown[] {
     const renderables = []
     for (let i = 0; i < count; i++) {
       renderables.push({

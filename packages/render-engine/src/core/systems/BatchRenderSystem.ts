@@ -3,7 +3,7 @@
  * 实现高效的批量渲染优化，包括智能批次合并和动态纹理图集
  */
 
-import type { BaseRenderer } from '../index'
+import type { BaseRenderer, RenderContext } from '../index'
 import type { BatchData, BatchRenderStats, BatchState, IBatchable } from './BatchRenderSystemTypes'
 import { Extension, ExtensionType } from './ExtensionSystem'
 import { BaseSystem } from './SystemManager'
@@ -52,7 +52,6 @@ export class BatchRenderSystem extends BaseSystem {
 
   // 智能批次合并
   private batchGroups = new Map<string, IBatchable[]>()
-  private frameObjectCount = 0
 
   // 性能统计
   private stats: BatchRenderStats = {
@@ -79,7 +78,7 @@ export class BatchRenderSystem extends BaseSystem {
       throw new Error('Renderer is required and cannot be null or undefined')
     }
 
-    let renderContext
+    let renderContext: RenderContext | null
     try {
       renderContext = this.renderer.getContext?.()
     } catch (error) {
@@ -494,7 +493,10 @@ export class BatchRenderSystem extends BaseSystem {
       if (!this.batchGroups.has(key)) {
         this.batchGroups.set(key, [])
       }
-      this.batchGroups.get(key)!.push(batchable)
+      const group = this.batchGroups.get(key)
+      if (group) {
+        group.push(batchable)
+      }
     }
 
     this.stats.sortTime = performance.now() - startTime

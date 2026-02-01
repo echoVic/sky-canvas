@@ -269,7 +269,7 @@ export abstract class BaseCompositeOperation implements ICompositeOperation {
   }
 
   protected copy(
-    dest: { r: number; g: number; b: number; a: number },
+    _dest: { r: number; g: number; b: number; a: number },
     src: { r: number; g: number; b: number; a: number }
   ): { r: number; g: number; b: number; a: number } {
     return { ...src }

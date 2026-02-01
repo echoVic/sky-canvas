@@ -350,7 +350,7 @@ export interface LightingEvents {
   shadowAdded: (shadow: IShadow) => void
   shadowRemoved: (shadowId: string) => void
   shadowUpdated: (shadow: IShadow) => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 /**

@@ -52,7 +52,7 @@ export class PathFactory {
         return new CustomPath(config as CustomPathConfig)
 
       default:
-        throw new Error(`Unsupported path type: ${(config as any).type}`)
+        throw new Error(`Unsupported path type: ${(config as { type?: unknown }).type}`)
     }
   }
 
@@ -415,7 +415,7 @@ export class PathFactory {
   /**
    * 解析SVG路径命令（简化版）
    */
-  private static parseSVGPath(pathString: string): any[] {
+  private static parseSVGPath(_pathString: string): unknown[] {
     // 简化的SVG路径解析
     // 实际实现需要更复杂的解析逻辑
     return []
@@ -607,7 +607,7 @@ class CompositePath implements IPath {
 
   split(t: number): [IPath, IPath] {
     // 简化实现
-    const splitPoint = this.getPoint(t)
+    const _splitPoint = this.getPoint(t)
     return [this, new CompositePath([])]
   }
 

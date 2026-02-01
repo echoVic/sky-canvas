@@ -3,7 +3,7 @@
  */
 
 import type { Point2D } from '../../animation/types/PathTypes'
-import { type IMask, MaskShape, MaskType, type RectangleMaskConfig } from '../types/MaskTypes'
+import { type IMask, MaskType, type RectangleMaskConfig } from '../types/MaskTypes'
 import { BaseMask } from './BaseMask'
 
 // Shape interface definition for render-engine
@@ -34,7 +34,7 @@ export class RectangleMask extends BaseMask {
 
   apply(
     ctx: CanvasRenderingContext2D | WebGLRenderingContext,
-    target: IShape | HTMLCanvasElement
+    _target: IShape | HTMLCanvasElement
   ): void {
     if (!this._enabled || !(ctx instanceof CanvasRenderingContext2D)) {
       return

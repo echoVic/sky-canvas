@@ -3,14 +3,7 @@
  */
 
 import type { Point2D } from '../../animation/types/PathTypes'
-import {
-  type AnyMaskConfig,
-  type IMask,
-  MaskBlendMode,
-  MaskEdgeType,
-  MaskShape,
-  MaskType,
-} from '../types/MaskTypes'
+import { type AnyMaskConfig, type IMask, MaskBlendMode, MaskEdgeType } from '../types/MaskTypes'
 
 // Shape interface definition for render-engine
 interface IShape {

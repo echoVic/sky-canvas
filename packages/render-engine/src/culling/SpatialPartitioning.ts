@@ -4,7 +4,7 @@
  */
 
 import type { IRenderCommand } from '../commands/IRenderCommand'
-import { IPoint, type IRect } from '../graphics/IGraphicsContext'
+import type { IRect } from '../graphics/IGraphicsContext'
 
 /**
  * 空间节点接口
@@ -237,7 +237,10 @@ export class SpatialHashGrid {
       if (!this.cells.has(key)) {
         this.cells.set(key, [])
       }
-      this.cells.get(key)!.push(object)
+      const cell = this.cells.get(key)
+      if (cell) {
+        cell.push(object)
+      }
     }
   }
 

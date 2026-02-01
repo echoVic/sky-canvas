@@ -311,7 +311,9 @@ export function mockLocalStorage() {
       delete storage[key]
     }),
     clear: vi.fn(() => {
-      Object.keys(storage).forEach((key) => delete storage[key])
+      for (const key of Object.keys(storage)) {
+        delete storage[key]
+      }
     }),
     key: vi.fn((index: number) => Object.keys(storage)[index] || null),
     get length() {

@@ -15,11 +15,11 @@ const App: React.FC = () => {
   return (
     <div className={`h-screen flex flex-col ${theme === 'dark' ? 'dark' : ''}`}>
       {/* 顶部工具栏 */}
-      <header className="h-12 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-4 flex-shrink-0">
+      <header className="flex flex-shrink-0 gap-4 items-center px-4 h-12 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">SC</span>
+        <div className="flex gap-2 items-center">
+          <div className="flex justify-center items-center w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+            <span className="text-sm font-bold text-white">SC</span>
           </div>
           <span className="font-semibold text-gray-800 dark:text-gray-200">Sky Canvas</span>
         </div>
@@ -28,13 +28,14 @@ const App: React.FC = () => {
         <div className="w-px h-6 bg-gray-200 dark:bg-gray-700" />
 
         {/* 工具栏 */}
-        <div className="flex-1 flex justify-center">
+        <div className="flex flex-1 justify-center">
           <Toolbar />
         </div>
 
         {/* 右侧按钮 */}
-        <div className="flex items-center gap-2">
+        <div className="flex gap-2 items-center">
           <button
+            type="button"
             onClick={() => setShowLayers(!showLayers)}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
               showLayers
@@ -45,6 +46,7 @@ const App: React.FC = () => {
             图层
           </button>
           <button
+            type="button"
             onClick={() => setShowInspector(!showInspector)}
             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
               showInspector
@@ -58,29 +60,29 @@ const App: React.FC = () => {
       </header>
 
       {/* 主内容区域 */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex overflow-hidden flex-1">
         {/* 左侧图层面板 */}
         {showLayers && (
-          <aside className="w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <aside className="flex-shrink-0 w-60 bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-gray-700">
             <LayersPanel />
           </aside>
         )}
 
         {/* 画布区域 */}
-        <main className="flex-1 relative bg-gray-100 dark:bg-gray-800 overflow-hidden">
+        <main className="overflow-hidden relative flex-1 bg-gray-100 dark:bg-gray-800">
           <Canvas />
         </main>
 
         {/* 右侧属性面板 */}
         {showInspector && (
-          <aside className="w-64 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <aside className="flex-shrink-0 w-64 bg-white border-l border-gray-200 dark:bg-gray-900 dark:border-gray-700">
             <Inspector />
           </aside>
         )}
       </div>
 
       {/* 底部状态栏 */}
-      <footer className="h-8 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0">
+      <footer className="flex flex-shrink-0 items-center px-4 h-8 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <StatusBar />
       </footer>
     </div>

@@ -3,12 +3,7 @@
  * 用于高效的粒子对象重用，减少GC压力
  */
 
-import {
-  type IParticle,
-  type IParticlePool,
-  ParticleConfig,
-  ParticleState,
-} from '../types/ParticleTypes'
+import { type IParticle, type IParticlePool, ParticleState } from '../types/ParticleTypes'
 import { Particle } from './Particle'
 
 export class ParticlePool implements IParticlePool {
@@ -134,7 +129,9 @@ export class ParticlePool implements IParticlePool {
     }
 
     // 立即释放回池
-    particles.forEach((particle) => this.release(particle))
+    for (const particle of particles) {
+      this.release(particle)
+    }
   }
 
   /**

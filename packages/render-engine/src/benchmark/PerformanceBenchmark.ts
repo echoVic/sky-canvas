@@ -240,7 +240,7 @@ export class PerformanceBenchmark extends EventEmitter<BenchmarkEvents> {
     config: BenchmarkConfig
   ): Promise<BenchmarkResult> {
     const times: number[] = []
-    const totalIterations = config.iterations + (config.warmupIterations || 0)
+    const _totalIterations = config.iterations + (config.warmupIterations || 0)
     let memoryBefore = 0
     let memoryAfter = 0
     let memoryPeak = 0
@@ -359,8 +359,11 @@ export class PerformanceBenchmark extends EventEmitter<BenchmarkEvents> {
   private async forceGC(): Promise<void> {
     if ('gc' in global && typeof global.gc === 'function') {
       global.gc()
-    } else if ('gc' in window && typeof (window as any).gc === 'function') {
-      ;(window as any).gc()
+    } else if (typeof window !== 'undefined') {
+      const windowWithGc = window as unknown as { gc?: () => void }
+      if (typeof windowWithGc.gc === 'function') {
+        windowWithGc.gc()
+      }
     }
 
     // 等待一个事件循环来确保GC完成
@@ -373,8 +376,13 @@ export class PerformanceBenchmark extends EventEmitter<BenchmarkEvents> {
   private getMemoryUsage(): number {
     if (typeof process !== 'undefined' && process.memoryUsage) {
       return process.memoryUsage().heapUsed
-    } else if (typeof performance !== 'undefined' && 'memory' in performance) {
-      return (performance as any).memory.usedJSHeapSize
+    } else if (typeof performance !== 'undefined') {
+      const performanceWithMemory = performance as unknown as {
+        memory?: { usedJSHeapSize: number }
+      }
+      if (performanceWithMemory.memory) {
+        return performanceWithMemory.memory.usedJSHeapSize
+      }
     }
     return 0
   }
@@ -402,8 +410,8 @@ export class PerformanceBenchmark extends EventEmitter<BenchmarkEvents> {
   /**
    * 获取平台信息
    */
-  private static getPlatformInfo(): Record<string, any> {
-    const info: Record<string, any> = {}
+  private static getPlatformInfo(): Record<string, unknown> {
+    const info: Record<string, unknown> = {}
 
     if (typeof navigator !== 'undefined') {
       info.userAgent = navigator.userAgent

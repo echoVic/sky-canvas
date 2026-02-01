@@ -16,7 +16,7 @@ interface ParticleSystemManagerEvents {
   systemRemoved: (system: IParticleSystem) => void
   systemCompleted: (system: IParticleSystem) => void
   allSystemsCompleted: () => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEvents> {
@@ -237,7 +237,7 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
   findSystemsByTag(tag: string): IParticleSystem[] {
     return this.getAllSystems().filter((system) => {
       const userData = system.config.emission.userData
-      return userData && userData.tags && userData.tags.includes(tag)
+      return userData?.tags?.includes(tag)
     })
   }
 
@@ -308,7 +308,7 @@ export class ParticleSystemManager extends EventEmitter<ParticleSystemManagerEve
     for (const system of completedSystems) {
       // 如果系统有清理标记，自动移除
       const userData = system.config.emission.userData
-      if (userData && userData.autoCleanup) {
+      if (userData?.autoCleanup) {
         this.removeSystem(system.id)
       }
     }

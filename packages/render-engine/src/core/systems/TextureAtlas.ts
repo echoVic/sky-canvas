@@ -20,9 +20,17 @@ export class TextureAtlas {
     this.gl = gl
     this.canvas = document.createElement('canvas')
     this.canvas.width = this.canvas.height = size
-    this.ctx = this.canvas.getContext('2d')!
+    const ctx = this.canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Failed to acquire 2D context for texture atlas')
+    }
+    this.ctx = ctx
 
-    this.texture = gl.createTexture()!
+    const texture = gl.createTexture()
+    if (!texture) {
+      throw new Error('Failed to create WebGL texture for atlas')
+    }
+    this.texture = texture
     this.root = { x: 0, y: 0, width: size, height: size, used: false }
 
     this.initTexture()
@@ -40,7 +48,7 @@ export class TextureAtlas {
 
   addTexture(sourceTexture: WebGLTexture, width: number, height: number): AtlasRegion | null {
     if (this.textureMap.has(sourceTexture)) {
-      return this.textureMap.get(sourceTexture)!
+      return this.textureMap.get(sourceTexture) || null
     }
 
     const node = this.findNode(this.root, width, height)
@@ -109,7 +117,10 @@ export class TextureAtlas {
         const tempCanvas = document.createElement('canvas')
         tempCanvas.width = region.width
         tempCanvas.height = region.height
-        const tempCtx = tempCanvas.getContext('2d')!
+        const tempCtx = tempCanvas.getContext('2d')
+        if (!tempCtx) {
+          return
+        }
 
         const imageData = tempCtx.createImageData(region.width, region.height)
         imageData.data.set(pixels)

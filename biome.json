@@ -76,6 +76,16 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/render-engine/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      }
     }
   ]
 }

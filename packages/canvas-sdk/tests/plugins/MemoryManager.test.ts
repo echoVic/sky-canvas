@@ -74,7 +74,7 @@ describe.skip('MemoryManager', () => {
       const resource = memoryManager.getResource('test-plugin', 'test-resource')
 
       expect(resource).toBeDefined()
-      expect(resource!.id).toBe('test-resource')
+      expect(resource?.id).toBe('test-resource')
     })
 
     it('应该返回undefined（不存在的资源）', () => {
@@ -279,8 +279,8 @@ describe.skip('MemoryManager', () => {
       const plugin1 = stats.plugins.find((p) => p.pluginId === 'plugin-1')
 
       expect(plugin1).toBeDefined()
-      expect(plugin1!.totalSize).toBe(1536) // 1024 + 512
-      expect(plugin1!.resourceCount).toBe(2)
+      expect(plugin1?.totalSize).toBe(1536) // 1024 + 512
+      expect(plugin1?.resourceCount).toBe(2)
     })
 
     it('应该计算平均内存使用', () => {

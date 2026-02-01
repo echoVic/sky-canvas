@@ -7,7 +7,10 @@
  * 批处理接口调用管理器
  */
 export class BatchCallManager {
-  private pendingCalls: Map<string, any[]> = new Map()
+  private pendingCalls: Map<
+    string,
+    Array<{ data: unknown; processor: (items: unknown[]) => void }>
+  > = new Map()
   private flushTimer: number | null = null
   private batchDelay = 16 // 1帧时间
   private maxBatchSize = 100
@@ -20,8 +23,11 @@ export class BatchCallManager {
       this.pendingCalls.set(key, [])
     }
 
-    const batch = this.pendingCalls.get(key)!
-    batch.push({ data, processor })
+    const batch = this.pendingCalls.get(key)
+    if (!batch) {
+      return
+    }
+    batch.push({ data, processor: processor as (items: unknown[]) => void })
 
     // 如果批次达到最大大小，立即处理
     if (batch.length >= this.maxBatchSize) {
@@ -55,14 +61,14 @@ export class BatchCallManager {
     if (!batch || batch.length === 0) return
 
     // 按处理器分组
-    const processorGroups = new Map<Function, any[]>()
+    const processorGroups = new Map<(items: unknown[]) => void, unknown[]>()
 
     for (const item of batch) {
       const processor = item.processor
       if (!processorGroups.has(processor)) {
         processorGroups.set(processor, [])
       }
-      processorGroups.get(processor)!.push(item.data)
+      processorGroups.get(processor)?.push(item.data)
     }
 
     // 执行批处理
@@ -134,7 +140,7 @@ export class BatchCallManager {
  * 对象池管理器
  */
 export class ObjectPoolManager {
-  private pools = new Map<string, ObjectPool<any>>()
+  private pools = new Map<string, ObjectPool<unknown>>()
 
   /**
    * 创建对象池
@@ -146,7 +152,7 @@ export class ObjectPoolManager {
     maxSize = 100
   ): ObjectPool<T> {
     const pool = new ObjectPool(factory, reset, maxSize)
-    this.pools.set(key, pool)
+    this.pools.set(key, pool as ObjectPool<unknown>)
     return pool
   }
 
@@ -162,16 +168,16 @@ export class ObjectPoolManager {
    */
   get<T>(key: string): T | null {
     const pool = this.pools.get(key)
-    return pool ? pool.get() : null
+    return pool ? (pool.get() as T) : null
   }
 
   /**
    * 归还对象到池
    */
-  release(key: string, obj: any): void {
+  release(key: string, obj: unknown): void {
     const pool = this.pools.get(key)
     if (pool) {
-      pool.release(obj)
+      pool.release(obj as never)
     }
   }
 
@@ -186,7 +192,7 @@ export class ObjectPoolManager {
       hitRate: number
     }
   > {
-    const stats: Record<string, any> = {}
+    const stats: Record<string, { available: number; total: number; hitRate: number }> = {}
 
     for (const [key, pool] of this.pools) {
       stats[key] = pool.getStats()
@@ -226,7 +232,12 @@ export class ObjectPool<T> {
   get(): T {
     if (this.available.length > 0) {
       this.hits++
-      const obj = this.available.pop()!
+      const obj = this.available.pop()
+      if (!obj) {
+        this.misses++
+        this.totalCreated++
+        return this.factory()
+      }
       if (this.reset) {
         this.reset(obj)
       }
@@ -265,7 +276,7 @@ export class ObjectPool<T> {
  */
 export class DataTransferOptimizer {
   private compressionThreshold = 1024 // 1KB
-  private cache = new Map<string, any>()
+  private cache = new Map<string, unknown>()
   private cacheMaxSize = 1000
 
   /**
@@ -409,7 +420,7 @@ export class InterfaceInterceptor {
     if (!this.interceptors.has(method)) {
       this.interceptors.set(method, [])
     }
-    this.interceptors.get(method)!.push(interceptor)
+    this.interceptors.get(method)?.push(interceptor)
   }
 
   /**
@@ -428,7 +439,7 @@ export class InterfaceInterceptor {
   /**
    * 执行拦截的方法调用
    */
-  async intercept<TArgs extends any[], TReturn>(
+  async intercept<TArgs extends unknown[], TReturn>(
     method: string,
     originalFn: (...args: TArgs) => TReturn | Promise<TReturn>,
     args: TArgs
@@ -522,7 +533,10 @@ export class InterfaceInterceptor {
       })
     }
 
-    const metrics = this.metrics.get(method)!
+    const metrics = this.metrics.get(method)
+    if (!metrics) {
+      return
+    }
 
     switch (type) {
       case 'call':
@@ -558,12 +572,12 @@ interface InterceptorFunction {
 
 interface InterceptorContext {
   method: string
-  args: any[]
-  result?: any
-  error?: any
+  args: unknown[]
+  result?: unknown
+  error?: unknown
   timestamp: number
   startTime?: number
-  pooledObj?: any
+  pooledObj?: unknown
 }
 
 interface CallMetrics {

@@ -238,7 +238,9 @@ export function hslToRgb(h: number | HSLColor, s?: number, l?: number): RGBAColo
   const sNorm = saturation / 100
   const lNorm = lightness / 100
 
-  let r, g, b
+  let r = 0
+  let g = 0
+  let b = 0
 
   if (sNorm === 0) {
     r = g = b = lNorm // 灰度

@@ -117,9 +117,15 @@ export class BatchBuffer {
    */
   bind(): void {
     // 绑定顶点缓冲区
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, (this.vertexBuffer as any).buffer)
+    const vertexBuffer = this.vertexBuffer as unknown as { buffer?: WebGLBuffer | null }
+    if (vertexBuffer.buffer) {
+      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertexBuffer.buffer)
+    }
     // 绑定索引缓冲区
-    this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, (this.indexBuffer as any).buffer)
+    const indexBuffer = this.indexBuffer as unknown as { buffer?: WebGLBuffer | null }
+    if (indexBuffer.buffer) {
+      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer.buffer)
+    }
   }
 
   /**

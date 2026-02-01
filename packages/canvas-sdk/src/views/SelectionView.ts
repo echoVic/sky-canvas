@@ -175,9 +175,12 @@ export class SelectionView {
     ctx: CanvasRenderingContext2D,
     bounds: { x: number; y: number; width: number; height: number }
   ): void {
-    ctx.strokeStyle = this.config.selectionColor!
-    ctx.lineWidth = this.config.selectionLineWidth!
-    ctx.setLineDash(this.config.dashPattern!)
+    const selectionColor = this.config.selectionColor ?? '#007AFF'
+    const selectionLineWidth = this.config.selectionLineWidth ?? 2
+    const dashPattern = this.config.dashPattern ?? [5, 5]
+    ctx.strokeStyle = selectionColor
+    ctx.lineWidth = selectionLineWidth
+    ctx.setLineDash(dashPattern)
 
     ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height)
 
@@ -224,11 +227,11 @@ export class SelectionView {
     handles: IControlHandle[],
     viewport: IViewportState
   ): void {
-    const handleSize = this.config.handleSize! / viewport.zoom // 根据缩放调整手柄大小
+    const handleSize = (this.config.handleSize ?? 8) / viewport.zoom
     const halfSize = handleSize / 2
 
-    ctx.fillStyle = this.config.handleColor!
-    ctx.strokeStyle = this.config.handleBorderColor!
+    ctx.fillStyle = this.config.handleColor ?? '#FFFFFF'
+    ctx.strokeStyle = this.config.handleBorderColor ?? '#007AFF'
     ctx.lineWidth = 1 / viewport.zoom
 
     for (const handle of handles) {
@@ -254,7 +257,7 @@ export class SelectionView {
     const handleRadius = 4 / viewport.zoom
 
     // 绘制连接线
-    ctx.strokeStyle = this.config.handleBorderColor!
+    ctx.strokeStyle = this.config.handleBorderColor ?? '#007AFF'
     ctx.lineWidth = 1 / viewport.zoom
     ctx.beginPath()
     ctx.moveTo(centerX, y)
@@ -262,8 +265,8 @@ export class SelectionView {
     ctx.stroke()
 
     // 绘制旋转手柄
-    ctx.fillStyle = this.config.rotateHandleColor!
-    ctx.strokeStyle = this.config.handleBorderColor!
+    ctx.fillStyle = this.config.rotateHandleColor ?? '#00C853'
+    ctx.strokeStyle = this.config.handleBorderColor ?? '#007AFF'
     ctx.beginPath()
     ctx.arc(centerX, rotateY, handleRadius, 0, Math.PI * 2)
     ctx.fill()
@@ -291,7 +294,7 @@ export class SelectionView {
 
     const bounds = getShapeBounds(selectedShapes[0])
     const handles = this.getControlHandles(bounds)
-    const handleSize = this.config.handleSize! / viewport.zoom
+    const handleSize = (this.config.handleSize ?? 8) / viewport.zoom
     const halfSize = handleSize / 2
 
     // 转换点击点到世界坐标
@@ -355,13 +358,15 @@ export class SelectionView {
     ctx.scale(viewport.zoom, viewport.zoom)
 
     // 绘制选择框
-    ctx.strokeStyle = this.config.selectionColor!
-    ctx.lineWidth = this.config.selectionLineWidth! / viewport.zoom
+    const selectionColor = this.config.selectionColor ?? '#007AFF'
+    const selectionLineWidth = this.config.selectionLineWidth ?? 2
+    ctx.strokeStyle = selectionColor
+    ctx.lineWidth = selectionLineWidth / viewport.zoom
     ctx.setLineDash([3, 3])
     ctx.strokeRect(x, y, width, height)
 
     // 绘制半透明填充
-    ctx.fillStyle = this.config.selectionColor! + '20' // 添加透明度
+    ctx.fillStyle = selectionColor + '20'
     ctx.fillRect(x, y, width, height)
 
     ctx.restore()

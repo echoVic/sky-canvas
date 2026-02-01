@@ -256,8 +256,8 @@ export class ShapeView {
    * 获取形状在屏幕上的边界框
    */
   getScreenBounds(
-    shape: ShapeEntity,
-    viewport: IViewportState
+    _shape: ShapeEntity,
+    _viewport: IViewportState
   ): { x: number; y: number; width: number; height: number } {
     // TODO: 实现精确的屏幕边界计算
     return { x: 0, y: 0, width: 0, height: 0 }
@@ -266,7 +266,11 @@ export class ShapeView {
   /**
    * 命中测试
    */
-  hitTest(shape: ShapeEntity, point: { x: number; y: number }, viewport: IViewportState): boolean {
+  hitTest(
+    _shape: ShapeEntity,
+    _point: { x: number; y: number },
+    _viewport: IViewportState
+  ): boolean {
     // TODO: 实现精确的命中测试
     return false
   }

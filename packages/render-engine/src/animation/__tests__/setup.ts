@@ -9,7 +9,7 @@ import { vi } from 'vitest'
 if (!global.performance) {
   global.performance = {
     now: vi.fn(() => Date.now()),
-  } as any
+  } as Performance
 }
 
 // 模拟 requestAnimationFrame 和 cancelAnimationFrame
@@ -39,7 +39,7 @@ global.cancelAnimationFrame = vi.fn((id: number) => {
 // 模拟 setTimeout 和 clearTimeout
 const originalSetTimeout = global.setTimeout
 Object.defineProperty(global, 'setTimeout', {
-  value: vi.fn((fn: Function, delay?: number) => {
+  value: vi.fn((fn: () => void, delay?: number) => {
     const id = Math.random()
     originalSetTimeout(() => fn(), delay || 0)
     return id

@@ -60,7 +60,7 @@ export enum EventPriority {
 export interface BridgeEvent {
   type: BridgeEventType
   priority: EventPriority
-  data: any
+  data: unknown
   timestamp: number
   source: 'canvas-sdk' | 'render-engine'
   propagationStopped?: boolean
@@ -150,7 +150,10 @@ class EventQueueManager {
     ]) {
       const queue = this.queues.get(priority)
       if (queue && queue.length > 0) {
-        return queue.shift()!
+        const nextEvent = queue.shift()
+        if (nextEvent) {
+          return nextEvent
+        }
       }
     }
     return null
@@ -352,7 +355,10 @@ export class EventBridge {
         this.listeners.set(type, new Set())
       }
 
-      const listeners = this.listeners.get(type)!
+      const listeners = this.listeners.get(type)
+      if (!listeners) {
+        return
+      }
 
       if (listeners.size >= this.config.maxListenersPerEvent) {
         console.warn(
@@ -389,7 +395,7 @@ export class EventBridge {
     if (!this.filters.has(type)) {
       this.filters.set(type, new Set())
     }
-    this.filters.get(type)!.add(filter)
+    this.filters.get(type)?.add(filter)
   }
 
   /**
@@ -412,7 +418,7 @@ export class EventBridge {
     if (!this.transformers.has(type)) {
       this.transformers.set(type, new Set())
     }
-    this.transformers.get(type)!.add(transformer)
+    this.transformers.get(type)?.add(transformer)
   }
 
   /**
@@ -420,7 +426,7 @@ export class EventBridge {
    */
   emit(
     type: BridgeEventType,
-    data: any,
+    data: unknown,
     priority = EventPriority.NORMAL,
     source: 'canvas-sdk' | 'render-engine' = 'canvas-sdk'
   ): void {
@@ -463,22 +469,26 @@ export class EventBridge {
   emitBatch(
     events: Array<{
       type: BridgeEventType
-      data: any
+      data: unknown
       priority?: EventPriority
       source?: 'canvas-sdk' | 'render-engine'
     }>
   ): void {
-    globalInterfaceOptimizer.batchManager.addCall('eventBatch', events, (eventBatches: any[]) => {
-      const allEvents = eventBatches.flat()
-      for (const eventData of allEvents) {
-        this.emit(
-          eventData.type,
-          eventData.data,
-          eventData.priority || EventPriority.NORMAL,
-          eventData.source || 'canvas-sdk'
-        )
+    globalInterfaceOptimizer.batchManager.addCall(
+      'eventBatch',
+      events,
+      (eventBatches: unknown[]) => {
+        const allEvents = eventBatches.flat()
+        for (const eventData of allEvents) {
+          this.emit(
+            (eventData as { type: BridgeEventType }).type,
+            (eventData as { data: unknown }).data,
+            (eventData as { priority?: EventPriority }).priority,
+            (eventData as { source?: 'canvas-sdk' | 'render-engine' }).source
+          )
+        }
       }
-    })
+    )
   }
 
   /**
@@ -697,5 +707,6 @@ export const globalEventBridge = new EventBridge()
 
 // 暴露到全局对象（方便调试）
 if (typeof window !== 'undefined') {
-  ;(window as any).eventBridge = globalEventBridge
+  const globalWindow = window as Window & { eventBridge?: EventBridge }
+  globalWindow.eventBridge = globalEventBridge
 }

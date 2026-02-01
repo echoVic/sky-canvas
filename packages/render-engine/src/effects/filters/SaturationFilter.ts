@@ -67,7 +67,7 @@ export class SaturationFilter extends PixelProcessor<SaturationParameters> {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: SaturationParameters): number {
+  protected getComplexityFactor(_parameters: SaturationParameters): number {
     return 0.8 // 饱和度调整需要计算亮度，稍复杂
   }
 

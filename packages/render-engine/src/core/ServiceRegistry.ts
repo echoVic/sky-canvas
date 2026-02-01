@@ -22,19 +22,19 @@ export const IToolService = createDecorator<IToolService>('toolService')
 // 渲染服务接口定义 - forward declarations
 interface IWebGLRenderer {
   initialize(): Promise<void>
-  render(scene: any): void
+  render(scene: unknown): void
   dispose(): void
 }
 
 interface IWebGPURenderer {
   initialize(): Promise<void>
-  render(scene: any): void
+  render(scene: unknown): void
   dispose(): void
 }
 
 interface ICanvas2DRenderer {
   initialize(): Promise<void>
-  render(scene: any): void
+  render(scene: unknown): void
   dispose(): void
 }
 
@@ -124,7 +124,7 @@ export interface IToolService {
 export interface ICanvas {
   readonly id: string
   readonly element: HTMLCanvasElement
-  readonly context: CanvasRenderingContext2D | WebGLRenderingContext | any // WebGPU context
+  readonly context: CanvasRenderingContext2D | WebGLRenderingContext | unknown // WebGPU context
   resize(width: number, height: number): void
   dispose(): void
 }
@@ -154,7 +154,7 @@ export interface IShape {
   contains(point: Vector2): boolean
   intersects(bounds: Rectangle): boolean
   clone(): IShape
-  serialize(): any
+  serialize(): unknown
 }
 
 export interface ITool {
@@ -186,8 +186,8 @@ export interface ICommand {
 }
 
 export type IEvent<T> = (
-  listener: (e: T) => any,
-  thisArg?: any,
+  listener: (e: T) => unknown,
+  thisArg?: unknown,
   disposables?: IDisposable[]
 ) => IDisposable
 
@@ -249,13 +249,13 @@ export interface IExtensionManifest {
   readonly version: string
   readonly description: string
   readonly main: string
-  readonly contributes: any
+  readonly contributes: unknown
 }
 
 export interface IExtensionContext {
   readonly subscriptions: IDisposable[]
-  readonly workspaceState: any
-  readonly globalState: any
+  readonly workspaceState: unknown
+  readonly globalState: unknown
   readonly extensionPath: string
   asAbsolutePath(relativePath: string): string
 }
@@ -264,7 +264,7 @@ export interface IExtensionContext {
  * 服务注册表 - 注册所有系统服务
  */
 export class ServiceRegistry {
-  static registerServices(services: ServiceCollection): void {
+  static registerServices(_services: ServiceCollection): void {
     // 核心服务注册将在具体实现类中完成
     // 这里只定义接口和注册结构
   }

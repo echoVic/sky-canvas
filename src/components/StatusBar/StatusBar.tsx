@@ -28,6 +28,7 @@ const StatusBar: React.FC = () => {
       {/* 左侧：撤销/重做 */}
       <div className="flex items-center gap-1">
         <button
+          type="button"
           onClick={undo}
           disabled={!canUndo}
           className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30"
@@ -36,6 +37,7 @@ const StatusBar: React.FC = () => {
           <Undo size={14} />
         </button>
         <button
+          type="button"
           onClick={redo}
           disabled={!canRedo}
           className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30"
@@ -48,6 +50,7 @@ const StatusBar: React.FC = () => {
       {/* 中间：缩放控制 */}
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={handleZoomOut}
           className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="缩小"
@@ -56,6 +59,7 @@ const StatusBar: React.FC = () => {
         </button>
         <span className="w-12 text-center">{zoom}%</span>
         <button
+          type="button"
           onClick={handleZoomIn}
           className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="放大"

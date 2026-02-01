@@ -403,7 +403,7 @@ class CompositePath extends BasePath {
     return this.paths[0]?.getPoint(t) || { x: 0, y: 0 }
   }
 
-  split(t: number): [IPath, IPath] {
+  split(_t: number): [IPath, IPath] {
     return [this, this]
   }
 

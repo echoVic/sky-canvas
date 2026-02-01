@@ -244,7 +244,7 @@ export interface CustomShaderParameters extends IFilterParameters {
   type: FilterType.CUSTOM_SHADER
   vertexShader: string // 顶点着色器代码
   fragmentShader: string // 片段着色器代码
-  uniforms?: Record<string, any> // 着色器uniform参数
+  uniforms?: Record<string, unknown> // 着色器uniform参数
 }
 
 // 滤镜参数联合类型
@@ -329,7 +329,7 @@ export interface FilterEvents {
   'filter-error': (filterType: FilterType, error: Error) => void
   'chain-start': (filters: FilterParameters[]) => void
   'chain-complete': (results: FilterResult[]) => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 // 滤镜接口

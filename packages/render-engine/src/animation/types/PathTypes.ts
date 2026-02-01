@@ -2,6 +2,8 @@
  * 路径动画类型定义
  */
 
+import type { EasingFunction, EasingType } from './AnimationTypes'
+
 export interface Point2D {
   x: number
   y: number
@@ -97,7 +99,7 @@ export type PathConfig =
 export interface PathAnimationConfig {
   path: PathConfig
   duration: number
-  easing?: any
+  easing?: EasingType | EasingFunction
   autoRotate?: boolean // 是否自动根据路径方向旋转
   rotationOffset?: number // 旋转偏移量（度）
   startOffset?: number // 起始位置偏移 0-1

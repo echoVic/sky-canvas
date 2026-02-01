@@ -42,8 +42,8 @@ export class MultiPropertyChangeCommand<T> implements ICommand {
   private target: T
   private changes: Array<{
     property: keyof T
-    oldValue: any
-    newValue: any
+    oldValue: T[keyof T]
+    newValue: T[keyof T]
   }> = []
   public description: string
 
@@ -65,7 +65,7 @@ export class MultiPropertyChangeCommand<T> implements ICommand {
 
   execute(): void {
     for (const change of this.changes) {
-      ;(this.target as any)[change.property] = change.newValue
+      this.target[change.property] = change.newValue
     }
   }
 
@@ -73,7 +73,7 @@ export class MultiPropertyChangeCommand<T> implements ICommand {
     // 按相反顺序恢复
     for (let i = this.changes.length - 1; i >= 0; i--) {
       const change = this.changes[i]
-      ;(this.target as any)[change.property] = change.oldValue
+      this.target[change.property] = change.oldValue
     }
   }
 
@@ -318,79 +318,49 @@ export class CompositeCommand implements ICommand {
 /**
  * 命令构建器 - 便捷创建命令
  */
-export class CommandBuilder {
-  /**
-   * 创建属性更改命令
-   */
-  static changeProperty<T, K extends keyof T>(
+export const CommandBuilder = {
+  changeProperty<T, K extends keyof T>(
     target: T,
     property: K,
     newValue: T[K],
     description?: string
   ): PropertyChangeCommand<T, K> {
     return new PropertyChangeCommand(target, property, newValue, description)
-  }
-
-  /**
-   * 创建多属性更改命令构建器
-   */
-  static changeMultipleProperties<T>(
-    target: T,
-    description?: string
-  ): MultiPropertyChangeCommand<T> {
+  },
+  changeMultipleProperties<T>(target: T, description?: string): MultiPropertyChangeCommand<T> {
     return new MultiPropertyChangeCommand(target, description)
-  }
-
-  /**
-   * 创建集合添加命令
-   */
-  static addToCollection<T>(
+  },
+  addToCollection<T>(
     collection: T[],
     item: T,
     index?: number,
     description?: string
   ): CollectionAddCommand<T> {
     return new CollectionAddCommand(collection, item, index, description)
-  }
-
-  /**
-   * 创建集合删除命令
-   */
-  static removeFromCollection<T>(
+  },
+  removeFromCollection<T>(
     collection: T[],
     item: T,
     description?: string
   ): CollectionRemoveCommand<T> {
     return new CollectionRemoveCommand(collection, item, description)
-  }
-
-  /**
-   * 创建集合移动命令
-   */
-  static moveInCollection<T>(
+  },
+  moveInCollection<T>(
     collection: T[],
     fromIndex: number,
     toIndex: number,
     description?: string
   ): CollectionMoveCommand<T> {
     return new CollectionMoveCommand(collection, fromIndex, toIndex, description)
-  }
-
-  /**
-   * 创建函数命令
-   */
-  static createFunction(
+  },
+  createFunction(
     executeFunction: () => void,
     undoFunction: () => void,
     description?: string
   ): FunctionCommand {
     return new FunctionCommand(executeFunction, undoFunction, description)
-  }
-
-  /**
-   * 创建复合命令
-   */
-  static createComposite(description?: string): CompositeCommand {
+  },
+  createComposite(description?: string): CompositeCommand {
     return new CompositeCommand(description)
-  }
+  },
 }

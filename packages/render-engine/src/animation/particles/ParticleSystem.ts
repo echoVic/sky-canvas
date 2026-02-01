@@ -32,7 +32,6 @@ export class ParticleSystem extends EventEmitter<ParticleSystemEvents> implement
   private _config: ParticleSystemConfig
 
   private pool: ParticlePool
-  private factory: ParticleFactory
 
   private emissionTimer: number = 0
   private systemTime: number = 0
@@ -49,7 +48,6 @@ export class ParticleSystem extends EventEmitter<ParticleSystemEvents> implement
     this.pool = new ParticlePool(poolSize)
 
     // 初始化工厂
-    this.factory = new ParticleFactory()
 
     // 预热（如果配置了）
     if (config.prewarm && config.prewarm > 0) {
@@ -205,7 +203,7 @@ export class ParticleSystem extends EventEmitter<ParticleSystemEvents> implement
         affector = new AlphaAffector(config)
         break
       default:
-        throw new Error(`Unknown affector type: ${(config as any).type}`)
+        throw new Error(`Unknown affector type: ${(config as { type?: unknown }).type}`)
     }
 
     this._affectors.push(affector)
@@ -368,7 +366,10 @@ export class ParticleSystem extends EventEmitter<ParticleSystemEvents> implement
   }
 
   private applyBounds(): void {
-    const bounds = this._config.bounds!
+    const bounds = this._config.bounds
+    if (!bounds) {
+      return
+    }
     const bounce = bounds.bounce || 0
 
     for (const particle of this._particles) {
@@ -394,7 +395,10 @@ export class ParticleSystem extends EventEmitter<ParticleSystemEvents> implement
   }
 
   private applyCulling(): void {
-    const cullBounds = this._config.cullBounds!
+    const cullBounds = this._config.cullBounds
+    if (!cullBounds) {
+      return
+    }
 
     for (const particle of this._particles) {
       if (!particle.isAlive()) continue
@@ -428,7 +432,7 @@ export class ParticleSystem extends EventEmitter<ParticleSystemEvents> implement
   getStats(): {
     activeParticles: number
     totalParticles: number
-    poolStats: any
+    poolStats: ReturnType<ParticlePool['getStats']>
     systemTime: number
     state: ParticleSystemState
   } {

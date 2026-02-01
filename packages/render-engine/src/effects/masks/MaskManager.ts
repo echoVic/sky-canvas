@@ -39,25 +39,25 @@ export class MaskManager extends EventEmitter<MaskEvents> implements IMaskManage
 
     switch (config.shape) {
       case 'rectangle':
-        mask = this.maskFactory.createRectangleMask(config as any)
+        mask = this.maskFactory.createRectangleMask(config)
         break
       case 'circle':
-        mask = this.maskFactory.createCircleMask(config as any)
+        mask = this.maskFactory.createCircleMask(config)
         break
       case 'ellipse':
-        mask = this.maskFactory.createEllipseMask(config as any)
+        mask = this.maskFactory.createEllipseMask(config)
         break
       case 'polygon':
-        mask = this.maskFactory.createPolygonMask(config as any)
+        mask = this.maskFactory.createPolygonMask(config)
         break
       case 'path':
-        mask = this.maskFactory.createPathMask(config as any)
+        mask = this.maskFactory.createPathMask(config)
         break
       case 'custom':
-        mask = this.maskFactory.createCustomMask(config as any)
+        mask = this.maskFactory.createCustomMask(config)
         break
       default:
-        throw new Error(`Unknown mask shape: ${(config as any).shape}`)
+        throw new Error(`Unknown mask shape: ${config.shape}`)
     }
 
     this.masks.set(mask.id, mask)

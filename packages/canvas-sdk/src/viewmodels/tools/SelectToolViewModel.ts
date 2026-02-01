@@ -30,13 +30,12 @@ export const ISelectToolViewModel = createDecorator<ISelectToolViewModelType>('S
 
 export class SelectToolViewModel implements ISelectToolViewModelType {
   private readonly _state: ISelectToolStateType
-  private draggedShapeId: string | null = null
   private initialShapeStates: Map<string, IInitialShapeState> = new Map()
   private resizeHandler: SelectToolResizeHandler
   private rotateHandler: SelectToolRotateHandler
 
   constructor(
-    @ISelectionService private selectionService: ISelectionService,
+    @ISelectionService _selectionService: ISelectionService,
     @ICanvasManager private canvasManager: ICanvasManager
   ) {
     this._state = proxy<ISelectToolStateType>({
@@ -125,7 +124,6 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
           this.canvasManager.selectShape(hitShapeId)
         }
         this._state.isDragging = true
-        this.draggedShapeId = hitShapeId
         this._state.cursor = 'move'
       }
     } else {
@@ -209,8 +207,13 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
   }
 
   private handleDrag(x: number, y: number): void {
-    const deltaX = x - this._state.lastPoint!.x
-    const deltaY = y - this._state.lastPoint!.y
+    const lastPoint = this._state.lastPoint
+    if (!lastPoint) {
+      this._state.lastPoint = { x, y }
+      return
+    }
+    const deltaX = x - lastPoint.x
+    const deltaY = y - lastPoint.y
 
     for (const shape of this.canvasManager.getSelectedShapes()) {
       const newPosition = {
@@ -226,10 +229,14 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
   }
 
   private completeMarqueeSelect(x: number, y: number): void {
-    const minX = Math.min(this._state.startPoint!.x, x)
-    const minY = Math.min(this._state.startPoint!.y, y)
-    const maxX = Math.max(this._state.startPoint!.x, x)
-    const maxY = Math.max(this._state.startPoint!.y, y)
+    const startPoint = this._state.startPoint
+    if (!startPoint) {
+      return
+    }
+    const minX = Math.min(startPoint.x, x)
+    const minY = Math.min(startPoint.y, y)
+    const maxX = Math.max(startPoint.x, x)
+    const maxY = Math.max(startPoint.y, y)
 
     if (maxX - minX > 5 || maxY - minY > 5) {
       this.performMarqueeSelect({ x: minX, y: minY, width: maxX - minX, height: maxY - minY })
@@ -286,6 +293,5 @@ export class SelectToolViewModel implements ISelectToolViewModelType {
     this._state.lastPoint = null
     this._state.cursor = 'default'
     this._state.activeHandle = null
-    this.draggedShapeId = null
   }
 }

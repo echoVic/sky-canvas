@@ -78,8 +78,8 @@ describe('PluginManager', () => {
 
       const instance = pluginManager.getPlugin('test-plugin')
       expect(instance).toBeDefined()
-      expect(instance!.status).toBe(PluginStatus.LOADED)
-      expect(instance!.manifest.id).toBe('test-plugin')
+      expect(instance?.status).toBe(PluginStatus.LOADED)
+      expect(instance?.manifest.id).toBe('test-plugin')
     })
 
     it('应该拒绝加载无效清单的插件', async () => {
@@ -121,8 +121,8 @@ describe('PluginManager', () => {
       await pluginManager.activatePlugin('test-plugin')
 
       const instance = pluginManager.getPlugin('test-plugin')
-      expect(instance!.status).toBe(PluginStatus.ACTIVE)
-      expect((instance!.plugin as MockPlugin).isActivated()).toBe(true)
+      expect(instance?.status).toBe(PluginStatus.ACTIVE)
+      expect((instance?.plugin as MockPlugin).isActivated()).toBe(true)
     })
 
     it('应该拒绝激活不存在的插件', async () => {
@@ -138,7 +138,7 @@ describe('PluginManager', () => {
       )
 
       const instance = pluginManager.getPlugin('error-plugin')
-      expect(instance!.status).toBe(PluginStatus.ERROR)
+      expect(instance?.status).toBe(PluginStatus.ERROR)
     })
 
     it('应该跳过已激活的插件', async () => {
@@ -148,7 +148,7 @@ describe('PluginManager', () => {
       await pluginManager.activatePlugin('test-plugin')
 
       const instance = pluginManager.getPlugin('test-plugin')
-      expect(instance!.status).toBe(PluginStatus.ACTIVE)
+      expect(instance?.status).toBe(PluginStatus.ACTIVE)
     })
   })
 
@@ -163,8 +163,8 @@ describe('PluginManager', () => {
       await pluginManager.deactivatePlugin('test-plugin')
 
       const instance = pluginManager.getPlugin('test-plugin')
-      expect(instance!.status).toBe(PluginStatus.INACTIVE)
-      expect((instance!.plugin as MockPlugin).isActivated()).toBe(false)
+      expect(instance?.status).toBe(PluginStatus.INACTIVE)
+      expect((instance?.plugin as MockPlugin).isActivated()).toBe(false)
     })
 
     it('应该拒绝停用不存在的插件', async () => {
@@ -178,7 +178,7 @@ describe('PluginManager', () => {
       await pluginManager.deactivatePlugin('test-plugin')
 
       const instance = pluginManager.getPlugin('test-plugin')
-      expect(instance!.status).toBe(PluginStatus.INACTIVE)
+      expect(instance?.status).toBe(PluginStatus.INACTIVE)
     })
   })
 
@@ -197,7 +197,11 @@ describe('PluginManager', () => {
     })
 
     it('应该在卸载前自动停用插件', async () => {
-      const plugin = pluginManager.getPlugin('test-plugin')!.plugin as MockPlugin
+      const instance = pluginManager.getPlugin('test-plugin')
+      if (!instance) {
+        throw new Error('Plugin not found')
+      }
+      const plugin = instance.plugin as MockPlugin
       expect(plugin.isActivated()).toBe(true)
 
       await pluginManager.unloadPlugin('test-plugin')

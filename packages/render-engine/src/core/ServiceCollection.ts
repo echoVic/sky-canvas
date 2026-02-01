@@ -3,38 +3,44 @@
  * 基于VSCode的ServiceCollection设计
  */
 
-export interface ServiceIdentifier<T = any> {
-  (...args: any[]): void
+export interface ServiceIdentifier<T = unknown> {
+  (...args: unknown[]): void
   type: T
 }
 
 export function createDecorator<T>(serviceId: string): ServiceIdentifier<T> {
-  const id = function (target: any, key: string, index: number): any {
-    if (arguments.length !== 3) {
+  const id = ((target: unknown, _key: string, index: number): void => {
+    if (typeof index !== 'number') {
       throw new Error('@IServiceName-decorator can only be used to decorate a parameter')
     }
     storeServiceDependency(id as ServiceIdentifier<T>, target, index)
-  } as ServiceIdentifier<T>
+  }) as ServiceIdentifier<T>
 
   id.toString = () => serviceId
   // Add the type property required by the interface
-  ;(id as any).type = undefined as T
+  ;(id as unknown as { type: T }).type = undefined as T
   return id
 }
 
 // 服务依赖存储
-const _serviceIds = new Map<string, ServiceIdentifier<any>>()
-const _serviceDependencies = new Map<ServiceIdentifier<any>, any[]>()
+const _serviceDependencies = new Map<ServiceIdentifier<unknown>, unknown[]>()
 
-function storeServiceDependency(id: ServiceIdentifier<any>, target: any, index: number): void {
+function storeServiceDependency(
+  id: ServiceIdentifier<unknown>,
+  target: unknown,
+  index: number
+): void {
   if (!_serviceDependencies.has(id)) {
     _serviceDependencies.set(id, [])
   }
-  _serviceDependencies.get(id)![index] = target
+  const dependencies = _serviceDependencies.get(id)
+  if (dependencies) {
+    dependencies[index] = target
+  }
 }
 
 export class ServiceCollection {
-  private _entries = new Map<ServiceIdentifier<any>, any>()
+  private _entries = new Map<ServiceIdentifier<unknown>, unknown>()
 
   set<T>(id: ServiceIdentifier<T>, instanceOrDescriptor: T | SyncDescriptor<T>): void {
     const entry = this._entries.get(id)
@@ -44,7 +50,7 @@ export class ServiceCollection {
     this._entries.set(id, instanceOrDescriptor)
   }
 
-  has(id: ServiceIdentifier<any>): boolean {
+  has(id: ServiceIdentifier<unknown>): boolean {
     return this._entries.has(id)
   }
 
@@ -52,21 +58,21 @@ export class ServiceCollection {
     return this._entries.get(id)
   }
 
-  getEntries(): IterableIterator<[ServiceIdentifier<any>, any]> {
+  getEntries(): IterableIterator<[ServiceIdentifier<unknown>, unknown]> {
     return this._entries.entries()
   }
 }
 
 export class SyncDescriptor<T> {
   readonly ctor: new (
-    ...args: any[]
+    ...args: unknown[]
   ) => T
-  readonly staticArguments: any[]
+  readonly staticArguments: unknown[]
   readonly supportsDelayedInstantiation: boolean
 
   constructor(
-    ctor: new (...args: any[]) => T,
-    staticArguments: any[] = [],
+    ctor: new (...args: unknown[]) => T,
+    staticArguments: unknown[] = [],
     supportsDelayedInstantiation: boolean = false
   ) {
     this.ctor = ctor
@@ -76,12 +82,12 @@ export class SyncDescriptor<T> {
 }
 
 export interface IInstantiationService {
-  createInstance<T>(ctor: new (...args: any[]) => T, ...args: any[]): T
+  createInstance<T>(ctor: new (...args: unknown[]) => T, ...args: unknown[]): T
   createInstance<T>(descriptor: SyncDescriptor<T>): T
 }
 
 export class InstantiationService implements IInstantiationService {
-  private _services = new Map<ServiceIdentifier<any>, any>()
+  private _services = new Map<ServiceIdentifier<unknown>, unknown>()
 
   constructor(services: ServiceCollection) {
     for (const [id, instanceOrDescriptor] of services.getEntries()) {
@@ -93,7 +99,10 @@ export class InstantiationService implements IInstantiationService {
     }
   }
 
-  createInstance<T>(ctorOrDescriptor: any, ...args: any[]): T {
+  createInstance<T>(
+    ctorOrDescriptor: SyncDescriptor<T> | (new (...args: unknown[]) => T),
+    ...args: unknown[]
+  ): T {
     if (ctorOrDescriptor instanceof SyncDescriptor) {
       return this._createInstance(ctorOrDescriptor.ctor, ctorOrDescriptor.staticArguments)
     } else {
@@ -101,7 +110,7 @@ export class InstantiationService implements IInstantiationService {
     }
   }
 
-  private _createInstance<T>(ctor: new (...args: any[]) => T, staticArgs: any[] = []): T {
+  private _createInstance<T>(ctor: new (...args: unknown[]) => T, staticArgs: unknown[] = []): T {
     // 获取构造函数的依赖
     const dependencies = this._getServiceDependencies(ctor)
     const args = [...staticArgs]
@@ -117,12 +126,12 @@ export class InstantiationService implements IInstantiationService {
     return new ctor(...args)
   }
 
-  private _getServiceDependencies(ctor: any): ServiceIdentifier<any>[] {
-    return _serviceDependencies.get(ctor) || []
+  private _getServiceDependencies(ctor: unknown): ServiceIdentifier<unknown>[] {
+    return _serviceDependencies.get(ctor as ServiceIdentifier<unknown>) || []
   }
 
   private _getOrCreateService<T>(id: ServiceIdentifier<T>): T {
-    const service = this._services.get(id)
+    const service = this._services.get(id as ServiceIdentifier<unknown>)
 
     if (!service) {
       throw new Error(`Service ${id} is not registered`)
@@ -130,10 +139,10 @@ export class InstantiationService implements IInstantiationService {
 
     if (service instanceof SyncDescriptor) {
       const instance = this._createInstance(service.ctor, service.staticArguments)
-      this._services.set(id, instance)
+      this._services.set(id as ServiceIdentifier<unknown>, instance)
       return instance
     }
 
-    return service
+    return service as T
   }
 }

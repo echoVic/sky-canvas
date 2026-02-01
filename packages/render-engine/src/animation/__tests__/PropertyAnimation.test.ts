@@ -9,7 +9,7 @@ import { AnimationState, EasingType } from '../types/AnimationTypes'
 import { createTestTarget, TestUtils } from './setup'
 
 describe('PropertyAnimation', () => {
-  let target: any
+  let target: Record<string, unknown>
 
   beforeEach(() => {
     target = createTestTarget()
@@ -354,7 +354,7 @@ describe('PropertyAnimation', () => {
       const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
       const animation = new PropertyAnimation({
-        target: null as any,
+        target: null as unknown as Record<string, unknown>,
         property: 'x',
         from: 0,
         to: 100,

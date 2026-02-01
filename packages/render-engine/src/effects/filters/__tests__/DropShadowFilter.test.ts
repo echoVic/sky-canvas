@@ -107,8 +107,8 @@ describe('DropShadowFilter', () => {
 
     expect(result.success).toBe(true)
     expect(result.processedImageData).toBeDefined()
-    expect(result.processedImageData!.width).toBe(imageData.width)
-    expect(result.processedImageData!.height).toBe(imageData.height)
+    expect(result.processedImageData?.width).toBe(imageData.width)
+    expect(result.processedImageData?.height).toBe(imageData.height)
   })
 
   it('应该创建投影效果', async () => {

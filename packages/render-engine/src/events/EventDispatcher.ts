@@ -30,7 +30,7 @@ export class EventDispatcher {
       listenersMap.set(type, new Set())
     }
 
-    listenersMap.get(type)!.add(listener as EventListener)
+    listenersMap.get(type)?.add(listener as EventListener)
   }
 
   /**

@@ -20,7 +20,7 @@ export class ClearCommand implements RenderCommand {
     private bounds?: { x: number; y: number; width: number; height: number }
   ) {}
 
-  execute(context: Canvas2DRenderContext | any): void {
+  execute(context: Canvas2DRenderContext): void {
     // 类型断言以确保是Canvas2D上下文
     if (!context.ctx || typeof context.ctx.save !== 'function') {
       console.warn('ClearCommand requires Canvas2D context')
@@ -63,7 +63,7 @@ export class DrawLineCommand implements RenderCommand {
     private style?: Partial<RenderState>
   ) {}
 
-  execute(context: any, state?: RenderState): void {
+  execute(context: Canvas2DRenderContext, state?: RenderState): void {
     // 类型检查，只处理Canvas2D上下文
     if (!context.ctx || typeof context.ctx.save !== 'function') {
       console.warn('DrawLineCommand requires Canvas2D context')
@@ -110,7 +110,7 @@ export class DrawRectCommand implements RenderCommand {
     private style?: Partial<RenderState>
   ) {}
 
-  execute(context: any, state?: RenderState): void {
+  execute(context: Canvas2DRenderContext, state?: RenderState): void {
     if (!context.ctx || typeof context.ctx.save !== 'function') {
       console.warn('DrawRectCommand requires Canvas2D context')
       return
@@ -158,7 +158,7 @@ export class DrawCircleCommand implements RenderCommand {
     private style?: Partial<RenderState>
   ) {}
 
-  execute(context: any, state: RenderState): void {
+  execute(context: Canvas2DRenderContext, state: RenderState): void {
     const { ctx } = context
     ctx.save()
 
@@ -207,7 +207,7 @@ export class DrawTextCommand implements RenderCommand {
     }
   ) {}
 
-  execute(context: any, state: RenderState): void {
+  execute(context: Canvas2DRenderContext, state: RenderState): void {
     const { ctx } = context
     ctx.save()
 
@@ -237,7 +237,7 @@ export class DrawTextCommand implements RenderCommand {
 export class SaveStateCommand implements RenderCommand {
   type = 'saveState'
 
-  execute(context: any): void {
+  execute(context: Canvas2DRenderContext): void {
     context.ctx.save()
   }
 }
@@ -248,7 +248,7 @@ export class SaveStateCommand implements RenderCommand {
 export class RestoreStateCommand implements RenderCommand {
   type = 'restoreState'
 
-  execute(context: any): void {
+  execute(context: Canvas2DRenderContext): void {
     context.ctx.restore()
   }
 }
@@ -268,7 +268,7 @@ export class TransformCommand implements RenderCommand {
     private f: number
   ) {}
 
-  execute(context: any): void {
+  execute(context: Canvas2DRenderContext): void {
     context.ctx.transform(this.a, this.b, this.c, this.d, this.e, this.f)
   }
 }
@@ -288,7 +288,7 @@ export class SetTransformCommand implements RenderCommand {
     private f: number
   ) {}
 
-  execute(context: any): void {
+  execute(context: Canvas2DRenderContext): void {
     context.ctx.setTransform(this.a, this.b, this.c, this.d, this.e, this.f)
   }
 }
@@ -303,7 +303,7 @@ export class CommandBatch {
     this.commands.push(command)
   }
 
-  execute(context: any, state: RenderState): void {
+  execute(context: Canvas2DRenderContext, state: RenderState): void {
     for (const command of this.commands) {
       command.execute(context, state)
     }

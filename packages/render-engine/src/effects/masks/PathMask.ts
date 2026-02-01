@@ -22,7 +22,14 @@ interface IShape {
   }
 }
 
-import { type IMask, MaskType, type PathMaskConfig } from '../types/MaskTypes'
+import {
+  type IMask,
+  MaskBlendMode,
+  MaskEdgeType,
+  MaskShape,
+  MaskType,
+  type PathMaskConfig,
+} from '../types/MaskTypes'
 import { BaseMask } from './BaseMask'
 
 export class PathMask extends BaseMask {
@@ -45,7 +52,7 @@ export class PathMask extends BaseMask {
 
   apply(
     ctx: CanvasRenderingContext2D | WebGLRenderingContext,
-    target: IShape | HTMLCanvasElement
+    _target: IShape | HTMLCanvasElement
   ): void {
     if (!this._enabled || !(ctx instanceof CanvasRenderingContext2D) || !this.pathObject) {
       return
@@ -167,7 +174,10 @@ export class PathMask extends BaseMask {
 
     // 创建临时canvas来检测点击
     const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')!
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) {
+      throw new Error('Cannot create 2D context for path mask')
+    }
 
     tempCtx.translate(this._config.position.x, this._config.position.y)
 
@@ -223,13 +233,13 @@ export class PathMask extends BaseMask {
   static fromSVGPath(pathData: string, position: Point2D): PathMask {
     return new PathMask({
       type: MaskType.CLIP,
-      shape: 'path' as any,
+      shape: MaskShape.PATH,
       position,
       path: pathData,
       enabled: true,
       opacity: 1,
-      blendMode: 'normal' as any,
-      edgeType: 'hard' as any,
+      blendMode: MaskBlendMode.NORMAL,
+      edgeType: MaskEdgeType.HARD,
     })
   }
 
@@ -239,13 +249,13 @@ export class PathMask extends BaseMask {
   static fromPath2D(path: Path2D, position: Point2D): PathMask {
     return new PathMask({
       type: MaskType.CLIP,
-      shape: 'path' as any,
+      shape: MaskShape.PATH,
       position,
       path,
       enabled: true,
       opacity: 1,
-      blendMode: 'normal' as any,
-      edgeType: 'hard' as any,
+      blendMode: MaskBlendMode.NORMAL,
+      edgeType: MaskEdgeType.HARD,
     })
   }
 }

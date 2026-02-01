@@ -84,7 +84,10 @@ export class PredictiveCacheManager {
       this.accessPattern.set(key, [])
     }
 
-    const pattern = this.accessPattern.get(key)!
+    const pattern = this.accessPattern.get(key)
+    if (!pattern) {
+      return
+    }
     pattern.push(currentTime)
 
     if (pattern.length > this.maxPatternLength) {

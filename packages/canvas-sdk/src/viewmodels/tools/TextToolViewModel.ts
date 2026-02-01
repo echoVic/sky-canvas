@@ -1,9 +1,10 @@
-import type { IPoint } from '@sky-canvas/render-engine'
 import { proxy } from 'valtio'
 import { createDecorator } from '../../di'
 import { ICanvasManager } from '../../managers/CanvasManager'
 import { type ITextEntity, ShapeEntityFactory } from '../../models/entities/Shape'
 import type { IViewModel } from '../interfaces/IViewModel'
+
+type IPoint = { x: number; y: number }
 
 export interface ITextToolState {
   isEditing: boolean
@@ -83,12 +84,11 @@ export class TextToolViewModel implements ITextToolViewModel {
     if (hitId) {
       const shape = this.canvasManager.getShapesByZOrder().find((s) => s.id === hitId)
       if (shape && shape.type === 'text' && !shape.locked) {
+        const textShape = shape as ITextEntity
         const nextText =
-          typeof window !== 'undefined'
-            ? window.prompt('编辑文本', (shape as any).content || '')
-            : null
+          typeof window !== 'undefined' ? window.prompt('编辑文本', textShape.content || '') : null
         if (nextText !== null) {
-          this.canvasManager.updateShape(hitId, { content: nextText } as any)
+          this.canvasManager.updateShape(hitId, { content: nextText })
         }
         return
       }

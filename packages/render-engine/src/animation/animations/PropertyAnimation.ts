@@ -8,7 +8,7 @@ import { BaseAnimation } from '../core/BaseAnimation'
 import type { PropertyAnimationConfig } from '../types/AnimationTypes'
 
 export class PropertyAnimation extends BaseAnimation {
-  private target: Record<string, any>
+  private target: Record<string, unknown>
   private property: string
   private fromValue: number
   private toValue: number

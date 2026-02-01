@@ -112,11 +112,11 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     this.currentState.style = { ...this.currentState.style, ...style }
   }
 
-  setFillColor(color: IColor | string): void {
+  setFillColor(_color: IColor | string): void {
     // 占位符实现
   }
 
-  setStrokeColor(color: IColor | string): void {
+  setStrokeColor(_color: IColor | string): void {
     // 占位符实现
   }
 
@@ -132,41 +132,41 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     this.currentState.style.opacity = alpha
   }
 
-  setLineDash(segments: number[]): void {
+  setLineDash(_segments: number[]): void {
     // 占位符实现
   }
 
-  setTextAlign(align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
+  setTextAlign(_align: 'left' | 'center' | 'right' | 'start' | 'end'): void {
     // 占位符实现
   }
 
-  setTextBaseline(baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
+  setTextBaseline(_baseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging'): void {
     // 占位符实现
   }
 
-  setFont(font: string): void {
+  setFont(_font: string): void {
     // 占位符实现
   }
 
-  setFillStyle(color: IColor | string): void {
+  setFillStyle(_color: IColor | string): void {
     // 占位符实现
   }
 
-  setStrokeStyle(color: IColor | string): void {
+  setStrokeStyle(_color: IColor | string): void {
     // 占位符实现
   }
 
-  drawLine(x1: number, y1: number, x2: number, y2: number): void {
+  drawLine(_x1: number, _y1: number, _x2: number, _y2: number): void {
     // 占位符实现
     console.warn('WebGPU drawLine not implemented')
   }
 
-  drawRect(rect: IRect, fill?: boolean, stroke?: boolean): void {
+  drawRect(_rect: IRect, _fill?: boolean, _stroke?: boolean): void {
     // 占位符实现
     console.warn('WebGPU drawRect not implemented')
   }
 
-  drawCircle(center: IPoint, radius: number, fill?: boolean, stroke?: boolean): void {
+  drawCircle(_center: IPoint, _radius: number, _fill?: boolean, _stroke?: boolean): void {
     // 占位符实现
     console.warn('WebGPU drawCircle not implemented')
   }
@@ -177,7 +177,7 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     console.warn('WebGPU clear not implemented')
   }
 
-  clearRect(x: number, y: number, width: number, height: number): void {
+  clearRect(_x: number, _y: number, _width: number, _height: number): void {
     // 占位符实现
     console.warn('WebGPU clearRect not implemented')
   }
@@ -191,41 +191,41 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     // 占位符实现
   }
 
-  moveTo(x: number, y: number): void {
+  moveTo(_x: number, _y: number): void {
     // 占位符实现
   }
 
-  lineTo(x: number, y: number): void {
+  lineTo(_x: number, _y: number): void {
     // 占位符实现
   }
 
-  quadraticCurveTo(cpx: number, cpy: number, x: number, y: number): void {
+  quadraticCurveTo(_cpx: number, _cpy: number, _x: number, _y: number): void {
     // 占位符实现
   }
 
   bezierCurveTo(
-    cp1x: number,
-    cp1y: number,
-    cp2x: number,
-    cp2y: number,
-    x: number,
-    y: number
+    _cp1x: number,
+    _cp1y: number,
+    _cp2x: number,
+    _cp2y: number,
+    _x: number,
+    _y: number
   ): void {
     // 占位符实现
   }
 
   arc(
-    x: number,
-    y: number,
-    radius: number,
-    startAngle: number,
-    endAngle: number,
-    counterclockwise?: boolean
+    _x: number,
+    _y: number,
+    _radius: number,
+    _startAngle: number,
+    _endAngle: number,
+    _counterclockwise?: boolean
   ): void {
     // 占位符实现
   }
 
-  rect(x: number, y: number, width: number, height: number): void {
+  rect(_x: number, _y: number, _width: number, _height: number): void {
     // 占位符实现
   }
 
@@ -237,38 +237,38 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     // 占位符实现
   }
 
-  fillRect(x: number, y: number, width: number, height: number): void {
+  fillRect(_x: number, _y: number, _width: number, _height: number): void {
     // 占位符实现
     console.warn('WebGPU fillRect not implemented')
   }
 
-  strokeRect(x: number, y: number, width: number, height: number): void {
+  strokeRect(_x: number, _y: number, _width: number, _height: number): void {
     // 占位符实现
     console.warn('WebGPU strokeRect not implemented')
   }
 
-  fillCircle(x: number, y: number, radius: number): void {
+  fillCircle(_x: number, _y: number, _radius: number): void {
     // 占位符实现
     console.warn('WebGPU fillCircle not implemented')
   }
 
-  strokeCircle(x: number, y: number, radius: number): void {
+  strokeCircle(_x: number, _y: number, _radius: number): void {
     // 占位符实现
     console.warn('WebGPU strokeCircle not implemented')
   }
 
   // 文本操作
-  fillText(text: string, x: number, y: number, style?: ITextStyle): void {
+  fillText(_text: string, _x: number, _y: number, _style?: ITextStyle): void {
     // 占位符实现
     console.warn('WebGPU fillText not implemented')
   }
 
-  strokeText(text: string, x: number, y: number, style?: ITextStyle): void {
+  strokeText(_text: string, _x: number, _y: number, _style?: ITextStyle): void {
     // 占位符实现
     console.warn('WebGPU strokeText not implemented')
   }
 
-  measureText(text: string, style?: ITextStyle): { width: number; height: number } {
+  measureText(_text: string, _style?: ITextStyle): { width: number; height: number } {
     // 占位符实现
     return { width: 0, height: 0 }
   }
@@ -276,12 +276,12 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
   // 图像操作
   drawImage(imageData: IImageData, dx: number, dy: number): void
   drawImage(imageData: IImageData, dx: number, dy: number, dw: number, dh: number): void
-  drawImage(imageData: IImageData, dx: number, dy: number, dw?: number, dh?: number): void {
+  drawImage(_imageData: IImageData, _dx: number, _dy: number, _dw?: number, _dh?: number): void {
     // 占位符实现
     console.warn('WebGPU drawImage not implemented')
   }
 
-  getImageData(x: number, y: number, width: number, height: number): IImageData {
+  getImageData(_x: number, _y: number, width: number, height: number): IImageData {
     // 占位符实现
     return {
       data: new Uint8ClampedArray(width * height * 4),
@@ -290,7 +290,7 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     }
   }
 
-  putImageData(imageData: IImageData, x: number, y: number): void {
+  putImageData(_imageData: IImageData, _x: number, _y: number): void {
     // 占位符实现
     console.warn('WebGPU putImageData not implemented')
   }
@@ -300,7 +300,7 @@ export class WebGPUGraphicsContext implements IGraphicsContext {
     // 占位符实现
   }
 
-  clipRect(x: number, y: number, width: number, height: number): void {
+  clipRect(_x: number, _y: number, _width: number, _height: number): void {
     // 占位符实现
   }
 

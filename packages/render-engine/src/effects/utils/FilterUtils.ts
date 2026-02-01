@@ -224,7 +224,7 @@ export class FilterUtils {
   static createCustomShader(
     vertexShader?: string,
     fragmentShader?: string,
-    uniforms?: Record<string, any>
+    uniforms?: Record<string, unknown>
   ): CustomShaderParameters {
     return {
       type: FilterType.CUSTOM_SHADER,
@@ -268,7 +268,7 @@ export class FilterUtils {
    */
   static createUserShader(
     userFunction: string,
-    uniforms?: Record<string, any>
+    uniforms?: Record<string, unknown>
   ): CustomShaderParameters {
     const fragmentShader = WebGLShaderManager.createUserFragmentShader(userFunction)
     return FilterUtils.createCustomShader(undefined, fragmentShader, uniforms)

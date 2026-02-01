@@ -165,8 +165,8 @@ export class LightingManager extends EventEmitter<LightingEvents> implements ILi
   updateLightPositions(positions: { [lightId: string]: Point2D }): void {
     for (const [lightId, position] of Object.entries(positions)) {
       const light = this.lights.get(lightId)
-      if (light && 'setPosition' in light) {
-        ;(light as any).setPosition(position)
+      if (light && this.hasSetPosition(light)) {
+        light.setPosition(position)
         this.emit('lightUpdated', light)
       }
     }
@@ -179,7 +179,7 @@ export class LightingManager extends EventEmitter<LightingEvents> implements ILi
     for (const [lightId, intensity] of Object.entries(intensities)) {
       const light = this.lights.get(lightId)
       if (light) {
-        light.updateConfig({ intensity } as any)
+        light.updateConfig({ intensity })
         this.emit('lightUpdated', light)
       }
     }
@@ -206,7 +206,7 @@ export class LightingManager extends EventEmitter<LightingEvents> implements ILi
   }
 
   // 更新光照系统
-  update(deltaTime: number): void {
+  update(_deltaTime: number): void {
     const currentTime = performance.now()
 
     if (this.lastUpdateTime === 0) {
@@ -219,15 +219,15 @@ export class LightingManager extends EventEmitter<LightingEvents> implements ILi
 
     // 更新动画光源（如果有的话）
     for (const light of this.lights.values()) {
-      if ('update' in light) {
-        ;(light as any).update(dt)
+      if (this.hasUpdate(light)) {
+        light.update(dt)
       }
     }
 
     // 更新动画阴影（如果有的话）
     for (const shadow of this.shadows.values()) {
-      if ('update' in shadow) {
-        ;(shadow as any).update(dt)
+      if (this.hasUpdate(shadow)) {
+        shadow.update(dt)
       }
     }
   }
@@ -272,7 +272,10 @@ export class LightingManager extends EventEmitter<LightingEvents> implements ILi
     canvas.width = width
     canvas.height = height
 
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cannot create 2D context for lighting preview')
+    }
     const imageData = ctx.createImageData(width, height)
 
     // 为每个像素计算光照
@@ -314,6 +317,14 @@ export class LightingManager extends EventEmitter<LightingEvents> implements ILi
 
       return aOrder - bOrder
     })
+  }
+
+  private hasUpdate(value: unknown): value is { update: (dt: number) => void } {
+    return typeof (value as { update?: unknown }).update === 'function'
+  }
+
+  private hasSetPosition(value: unknown): value is { setPosition: (position: Point2D) => void } {
+    return typeof (value as { setPosition?: unknown }).setPosition === 'function'
   }
 
   /**

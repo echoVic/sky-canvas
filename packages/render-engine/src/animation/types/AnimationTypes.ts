@@ -2,6 +2,8 @@
  * 动画系统类型定义
  */
 
+import type { PathMotionInfo } from './PathTypes'
+
 export enum EasingType {
   LINEAR = 'linear',
   EASE_IN = 'ease-in',
@@ -44,14 +46,14 @@ export interface AnimationConfig {
 }
 
 export interface PropertyAnimationConfig extends AnimationConfig {
-  target: Record<string, any>
+  target: Record<string, unknown>
   property: string
   from?: number
   to: number
 }
 
 export interface MultiPropertyAnimationConfig extends AnimationConfig {
-  target: Record<string, any>
+  target: Record<string, unknown>
   properties: Record<string, { from?: number; to: number }>
 }
 
@@ -63,7 +65,7 @@ export interface AnimationEvents {
   pause: (animation: IAnimation) => void
   resume: (animation: IAnimation) => void
   cancel: (animation: IAnimation) => void
-  pathUpdate: (animation: IAnimation, motionInfo: any) => void
+  pathUpdate: (animation: IAnimation, motionInfo: PathMotionInfo) => void
 }
 
 export interface IAnimation {

@@ -408,8 +408,8 @@ export class CustomPath extends BasePath {
         if (
           typeof point.x !== 'number' ||
           typeof point.y !== 'number' ||
-          !isFinite(point.x) ||
-          !isFinite(point.y)
+          !Number.isFinite(point.x) ||
+          !Number.isFinite(point.y)
         ) {
           return false
         }

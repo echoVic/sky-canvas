@@ -3,7 +3,7 @@
  * 展示如何使用基准测试框架测试渲染引擎性能
  */
 
-import { createBenchmark, PerformanceBenchmark } from '../PerformanceBenchmark'
+import { createBenchmark } from '../PerformanceBenchmark'
 import { RenderingBenchmark } from '../RenderingBenchmark'
 
 /**

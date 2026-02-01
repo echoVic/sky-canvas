@@ -21,6 +21,16 @@ import type {
 } from '../types/PluginTypes'
 import type { PluginManager } from './PluginManager'
 
+type PluginWindow = Window & {
+  currentRenderer?: CustomRenderer | null
+  currentShapes?: unknown[]
+  currentTool?: Tool | null
+  currentViewport?: { x: number; y: number; width: number; height: number; zoom: number } | null
+  availableRenderers?: CustomRenderer[]
+}
+
+const getPluginWindow = (): PluginWindow => window as PluginWindow
+
 export class PluginContextImpl implements PluginContext {
   public readonly manifest: PluginManifest
   public readonly api: PluginAPI
@@ -78,10 +88,10 @@ class PluginAPIImpl implements PluginAPI {
     getRenderer: () => {
       this.checkPermission('canvas.getRenderer')
       // 返回当前渲染器实例
-      return (window as any).currentRenderer || null
+      return getPluginWindow().currentRenderer || null
     },
 
-    addShape: (shape: any) => {
+    addShape: (shape: unknown) => {
       this.checkPermission('canvas.addShape')
       // 添加图形到画布
       const event = new CustomEvent('plugin:addShape', {
@@ -99,7 +109,7 @@ class PluginAPIImpl implements PluginAPI {
       window.dispatchEvent(event)
     },
 
-    updateShape: (id: string, updates: any) => {
+    updateShape: (id: string, updates: unknown) => {
       this.checkPermission('canvas.updateShape')
       // 更新图形
       const event = new CustomEvent('plugin:updateShape', {
@@ -111,7 +121,7 @@ class PluginAPIImpl implements PluginAPI {
     getShapes: () => {
       this.checkPermission('canvas.getShapes')
       // 获取所有图形
-      return (window as any).currentShapes || []
+      return getPluginWindow().currentShapes || []
     },
 
     clear: () => {
@@ -122,7 +132,7 @@ class PluginAPIImpl implements PluginAPI {
     },
 
     // 兼容方法
-    addElement: (element: any) => {
+    addElement: (element: unknown) => {
       this.checkPermission('canvas.addShape')
       // 添加元素（兼容方法）
       const event = new CustomEvent('plugin:addShape', {
@@ -140,7 +150,7 @@ class PluginAPIImpl implements PluginAPI {
       window.dispatchEvent(event)
     },
 
-    updateElement: (id: string, updates: any) => {
+    updateElement: (id: string, updates: unknown) => {
       this.checkPermission('canvas.updateShape')
       // 更新元素（兼容方法）
       const event = new CustomEvent('plugin:updateShape', {
@@ -152,14 +162,14 @@ class PluginAPIImpl implements PluginAPI {
     getElement: (id: string) => {
       this.checkPermission('canvas.getShapes')
       // 获取元素（兼容方法）
-      const shapes = (window as any).currentShapes || []
-      return shapes.find((shape: any) => shape.id === id) || null
+      const shapes = getPluginWindow().currentShapes || []
+      return shapes.find((shape) => hasId(shape) && shape.id === id) || null
     },
 
     getAllElements: () => {
       this.checkPermission('canvas.getShapes')
       // 获取所有元素（兼容方法）
-      return (window as any).currentShapes || []
+      return getPluginWindow().currentShapes || []
     },
 
     setTool: (tool: string) => {
@@ -172,7 +182,7 @@ class PluginAPIImpl implements PluginAPI {
     getTool: () => {
       this.checkPermission('canvas.getTool')
       // 获取当前工具
-      return (window as any).currentTool || null
+      return getPluginWindow().currentTool || null
     },
 
     undo: () => {
@@ -206,7 +216,7 @@ class PluginAPIImpl implements PluginAPI {
     getViewport: () => {
       this.checkPermission('canvas.getViewport')
       // 获取视口信息
-      return (window as any).currentViewport || null
+      return getPluginWindow().currentViewport || null
     },
   }
 
@@ -259,7 +269,7 @@ class PluginAPIImpl implements PluginAPI {
       window.dispatchEvent(event)
     },
 
-    showDialog: async (dialog: Dialog): Promise<any> => {
+    showDialog: async (dialog: Dialog): Promise<unknown> => {
       this.checkPermission('ui.showDialog')
       return new Promise((resolve) => {
         const event = new CustomEvent('plugin:showDialog', {
@@ -300,7 +310,7 @@ class PluginAPIImpl implements PluginAPI {
       })
     },
 
-    save: async (data: any, filename?: string): Promise<void> => {
+    save: async (data: unknown, filename?: string): Promise<void> => {
       this.checkPermission('file.save')
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -311,7 +321,7 @@ class PluginAPIImpl implements PluginAPI {
       URL.revokeObjectURL(url)
     },
 
-    import: async (data: any): Promise<void> => {
+    import: async (data: unknown): Promise<void> => {
       this.checkPermission('file.import')
       const event = new CustomEvent('plugin:importData', {
         detail: { data, pluginId: this.pluginId },
@@ -319,7 +329,7 @@ class PluginAPIImpl implements PluginAPI {
       window.dispatchEvent(event)
     },
 
-    export: async (format: string): Promise<any> => {
+    export: async (format: string): Promise<unknown> => {
       this.checkPermission('file.export')
       return new Promise((resolve) => {
         const event = new CustomEvent('plugin:exportData', {
@@ -397,7 +407,7 @@ class PluginAPIImpl implements PluginAPI {
     },
 
     getActive: (): Tool | null => {
-      return (window as any).currentTool || null
+      return getPluginWindow().currentTool || null
     },
 
     setActive: (id: string) => {
@@ -427,7 +437,7 @@ class PluginAPIImpl implements PluginAPI {
     },
 
     getAvailable: (): CustomRenderer[] => {
-      return (window as any).availableRenderers || []
+      return getPluginWindow().availableRenderers || []
     },
   }
 
@@ -443,7 +453,7 @@ class PluginAPIImpl implements PluginAPI {
  * 插件配置实现
  */
 class PluginConfigImpl implements PluginConfig {
-  private storage = new Map<string, any>()
+  private storage = new Map<string, unknown>()
   private storageKey: string
 
   constructor(pluginId: string) {
@@ -451,11 +461,11 @@ class PluginConfigImpl implements PluginConfig {
     this.loadFromStorage()
   }
 
-  get<T = any>(key: string, defaultValue?: T): T {
+  get<T = unknown>(key: string, defaultValue?: T): T {
     return this.storage.has(key) ? this.storage.get(key) : (defaultValue as T)
   }
 
-  set(key: string, value: any): void {
+  set(key: string, value: unknown): void {
     this.storage.set(key, value)
     this.saveToStorage()
   }
@@ -474,8 +484,8 @@ class PluginConfigImpl implements PluginConfig {
     this.saveToStorage()
   }
 
-  getAll(): Record<string, any> {
-    const result: Record<string, any> = {}
+  getAll(): Record<string, unknown> {
+    const result: Record<string, unknown> = {}
     for (const [key, value] of this.storage) {
       result[key] = value
     }
@@ -506,23 +516,23 @@ class PluginConfigImpl implements PluginConfig {
  * 插件事件发射器实现
  */
 class PluginEventEmitterImpl implements PluginEventEmitter {
-  private listeners = new Map<string, Set<Function>>()
+  private listeners = new Map<string, Set<(...args: unknown[]) => void>>()
 
-  on(event: string, listener: (...args: any[]) => void): void {
+  on(event: string, listener: (...args: unknown[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }
-    this.listeners.get(event)!.add(listener)
+    this.listeners.get(event)?.add(listener)
   }
 
-  off(event: string, listener: (...args: any[]) => void): void {
+  off(event: string, listener: (...args: unknown[]) => void): void {
     const listeners = this.listeners.get(event)
     if (listeners) {
       listeners.delete(listener)
     }
   }
 
-  emit(event: string, ...args: any[]): void {
+  emit(event: string, ...args: unknown[]): void {
     const listeners = this.listeners.get(event)
     if (listeners) {
       for (const listener of listeners) {
@@ -533,8 +543,8 @@ class PluginEventEmitterImpl implements PluginEventEmitter {
     }
   }
 
-  once(event: string, listener: (...args: any[]) => void): void {
-    const onceListener = (...args: any[]) => {
+  once(event: string, listener: (...args: unknown[]) => void): void {
+    const onceListener = (...args: unknown[]) => {
       this.off(event, onceListener)
       listener(...args)
     }
@@ -550,15 +560,15 @@ class PluginEventEmitterImpl implements PluginEventEmitter {
  * 插件资源管理器实现
  */
 class PluginResourceManagerImpl implements PluginResourceManager {
-  private cache = new Map<string, any>()
-  private resources = new Map<string, any>()
+  private cache = new Map<string, unknown>()
+  private resources = new Map<string, unknown>()
   private baseUrl: string
 
   constructor(pluginId: string) {
     this.baseUrl = `/plugins/${pluginId}/assets/`
   }
 
-  async loadAsset(path: string): Promise<any> {
+  async loadAsset(path: string): Promise<unknown> {
     if (this.cache.has(path)) {
       return this.cache.get(path)
     }
@@ -571,7 +581,7 @@ class PluginResourceManagerImpl implements PluginResourceManager {
         throw new Error(`Failed to load asset: ${path}`)
       }
 
-      let asset
+      let asset: unknown
       const contentType = response.headers.get('content-type')
 
       if (contentType?.includes('application/json')) {
@@ -604,11 +614,11 @@ class PluginResourceManagerImpl implements PluginResourceManager {
   }
 
   // 资源注册和管理方法
-  register(key: string, resource: any): void {
+  register(key: string, resource: unknown): void {
     this.resources.set(key, resource)
   }
 
-  get(key: string): any {
+  get(key: string): unknown {
     return this.resources.get(key)
   }
 
@@ -641,11 +651,11 @@ class PluginResourceManagerImpl implements PluginResourceManager {
 class PluginLoggerImpl implements PluginLogger {
   constructor(private pluginId: string) {}
 
-  debug(_message: string, ..._args: any[]): void {}
+  debug(_message: string, ..._args: unknown[]): void {}
 
-  info(_message: string, ..._args: any[]): void {}
+  info(_message: string, ..._args: unknown[]): void {}
 
-  warn(_message: string, ..._args: any[]): void {}
+  warn(_message: string, ..._args: unknown[]): void {}
 
-  error(_message: string, ..._args: any[]): void {}
+  error(_message: string, ..._args: unknown[]): void {}
 }

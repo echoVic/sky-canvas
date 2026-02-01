@@ -3,20 +3,12 @@ import {
   Download,
   Folder,
   FolderOpen,
-  Github,
   HelpCircle,
-  Menu,
-  MessageCircle,
-  Monitor,
   Moon,
-  Palette,
-  RotateCcw,
   Save,
   Search,
   Share,
   Sun,
-  Terminal,
-  UserPlus,
   Users,
   X,
 } from 'lucide-react'
@@ -55,8 +47,8 @@ const Sidebar: React.FC = () => {
 
       {/* 主菜单图标 */}
       <div className="flex-1 px-3 py-3 space-y-2">
-        {menuItems.map((item, index) => (
-          <Tooltip key={index} content={`${item.label} ${item.shortcut}`} placement="right">
+        {menuItems.map((item) => (
+          <Tooltip key={item.label} content={`${item.label} ${item.shortcut}`} placement="right">
             <Button
               variant="light"
               isIconOnly

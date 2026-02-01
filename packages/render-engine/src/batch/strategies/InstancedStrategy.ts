@@ -358,7 +358,7 @@ export class InstancedStrategy implements IBatchStrategy {
   /**
    * 设置渲染状态
    */
-  private setupRenderState(batch: InstancedBatch, projectionMatrix: Matrix3): void {
+  private setupRenderState(batch: InstancedBatch, _projectionMatrix: Matrix3): void {
     // 设置混合模式
     this.setBlendMode(batch.key.blendMode)
 

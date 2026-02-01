@@ -58,7 +58,7 @@ export class BrightnessFilter extends PixelProcessor<BrightnessParameters> {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: BrightnessParameters): number {
+  protected getComplexityFactor(_parameters: BrightnessParameters): number {
     return 0.5 // 亮度调整是最简单的操作之一
   }
 

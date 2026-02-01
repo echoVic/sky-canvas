@@ -494,7 +494,9 @@ export class ColorUtils {
     const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
     const m = l - c / 2
 
-    let r, g, b
+    let r = 0
+    let g = 0
+    let b = 0
 
     if (0 <= h && h < 60) {
       r = c

@@ -61,14 +61,20 @@ export class PostProcessManager
     const startTime = performance.now()
 
     try {
-      const ctx = canvas.getContext('2d')!
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        throw new Error('Cannot create 2D context for post process')
+      }
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const processedData = this.processImageData(imageData)
 
       const result = document.createElement('canvas')
       result.width = canvas.width
       result.height = canvas.height
-      const resultCtx = result.getContext('2d')!
+      const resultCtx = result.getContext('2d')
+      if (!resultCtx) {
+        throw new Error('Cannot create 2D context for post process result')
+      }
       resultCtx.putImageData(processedData, 0, 0)
 
       const endTime = performance.now()
@@ -167,7 +173,10 @@ export class PostProcessManager
       const result = document.createElement('canvas')
       result.width = bounds.width
       result.height = bounds.height
-      const ctx = result.getContext('2d')!
+      const ctx = result.getContext('2d')
+      if (!ctx) {
+        throw new Error('Cannot create 2D context for post process layers')
+      }
 
       // 处理每个图层
       for (const layer of visibleLayers) {
@@ -230,7 +239,10 @@ export class PostProcessManager
       return layer.canvas
     }
 
-    const ctx = layer.canvas.getContext('2d')!
+    const ctx = layer.canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cannot create 2D context for post process layer')
+    }
     let imageData = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height)
 
     // 应用图层的所有效果
@@ -244,7 +256,10 @@ export class PostProcessManager
     const result = document.createElement('canvas')
     result.width = layer.canvas.width
     result.height = layer.canvas.height
-    const resultCtx = result.getContext('2d')!
+    const resultCtx = result.getContext('2d')
+    if (!resultCtx) {
+      throw new Error('Cannot create 2D context for post process layer result')
+    }
     resultCtx.putImageData(imageData, 0, 0)
 
     return result

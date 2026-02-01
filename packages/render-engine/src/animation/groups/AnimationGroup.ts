@@ -234,7 +234,7 @@ export class AnimationGroup extends BaseAnimation implements IAnimationGroup {
     }
   }
 
-  protected onChildAnimationComplete(completedAnimation: IAnimation): void {
+  protected onChildAnimationComplete(_completedAnimation: IAnimation): void {
     if (this.playMode === GroupPlayMode.SEQUENCE) {
       this.currentSequenceIndex++
 

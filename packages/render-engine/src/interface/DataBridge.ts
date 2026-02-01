@@ -140,7 +140,7 @@ export class DataBridge {
   /**
    * 应用增量更新
    */
-  applyDelta<T extends object>(id: string, delta: IncrementalData<T>, currentData: T): T {
+  applyDelta<T extends object>(_id: string, delta: IncrementalData<T>, currentData: T): T {
     if (!delta.changes) return currentData
 
     if (this.config.enableChecksum && delta.checksum) {
@@ -190,7 +190,10 @@ export class DataBridge {
       this.subscribers.set(id, new Set())
     }
 
-    this.subscribers.get(id)!.add(callback)
+    const subscribers = this.subscribers.get(id)
+    if (subscribers) {
+      subscribers.add(callback)
+    }
 
     return () => {
       const subscribers = this.subscribers.get(id)

@@ -201,8 +201,8 @@ export class WebGPUGeometry {
   /**
    * 生成圆形顶点数据（用于SDF渲染的四边形）
    */
-  static createCircleQuad(centerX: number, centerY: number, radius: number): CircleVertices {
-    const r = radius
+  static createCircleQuad(_centerX: number, _centerY: number, radius: number): CircleVertices {
+    const _r = radius
 
     // 创建覆盖圆形的四边形，用于SDF渲染
     // 只需要位置，颜色通过 uniform 传入

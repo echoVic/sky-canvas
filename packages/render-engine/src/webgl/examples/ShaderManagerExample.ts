@@ -284,11 +284,12 @@ export class ShaderManagerExample {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
-    this.gl = canvas.getContext('webgl2')!
+    const gl = canvas.getContext('webgl2')
 
-    if (!this.gl) {
+    if (!gl) {
       throw new Error('WebGL2 context not supported')
     }
+    this.gl = gl
 
     // 创建着色器管理器
     this.manager = new AdvancedShaderManager(this.gl, {

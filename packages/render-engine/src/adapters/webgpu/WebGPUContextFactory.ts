@@ -118,7 +118,9 @@ export class WebGPUContextManager {
    * 销毁所有上下文
    */
   static disposeAllContexts(): void {
-    WebGPUContextManager.contexts.forEach((context) => context.dispose())
+    for (const context of WebGPUContextManager.contexts.values()) {
+      context.dispose()
+    }
     WebGPUContextManager.contexts.clear()
   }
 

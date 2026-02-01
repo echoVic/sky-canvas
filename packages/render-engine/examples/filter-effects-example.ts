@@ -45,7 +45,10 @@ const renderable = {
     const offscreenCanvas = document.createElement('canvas')
     offscreenCanvas.width = canvas.width
     offscreenCanvas.height = canvas.height
-    const offscreenCtx = offscreenCanvas.getContext('2d')!
+    const offscreenCtx = offscreenCanvas.getContext('2d')
+    if (!offscreenCtx) {
+      throw new Error('Failed to get offscreen 2d context')
+    }
 
     shapes.forEach((shape) => {
       offscreenCtx.fillStyle = shape.color

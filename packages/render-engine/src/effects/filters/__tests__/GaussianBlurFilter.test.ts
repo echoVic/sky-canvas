@@ -85,7 +85,7 @@ describe('GaussianBlurFilter', () => {
 
     expect(result.success).toBe(true)
     expect(result.processedImageData).toBeDefined()
-    expect(result.processedImageData!.data[0]).toBe(255)
+    expect(result.processedImageData?.data[0]).toBe(255)
   })
 
   it('应该估算处理时间', () => {

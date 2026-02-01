@@ -101,7 +101,7 @@ export abstract class PixelProcessor<T extends FilterParameters> extends BaseFil
   /**
    * 获取RGB处理函数（子类实现）
    */
-  protected getRGBProcessor(parameters: T): RGBProcessorFunction {
+  protected getRGBProcessor(_parameters: T): RGBProcessorFunction {
     throw new Error('子类必须实现 getRGBProcessor 或 getPixelProcessor 方法')
   }
 

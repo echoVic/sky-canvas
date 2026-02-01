@@ -119,7 +119,9 @@ export class PluginContextFactory {
 
       clear(): void {
         const keys = Object.keys(localStorage).filter((key) => key.startsWith(prefix))
-        keys.forEach((key) => localStorage.removeItem(key))
+        keys.forEach((key) => {
+          localStorage.removeItem(key)
+        })
       },
 
       keys(): string[] {

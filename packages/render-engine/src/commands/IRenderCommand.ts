@@ -32,7 +32,7 @@ export interface MaterialKey {
   /** 描边颜色 */
   strokeColor?: string
   /** 其他渲染状态 */
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**
@@ -74,7 +74,7 @@ export interface IRenderCommand {
    * 获取渲染数据用于批处理
    * @returns 渲染数据
    */
-  getBatchData(): any
+  getBatchData(): Record<string, unknown>
 
   /**
    * 检查是否在视口内
@@ -116,7 +116,7 @@ export abstract class RenderCommand implements IRenderCommand {
 
   abstract execute(context: IGraphicsContext): void
   abstract getBounds(): IRect
-  abstract getBatchData(): any
+  abstract getBatchData(): Record<string, unknown>
 
   canBatchWith(other: IRenderCommand): boolean {
     // 基本批处理条件：相同类型和材质
@@ -173,11 +173,11 @@ export class ClearCommand extends RenderCommand {
     return { x: 0, y: 0, width: Infinity, height: Infinity }
   }
 
-  getBatchData(): any {
+  getBatchData(): Record<string, unknown> {
     return { color: this.color }
   }
 
-  canBatchWith(other: IRenderCommand): boolean {
+  canBatchWith(_other: IRenderCommand): boolean {
     // 清屏命令不能批处理
     return false
   }
@@ -218,7 +218,7 @@ export class RectCommand extends RenderCommand {
     }
   }
 
-  getBatchData(): any {
+  getBatchData(): Record<string, unknown> {
     return {
       x: this.rect.x,
       y: this.rect.y,
@@ -267,7 +267,7 @@ export class CircleCommand extends RenderCommand {
     }
   }
 
-  getBatchData(): any {
+  getBatchData(): Record<string, unknown> {
     return {
       centerX: this.center.x,
       centerY: this.center.y,

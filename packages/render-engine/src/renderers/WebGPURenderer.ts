@@ -550,10 +550,14 @@ export class WebGPURenderer extends RendererBase {
   }
 
   dispose(): void {
-    this.buffers.forEach((buffer) => buffer.destroy())
+    this.buffers.forEach((buffer) => {
+      buffer.destroy()
+    })
     this.buffers.clear()
 
-    this.textures.forEach((texture) => texture.destroy())
+    this.textures.forEach((texture) => {
+      texture.destroy()
+    })
     this.textures.clear()
 
     if (this.uniformBuffer) {

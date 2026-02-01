@@ -150,7 +150,7 @@ export class BatchOptimizer {
    */
   calculateOptimalBatchSize(stats: BatchStats): number {
     const avgVerticesPerBatch = stats.vertices / Math.max(stats.batches, 1)
-    const avgTrianglesPerBatch = stats.triangles / Math.max(stats.batches, 1)
+    const _avgTrianglesPerBatch = stats.triangles / Math.max(stats.batches, 1)
 
     // 基于当前性能计算最优批次大小
     if (avgVerticesPerBatch < 100) {
@@ -178,7 +178,7 @@ export class BatchOptimizer {
       if (!geometryGroups.has(hash)) {
         geometryGroups.set(hash, [])
       }
-      geometryGroups.get(hash)!.push(batch)
+      geometryGroups.get(hash)?.push(batch)
     }
 
     const opportunities: Array<{
@@ -364,7 +364,7 @@ export class BatchOptimizer {
   /**
    * 计算合并节省效果
    */
-  private calculateMergeSaving(batchA: RenderBatch, batchB: RenderBatch): number {
+  private calculateMergeSaving(_batchA: RenderBatch, _batchB: RenderBatch): number {
     // 简化计算：合并后可以减少一个draw call
     return 1.0
   }

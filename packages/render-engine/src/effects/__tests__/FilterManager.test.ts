@@ -38,7 +38,7 @@ describe('FilterManager', () => {
   it('应该能够获取特定滤镜', () => {
     const blurFilter = filterManager.getFilter(FilterType.GAUSSIAN_BLUR)
     expect(blurFilter).toBeDefined()
-    expect(blurFilter!.type).toBe(FilterType.GAUSSIAN_BLUR)
+    expect(blurFilter?.type).toBe(FilterType.GAUSSIAN_BLUR)
   })
 
   it('应该能够应用单个滤镜', async () => {
@@ -188,8 +188,8 @@ describe('FilterManager', () => {
     const result = await filterManager.createPreview(imageData, params, previewSize)
 
     expect(result.success).toBe(true)
-    expect(result.processedImageData!.width).toBe(50)
-    expect(result.processedImageData!.height).toBe(50)
+    expect(result.processedImageData?.width).toBe(50)
+    expect(result.processedImageData?.height).toBe(50)
   })
 
   it('应该能够估算处理时间', () => {

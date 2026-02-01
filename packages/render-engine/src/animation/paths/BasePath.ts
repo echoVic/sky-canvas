@@ -85,7 +85,10 @@ export abstract class BasePath implements IPath {
 
   sample(segments: number = 50): PathPoint[] {
     if (this._sampleCache.has(segments)) {
-      return this._sampleCache.get(segments)!
+      const cached = this._sampleCache.get(segments)
+      if (cached) {
+        return cached
+      }
     }
 
     const points: PathPoint[] = []

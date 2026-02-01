@@ -2,6 +2,11 @@ import type { ICanvasManager } from '../../../managers/CanvasManager'
 import type { ShapeEntity } from '../../../models/entities/Shape'
 import type { HandlePosition, IInitialShapeState, ISelectToolState } from './SelectToolTypes'
 
+type RectUpdate = Partial<ShapeEntity> & {
+  size?: { width: number; height: number }
+  transform?: ShapeEntity['transform']
+}
+
 export class SelectToolResizeHandler {
   constructor(
     private state: ISelectToolState,
@@ -81,7 +86,7 @@ export class SelectToolResizeHandler {
         state.radiusX = shape.radiusX
         state.radiusY = shape.radiusY
       } else if (shape.type === 'polygon') {
-        state.points = shape.points.map((p: any) => ({ x: p.x, y: p.y }))
+        state.points = shape.points.map((p) => ({ x: p.x, y: p.y }))
       } else if (shape.type === 'star') {
         state.outerRadius = shape.outerRadius
         state.innerRadius = shape.innerRadius
@@ -97,7 +102,7 @@ export class SelectToolResizeHandler {
     deltaX: number,
     deltaY: number
   ): Partial<ShapeEntity> {
-    const size = initial.size!
+    const size = initial.size ?? { width: 0, height: 0 }
     const pos = initial.transform.position
     let newWidth = size.width
     let newHeight = size.height
@@ -152,7 +157,7 @@ export class SelectToolResizeHandler {
     deltaX: number,
     deltaY: number
   ): Partial<ShapeEntity> {
-    const radius = initial.radius!
+    const radius = initial.radius ?? 0
     const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY))
     const sign = deltaX + deltaY > 0 ? 1 : -1
     const newRadius = Math.max(5, radius + delta * sign)
@@ -166,8 +171,8 @@ export class SelectToolResizeHandler {
     deltaX: number,
     deltaY: number
   ): Partial<ShapeEntity> {
-    const radiusX = initial.radiusX!
-    const radiusY = initial.radiusY!
+    const radiusX = initial.radiusX ?? 0
+    const radiusY = initial.radiusY ?? 0
     let newRadiusX = radiusX
     let newRadiusY = radiusY
     let newX = initial.transform.position.x
@@ -229,7 +234,7 @@ export class SelectToolResizeHandler {
       handle,
       deltaX,
       deltaY
-    ) as any
+    ) as RectUpdate
     const newSize = rectUpdates.size || { width: bounds.width, height: bounds.height }
     const scaleX = newSize.width / bounds.width
     const scaleY = newSize.height / bounds.height
@@ -256,7 +261,7 @@ export class SelectToolResizeHandler {
       handle,
       deltaX,
       deltaY
-    ) as any
+    ) as RectUpdate
     const newSize = rectUpdates.size || { width: outer * 2, height: outer * 2 }
     const newOuter = Math.max(5, Math.max(newSize.width, newSize.height) / 2)
     const inner = initial.innerRadius || newOuter * 0.5

@@ -3,11 +3,7 @@
  * 提供后处理效果的管道式处理
  */
 
-import type {
-  PostProcessConfig,
-  PostProcessLayer,
-  PostProcessType,
-} from '../types/PostProcessTypes'
+import type { PostProcessConfig, PostProcessType } from '../types/PostProcessTypes'
 import { PostProcessManager } from './PostProcessManager'
 
 export class PostProcessPipeline {
@@ -84,14 +80,6 @@ export class PostProcessPipeline {
         continue
       }
 
-      // 创建临时图层
-      const layer: PostProcessLayer = {
-        id: `layer-${config.type}`,
-        canvas: currentCanvas,
-        effects: [],
-        enabled: true,
-      }
-
       // 应用效果
       currentCanvas = this.postProcessManager.process(currentCanvas)
     }
@@ -139,7 +127,7 @@ export class PostProcessPipeline {
         return false
       }
 
-      for (const [key, value] of Object.entries(config.parameters)) {
+      for (const [_key, value] of Object.entries(config.parameters)) {
         if (typeof value !== 'number') {
           return false
         }

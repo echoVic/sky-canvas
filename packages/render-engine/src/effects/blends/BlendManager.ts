@@ -149,7 +149,10 @@ export class BlendManager extends EventEmitter<BlendEvents> implements IBlendMan
     const canvas = document.createElement('canvas')
     canvas.width = bounds.width
     canvas.height = bounds.height
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Cannot create 2D context for blend canvas')
+    }
 
     const firstLayer = layers[0]
     this.drawLayer(ctx, firstLayer, bounds)
@@ -187,7 +190,10 @@ export class BlendManager extends EventEmitter<BlendEvents> implements IBlendMan
     const tempCanvas = document.createElement('canvas')
     tempCanvas.width = bounds.width
     tempCanvas.height = bounds.height
-    const tempCtx = tempCanvas.getContext('2d')!
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) {
+      throw new Error('Cannot create 2D context for temp blend canvas')
+    }
 
     const offsetX = (layer.bounds?.x || 0) - bounds.x
     const offsetY = (layer.bounds?.y || 0) - bounds.y

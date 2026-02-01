@@ -81,7 +81,10 @@ export class ResourcePool<T extends GPUResource> {
     let oldestTime = Infinity
 
     for (const id of this.freeResources) {
-      const resource = this.resources.get(id)!
+      const resource = this.resources.get(id)
+      if (!resource) {
+        continue
+      }
       if (resource.lastUsed < oldestTime && !resource.persistent) {
         oldestTime = resource.lastUsed
         oldestId = id

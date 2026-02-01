@@ -725,26 +725,24 @@ export class CanvasManager implements ICanvasManager {
           height: group.size.height,
         }
       }
-      case 'circle':
-        {
-          const circle = shape as ICircleEntity
+      case 'circle': {
+        const circle = shape as ICircleEntity
         return {
           x: pos.x - circle.radius,
           y: pos.y - circle.radius,
           width: circle.radius * 2,
           height: circle.radius * 2,
         }
-        }
-      case 'ellipse':
-        {
-          const ellipse = shape as IEllipseEntity
+      }
+      case 'ellipse': {
+        const ellipse = shape as IEllipseEntity
         return {
           x: pos.x - ellipse.radiusX,
           y: pos.y - ellipse.radiusY,
           width: ellipse.radiusX * 2,
           height: ellipse.radiusY * 2,
         }
-        }
+      }
       case 'polygon': {
         const polygon = shape as IPolygonEntity
         const points = polygon.points || []

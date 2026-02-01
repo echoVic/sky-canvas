@@ -16,6 +16,7 @@ export { GaussianBlurFilter } from './GaussianBlurFilter'
 import {
   type BrightnessParameters,
   type FilterContext,
+  type FilterParameters,
   FilterType,
   type GaussianBlurParameters,
 } from '../types/FilterTypes'
@@ -91,7 +92,7 @@ export class FilterPresets {
   /**
    * 创建复古滤镜
    */
-  static createVintage(): Array<any> {
+  static createVintage(): FilterParameters[] {
     return [
       {
         type: FilterType.SEPIA,
@@ -117,7 +118,7 @@ export class FilterPresets {
   /**
    * 创建黑白滤镜
    */
-  static createBlackAndWhite(): Array<any> {
+  static createBlackAndWhite(): FilterParameters[] {
     return [
       {
         type: FilterType.GRAYSCALE,
@@ -137,7 +138,7 @@ export class FilterPresets {
   /**
    * 创建暖色调滤镜
    */
-  static createWarmTone(): Array<any> {
+  static createWarmTone(): FilterParameters[] {
     return [
       {
         type: FilterType.HUE_ROTATE,
@@ -163,7 +164,7 @@ export class FilterPresets {
   /**
    * 创建冷色调滤镜
    */
-  static createCoolTone(): Array<any> {
+  static createCoolTone(): FilterParameters[] {
     return [
       {
         type: FilterType.HUE_ROTATE,
@@ -189,7 +190,7 @@ export class FilterPresets {
   /**
    * 创建发光效果
    */
-  static createGlowEffect(color: string = '#ffffff', strength: number = 10): Array<any> {
+  static createGlowEffect(color: string = '#ffffff', strength: number = 10): FilterParameters[] {
     return [
       {
         type: FilterType.GLOW,
@@ -205,7 +206,7 @@ export class FilterPresets {
   /**
    * 创建模糊背景效果
    */
-  static createBlurBackground(radius: number = 20): Array<any> {
+  static createBlurBackground(radius: number = 20): FilterParameters[] {
     return [
       {
         type: FilterType.GAUSSIAN_BLUR,

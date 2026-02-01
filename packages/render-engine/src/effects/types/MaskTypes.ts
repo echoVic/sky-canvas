@@ -238,7 +238,7 @@ export interface MaskEvents {
   maskRemoved: (maskId: string) => void
   maskUpdated: (mask: IMask) => void
   maskEnabled: (maskId: string, enabled: boolean) => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 /**

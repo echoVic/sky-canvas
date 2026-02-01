@@ -40,7 +40,7 @@ export interface ICanvasViewModelEvents {
 export class CanvasViewModel {
   private state: ICanvasState
   private shapeRepository: IShapeRepository
-  private eventListeners = new Map<string, Set<Function>>()
+  private eventListeners = new Map<string, Set<(data: unknown) => void>>()
   private repositoryUnsubscribe?: () => void
 
   constructor(
@@ -103,7 +103,7 @@ export class CanvasViewModel {
    * 更新状态
    */
   private updateState(changes: Partial<ICanvasState>): void {
-    const previousState = { ...this.state }
+    const _previousState = { ...this.state }
     this.state = { ...this.state, ...changes }
 
     this.emit('state:changed', {
@@ -306,7 +306,7 @@ export class CanvasViewModel {
     }
 
     const listeners = this.eventListeners.get(event)!
-    listeners.add(listener)
+    listeners.add(listener as (data: unknown) => void)
 
     return () => {
       listeners.delete(listener)
@@ -321,7 +321,7 @@ export class CanvasViewModel {
     if (listeners) {
       listeners.forEach((listener) => {
         try {
-          ;(listener as any)(data)
+          listener(data as unknown)
         } catch {}
       })
     }

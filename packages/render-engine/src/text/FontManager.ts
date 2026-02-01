@@ -373,7 +373,9 @@ class FontCache implements IFontCache {
       }
     }
 
-    toDelete.forEach((key) => this.delete(key))
+    toDelete.forEach((key) => {
+      this.delete(key)
+    })
   }
 }
 

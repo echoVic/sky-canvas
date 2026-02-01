@@ -262,12 +262,12 @@ export abstract class BaseAnimation implements IAnimation {
 
   // 强类型事件方法
   on<K extends keyof AnimationEvents>(event: K, listener: AnimationEvents[K]): this {
-    this.emitter.on(event, listener as any)
+    this.emitter.on(event, listener as unknown as (...args: unknown[]) => void)
     return this
   }
 
   off<K extends keyof AnimationEvents>(event: K, listener: AnimationEvents[K]): this {
-    this.emitter.off(event, listener as any)
+    this.emitter.off(event, listener as unknown as (...args: unknown[]) => void)
     return this
   }
 

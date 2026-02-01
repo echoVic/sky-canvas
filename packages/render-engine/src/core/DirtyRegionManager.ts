@@ -22,7 +22,7 @@ export class DirtyRegionManager {
   /**
    * 标记区域为脏区域
    */
-  markRegionDirty(bounds: Rectangle, reason: string = 'unknown'): void {
+  markRegionDirty(bounds: Rectangle, _reason: string = 'unknown'): void {
     this.dirtyRegions.push(bounds.clone())
   }
 
@@ -37,7 +37,10 @@ export class DirtyRegionManager {
     const regions = [...this.dirtyRegions]
 
     while (regions.length > 0) {
-      const region = regions.shift()!
+      const region = regions.shift()
+      if (!region) {
+        continue
+      }
       let merged = false
 
       for (let i = 0; i < optimized.length; i++) {

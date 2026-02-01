@@ -2,7 +2,7 @@
  * 批量渲染系统类型定义
  */
 
-import { type BlendMode, RenderStats } from '../../core/RenderTypes'
+import type { BlendMode } from '../../core/RenderTypes'
 import type { Vector2 } from '../../math'
 
 // 批量渲染顶点结构

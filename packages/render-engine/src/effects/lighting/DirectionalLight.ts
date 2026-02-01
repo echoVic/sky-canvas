@@ -21,7 +21,7 @@ export class DirectionalLight extends BaseLight {
   }
 
   calculateLighting(
-    position: Point2D,
+    _position: Point2D,
     normal: Vector2D,
     viewDirection: Vector2D,
     material: MaterialProperties
@@ -65,16 +65,16 @@ export class DirectionalLight extends BaseLight {
     return result
   }
 
-  isPointLit(position: Point2D): boolean {
+  isPointLit(_position: Point2D): boolean {
     // 方向光照亮所有点
     return this._enabled
   }
 
-  getIntensityAtPoint(position: Point2D): number {
+  getIntensityAtPoint(_position: Point2D): number {
     return this._enabled ? this._config.intensity : 0
   }
 
-  getDirectionAtPoint(position: Point2D): Vector2D {
+  getDirectionAtPoint(_position: Point2D): Vector2D {
     return this.normalize(this._config.direction)
   }
 

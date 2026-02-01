@@ -5,7 +5,6 @@
 
 import type { IPoint } from '@sky-canvas/render-engine'
 import type { ShapeEntity } from '../../models/entities/Shape'
-import { ICanvasView } from '../../views/interfaces/ICanvasView'
 
 /**
  * Canvas 鼠标事件

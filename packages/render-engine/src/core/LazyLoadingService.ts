@@ -68,8 +68,11 @@ export class LazyComponent<T> implements ILazyComponent<T> {
     }
 
     this._disposed = true
-    if (this._instance && typeof (this._instance as any).dispose === 'function') {
-      ;(this._instance as any).dispose()
+    if (this._instance) {
+      const disposable = this._instance as unknown as { dispose?: () => void }
+      if (typeof disposable.dispose === 'function') {
+        disposable.dispose()
+      }
     }
     this._instance = undefined
     this._loadingPromise = undefined
@@ -80,11 +83,11 @@ export class LazyComponent<T> implements ILazyComponent<T> {
  * 模块缓存管理
  */
 class ModuleCache {
-  private _cache = new Map<string, any>()
-  private _loadingPromises = new Map<string, Promise<any>>()
+  private _cache = new Map<string, unknown>()
+  private _loadingPromises = new Map<string, Promise<unknown>>()
   private _metrics = new Map<string, ILoadingMetrics>()
 
-  set(modulePath: string, module: any, loadTime: number, size: number): void {
+  set(modulePath: string, module: unknown, loadTime: number, size: number): void {
     this._cache.set(modulePath, module)
     this._metrics.set(modulePath, {
       modulePath,
@@ -102,7 +105,7 @@ class ModuleCache {
     return this._cache.has(modulePath)
   }
 
-  setLoadingPromise(modulePath: string, promise: Promise<any>): void {
+  setLoadingPromise(modulePath: string, promise: Promise<unknown>): void {
     this._loadingPromises.set(modulePath, promise)
   }
 
@@ -148,12 +151,12 @@ class DependencyGraph {
     if (!this._dependencies.has(module)) {
       this._dependencies.set(module, new Set())
     }
-    this._dependencies.get(module)!.add(dependency)
+    this._dependencies.get(module)?.add(dependency)
 
     if (!this._dependents.has(dependency)) {
       this._dependents.set(dependency, new Set())
     }
-    this._dependents.get(dependency)!.add(module)
+    this._dependents.get(dependency)?.add(module)
   }
 
   getDependencies(module: string): string[] {
@@ -227,7 +230,10 @@ class PreloadManager {
     this._preloadInProgress = true
 
     while (this._preloadQueue.length > 0) {
-      const modulePath = this._preloadQueue.shift()!
+      const modulePath = this._preloadQueue.shift()
+      if (!modulePath) {
+        continue
+      }
       try {
         await this._moduleLoader.preloadModule(modulePath)
       } catch (error) {
@@ -265,7 +271,10 @@ export class LazyLoadingService implements IModuleLoader {
 
     // 检查缓存
     if (this._cache.has(modulePath)) {
-      return this._cache.get<T>(modulePath)!
+      const cached = this._cache.get<T>(modulePath)
+      if (cached !== undefined) {
+        return cached
+      }
     }
 
     // 检查是否正在加载

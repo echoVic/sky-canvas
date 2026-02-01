@@ -13,6 +13,10 @@ export class TransformStack {
     return this.stack[this.stack.length - 1].clone()
   }
 
+  getDepth(): number {
+    return this.stack.length
+  }
+
   /** 保存当前变换 */
   push(): void {
     this.stack.push(this.current)

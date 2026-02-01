@@ -225,7 +225,7 @@ export class CustomShaderFilter extends BaseFilter<CustomShaderParameters> {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: CustomShaderParameters): number {
+  protected getComplexityFactor(_parameters: CustomShaderParameters): number {
     // 自定义着色器复杂度难以预测，使用中等值
     return 2.0
   }

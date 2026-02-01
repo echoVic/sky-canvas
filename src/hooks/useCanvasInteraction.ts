@@ -17,7 +17,7 @@ export interface CanvasInteractionState {
  * 根据UI状态切换SDK的当前工具
  */
 export function useCanvasInteraction(
-  canvasRef: React.RefObject<HTMLCanvasElement>,
+  _canvasRef: React.RefObject<HTMLCanvasElement>,
   sdkResult: UseCanvasSDKResult,
   currentTool: UIToolType
 ) {
@@ -108,7 +108,7 @@ export function useCanvasInteraction(
 
   useEffect(() => {
     syncToolToSDK()
-  }, [currentTool, sdkState.isInitialized, syncToolToSDK])
+  }, [syncToolToSDK])
 
   return {
     interactionState,

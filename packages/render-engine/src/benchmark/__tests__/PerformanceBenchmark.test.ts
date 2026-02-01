@@ -278,9 +278,9 @@ describe('PerformanceBenchmark', () => {
       const result = results[0]
 
       expect(result.memoryUsage).toBeDefined()
-      expect(typeof result.memoryUsage!.before).toBe('number')
-      expect(typeof result.memoryUsage!.after).toBe('number')
-      expect(typeof result.memoryUsage!.peak).toBe('number')
+      expect(typeof result.memoryUsage?.before).toBe('number')
+      expect(typeof result.memoryUsage?.after).toBe('number')
+      expect(typeof result.memoryUsage?.peak).toBe('number')
     })
   })
 

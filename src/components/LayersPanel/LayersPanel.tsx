@@ -40,7 +40,6 @@ function LayerItem({
 
   return (
     <div
-      onClick={handleClick}
       className={`
         flex items-center px-3 py-2 cursor-pointer border-b border-gray-100 dark:border-gray-800
         transition-colors group
@@ -52,11 +51,16 @@ function LayerItem({
         ${!shape.visible ? 'opacity-50' : ''}
       `}
     >
-      <span className="w-5 text-center text-gray-400 text-sm">{icon}</span>
-      <span className="flex-1 text-sm truncate ml-2 text-gray-700 dark:text-gray-300">{name}</span>
+      <button type="button" onClick={handleClick} className="flex flex-1 items-center text-left">
+        <span className="w-5 text-center text-gray-400 text-sm">{icon}</span>
+        <span className="flex-1 text-sm truncate ml-2 text-gray-700 dark:text-gray-300">
+          {name}
+        </span>
+      </button>
 
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation()
             onToggleLock(shape.id)
@@ -71,6 +75,7 @@ function LayerItem({
           )}
         </button>
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation()
             onToggleVisibility(shape.id)
@@ -178,6 +183,7 @@ export function LayersPanel() {
         <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <span className="text-xs text-gray-500">已选 {selectedShapes.length}</span>
           <button
+            type="button"
             onClick={handleDeleteSelected}
             className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
             title="删除选中"

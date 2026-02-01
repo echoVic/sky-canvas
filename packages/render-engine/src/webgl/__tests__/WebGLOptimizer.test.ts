@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { BufferManager, BufferType, BufferUsage } from '../BufferManager'
+import { BufferManager, BufferType } from '../BufferManager'
 import { type IShaderSource, ShaderManager } from '../ShaderManager'
 import {
   BufferPool,

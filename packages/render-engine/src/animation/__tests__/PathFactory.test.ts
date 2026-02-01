@@ -9,7 +9,7 @@ import { CustomPath } from '../paths/CustomPath'
 import { LinearPath } from '../paths/LinearPath'
 import { PathFactory } from '../paths/PathFactory'
 import { SplinePath } from '../paths/SplinePath'
-import { PathType } from '../types/PathTypes'
+import { type PathConfig, PathType } from '../types/PathTypes'
 
 describe('PathFactory', () => {
   describe('createPath', () => {
@@ -105,9 +105,9 @@ describe('PathFactory', () => {
 
     it('应该抛出不支持的路径类型错误', () => {
       const config = {
-        type: 'UNKNOWN' as any,
+        type: 'UNKNOWN' as unknown,
         getPoint: () => ({ x: 0, y: 0 }),
-      }
+      } as unknown as PathConfig
 
       expect(() => PathFactory.createPath(config)).toThrow('Unsupported path type: UNKNOWN')
     })

@@ -165,7 +165,10 @@ export class WebGPUBufferManager {
     const pool = this.bufferPool.get(key)
     if (pool && pool.length > 0) {
       this.stats.pooledBuffers--
-      return pool.pop()!
+      const buffer = pool.pop()
+      if (buffer) {
+        return buffer
+      }
     }
 
     return this.createBuffer({

@@ -38,9 +38,69 @@ export interface RenderCommand {
   type: RenderCommandType
   id?: string
   priority?: number
-  data: any
+  data: unknown
   timestamp?: number
 }
+
+type FillStrokeStyle = string | CanvasGradient | CanvasPattern
+
+type RectangleCommandData = {
+  x: number
+  y: number
+  width: number
+  height: number
+  fillStyle?: FillStrokeStyle
+  strokeStyle?: FillStrokeStyle
+  merged?: boolean
+  rectangles?: RectangleCommandData[]
+}
+
+type CircleCommandData = {
+  x: number
+  y: number
+  radius: number
+  fillStyle?: FillStrokeStyle
+  strokeStyle?: FillStrokeStyle
+  merged?: boolean
+  circles?: CircleCommandData[]
+}
+
+type LineCommandData = {
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+  strokeStyle?: FillStrokeStyle
+}
+
+type PathPoint = { x: number; y: number }
+
+type PathCommandData = {
+  path: PathPoint[]
+  closed?: boolean
+  fillStyle?: FillStrokeStyle
+  strokeStyle?: FillStrokeStyle
+}
+
+type TextCommandData = {
+  text: string
+  x: number
+  y: number
+  font?: string
+  textAlign?: CanvasTextAlign
+  textBaseline?: CanvasTextBaseline
+  fillStyle?: FillStrokeStyle
+  strokeStyle?: FillStrokeStyle
+}
+
+type StyleCommandData = {
+  fillStyle?: FillStrokeStyle
+  strokeStyle?: FillStrokeStyle
+  lineWidth?: number
+  globalAlpha?: number
+}
+
+type ClearRectCommandData = { x: number; y: number; width: number; height: number }
 
 /**
  * 批处理渲染命令
@@ -173,8 +233,8 @@ export class RenderCommandOptimizer {
     cmd1: RenderCommand,
     cmd2: RenderCommand
   ): RenderCommand | null {
-    const data1 = cmd1.data
-    const data2 = cmd2.data
+    const data1 = cmd1.data as RectangleCommandData
+    const data2 = cmd2.data as RectangleCommandData
 
     // 检查样式是否相同
     if (data1.fillStyle !== data2.fillStyle || data1.strokeStyle !== data2.strokeStyle) {
@@ -198,8 +258,8 @@ export class RenderCommandOptimizer {
   }
 
   private static tryMergeCircles(cmd1: RenderCommand, cmd2: RenderCommand): RenderCommand | null {
-    const data1 = cmd1.data
-    const data2 = cmd2.data
+    const data1 = cmd1.data as CircleCommandData
+    const data2 = cmd2.data as CircleCommandData
 
     // 检查样式是否相同
     if (data1.fillStyle !== data2.fillStyle || data1.strokeStyle !== data2.strokeStyle) {
@@ -229,7 +289,7 @@ export class RenderCommandOptimizer {
     }
   }
 
-  private static areRectanglesAdjacent(rect1: any, rect2: any): boolean {
+  private static areRectanglesAdjacent(rect1: IRect, rect2: IRect): boolean {
     // 简化的相邻检测逻辑
     const gap = 1 // 允许的间隙
 
@@ -270,7 +330,7 @@ export class RenderBridge {
 
   // 缓存
   private stateCache = new Map<string, RenderState>()
-  private commandCache = new Map<string, any>()
+  private commandCache = new Map<string, { result: unknown; timestamp: number }>()
   private transformCache = new Map<string, Transform>()
 
   // 统计
@@ -368,13 +428,13 @@ export class RenderBridge {
       this.stats.cacheHits++
       const cached = this.commandCache.get(cacheKey)
       if (cached && cached.result) {
-        return cached.result
+        return
       }
     }
 
     this.stats.cacheMisses++
 
-    let result: any
+    let result: unknown
 
     try {
       switch (command.type) {
@@ -439,18 +499,19 @@ export class RenderBridge {
     }
   }
 
-  private executeDrawRectangle(data: any): void {
-    if (data.merged && data.rectangles) {
+  private executeDrawRectangle(data: unknown): void {
+    const command = data as RectangleCommandData
+    if (command.merged && command.rectangles) {
       // 批量绘制矩形
-      for (const rect of data.rectangles) {
+      for (const rect of command.rectangles) {
         this.drawSingleRectangle(rect)
       }
     } else {
-      this.drawSingleRectangle(data)
+      this.drawSingleRectangle(command)
     }
   }
 
-  private drawSingleRectangle(data: any): void {
+  private drawSingleRectangle(data: RectangleCommandData): void {
     if (data.fillStyle) {
       this.context.setFillStyle(data.fillStyle)
       this.context.fillRect(data.x, data.y, data.width, data.height)
@@ -461,18 +522,19 @@ export class RenderBridge {
     }
   }
 
-  private executeDrawCircle(data: any): void {
-    if (data.merged && data.circles) {
+  private executeDrawCircle(data: unknown): void {
+    const command = data as CircleCommandData
+    if (command.merged && command.circles) {
       // 批量绘制圆形
-      for (const circle of data.circles) {
+      for (const circle of command.circles) {
         this.drawSingleCircle(circle)
       }
     } else {
-      this.drawSingleCircle(data)
+      this.drawSingleCircle(command)
     }
   }
 
-  private drawSingleCircle(data: any): void {
+  private drawSingleCircle(data: CircleCommandData): void {
     this.context.beginPath()
     this.context.arc(data.x, data.y, data.radius, 0, Math.PI * 2)
 
@@ -486,24 +548,26 @@ export class RenderBridge {
     }
   }
 
-  private executeDrawLine(data: any): void {
+  private executeDrawLine(data: unknown): void {
+    const command = data as LineCommandData
     this.context.beginPath()
-    this.context.moveTo(data.startX, data.startY)
-    this.context.lineTo(data.endX, data.endY)
+    this.context.moveTo(command.startX, command.startY)
+    this.context.lineTo(command.endX, command.endY)
 
-    if (data.strokeStyle) {
-      this.context.setStrokeStyle(data.strokeStyle)
+    if (command.strokeStyle) {
+      this.context.setStrokeStyle(command.strokeStyle)
       this.context.stroke()
     }
   }
 
-  private executeDrawPath(data: any): void {
-    if (!data.path || !Array.isArray(data.path)) return
+  private executeDrawPath(data: unknown): void {
+    const command = data as PathCommandData
+    if (!command.path || !Array.isArray(command.path)) return
 
     this.context.beginPath()
 
-    for (let i = 0; i < data.path.length; i++) {
-      const point = data.path[i]
+    for (let i = 0; i < command.path.length; i++) {
+      const point = command.path[i]
       if (i === 0) {
         this.context.moveTo(point.x, point.y)
       } else {
@@ -511,42 +575,43 @@ export class RenderBridge {
       }
     }
 
-    if (data.closed) {
+    if (command.closed) {
       this.context.closePath()
     }
 
-    if (data.fillStyle) {
-      this.context.setFillStyle(data.fillStyle)
+    if (command.fillStyle) {
+      this.context.setFillStyle(command.fillStyle)
       this.context.fill()
     }
-    if (data.strokeStyle) {
-      this.context.setStrokeStyle(data.strokeStyle)
+    if (command.strokeStyle) {
+      this.context.setStrokeStyle(command.strokeStyle)
       this.context.stroke()
     }
   }
 
-  private executeDrawText(data: any): void {
-    if (data.font) {
-      this.context.setFont(data.font)
+  private executeDrawText(data: unknown): void {
+    const command = data as TextCommandData
+    if (command.font) {
+      this.context.setFont(command.font)
     }
-    if (data.textAlign) {
-      this.context.setTextAlign(data.textAlign)
+    if (command.textAlign) {
+      this.context.setTextAlign(command.textAlign)
     }
-    if (data.textBaseline) {
-      this.context.setTextBaseline(data.textBaseline)
+    if (command.textBaseline) {
+      this.context.setTextBaseline(command.textBaseline)
     }
 
-    if (data.fillStyle) {
-      this.context.setFillStyle(data.fillStyle)
-      this.context.fillText(data.text, data.x, data.y)
+    if (command.fillStyle) {
+      this.context.setFillStyle(command.fillStyle)
+      this.context.fillText(command.text, command.x, command.y)
     }
-    if (data.strokeStyle) {
-      this.context.setStrokeStyle(data.strokeStyle)
-      this.context.strokeText(data.text, data.x, data.y)
+    if (command.strokeStyle) {
+      this.context.setStrokeStyle(command.strokeStyle)
+      this.context.strokeText(command.text, command.x, command.y)
     }
   }
 
-  private executeSetTransform(data: any): void {
+  private executeSetTransform(data: unknown): void {
     const transform = data as Transform
     const cacheKey = CacheKeyGenerator.generateTransformKey(transform)
 
@@ -570,27 +635,37 @@ export class RenderBridge {
     this.transformCache.set(cacheKey, transform)
   }
 
-  private executeSetStyle(data: any): void {
-    Object.keys(data).forEach((key) => {
+  private executeSetStyle(data: unknown): void {
+    const command = data as StyleCommandData
+    Object.keys(command).forEach((key) => {
       switch (key) {
         case 'fillStyle':
-          this.context.setFillStyle(data[key])
+          if (command.fillStyle) {
+            this.context.setFillStyle(command.fillStyle)
+          }
           break
         case 'strokeStyle':
-          this.context.setStrokeStyle(data[key])
+          if (command.strokeStyle) {
+            this.context.setStrokeStyle(command.strokeStyle)
+          }
           break
         case 'lineWidth':
-          this.context.setLineWidth(data[key])
+          if (typeof command.lineWidth === 'number') {
+            this.context.setLineWidth(command.lineWidth)
+          }
           break
         case 'globalAlpha':
-          this.context.setGlobalAlpha(data[key])
+          if (typeof command.globalAlpha === 'number') {
+            this.context.setGlobalAlpha(command.globalAlpha)
+          }
           break
       }
     })
   }
 
-  private executeClearRect(data: any): void {
-    this.context.clearRect(data.x, data.y, data.width, data.height)
+  private executeClearRect(data: unknown): void {
+    const command = data as ClearRectCommandData
+    this.context.clearRect(command.x, command.y, command.width, command.height)
   }
 
   /**
@@ -666,7 +741,7 @@ export class RenderBridge {
   /**
    * 释放池化对象
    */
-  releasePooledObject(type: string, obj: any): void {
+  releasePooledObject(type: string, obj: unknown): void {
     this.objectPoolManager.release(type, obj)
   }
 

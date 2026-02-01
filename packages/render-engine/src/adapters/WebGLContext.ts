@@ -56,9 +56,6 @@ export class WebGLContext implements IWebGLContext {
   private strokeStyle: string = '#000000'
   private lineWidth: number = 1
   private globalAlpha: number = 1
-  private currentFont: string = '16px Arial'
-  private textAlign: string = 'left'
-  private textBaseline: string = 'alphabetic'
 
   // 管理器
   private shaderManager: ShaderManager
@@ -625,7 +622,9 @@ export class WebGLContext implements IWebGLContext {
       WebGLRenderableFactory.createLine(p3.x, p3.y, p4.x, p4.y, this.lineWidth, color),
       WebGLRenderableFactory.createLine(p4.x, p4.y, p1.x, p1.y, this.lineWidth, color),
     ]
-    lines.forEach((r) => this.batchManager.addRenderable(r))
+    for (const renderable of lines) {
+      this.batchManager.addRenderable(renderable)
+    }
   }
 
   fillCircle(x: number, y: number, radius: number): void {

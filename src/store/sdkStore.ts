@@ -1,8 +1,10 @@
 import {
   type CanvasSDK,
   createCanvasSDK,
+  type ICanvasManager,
   type ICanvasSDKConfig,
   type IShapeEntity,
+  type IToolManager,
   type ShapeEntity,
 } from '@sky-canvas/canvas-sdk'
 import { create } from 'zustand'
@@ -18,8 +20,8 @@ interface SDKState {
   initialize: (canvas: HTMLCanvasElement, config?: ICanvasSDKConfig) => Promise<void>
   updateState: () => void
 
-  getCanvasManager: () => any
-  getToolManager: () => any
+  getCanvasManager: () => ICanvasManager
+  getToolManager: () => IToolManager
   addShape: (entity: ShapeEntity) => void
   removeShape: (id: string) => void
   updateShape: (id: string, updates: Partial<ShapeEntity>) => void

@@ -94,7 +94,7 @@ export class CircleToolViewModel implements ICircleToolViewModel {
     }
   }
 
-  handleMouseUp(x: number, y: number, _event?: MouseEvent): void {
+  handleMouseUp(_x: number, _y: number, _event?: MouseEvent): void {
     if (!this._state.enabled || !this._state.isDrawing) return
     if (!this._state.currentShape) return
 

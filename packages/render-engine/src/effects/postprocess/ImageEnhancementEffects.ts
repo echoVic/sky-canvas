@@ -26,8 +26,8 @@ export class SharpenEffect extends BasePostProcessEffect {
     }
 
     const result = targetData || new ImageData(imageData.width, imageData.height)
-    const data = imageData.data
-    const resultData = result.data
+    const _data = imageData.data
+    const _resultData = result.data
     const { strength, radius } = (this._config as SharpenConfig).parameters
     const intensity = this._config.intensity
 

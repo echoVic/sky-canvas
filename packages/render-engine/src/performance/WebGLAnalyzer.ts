@@ -518,7 +518,9 @@ export class WebGLPerformanceMonitor {
   private startMonitoring(frequency: number): void {
     this.updateInterval = window.setInterval(() => {
       const metrics = this.analyzer.getMetrics()
-      this.callbacks.forEach((callback) => callback(metrics))
+      this.callbacks.forEach((callback) => {
+        callback(metrics)
+      })
     }, frequency)
   }
 

@@ -168,7 +168,10 @@ class BatchRenderer implements IBatchRenderer {
       this._batches.set(batchKey, [])
     }
 
-    const batch = this._batches.get(batchKey)!
+    const batch = this._batches.get(batchKey)
+    if (!batch) {
+      return
+    }
     batch.push(item)
 
     // 如果批次达到最大大小，自动刷新
@@ -211,12 +214,10 @@ class BatchRenderer implements IBatchRenderer {
  */
 class PerformanceProfiler {
   private _metrics = new Map<string, number[]>()
-  private _frameCount = 0
   private _startTime = 0
 
   startFrame(): void {
     this._startTime = performance.now()
-    this._frameCount++
   }
 
   endFrame(): void {
@@ -245,7 +246,7 @@ class PerformanceProfiler {
 
   getMetrics(): Record<string, number> {
     const result: Record<string, number> = {}
-    for (const [name, values] of this._metrics.entries()) {
+    for (const [name, _values] of this._metrics.entries()) {
       if (!name.endsWith('_start')) {
         result[name] = this.getAverageMetric(name)
       }
@@ -258,7 +259,10 @@ class PerformanceProfiler {
       this._metrics.set(name, [])
     }
 
-    const values = this._metrics.get(name)!
+    const values = this._metrics.get(name)
+    if (!values) {
+      return
+    }
     values.push(value)
 
     // 保持最近100个样本
@@ -274,7 +278,6 @@ class PerformanceProfiler {
 
   clear(): void {
     this._metrics.clear()
-    this._frameCount = 0
   }
 }
 

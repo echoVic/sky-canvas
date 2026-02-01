@@ -92,6 +92,10 @@ export class RenderPipelineScheduler extends BaseSystem {
 
   private initializeSubSystems(): void {
     logger.debug('Initializing render pipeline subsystems')
+    void this.resourceSystem
+    void this.shaderSystem
+    void this.cacheSystem
+    void this.monitorSystem
   }
 
   setSubSystems(systems: {

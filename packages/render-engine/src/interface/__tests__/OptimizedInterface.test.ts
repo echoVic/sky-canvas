@@ -120,7 +120,9 @@ describe('ObjectPool', () => {
     }
 
     // 释放所有对象
-    objects.forEach((obj) => pool.release(obj))
+    objects.forEach((obj) => {
+      pool.release(obj)
+    })
 
     const stats = pool.getStats()
     expect(stats.available).toBeLessThanOrEqual(3) // 不应超过最大大小

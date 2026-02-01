@@ -3,8 +3,8 @@
  * 提供事件订阅和发布功能
  */
 
-export class EventEmitter<T extends Record<string, (...args: any[]) => void>> {
-  private listeners: Map<keyof T, Set<Function>> = new Map()
+export class EventEmitter<T extends Record<string, (...args: unknown[]) => void>> {
+  private listeners: Map<keyof T, Set<(...args: unknown[]) => void>> = new Map()
 
   /**
    * 订阅事件
@@ -13,7 +13,7 @@ export class EventEmitter<T extends Record<string, (...args: any[]) => void>> {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }
-    this.listeners.get(event)!.add(listener)
+    this.listeners.get(event)?.add(listener as (...args: unknown[]) => void)
     return this
   }
 
@@ -44,7 +44,7 @@ export class EventEmitter<T extends Record<string, (...args: any[]) => void>> {
   once<K extends keyof T>(event: K, listener: T[K]): this {
     const onceWrapper = ((...args: Parameters<T[K]>) => {
       this.off(event, onceWrapper as T[K])
-      ;(listener as any)(...args)
+      ;(listener as unknown as (...args: Parameters<T[K]>) => void)(...args)
     }) as T[K]
 
     return this.on(event, onceWrapper)
@@ -58,7 +58,7 @@ export class EventEmitter<T extends Record<string, (...args: any[]) => void>> {
     if (eventListeners) {
       eventListeners.forEach((listener) => {
         try {
-          ;(listener as any)(...args)
+          ;(listener as unknown as (...args: Parameters<T[K]>) => void)(...args)
         } catch (error) {
           console.error(`Error in event listener for '${String(event)}':`, error)
         }

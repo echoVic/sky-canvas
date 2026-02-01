@@ -36,6 +36,14 @@ export interface ICanvasInteractionEvent {
   metaKey?: boolean
 }
 
+type CanvasViewListener = (data: unknown) => void
+
+type CanvasViewEventHandlers = {
+  handleMouseEvent: (e: MouseEvent) => void
+  handleWheelEvent: (e: WheelEvent) => void
+  handleKeyEvent: (e: KeyboardEvent) => void
+}
+
 /**
  * 视图配置
  */
@@ -193,8 +201,9 @@ export abstract class BaseCanvasView implements ICanvasView {
   protected canvas!: HTMLCanvasElement
   protected config: ICanvasViewConfig = {}
   protected viewport: IViewportState = { x: 0, y: 0, width: 800, height: 600, zoom: 1 }
-  protected eventListeners = new Map<string, Set<Function>>()
+  protected eventListeners = new Map<string, Set<CanvasViewListener>>()
   protected isInitialized = false
+  private eventHandlers?: CanvasViewEventHandlers
 
   async initialize(canvas: HTMLCanvasElement, config: ICanvasViewConfig = {}): Promise<void> {
     this.canvas = canvas
@@ -289,20 +298,19 @@ export abstract class BaseCanvasView implements ICanvasView {
   abstract exportAsImage(format?: 'png' | 'jpeg' | 'webp', quality?: number): Promise<Blob>
   abstract exportAsSVG(): Promise<string>
 
-  on(event: string, listener: Function): () => void {
+  on(event: string, listener: CanvasViewListener): () => void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set())
     }
 
-    const listeners = this.eventListeners.get(event)!
-    listeners.add(listener)
+    this.eventListeners.get(event)?.add(listener)
 
     return () => {
-      listeners.delete(listener)
+      this.eventListeners.get(event)?.delete(listener)
     }
   }
 
-  protected emit(event: string, data: any): void {
+  protected emit(event: string, data: unknown): void {
     const listeners = this.eventListeners.get(event)
     if (listeners) {
       listeners.forEach((listener) => {
@@ -319,7 +327,7 @@ export abstract class BaseCanvasView implements ICanvasView {
     const handleMouseEvent = (e: MouseEvent) => {
       const canvasPos = this.screenToCanvas(e.clientX, e.clientY)
       const interactionEvent: ICanvasInteractionEvent = {
-        type: e.type as any,
+        type: e.type as ICanvasInteractionEvent['type'],
         clientX: e.clientX,
         clientY: e.clientY,
         canvasX: canvasPos.x,
@@ -356,7 +364,7 @@ export abstract class BaseCanvasView implements ICanvasView {
 
     const handleKeyEvent = (e: KeyboardEvent) => {
       const interactionEvent: ICanvasInteractionEvent = {
-        type: e.type as any,
+        type: e.type as ICanvasInteractionEvent['type'],
         clientX: 0,
         clientY: 0,
         canvasX: 0,
@@ -382,7 +390,7 @@ export abstract class BaseCanvasView implements ICanvasView {
     document.addEventListener('keyup', handleKeyEvent)
 
     // 存储事件处理器以便清理
-    ;(this as any)._eventHandlers = {
+    this.eventHandlers = {
       handleMouseEvent,
       handleWheelEvent,
       handleKeyEvent,
@@ -391,8 +399,8 @@ export abstract class BaseCanvasView implements ICanvasView {
 
   dispose(): void {
     // 清理事件监听器
-    if ((this as any)._eventHandlers) {
-      const handlers = (this as any)._eventHandlers
+    if (this.eventHandlers) {
+      const handlers = this.eventHandlers
       this.canvas.removeEventListener('mousedown', handlers.handleMouseEvent)
       this.canvas.removeEventListener('mousemove', handlers.handleMouseEvent)
       this.canvas.removeEventListener('mouseup', handlers.handleMouseEvent)

@@ -89,7 +89,7 @@ export interface DebugRendererEvents {
   'debug-info-added': { info: DebugInfo }
   'debug-line-added': { line: DebugLine }
   'debug-shape-added': { shape: DebugShape }
-  'debug-cleared': {}
+  'debug-cleared': Record<string, never>
 }
 
 /**
@@ -98,7 +98,6 @@ export interface DebugRendererEvents {
 export class DebugRenderer {
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
-  private gl?: WebGLRenderingContext
 
   private options: DebugRenderOptions
   private eventBus?: IEventBus
@@ -129,10 +128,11 @@ export class DebugRenderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
-    this.ctx = canvas.getContext('2d')!
-    this.gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as
-      | WebGLRenderingContext
-      | undefined
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('2D canvas context not supported')
+    }
+    this.ctx = ctx
 
     this.options = this.createDefaultOptions()
 
@@ -480,9 +480,10 @@ export class DebugRenderer {
     checkboxes.forEach((checkbox, index) => {
       checkbox.addEventListener('change', (e) => {
         const target = e.target as HTMLInputElement
-        const optionKeys = Object.keys(this.options)
-        if (optionKeys[index]) {
-          ;(this.options as any)[optionKeys[index]] = target.checked
+        const optionKeys = Object.keys(this.options) as Array<keyof DebugRenderOptions>
+        const optionKey = optionKeys[index]
+        if (optionKey) {
+          this.options[optionKey] = target.checked
         }
       })
     })

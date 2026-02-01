@@ -30,7 +30,7 @@ export class VortexAffector extends BaseAffector {
     this._enabled = config.enabled !== false
   }
 
-  affect(particle: IParticle, deltaTime: number): void {
+  affect(particle: IParticle, _deltaTime: number): void {
     if (!this.shouldAffect(particle)) {
       return
     }

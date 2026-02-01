@@ -35,7 +35,7 @@ export interface ExtensionMetadata {
   type: ExtensionType | ExtensionType[]
   name: string
   priority?: number
-  ref?: any
+  ref?: unknown
 }
 
 /**
@@ -75,11 +75,11 @@ export class ExtensionRegistry {
     const types = Array.isArray(metadata.type) ? metadata.type : [metadata.type]
 
     for (const type of types) {
-      if (!this.extensions.has(type)) {
-        this.extensions.set(type, new Map())
+      let typeMap = this.extensions.get(type)
+      if (!typeMap) {
+        typeMap = new Map()
+        this.extensions.set(type, typeMap)
       }
-
-      const typeMap = this.extensions.get(type)!
       typeMap.set(metadata.name, extension)
 
       // 按优先级排序
@@ -88,7 +88,9 @@ export class ExtensionRegistry {
       )
 
       typeMap.clear()
-      sorted.forEach(([name, ext]) => typeMap.set(name, ext))
+      for (const [name, ext] of sorted) {
+        typeMap.set(name, ext)
+      }
     }
   }
 
@@ -170,8 +172,8 @@ export class ExtensionRegistry {
    */
   dispose(): void {
     // 销毁所有扩展
-    for (const [type, typeMap] of this.extensions) {
-      for (const [name, extension] of typeMap) {
+    for (const [_type, typeMap] of this.extensions) {
+      for (const [_name, extension] of typeMap) {
         this.destroyExtension(extension)
       }
     }
@@ -204,11 +206,11 @@ export const extensions = new ExtensionRegistry()
  * 扩展装饰器
  */
 export function Extension(metadata: ExtensionMetadata) {
-  return <T extends new (...args: unknown[]) => IExtension>(constructor: T) => {
-    const extensionConstructor = constructor as unknown as ExtensionConstructor
+  return <T extends new (...args: unknown[]) => IExtension>(extensionClass: T) => {
+    const extensionConstructor = extensionClass as unknown as ExtensionConstructor
     extensionConstructor.extension = metadata
     extensions.register(extensionConstructor)
-    return constructor
+    return extensionClass
   }
 }
 

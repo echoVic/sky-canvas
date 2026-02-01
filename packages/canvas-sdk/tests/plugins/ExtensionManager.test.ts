@@ -81,7 +81,9 @@ describe('ExtensionManager', () => {
         createTestExtensionPoint('point-3'),
       ]
 
-      points.forEach((point) => extensionManager.defineExtensionPoint(point))
+      for (const point of points) {
+        extensionManager.defineExtensionPoint(point)
+      }
 
       const allPoints = extensionManager.getAllExtensionPoints()
       expect(allPoints).toHaveLength(3)
@@ -263,7 +265,9 @@ describe('ExtensionManager', () => {
         createTestExtensionPoint('ui-panels', { name: 'UI Panels' }),
       ]
 
-      points.forEach((point) => extensionManager.defineExtensionPoint(point))
+      for (const point of points) {
+        extensionManager.defineExtensionPoint(point)
+      }
 
       const providers = [
         new MockExtensionProvider('tool-1', 'plugin-1'),

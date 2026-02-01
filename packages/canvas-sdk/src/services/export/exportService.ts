@@ -3,7 +3,17 @@
  */
 
 import { createDecorator } from '../../di'
-import type { ShapeEntity } from '../../models/entities/Shape'
+import type {
+  ICircleEntity,
+  IEllipseEntity,
+  IImageEntity,
+  IPathEntity,
+  IPolygonEntity,
+  IRectangleEntity,
+  IStarEntity,
+  ITextEntity,
+  ShapeEntity,
+} from '../../models/entities/Shape'
 
 /**
  * 导出选项接口
@@ -175,50 +185,50 @@ export class ExportService implements IExportService {
 
     switch (shape.type) {
       case 'rectangle': {
-        const rectShape = shape as any
+        const rectShape = shape as IRectangleEntity
         return `<rect x="${transform.position.x}" y="${transform.position.y}" width="${rectShape.size?.width || 100}" height="${rectShape.size?.height || 100}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
       }
 
       case 'circle': {
-        const circleShape = shape as any
+        const circleShape = shape as ICircleEntity
         const cx = transform.position.x
         const cy = transform.position.y
         return `<circle cx="${cx}" cy="${cy}" r="${circleShape.radius || 50}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
       }
 
       case 'ellipse': {
-        const ellipseShape = shape as any
+        const ellipseShape = shape as IEllipseEntity
         return `<ellipse cx="${transform.position.x}" cy="${transform.position.y}" rx="${ellipseShape.radiusX || 50}" ry="${ellipseShape.radiusY || 30}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
       }
 
       case 'polygon': {
-        const polygonShape = shape as any
+        const polygonShape = shape as IPolygonEntity
         const polygonPoints = (polygonShape.points || [])
-          .map((p: any) => `${p.x + transform.position.x},${p.y + transform.position.y}`)
+          .map((p) => `${p.x + transform.position.x},${p.y + transform.position.y}`)
           .join(' ')
         return `<polygon points="${polygonPoints}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
       }
 
       case 'star': {
-        const starShape = shape as any
+        const starShape = shape as IStarEntity
         const starPoints = this.buildStarPoints(starShape)
-          .map((p: any) => `${p.x + transform.position.x},${p.y + transform.position.y}`)
+          .map((p) => `${p.x + transform.position.x},${p.y + transform.position.y}`)
           .join(' ')
         return `<polygon points="${starPoints}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
       }
 
       case 'path': {
-        const pathShape = shape as any
+        const pathShape = shape as IPathEntity
         return `<path d="${pathShape.pathData || 'M 0 0'}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}"/>`
       }
 
       case 'text': {
-        const textShape = shape as any
+        const textShape = shape as ITextEntity
         return `<text x="${transform.position.x}" y="${transform.position.y + (textShape.fontSize || 16)}" font-family="${textShape.fontFamily || 'Arial'}" font-size="${textShape.fontSize || 16}" fill="${fill}">${textShape.content || ''}</text>`
       }
 
       case 'image': {
-        const imageShape = shape as any
+        const imageShape = shape as IImageEntity
         return `<image x="${transform.position.x}" y="${transform.position.y}" width="${imageShape.size?.width || 100}" height="${imageShape.size?.height || 100}" href="${imageShape.src || ''}"/>`
       }
 
@@ -234,12 +244,13 @@ export class ExportService implements IExportService {
   private serializeShape(shape: ShapeEntity): ShapeEntity {
     const cloned = JSON.parse(JSON.stringify(shape)) as ShapeEntity
     if (cloned.type === 'image') {
-      delete (cloned as any).imageData
+      const imageShape = cloned as IImageEntity & { imageData?: unknown }
+      delete imageShape.imageData
     }
     return cloned
   }
 
-  private buildStarPoints(starShape: any): Array<{ x: number; y: number }> {
+  private buildStarPoints(starShape: IStarEntity): Array<{ x: number; y: number }> {
     const points: Array<{ x: number; y: number }> = []
     const count = Math.max(2, Math.floor(starShape.points || 5))
     const outer = starShape.outerRadius || 50

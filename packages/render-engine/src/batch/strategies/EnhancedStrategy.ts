@@ -328,7 +328,7 @@ export class EnhancedStrategy implements IBatchStrategy {
   /**
    * 设置渲染状态
    */
-  private setupRenderState(batch: RenderBatch, projectionMatrix: Matrix3): void {
+  private setupRenderState(batch: RenderBatch, _projectionMatrix: Matrix3): void {
     // 设置混合模式
     this.setBlendMode(batch.key.blendMode)
 

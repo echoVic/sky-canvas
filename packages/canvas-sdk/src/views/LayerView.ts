@@ -152,7 +152,7 @@ export class LayerView {
     element.className = 'layer-item'
     element.style.cssText = `
       height: ${this.config.itemHeight}px;
-      padding-left: ${item.level * this.config.indent!}px;
+      padding-left: ${item.level * (this.config.indent ?? 20)}px;
       display: flex;
       align-items: center;
       background-color: ${item.selected ? this.config.selectedBackgroundColor : this.config.backgroundColor};
@@ -420,13 +420,13 @@ export class LayerView {
   /**
    * 简单的事件发射器
    */
-  private eventListeners = new Map<string, Function[]>()
+  private eventListeners = new Map<string, Array<(data?: unknown) => void>>()
 
-  on(event: string, listener: Function): () => void {
+  on(event: string, listener: (data?: unknown) => void): () => void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }
-    this.eventListeners.get(event)!.push(listener)
+    this.eventListeners.get(event)?.push(listener)
 
     return () => {
       const listeners = this.eventListeners.get(event)
@@ -439,7 +439,7 @@ export class LayerView {
     }
   }
 
-  private emit(event: string, data?: any): void {
+  private emit(event: string, data?: unknown): void {
     const listeners = this.eventListeners.get(event)
     if (listeners) {
       listeners.forEach((listener) => {

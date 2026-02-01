@@ -17,17 +17,12 @@ import type {
   ITransform,
 } from '../graphics/IGraphicsContext'
 
-/**
- * 颜色转换工具
- */
-class ColorUtils {
-  static toCanvasColor(color: IColor | string): string {
-    if (typeof color === 'string') {
-      return color
-    }
-    const { r, g, b, a = 1 } = color
-    return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a})`
+const toCanvasColor = (color: IColor | string): string => {
+  if (typeof color === 'string') {
+    return color
   }
+  const { r, g, b, a = 1 } = color
+  return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, ${a})`
 }
 
 /**
@@ -74,7 +69,10 @@ class Canvas2DContext implements ICanvas2DContext {
   restore(): void {
     this.ctx.restore()
     if (this.stateStack.length > 0) {
-      this.currentState = this.stateStack.pop()!
+      const state = this.stateStack.pop()
+      if (state) {
+        this.currentState = state
+      }
     }
   }
 
@@ -152,13 +150,13 @@ class Canvas2DContext implements ICanvas2DContext {
   }
 
   setFillColor(color: IColor | string): void {
-    const canvasColor = ColorUtils.toCanvasColor(color)
+    const canvasColor = toCanvasColor(color)
     this.ctx.fillStyle = canvasColor
     this.currentState.style.fillColor = color
   }
 
   setStrokeColor(color: IColor | string): void {
-    const canvasColor = ColorUtils.toCanvasColor(color)
+    const canvasColor = toCanvasColor(color)
     this.ctx.strokeStyle = canvasColor
     this.currentState.style.strokeColor = color
   }
@@ -352,7 +350,10 @@ class Canvas2DContext implements ICanvas2DContext {
     const canvas = document.createElement('canvas')
     canvas.width = imageData.width
     canvas.height = imageData.height
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      throw new Error('Failed to get 2d context')
+    }
     const canvasImageData = ctx.createImageData(imageData.width, imageData.height)
     canvasImageData.data.set(imageData.data)
     ctx.putImageData(canvasImageData, 0, 0)
@@ -439,10 +440,10 @@ class Canvas2DContext implements ICanvas2DContext {
 
   private applyStyleToContext(style: Partial<IGraphicsStyle>): void {
     if (style.fillColor !== undefined) {
-      this.ctx.fillStyle = ColorUtils.toCanvasColor(style.fillColor)
+      this.ctx.fillStyle = toCanvasColor(style.fillColor)
     }
     if (style.strokeColor !== undefined) {
-      this.ctx.strokeStyle = ColorUtils.toCanvasColor(style.strokeColor)
+      this.ctx.strokeStyle = toCanvasColor(style.strokeColor)
     }
     if (style.lineWidth !== undefined) {
       this.ctx.lineWidth = style.lineWidth
@@ -457,7 +458,7 @@ class Canvas2DContext implements ICanvas2DContext {
       this.ctx.globalAlpha = style.opacity
     }
     if (style.shadowColor !== undefined) {
-      this.ctx.shadowColor = ColorUtils.toCanvasColor(style.shadowColor)
+      this.ctx.shadowColor = toCanvasColor(style.shadowColor)
     }
     if (style.shadowBlur !== undefined) {
       this.ctx.shadowBlur = style.shadowBlur
@@ -516,7 +517,7 @@ export class Canvas2DContextFactory implements IGraphicsContextFactory<HTMLCanva
   isSupported(): boolean {
     try {
       const canvas = document.createElement('canvas')
-      return !!(canvas.getContext && canvas.getContext('2d'))
+      return !!canvas.getContext?.('2d')
     } catch {
       return false
     }

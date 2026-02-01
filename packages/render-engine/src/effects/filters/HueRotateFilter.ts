@@ -69,7 +69,7 @@ export class HueRotateFilter extends PixelProcessor<HueRotateParameters> {
   /**
    * 获取复杂度因子
    */
-  protected getComplexityFactor(parameters: HueRotateParameters): number {
+  protected getComplexityFactor(_parameters: HueRotateParameters): number {
     return 1.5 // 色相旋转需要RGB-HSL转换，较复杂
   }
 

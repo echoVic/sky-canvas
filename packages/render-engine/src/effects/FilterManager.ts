@@ -15,22 +15,20 @@ import { GrayscaleFilter } from './filters/GrayscaleFilter'
 import { HueRotateFilter } from './filters/HueRotateFilter'
 import { InnerShadowFilter } from './filters/InnerShadowFilter'
 import { SaturationFilter } from './filters/SaturationFilter'
-import {
-  type FilterChainConfig,
-  type FilterContext,
-  FilterEvents,
-  type FilterParameters,
-  type FilterProcessingOptions,
-  type FilterResult,
-  type FilterType,
-  type IFilter,
+import type {
+  FilterChainConfig,
+  FilterContext,
+  FilterParameters,
+  FilterProcessingOptions,
+  FilterResult,
+  FilterType,
+  IFilter,
 } from './types/FilterTypes'
 
 export class FilterManager extends EventEmitter {
   private filters = new Map<FilterType, IFilter>()
   private resultCache = new Map<string, ImageData>()
   private maxCacheSize = 50 // 最大缓存数量
-  private processingQueue: Array<{ id: string; promise: Promise<FilterResult> }> = []
 
   constructor() {
     super()
@@ -85,7 +83,7 @@ export class FilterManager extends EventEmitter {
   async applyFilter(
     imageData: ImageData,
     parameters: FilterParameters,
-    options?: FilterProcessingOptions
+    _options?: FilterProcessingOptions
   ): Promise<FilterResult> {
     const filter = this.filters.get(parameters.type)
     if (!filter) {
@@ -257,9 +255,9 @@ export class FilterManager extends EventEmitter {
    * 获取滤镜性能统计
    */
   getPerformanceStats() {
-    const stats: Array<any> = []
+    const stats: Array<unknown> = []
 
-    for (const [type, filter] of this.filters) {
+    for (const [_type, filter] of this.filters) {
       if ('getPerformanceStats' in filter && typeof filter.getPerformanceStats === 'function') {
         stats.push(filter.getPerformanceStats())
       }
@@ -282,29 +280,6 @@ export class FilterManager extends EventEmitter {
   /**
    * 生成缓存键
    */
-  private generateCacheKey(imageData: ImageData, parameters: FilterParameters): string {
-    const imageHash = this.hashImageData(imageData)
-    const paramsHash = JSON.stringify(parameters)
-    return `${imageHash}_${paramsHash}`
-  }
-
-  /**
-   * 简单的图像数据哈希
-   */
-  private hashImageData(imageData: ImageData): string {
-    let hash = 0
-    const data = imageData.data
-
-    // 采样部分像素来生成哈希
-    const step = Math.max(1, Math.floor(data.length / 1000))
-
-    for (let i = 0; i < data.length; i += step) {
-      hash = ((hash << 5) - hash + data[i]) & 0xffffffff
-    }
-
-    return hash.toString(36)
-  }
-
   /**
    * 清理缓存
    */
@@ -343,7 +318,10 @@ export class FilterManager extends EventEmitter {
       if (!('gpu' in navigator)) {
         return false
       }
-      const adapter = await (navigator as any).gpu.requestAdapter()
+      const navigatorWithGpu = navigator as unknown as {
+        gpu?: { requestAdapter: () => Promise<unknown> }
+      }
+      const adapter = await navigatorWithGpu.gpu?.requestAdapter()
       return !!adapter
     } catch {
       return false
@@ -361,7 +339,6 @@ export class FilterManager extends EventEmitter {
 
     this.filters.clear()
     this.resultCache.clear()
-    this.processingQueue = []
     this.removeAllListeners()
   }
 }

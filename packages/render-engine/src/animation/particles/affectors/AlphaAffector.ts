@@ -24,7 +24,7 @@ export class AlphaAffector extends BaseAffector {
     this.curve.sort((a, b) => a.time - b.time)
   }
 
-  affect(particle: IParticle, deltaTime: number): void {
+  affect(particle: IParticle, _deltaTime: number): void {
     if (!this.shouldAffect(particle)) {
       return
     }
@@ -34,7 +34,7 @@ export class AlphaAffector extends BaseAffector {
       this.initialAlphas.set(particle, particle.alpha)
     }
 
-    const initialAlpha = this.initialAlphas.get(particle)!
+    const initialAlpha = this.initialAlphas.get(particle) ?? particle.alpha
     const lifeProgress = particle.getLifeProgress()
 
     // 应用缓动函数

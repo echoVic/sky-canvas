@@ -149,7 +149,7 @@ export class DrawToolViewModel implements IDrawToolViewModel {
     let path = `M ${points[0].x} ${points[0].y}`
 
     for (let i = 1; i < points.length - 1; i++) {
-      const p0 = points[i - 1]
+      const _p0 = points[i - 1]
       const p1 = points[i]
       const p2 = points[i + 1]
 

@@ -81,7 +81,7 @@ describe('BrightnessFilter', () => {
 
     expect(result.success).toBe(true)
     expect(result.processedImageData).toBeDefined()
-    expect(result.processedImageData!.data[0]).toBe(128)
+    expect(result.processedImageData?.data[0]).toBe(128)
   })
 
   it('应该正确增加亮度', async () => {
@@ -109,8 +109,8 @@ describe('BrightnessFilter', () => {
     const result = await filter.apply(context, params)
 
     expect(result.success).toBe(true)
-    expect(result.processedImageData!.data[0]).toBeGreaterThan(100)
-    expect(result.processedImageData!.data[3]).toBe(255) // Alpha不变
+    expect(result.processedImageData?.data[0]).toBeGreaterThan(100)
+    expect(result.processedImageData?.data[3]).toBe(255) // Alpha不变
   })
 
   it('应该正确降低亮度', async () => {
@@ -138,8 +138,8 @@ describe('BrightnessFilter', () => {
     const result = await filter.apply(context, params)
 
     expect(result.success).toBe(true)
-    expect(result.processedImageData!.data[0]).toBeLessThan(200)
-    expect(result.processedImageData!.data[3]).toBe(255) // Alpha不变
+    expect(result.processedImageData?.data[0]).toBeLessThan(200)
+    expect(result.processedImageData?.data[3]).toBe(255) // Alpha不变
   })
 
   it('应该限制颜色值在0-255范围内', async () => {
@@ -167,8 +167,8 @@ describe('BrightnessFilter', () => {
     const result = await filter.apply(context, params)
 
     expect(result.success).toBe(true)
-    expect(result.processedImageData!.data[0]).toBeLessThanOrEqual(255)
-    expect(result.processedImageData!.data[1]).toBeLessThanOrEqual(255)
-    expect(result.processedImageData!.data[2]).toBeLessThanOrEqual(255)
+    expect(result.processedImageData?.data[0]).toBeLessThanOrEqual(255)
+    expect(result.processedImageData?.data[1]).toBeLessThanOrEqual(255)
+    expect(result.processedImageData?.data[2]).toBeLessThanOrEqual(255)
   })
 })

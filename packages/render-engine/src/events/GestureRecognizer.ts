@@ -4,7 +4,7 @@
 
 import { Vector2 } from '../math/Vector2'
 import { EventDispatcher } from './EventDispatcher'
-import { IGestureEvent, InputEventFactory, type IPoint, type ITouchEvent } from './InputEvents'
+import { InputEventFactory, type IPoint, type ITouchEvent } from './InputEvents'
 
 /**
  * 手势类型枚举
@@ -51,11 +51,9 @@ export class GestureRecognizer extends EventDispatcher {
 
   // 触摸状态
   private _activeTouches: Map<number, IPoint> = new Map()
-  private _lastTouchPositions: IPoint[] = []
   private _lastDistance = 0
   private _lastAngle = 0
   private _lastCenter: IPoint = { x: 0, y: 0 }
-  private _initialCenter: IPoint = { x: 0, y: 0 }
 
   // 手势状态
   private _gestureActive = false
@@ -174,7 +172,7 @@ export class GestureRecognizer extends EventDispatcher {
   /**
    * 处理触摸取消事件
    */
-  handleTouchCancel(event: ITouchEvent): void {
+  handleTouchCancel(_event: ITouchEvent): void {
     if (!this._enabled) return
 
     this._cancelGesture()

@@ -266,6 +266,6 @@ export class BlendModeFactory {
   }
 
   static normal(config?: BlendModeConfig) {
-    return new GenericBlendOperation(BlendMode.NORMAL, (base, overlay) => overlay, config)
+    return new GenericBlendOperation(BlendMode.NORMAL, (_base, overlay) => overlay, config)
   }
 }

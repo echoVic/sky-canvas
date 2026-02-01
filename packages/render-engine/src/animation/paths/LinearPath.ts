@@ -23,7 +23,7 @@ export class LinearPath extends BasePath {
     return this.lerpPoint(this.start, this.end, clamped)
   }
 
-  getTangent(t: number): Point2D {
+  getTangent(_t: number): Point2D {
     const dx = this.end.x - this.start.x
     const dy = this.end.y - this.start.y
 
@@ -35,7 +35,7 @@ export class LinearPath extends BasePath {
     return this.normalizeVector({ x: dx, y: dy })
   }
 
-  getCurvature(t: number): number {
+  getCurvature(_t: number): number {
     // 直线的曲率始终为0
     return 0
   }

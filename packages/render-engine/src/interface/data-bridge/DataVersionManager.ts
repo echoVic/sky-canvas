@@ -172,7 +172,7 @@ export class DataVersionManager {
   private deepClone(obj: unknown): unknown {
     if (obj === null || typeof obj !== 'object') return obj
     if (obj instanceof Date) return new Date(obj.getTime())
-    if (obj instanceof Array) return obj.map((item) => this.deepClone(item))
+    if (Array.isArray(obj)) return obj.map((item) => this.deepClone(item))
 
     const cloned: Record<string, unknown> = {}
     const record = obj as Record<string, unknown>

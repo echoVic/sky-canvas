@@ -364,8 +364,8 @@ export class ArchitectureManager implements IExtension {
    * 检查循环依赖
    */
   private checkForCircularDependency(
-    componentName: string,
-    layer: 'gl' | 'core' | 'feature'
+    _componentName: string,
+    _layer: 'gl' | 'core' | 'feature'
   ): boolean {
     // 简化的循环依赖检查 - 实际项目中应该更复杂
     // 这里返回false表示没有循环依赖
@@ -375,7 +375,7 @@ export class ArchitectureManager implements IExtension {
   /**
    * 检查Feature层依赖
    */
-  private checkForFeatureDependency(componentName: string): boolean {
+  private checkForFeatureDependency(_componentName: string): boolean {
     // 检查Core层组件是否依赖Feature层
     return false
   }
@@ -383,7 +383,7 @@ export class ArchitectureManager implements IExtension {
   /**
    * 检查GL层依赖
    */
-  private checkForGLDependency(componentName: string): boolean {
+  private checkForGLDependency(_componentName: string): boolean {
     // 检查Feature层组件是否直接依赖GL层
     return false
   }

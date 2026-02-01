@@ -182,6 +182,20 @@ export interface IRenderQueueConfig {
   cullMargin: number
 }
 
+export interface RenderQueueStats {
+  totalCommands: number
+  visibleCommands: number
+  totalBatches: number
+  culledCommands: number
+  batches: Array<{
+    commandCount: number
+    estimatedDrawCalls: number
+    memoryUsage: number
+  }>
+  totalDrawCalls: number
+  totalMemoryUsage: number
+}
+
 /**
  * 渲染命令队列
  */
@@ -223,7 +237,7 @@ export interface IRenderQueue {
   /**
    * 获取渲染统计
    */
-  getStats(): any
+  getStats(): RenderQueueStats
 }
 
 /**
@@ -317,7 +331,7 @@ export class RenderQueue implements IRenderQueue {
     }
   }
 
-  getStats() {
+  getStats(): RenderQueueStats {
     const batchStats = Array.from(this.batches.values()).map((batch) => batch.getStats())
     return {
       ...this._stats,
@@ -330,7 +344,7 @@ export class RenderQueue implements IRenderQueue {
   private cullCommands(commands: IRenderCommand[]): IRenderCommand[] {
     if (!this.viewport) return commands
 
-    return commands.filter((command) => command.isVisible(this.viewport!))
+    return commands.filter((command) => command.isVisible(this.viewport))
   }
 
   private executeBatched(context: IGraphicsContext, commands: IRenderCommand[]): void {

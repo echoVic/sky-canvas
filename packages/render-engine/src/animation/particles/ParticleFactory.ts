@@ -52,7 +52,7 @@ export class ParticleFactory implements IParticleFactory {
       return // 点发射器不需要特殊处理
     }
 
-    const basePosition = config.position!
+    const basePosition = config.position ?? { x: 0, y: 0 }
     let newPosition: Point2D
 
     switch (emission.emitterShape) {

@@ -1,7 +1,6 @@
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@heroui/react'
 import {
   Download,
-  Folder,
   FolderOpen,
   HelpCircle,
   Menu,
@@ -10,7 +9,6 @@ import {
   RotateCcw,
   Save,
   Search,
-  Share,
   Sun,
   Terminal,
   Users,
@@ -168,6 +166,7 @@ const MenuDropdown: React.FC = () => {
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">主题</p>
               <div className="flex gap-1.5">
                 <button
+                  type="button"
                   onClick={() => theme !== 'light' && toggleTheme()}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all text-xs ${
                     theme === 'light'
@@ -179,6 +178,7 @@ const MenuDropdown: React.FC = () => {
                   <span>浅色</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => theme !== 'dark' && toggleTheme()}
                   className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all text-xs ${
                     theme === 'dark'
@@ -189,7 +189,10 @@ const MenuDropdown: React.FC = () => {
                   <Moon size={16} />
                   <span>深色</span>
                 </button>
-                <button className="flex flex-col items-center gap-1 p-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-xs">
+                <button
+                  type="button"
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-xs"
+                >
                   <Monitor size={16} />
                   <span>系统</span>
                 </button>
@@ -206,15 +209,21 @@ const MenuDropdown: React.FC = () => {
                   { color: 'bg-blue-50', border: 'border-gray-300', active: false },
                   { color: 'bg-yellow-50', border: 'border-gray-300', active: false },
                   { color: 'bg-pink-50', border: 'border-gray-300', active: false },
-                  { color: 'bg-transparent', border: 'border-gray-300', active: false },
-                ].map((item, index) => (
+                  {
+                    color: 'bg-transparent',
+                    border: 'border-gray-300',
+                    active: false,
+                    isTransparent: true,
+                  },
+                ].map((item) => (
                   <button
-                    key={index}
+                    key={item.color}
+                    type="button"
                     className={`w-6 h-6 rounded-md border-2 transition-all hover:scale-105 ${item.color} ${
                       item.active ? item.border : 'border-gray-200 dark:border-gray-700'
                     }`}
                     style={
-                      index === 5
+                      item.isTransparent
                         ? {
                             background:
                               'repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 6px 6px',

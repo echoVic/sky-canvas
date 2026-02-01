@@ -148,7 +148,11 @@ describe('FilterUtils', () => {
       canvas = document.createElement('canvas')
       canvas.width = 10
       canvas.height = 10
-      ctx = canvas.getContext('2d')!
+      const context = canvas.getContext('2d')
+      if (!context) {
+        throw new Error('Cannot create 2D context for test')
+      }
+      ctx = context
     })
 
     it('应该从Canvas获取ImageData', () => {

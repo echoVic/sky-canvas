@@ -28,7 +28,7 @@ export interface RenderState {
 // 渲染命令接口
 export interface RenderCommand {
   type: string
-  execute(context: any, state?: any): void
+  execute(context: RenderContext, state?: RenderState): void
 }
 
 // 基础渲染器接口
@@ -85,7 +85,7 @@ export abstract class BaseRenderer implements Renderer {
   initialize?(canvas: HTMLCanvasElement): boolean | Promise<boolean>
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  update(deltaTime: number): void {
+  update(_deltaTime: number): void {
     // 更新所有可绘制对象
     this.drawables.forEach((drawable) => {
       if (drawable.visible) {
@@ -130,7 +130,10 @@ export abstract class BaseRenderer implements Renderer {
 
   popState(): void {
     if (this.stateStack.length > 0) {
-      this.renderState = this.stateStack.pop()!
+      const previousState = this.stateStack.pop()
+      if (previousState) {
+        this.renderState = previousState
+      }
     }
   }
 

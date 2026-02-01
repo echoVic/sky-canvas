@@ -305,8 +305,11 @@ describe('遮罩系统', () => {
       const clonedMask = maskManager.cloneMask(originalMask.id)
 
       expect(clonedMask).toBeDefined()
-      expect(clonedMask!.id).not.toBe(originalMask.id)
-      expect(clonedMask!.config).toEqual(originalMask.config)
+      if (!clonedMask) {
+        throw new Error('clonedMask should be defined')
+      }
+      expect(clonedMask.id).not.toBe(originalMask.id)
+      expect(clonedMask.config).toEqual(originalMask.config)
       expect(maskManager.getAllMasks()).toHaveLength(2)
     })
   })

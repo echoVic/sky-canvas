@@ -7,7 +7,7 @@ import { PathAnimation } from '../animations/PathAnimation'
 import { PathType, type SplinePathConfig } from '../types/PathTypes'
 
 describe('PathAnimation', () => {
-  let mockTarget: any
+  let mockTarget: Record<string, unknown>
 
   beforeEach(() => {
     // 创建模拟动画目标对象
@@ -528,7 +528,7 @@ describe('PathAnimation', () => {
         path: pathConfig,
       })
 
-      animation.on('pathUpdate', (anim: any, motionInfo: any) => {
+      animation.on('pathUpdate', (anim, motionInfo) => {
         expect(anim).toBe(animation)
         expect(motionInfo.position).toBeDefined()
         expect(motionInfo.tangent).toBeDefined()
