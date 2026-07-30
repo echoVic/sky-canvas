@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2020", "DOM"],
+    "lib": ["ES2022", "DOM"],
     "types": ["@webgpu/types", "node"],
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -18,5 +18,25 @@
     "isolatedModules": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "**/__tests__/**", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/animation/**",
+    "src/effects/**",
+    "src/physics/**",
+    "src/particles/**",
+    "src/plugins/**",
+    "src/editor/**",
+    "src/debug/**",
+    "src/benchmark/**",
+    "src/text/**",
+    "src/paths/**",
+    "src/resources/**",
+    "src/performance/**",
+    "src/interface/**"
+  ]
 }

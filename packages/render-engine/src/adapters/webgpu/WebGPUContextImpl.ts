@@ -17,6 +17,7 @@ import {
   getGPU,
   type WebGPUContextConfig,
   type WebGPUDeviceInfo,
+  type WebGPURenderState,
 } from './WebGPUTypes'
 
 /**
@@ -36,6 +37,9 @@ export class WebGPUContext implements IGraphicsContext {
   private gpuContext: GPUCanvasContext | null = null
   private format: GPUTextureFormat = 'bgra8unorm'
   private renderer: WebGPURenderer | null = null
+
+  // 渲染状态(viewport/裁剪/混合模式等),供无限画布视口逻辑读取
+  private renderState: WebGPURenderState
 
   readonly width: number
   readonly height: number
