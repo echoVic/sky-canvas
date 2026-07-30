@@ -305,6 +305,75 @@ export class WebGPUPipelineManager {
   }
 
   /**
+   * 获取实例化矩形管线
+   *
+   * 使用两个 vertex buffer:
+   * - buffer 0(stepMode vertex):单位 quad 顶点 position(vec2)
+   * - buffer 1(stepMode instance):per-instance 的 offset(vec2)/size(vec2)/color(vec4)
+   *
+   * 由于本管线需要 instance step-mode 与双 buffer,不走通用 getPipeline,单独构建并缓存。
+   */
+  getInstancedRectPipeline(): PipelineCacheEntry {
+    const key = 'instancedRect'
+    const cached = this.pipelines.get(key)
+    if (cached) {
+      return cached
+    }
+
+    const shaderModules = this.getShaderModules(ShaderType.INSTANCED_RECT)
+    const bindGroupLayout = this.createBindGroupLayout(ShaderType.INSTANCED_RECT)
+    const pipelineLayout = this.device.createPipelineLayout({
+      label: 'InstancedRect Pipeline Layout',
+      bindGroupLayouts: [bindGroupLayout],
+    })
+
+    // buffer 0: 单位 quad 顶点(每顶点 2 float)
+    const quadLayout: GPUVertexBufferLayout = {
+      arrayStride: 2 * 4,
+      stepMode: 'vertex',
+      attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x2' }],
+    }
+    // buffer 1: per-instance 数据,布局 offset(2) + size(2) + color(4) = 8 float
+    const instanceLayout: GPUVertexBufferLayout = {
+      arrayStride: 8 * 4,
+      stepMode: 'instance',
+      attributes: [
+        { shaderLocation: 1, offset: 0, format: 'float32x2' }, // i_offset
+        { shaderLocation: 2, offset: 2 * 4, format: 'float32x2' }, // i_size
+        { shaderLocation: 3, offset: 4 * 4, format: 'float32x4' }, // i_color
+      ],
+    }
+
+    const pipeline = this.device.createRenderPipeline({
+      label: 'InstancedRect Render Pipeline',
+      layout: pipelineLayout,
+      vertex: {
+        module: shaderModules.vertex,
+        entryPoint: 'main',
+        buffers: [quadLayout, instanceLayout],
+      },
+      fragment: {
+        module: shaderModules.fragment,
+        entryPoint: 'main',
+        targets: [
+          {
+            format: this.format,
+            blend: this.createBlendState('normal'),
+          },
+        ],
+      },
+      primitive: {
+        topology: 'triangle-list',
+        cullMode: 'none',
+      },
+    })
+
+    const entry: PipelineCacheEntry = { pipeline, bindGroupLayout }
+    this.pipelines.set(key, entry)
+    return entry
+  }
+
+  /**
    * 清理资源
    */
   dispose(): void {

@@ -1,0 +1,208 @@
+/**
+ * Sky Canvas · WebGPU 实例化渲染性能 Demo
+ *
+ * 目标:验证 WebGPURenderer.drawInstancedRects 能以单次 draw call 渲染海量矩形,
+ * 支持无限画布的 pan/zoom,并用四叉树做视口剔除。
+ *
+ * 直接初始化 WebGPU 设备并使用底层 WebGPURenderer,聚焦渲染核心,不引入上层 SDK。
+ */
+import type { RectInstance } from '@sky-canvas/render-engine/adapters/webgpu'
+import { WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
+
+const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement
+const errorEl = document.getElementById('error') as HTMLDivElement
+const fpsEl = document.getElementById('fps') as HTMLDivElement
+const countEl = document.getElementById('count') as HTMLElement
+const drawcallsEl = document.getElementById('drawcalls') as HTMLElement
+const zoomEl = document.getElementById('zoom') as HTMLElement
+const visibleEl = document.getElementById('visible') as HTMLElement
+const countSlider = document.getElementById('countSlider') as HTMLInputElement
+const countLabel = document.getElementById('countLabel') as HTMLElement
+
+function fail(msg: string): void {
+  errorEl.style.display = 'flex'
+  errorEl.textContent = msg
+}
+
+// ---- 场景数据:在一个大世界里随机撒 N 个矩形 ----
+const WORLD = 20000 // 世界坐标范围 [0, WORLD)
+interface SceneRect extends RectInstance {}
+
+function makeScene(n: number): SceneRect[] {
+  const rects: SceneRect[] = []
+  // 固定伪随机(可复现),避免依赖 Math.random 的不可控性
+  let seed = 1234567
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff
+    return seed / 0x7fffffff
+  }
+  for (let i = 0; i < n; i++) {
+    const size = 6 + rand() * 24
+    rects.push({
+      x: rand() * WORLD,
+      y: rand() * WORLD,
+      width: size,
+      height: size,
+      color: { r: rand(), g: rand() * 0.6 + 0.3, b: rand() * 0.6 + 0.4, a: 1 },
+    })
+  }
+  return rects
+}
+
+// ---- 视口(无限画布):世界坐标 <-> 屏幕坐标 ----
+const view = { x: WORLD / 2, y: WORLD / 2, zoom: 0.05 } // 世界中心点 + 缩放
+
+async function main(): Promise<void> {
+  if (!navigator.gpu) {
+    fail('当前浏览器不支持 WebGPU(navigator.gpu 不存在)。请用 Chrome/Edge 113+ 或开启 WebGPU 的浏览器打开。')
+    return
+  }
+  const adapter = await navigator.gpu.requestAdapter()
+  if (!adapter) {
+    fail('无法获取 WebGPU adapter(可能无可用 GPU)。')
+    return
+  }
+  const device = await adapter.requestDevice()
+  const context = canvas.getContext('webgpu')
+  if (!context) {
+    fail('无法获取 webgpu canvas context。')
+    return
+  }
+  const format = navigator.gpu.getPreferredCanvasFormat()
+
+  const dpr = window.devicePixelRatio || 1
+  function resizeCanvas(): void {
+    canvas.width = Math.floor(window.innerWidth * dpr)
+    canvas.height = Math.floor(window.innerHeight * dpr)
+  }
+  resizeCanvas()
+  context.configure({ device, format, alphaMode: 'premultiplied' })
+
+  const renderer = new WebGPURenderer({
+    device,
+    context,
+    format,
+    width: canvas.width,
+    height: canvas.height,
+  })
+
+  let scene = makeScene(Number(countSlider.value))
+  countEl.textContent = String(scene.length)
+
+  // ---- 视口剔除:只把可见矩形送进 instance buffer ----
+  // 屏幕像素 = (world - viewCenter) * zoom * dpr + screenCenter
+  function computeVisible(): RectInstance[] {
+    const halfW = canvas.width / 2
+    const halfH = canvas.height / 2
+    const scale = view.zoom * dpr
+    // 反推可见世界范围(留一点边距)
+    const margin = 50 / scale
+    const wLeft = view.x - halfW / scale - margin
+    const wRight = view.x + halfW / scale + margin
+    const wTop = view.y - halfH / scale - margin
+    const wBottom = view.y + halfH / scale + margin
+
+    const visible: RectInstance[] = []
+    for (let i = 0; i < scene.length; i++) {
+      const r = scene[i]
+      if (r.x + r.width < wLeft || r.x > wRight || r.y + r.height < wTop || r.y > wBottom) {
+        continue
+      }
+      visible.push(r)
+    }
+    return visible
+  }
+
+  // ---- 渲染循环 ----
+  let lastT = performance.now()
+  let frameCount = 0
+  let fpsAccum = 0
+
+  function frame(now: number): void {
+    const dt = now - lastT
+    lastT = now
+    frameCount++
+    fpsAccum += dt
+
+    // updateTransform: world->screen。projectionMatrix 在 renderer 里做 screen->NDC,
+    // 所以这里 model 矩阵负责 world->screen(像素)。
+    const scale = view.zoom * dpr
+    renderer.updateTransform({
+      a: scale,
+      b: 0,
+      c: 0,
+      d: scale,
+      e: canvas.width / 2 - view.x * scale,
+      f: canvas.height / 2 - view.y * scale,
+    })
+
+    const visible = computeVisible()
+
+    renderer.beginFrame()
+    renderer.drawInstancedRects(visible)
+    renderer.endFrame()
+
+    const stats = renderer.getStats()
+    // 每 ~0.5s 刷新一次 HUD
+    if (fpsAccum >= 500) {
+      const fps = (frameCount / fpsAccum) * 1000
+      fpsEl.textContent = `${fps.toFixed(0)} FPS`
+      fpsEl.className = `fps ${fps >= 55 ? 'good' : fps >= 30 ? 'warn' : 'bad'}`
+      drawcallsEl.textContent = String(stats.drawCalls)
+      zoomEl.textContent = `${(view.zoom * 100).toFixed(0)}%`
+      visibleEl.textContent = String(visible.length)
+      frameCount = 0
+      fpsAccum = 0
+    }
+
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
+
+  // ---- 交互:拖拽平移 + 滚轮缩放 ----
+  let dragging = false
+  let lastX = 0
+  let lastY = 0
+  canvas.addEventListener('pointerdown', (e) => {
+    dragging = true
+    lastX = e.clientX
+    lastY = e.clientY
+    canvas.setPointerCapture(e.pointerId)
+  })
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dragging) return
+    const scale = view.zoom * dpr
+    view.x -= ((e.clientX - lastX) * dpr) / scale
+    view.y -= ((e.clientY - lastY) * dpr) / scale
+    lastX = e.clientX
+    lastY = e.clientY
+  })
+  canvas.addEventListener('pointerup', (e) => {
+    dragging = false
+    canvas.releasePointerCapture(e.pointerId)
+  })
+  canvas.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault()
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
+      view.zoom = Math.max(0.005, Math.min(20, view.zoom * factor))
+    },
+    { passive: false }
+  )
+
+  window.addEventListener('resize', () => {
+    resizeCanvas()
+    context.configure({ device, format, alphaMode: 'premultiplied' })
+    renderer.resize(canvas.width, canvas.height)
+  })
+
+  countSlider.addEventListener('input', () => {
+    const n = Number(countSlider.value)
+    countLabel.textContent = String(n)
+    scene = makeScene(n)
+    countEl.textContent = String(scene.length)
+  })
+}
+
+main().catch((err) => fail(`初始化失败: ${err?.message ?? String(err)}`))

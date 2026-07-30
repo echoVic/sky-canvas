@@ -20,6 +20,42 @@ export interface WebGPURendererConfig {
 }
 
 /**
+ * 实例化矩形数据(世界坐标下的位置/尺寸/颜色)
+ */
+export interface RectInstance {
+  x: number
+  y: number
+  width: number
+  height: number
+  color: Color
+}
+
+/** 每个实例的 float 数量:offset.xy + size.xy + color.rgba */
+export const RECT_INSTANCE_STRIDE = 8
+
+/**
+ * 将矩形实例数组打包为紧凑的 Float32Array(布局与 instance vertex buffer 一致)。
+ * 纯函数,便于单测:每实例 8 float = [x, y, width, height, r, g, b, a]。
+ */
+export function packRectInstances(rects: RectInstance[]): Float32Array {
+  const count = rects.length
+  const data = new Float32Array(count * RECT_INSTANCE_STRIDE)
+  for (let i = 0; i < count; i++) {
+    const r = rects[i]
+    const o = i * RECT_INSTANCE_STRIDE
+    data[o] = r.x
+    data[o + 1] = r.y
+    data[o + 2] = r.width
+    data[o + 3] = r.height
+    data[o + 4] = r.color.r
+    data[o + 5] = r.color.g
+    data[o + 6] = r.color.b
+    data[o + 7] = r.color.a
+  }
+  return data
+}
+
+/**
  * WebGPU 渲染器
  */
 export class WebGPURenderer {
@@ -39,6 +75,13 @@ export class WebGPURenderer {
   // Uniform 缓冲区
   private uniformBuffer: GPUBuffer | null = null
   private uniformBindGroup: GPUBindGroup | null = null
+
+  // 实例化渲染:单位 quad 的顶点/索引缓冲只创建一次并复用
+  private quadVertexBuffer: GPUBuffer | null = null
+  private quadIndexBuffer: GPUBuffer | null = null
+  // 复用的 instance 缓冲(容量不足时按需扩容)
+  private instanceBuffer: GPUBuffer | null = null
+  private instanceBufferCapacity = 0
 
   // 统计信息
   private stats = {
@@ -251,6 +294,69 @@ export class WebGPURenderer {
   }
 
   /**
+   * 确保单位 quad 缓冲已创建(顶点 (0,0)-(1,1),两个三角形)。只创建一次并复用。
+   */
+  private ensureQuadBuffers(): void {
+    if (this.quadVertexBuffer && this.quadIndexBuffer) return
+    // 单位 quad 的 4 个顶点(x,y),shader 里以 i_offset + position * i_size 展开
+    const quad = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3])
+    this.quadVertexBuffer = this.bufferManager.createVertexBuffer(quad, 'InstancedRect Quad VB')
+    this.quadIndexBuffer = this.bufferManager.createIndexBuffer(indices, 'InstancedRect Quad IB')
+  }
+
+  /**
+   * 实例化绘制矩形:一次 drawIndexed 渲染全部矩形。
+   *
+   * 每个实例 8 个 float:offset.xy + size.xy + color.rgba。
+   * 相比逐个 fillRect(每个矩形一次 draw call + 建/毁 buffer),这里 draw call 恒为 1,
+   * 是支撑「10 万对象 60fps」的关键路径。
+   *
+   * @param instanceData 打包好的实例数据(长度必须是 8 的倍数),或 RectInstance 数组
+   */
+  drawInstancedRects(instanceData: Float32Array | RectInstance[]): void {
+    if (!this.renderPass || !this.uniformBindGroup) return
+
+    // 归一化为 Float32Array(每实例 8 float)
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packRectInstances(instanceData)
+    const count = Math.floor(data.length / 8)
+    if (count === 0) return
+
+    this.ensureQuadBuffers()
+    const quadVB = this.quadVertexBuffer
+    const quadIB = this.quadIndexBuffer
+    if (!quadVB || !quadIB) return
+
+    // 复用 instance buffer,容量不足时按需扩容(2 倍增长,减少重建次数)
+    const byteLength = data.byteLength
+    if (!this.instanceBuffer || this.instanceBufferCapacity < byteLength) {
+      this.instanceBuffer?.destroy()
+      const newCapacity = Math.max(byteLength, this.instanceBufferCapacity * 2)
+      this.instanceBuffer = this.device.createBuffer({
+        label: 'InstancedRect Instance Buffer',
+        size: newCapacity,
+        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      })
+      this.instanceBufferCapacity = newCapacity
+    }
+    this.device.queue.writeBuffer(this.instanceBuffer, 0, data, 0, count * 8)
+
+    const { pipeline } = this.pipelineManager.getInstancedRectPipeline()
+    this.renderPass.setPipeline(pipeline)
+    this.renderPass.setBindGroup(0, this.uniformBindGroup)
+    this.renderPass.setVertexBuffer(0, quadVB)
+    this.renderPass.setVertexBuffer(1, this.instanceBuffer)
+    this.renderPass.setIndexBuffer(quadIB, 'uint16')
+    this.renderPass.drawIndexed(6, count)
+
+    // 统计:draw call 恒为 1,与逐个绘制形成对比
+    this.stats.drawCalls++
+    this.stats.triangles += count * 2
+    this.stats.vertices += count * 4
+  }
+
+  /**
    * 调整大小
    */
   resize(width: number, height: number): void {
@@ -273,6 +379,13 @@ export class WebGPURenderer {
       this.uniformBuffer.destroy()
       this.uniformBuffer = null
     }
+    this.quadVertexBuffer?.destroy()
+    this.quadVertexBuffer = null
+    this.quadIndexBuffer?.destroy()
+    this.quadIndexBuffer = null
+    this.instanceBuffer?.destroy()
+    this.instanceBuffer = null
+    this.instanceBufferCapacity = 0
     this.bufferManager.dispose()
     this.pipelineManager.dispose()
   }

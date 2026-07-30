@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sky Canvas · WebGPU 实例化性能 Demo</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #0d1117; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      #gpu-canvas { display: block; width: 100vw; height: 100vh; cursor: grab; }
+      #gpu-canvas:active { cursor: grabbing; }
+      #hud {
+        position: fixed; top: 12px; left: 12px; color: #e6edf3;
+        background: rgba(22, 27, 34, 0.85); border: 1px solid #30363d; border-radius: 8px;
+        padding: 12px 16px; font-size: 13px; line-height: 1.7; pointer-events: none;
+        min-width: 220px; backdrop-filter: blur(4px);
+      }
+      #hud b { color: #58a6ff; }
+      #hud .fps { font-size: 20px; font-weight: 700; }
+      #hud .fps.good { color: #3fb950; }
+      #hud .fps.warn { color: #d29922; }
+      #hud .fps.bad { color: #f85149; }
+      #controls {
+        position: fixed; bottom: 12px; left: 12px; color: #8b949e;
+        background: rgba(22, 27, 34, 0.85); border: 1px solid #30363d; border-radius: 8px;
+        padding: 10px 14px; font-size: 12px; line-height: 1.6;
+      }
+      #controls label { color: #e6edf3; }
+      #controls input { vertical-align: middle; }
+      #error {
+        position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+        background: #0d1117; color: #f85149; font-size: 16px; text-align: center; padding: 40px;
+        line-height: 1.8;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gpu-canvas"></canvas>
+    <div id="hud">
+      <div class="fps" id="fps">-- FPS</div>
+      <div>对象数: <b id="count">0</b></div>
+      <div>Draw calls: <b id="drawcalls">0</b></div>
+      <div>缩放: <b id="zoom">100%</b></div>
+      <div>可见(剔除后): <b id="visible">0</b></div>
+    </div>
+    <div id="controls">
+      <label>对象数量: <span id="countLabel">100000</span></label><br />
+      <input type="range" id="countSlider" min="1000" max="500000" step="1000" value="100000" style="width: 260px" />
+      <br />拖拽平移 · 滚轮缩放
+    </div>
+    <div id="error"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

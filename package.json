@@ -39,6 +39,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:demo": "vite --config examples/perf-demo/vite.config.ts",
+    "build:demo": "vite build --config examples/perf-demo/vite.config.ts",
     "dev:full": "pnpm build:packages && pnpm dev",
     "build": "tsc && vite build",
     "build:packages": "tsc && pnpm -r build",

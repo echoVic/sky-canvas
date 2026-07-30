@@ -57,6 +57,46 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
 `
 
 /**
+ * 实例化矩形顶点着色器
+ * 一次 drawIndexed 渲染海量矩形:共享单位 quad,per-instance 传 offset/size/color。
+ * 顶点世界坐标 = i_offset + position * i_size,再过 model/projection。
+ */
+export const INSTANCED_RECT_VERTEX_SHADER = /* wgsl */ `
+struct Uniforms {
+  projectionMatrix: mat3x3<f32>,
+  modelMatrix: mat3x3<f32>,
+}
+
+struct VertexInput {
+  @location(0) position: vec2<f32>,
+  @location(1) i_offset: vec2<f32>,
+  @location(2) i_size: vec2<f32>,
+  @location(3) i_color: vec4<f32>,
+}
+
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) color: vec4<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+
+  let worldPos = input.i_offset + input.position * input.i_size;
+  let modelPos = uniforms.modelMatrix * vec3<f32>(worldPos, 1.0);
+  let projPos = uniforms.projectionMatrix * modelPos;
+
+  output.position = vec4<f32>(projPos.xy, 0.0, 1.0);
+  output.color = input.i_color;
+
+  return output;
+}
+`
+
+/**
  * 带纹理的顶点着色器
  */
 export const TEXTURED_VERTEX_SHADER = /* wgsl */ `
@@ -274,6 +314,7 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
  */
 export enum ShaderType {
   BASIC_2D = 'basic2d',
+  INSTANCED_RECT = 'instancedRect',
   TEXTURED = 'textured',
   CIRCLE = 'circle',
   LINE = 'line',
@@ -285,6 +326,10 @@ export enum ShaderType {
 export const SHADER_SOURCES: Record<ShaderType, { vertex: string; fragment: string }> = {
   [ShaderType.BASIC_2D]: {
     vertex: BASIC_2D_VERTEX_SHADER,
+    fragment: BASIC_FRAGMENT_SHADER,
+  },
+  [ShaderType.INSTANCED_RECT]: {
+    vertex: INSTANCED_RECT_VERTEX_SHADER,
     fragment: BASIC_FRAGMENT_SHADER,
   },
   [ShaderType.TEXTURED]: {
