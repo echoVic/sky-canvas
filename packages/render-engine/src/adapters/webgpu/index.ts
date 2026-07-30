@@ -20,15 +20,31 @@ export { WebGPUGeometry } from './WebGPUGeometry'
 export type { PipelineConfig } from './WebGPUPipelineManager'
 // 管线管理
 export { WebGPUPipelineManager } from './WebGPUPipelineManager'
-export type { RectInstance, WebGPURendererConfig } from './WebGPURenderer'
+export type {
+  CircleInstance,
+  LineInstance,
+  RectInstance,
+  WebGPURendererConfig,
+} from './WebGPURenderer'
 // 渲染器
-export { WebGPURenderer } from './WebGPURenderer'
+export {
+  CIRCLE_INSTANCE_STRIDE,
+  LINE_INSTANCE_STRIDE,
+  packCircleInstances,
+  packLineInstances,
+  packRectInstances,
+  RECT_INSTANCE_STRIDE,
+  WebGPURenderer,
+} from './WebGPURenderer'
 // 着色器
 export {
   BASIC_2D_VERTEX_SHADER,
   BASIC_FRAGMENT_SHADER,
   CIRCLE_FRAGMENT_SHADER,
   CIRCLE_VERTEX_SHADER,
+  INSTANCED_CIRCLE_FRAGMENT_SHADER,
+  INSTANCED_CIRCLE_VERTEX_SHADER,
+  INSTANCED_LINE_VERTEX_SHADER,
   INSTANCED_RECT_VERTEX_SHADER,
   LINE_FRAGMENT_SHADER,
   LINE_VERTEX_SHADER,

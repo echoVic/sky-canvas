@@ -6,7 +6,11 @@
  *
  * 直接初始化 WebGPU 设备并使用底层 WebGPURenderer,聚焦渲染核心,不引入上层 SDK。
  */
-import type { RectInstance } from '@sky-canvas/render-engine/adapters/webgpu'
+import type {
+  CircleInstance,
+  LineInstance,
+  RectInstance,
+} from '@sky-canvas/render-engine/adapters/webgpu'
 import { WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
 
 const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement
@@ -49,12 +53,56 @@ function makeScene(n: number): SceneRect[] {
   return rects
 }
 
+// 固定伪随机工厂(可复现)
+function makeRand(seedInit: number): () => number {
+  let seed = seedInit
+  return () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff
+    return seed / 0x7fffffff
+  }
+}
+
+// 少量圆 + 线,用于视觉验证圆(SDF)与线段实例化渲染是否正确
+function makeCircles(n: number): CircleInstance[] {
+  const rand = makeRand(2024)
+  const out: CircleInstance[] = []
+  for (let i = 0; i < n; i++) {
+    out.push({
+      cx: rand() * WORLD,
+      cy: rand() * WORLD,
+      radius: 40 + rand() * 120,
+      color: { r: rand() * 0.4 + 0.6, g: rand() * 0.4, b: rand() * 0.4, a: 0.9 },
+    })
+  }
+  return out
+}
+
+function makeLines(n: number): LineInstance[] {
+  const rand = makeRand(777)
+  const out: LineInstance[] = []
+  for (let i = 0; i < n; i++) {
+    const x = rand() * WORLD
+    const y = rand() * WORLD
+    out.push({
+      x1: x,
+      y1: y,
+      x2: x + (rand() - 0.5) * 1500,
+      y2: y + (rand() - 0.5) * 1500,
+      width: 4 + rand() * 12,
+      color: { r: rand() * 0.4, g: rand() * 0.5 + 0.5, b: rand() * 0.4 + 0.6, a: 0.85 },
+    })
+  }
+  return out
+}
+
 // ---- 视口(无限画布):世界坐标 <-> 屏幕坐标 ----
 const view = { x: WORLD / 2, y: WORLD / 2, zoom: 0.05 } // 世界中心点 + 缩放
 
 async function main(): Promise<void> {
   if (!navigator.gpu) {
-    fail('当前浏览器不支持 WebGPU(navigator.gpu 不存在)。请用 Chrome/Edge 113+ 或开启 WebGPU 的浏览器打开。')
+    fail(
+      '当前浏览器不支持 WebGPU(navigator.gpu 不存在)。请用 Chrome/Edge 113+ 或开启 WebGPU 的浏览器打开。'
+    )
     return
   }
   const adapter = await navigator.gpu.requestAdapter()
@@ -88,6 +136,9 @@ async function main(): Promise<void> {
 
   let scene = makeScene(Number(countSlider.value))
   countEl.textContent = String(scene.length)
+  // 少量圆/线,叠加在矩形之上,验证 SDF 圆与线段实例化渲染
+  const circles = makeCircles(200)
+  const lines = makeLines(200)
 
   // ---- 视口剔除:只把可见矩形送进 instance buffer ----
   // 屏幕像素 = (world - viewCenter) * zoom * dpr + screenCenter
@@ -140,6 +191,8 @@ async function main(): Promise<void> {
 
     renderer.beginFrame()
     renderer.drawInstancedRects(visible)
+    renderer.drawInstancedLines(lines)
+    renderer.drawInstancedCircles(circles)
     renderer.endFrame()
 
     const stats = renderer.getStats()

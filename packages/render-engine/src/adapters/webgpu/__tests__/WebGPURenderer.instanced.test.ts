@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { packRectInstances, RECT_INSTANCE_STRIDE, type RectInstance } from '../WebGPURenderer'
+import {
+  CIRCLE_INSTANCE_STRIDE,
+  type CircleInstance,
+  LINE_INSTANCE_STRIDE,
+  type LineInstance,
+  packCircleInstances,
+  packLineInstances,
+  packRectInstances,
+  RECT_INSTANCE_STRIDE,
+  type RectInstance,
+} from '../WebGPURenderer'
 
 describe('packRectInstances', () => {
   it('每实例打包为 8 个 float,布局为 [x,y,w,h,r,g,b,a]', () => {
@@ -42,5 +52,48 @@ describe('packRectInstances', () => {
   it('空数组返回空 Float32Array', () => {
     const data = packRectInstances([])
     expect(data.length).toBe(0)
+  })
+})
+
+describe('packCircleInstances', () => {
+  it('每实例 7 float,布局为 [cx,cy,radius,r,g,b,a]', () => {
+    const circles: CircleInstance[] = [
+      { cx: 100, cy: 200, radius: 15, color: { r: 1, g: 0, b: 0, a: 1 } },
+    ]
+    const data = packCircleInstances(circles)
+    expect(data.length).toBe(CIRCLE_INSTANCE_STRIDE)
+    expect(data[0]).toBe(100)
+    expect(data[1]).toBe(200)
+    expect(data[2]).toBe(15)
+    expect(data[3]).toBe(1)
+    expect(data[6]).toBe(1)
+  })
+
+  it('多实例连续排布,第二个从 offset 7 起', () => {
+    const data = packCircleInstances([
+      { cx: 1, cy: 2, radius: 3, color: { r: 0, g: 0, b: 0, a: 1 } },
+      { cx: 4, cy: 5, radius: 6, color: { r: 1, g: 1, b: 1, a: 1 } },
+    ])
+    expect(data.length).toBe(2 * CIRCLE_INSTANCE_STRIDE)
+    expect(data[7]).toBe(4)
+    expect(data[8]).toBe(5)
+    expect(data[9]).toBe(6)
+  })
+})
+
+describe('packLineInstances', () => {
+  it('每实例 9 float,布局为 [x1,y1,x2,y2,width,r,g,b,a]', () => {
+    const lines: LineInstance[] = [
+      { x1: 0, y1: 0, x2: 10, y2: 20, width: 2, color: { r: 0.5, g: 0.6, b: 0.7, a: 0.8 } },
+    ]
+    const data = packLineInstances(lines)
+    expect(data.length).toBe(LINE_INSTANCE_STRIDE)
+    expect(Array.from(data.slice(0, 5))).toEqual([0, 0, 10, 20, 2])
+    expect(data[8]).toBeCloseTo(0.8, 5)
+  })
+
+  it('空数组返回空 Float32Array', () => {
+    expect(packLineInstances([]).length).toBe(0)
+    expect(packCircleInstances([]).length).toBe(0)
   })
 })

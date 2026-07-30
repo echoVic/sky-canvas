@@ -56,6 +56,76 @@ export function packRectInstances(rects: RectInstance[]): Float32Array {
 }
 
 /**
+ * 实例化圆形数据(世界坐标下的圆心/半径/颜色)
+ */
+export interface CircleInstance {
+  cx: number
+  cy: number
+  radius: number
+  color: Color
+}
+
+/** 每个实例的 float 数量:center.xy + radius + color.rgba */
+export const CIRCLE_INSTANCE_STRIDE = 7
+
+/**
+ * 将圆形实例数组打包为紧凑 Float32Array:每实例 7 float = [cx, cy, radius, r, g, b, a]。
+ */
+export function packCircleInstances(circles: CircleInstance[]): Float32Array {
+  const count = circles.length
+  const data = new Float32Array(count * CIRCLE_INSTANCE_STRIDE)
+  for (let i = 0; i < count; i++) {
+    const c = circles[i]
+    const o = i * CIRCLE_INSTANCE_STRIDE
+    data[o] = c.cx
+    data[o + 1] = c.cy
+    data[o + 2] = c.radius
+    data[o + 3] = c.color.r
+    data[o + 4] = c.color.g
+    data[o + 5] = c.color.b
+    data[o + 6] = c.color.a
+  }
+  return data
+}
+
+/**
+ * 实例化线段数据(世界坐标下的两端点/线宽/颜色)
+ */
+export interface LineInstance {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  width: number
+  color: Color
+}
+
+/** 每个实例的 float 数量:p1.xy + p2.xy + width + color.rgba */
+export const LINE_INSTANCE_STRIDE = 9
+
+/**
+ * 将线段实例数组打包为紧凑 Float32Array:每实例 9 float = [x1,y1,x2,y2,width,r,g,b,a]。
+ */
+export function packLineInstances(lines: LineInstance[]): Float32Array {
+  const count = lines.length
+  const data = new Float32Array(count * LINE_INSTANCE_STRIDE)
+  for (let i = 0; i < count; i++) {
+    const l = lines[i]
+    const o = i * LINE_INSTANCE_STRIDE
+    data[o] = l.x1
+    data[o + 1] = l.y1
+    data[o + 2] = l.x2
+    data[o + 3] = l.y2
+    data[o + 4] = l.width
+    data[o + 5] = l.color.r
+    data[o + 6] = l.color.g
+    data[o + 7] = l.color.b
+    data[o + 8] = l.color.a
+  }
+  return data
+}
+
+/**
  * WebGPU 渲染器
  */
 export class WebGPURenderer {
@@ -76,10 +146,10 @@ export class WebGPURenderer {
   private uniformBuffer: GPUBuffer | null = null
   private uniformBindGroup: GPUBindGroup | null = null
 
-  // 实例化渲染:单位 quad 的顶点/索引缓冲只创建一次并复用
-  private quadVertexBuffer: GPUBuffer | null = null
-  private quadIndexBuffer: GPUBuffer | null = null
-  // 复用的 instance 缓冲(容量不足时按需扩容)
+  // 实例化渲染:不同图元用不同的单位 quad(rect: 0~1;circle: -1~1;line: x 0~1,y -0.5~0.5)
+  // 每种 quad 的 顶点/索引缓冲只创建一次并按 key 缓存
+  private quadBuffers = new Map<string, { vertex: GPUBuffer; index: GPUBuffer }>()
+  // 复用的 instance 缓冲(所有图元共用一块,容量不足时按需扩容)
   private instanceBuffer: GPUBuffer | null = null
   private instanceBufferCapacity = 0
 
@@ -294,66 +364,119 @@ export class WebGPURenderer {
   }
 
   /**
-   * 确保单位 quad 缓冲已创建(顶点 (0,0)-(1,1),两个三角形)。只创建一次并复用。
+   * 获取(或惰性创建)某种图元的单位 quad 顶点/索引缓冲,按 key 缓存复用。
+   * @param key 缓存键
+   * @param quad 4 个顶点的 x,y(共 8 个 float)
    */
-  private ensureQuadBuffers(): void {
-    if (this.quadVertexBuffer && this.quadIndexBuffer) return
-    // 单位 quad 的 4 个顶点(x,y),shader 里以 i_offset + position * i_size 展开
-    const quad = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])
+  private getQuadBuffers(key: string, quad: Float32Array): { vertex: GPUBuffer; index: GPUBuffer } {
+    const cached = this.quadBuffers.get(key)
+    if (cached) return cached
     const indices = new Uint16Array([0, 1, 2, 0, 2, 3])
-    this.quadVertexBuffer = this.bufferManager.createVertexBuffer(quad, 'InstancedRect Quad VB')
-    this.quadIndexBuffer = this.bufferManager.createIndexBuffer(indices, 'InstancedRect Quad IB')
+    const entry = {
+      vertex: this.bufferManager.createVertexBuffer(quad, `${key} Quad VB`),
+      index: this.bufferManager.createIndexBuffer(indices, `${key} Quad IB`),
+    }
+    this.quadBuffers.set(key, entry)
+    return entry
   }
 
   /**
-   * 实例化绘制矩形:一次 drawIndexed 渲染全部矩形。
-   *
-   * 每个实例 8 个 float:offset.xy + size.xy + color.rgba。
-   * 相比逐个 fillRect(每个矩形一次 draw call + 建/毁 buffer),这里 draw call 恒为 1,
-   * 是支撑「10 万对象 60fps」的关键路径。
-   *
-   * @param instanceData 打包好的实例数据(长度必须是 8 的倍数),或 RectInstance 数组
+   * 确保 instance buffer 容量足够并写入数据(容量不足时按 2 倍扩容,复用不重建)。
    */
-  drawInstancedRects(instanceData: Float32Array | RectInstance[]): void {
-    if (!this.renderPass || !this.uniformBindGroup) return
-
-    // 归一化为 Float32Array(每实例 8 float)
-    const data =
-      instanceData instanceof Float32Array ? instanceData : packRectInstances(instanceData)
-    const count = Math.floor(data.length / 8)
-    if (count === 0) return
-
-    this.ensureQuadBuffers()
-    const quadVB = this.quadVertexBuffer
-    const quadIB = this.quadIndexBuffer
-    if (!quadVB || !quadIB) return
-
-    // 复用 instance buffer,容量不足时按需扩容(2 倍增长,减少重建次数)
+  private uploadInstanceData(data: Float32Array): void {
     const byteLength = data.byteLength
     if (!this.instanceBuffer || this.instanceBufferCapacity < byteLength) {
       this.instanceBuffer?.destroy()
       const newCapacity = Math.max(byteLength, this.instanceBufferCapacity * 2)
       this.instanceBuffer = this.device.createBuffer({
-        label: 'InstancedRect Instance Buffer',
+        label: 'Instanced Instance Buffer',
         size: newCapacity,
         usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
       })
       this.instanceBufferCapacity = newCapacity
     }
-    this.device.queue.writeBuffer(this.instanceBuffer, 0, data, 0, count * 8)
+    this.device.queue.writeBuffer(this.instanceBuffer, 0, data, 0, data.length)
+  }
 
-    const { pipeline } = this.pipelineManager.getInstancedRectPipeline()
+  /**
+   * 通用实例化绘制:一次 drawIndexed(6, count) 渲染全部实例,draw call 恒为 1。
+   */
+  private drawInstanced(
+    quadKey: string,
+    quad: Float32Array,
+    pipeline: GPURenderPipeline,
+    data: Float32Array,
+    strideFloats: number
+  ): void {
+    if (!this.renderPass || !this.uniformBindGroup) return
+    const count = Math.floor(data.length / strideFloats)
+    if (count === 0) return
+
+    const { vertex, index } = this.getQuadBuffers(quadKey, quad)
+    this.uploadInstanceData(data)
+    if (!this.instanceBuffer) return
+
     this.renderPass.setPipeline(pipeline)
     this.renderPass.setBindGroup(0, this.uniformBindGroup)
-    this.renderPass.setVertexBuffer(0, quadVB)
+    this.renderPass.setVertexBuffer(0, vertex)
     this.renderPass.setVertexBuffer(1, this.instanceBuffer)
-    this.renderPass.setIndexBuffer(quadIB, 'uint16')
+    this.renderPass.setIndexBuffer(index, 'uint16')
     this.renderPass.drawIndexed(6, count)
 
-    // 统计:draw call 恒为 1,与逐个绘制形成对比
     this.stats.drawCalls++
     this.stats.triangles += count * 2
     this.stats.vertices += count * 4
+  }
+
+  // 各图元的单位 quad 定义
+  private static readonly QUAD_RECT = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])
+  private static readonly QUAD_CIRCLE = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1])
+  private static readonly QUAD_LINE = new Float32Array([0, -0.5, 1, -0.5, 1, 0.5, 0, 0.5])
+
+  /**
+   * 实例化绘制矩形。每实例 8 float:offset.xy + size.xy + color.rgba。
+   * 相比逐个 fillRect,draw call 恒为 1,是支撑海量对象 60fps 的关键路径。
+   */
+  drawInstancedRects(instanceData: Float32Array | RectInstance[]): void {
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packRectInstances(instanceData)
+    this.drawInstanced(
+      'rect',
+      WebGPURenderer.QUAD_RECT,
+      this.pipelineManager.getInstancedRectPipeline().pipeline,
+      data,
+      RECT_INSTANCE_STRIDE
+    )
+  }
+
+  /**
+   * 实例化绘制圆形(SDF 抗锯齿)。每实例 7 float:center.xy + radius + color.rgba。
+   */
+  drawInstancedCircles(instanceData: Float32Array | CircleInstance[]): void {
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packCircleInstances(instanceData)
+    this.drawInstanced(
+      'circle',
+      WebGPURenderer.QUAD_CIRCLE,
+      this.pipelineManager.getInstancedCirclePipeline().pipeline,
+      data,
+      CIRCLE_INSTANCE_STRIDE
+    )
+  }
+
+  /**
+   * 实例化绘制线段。每实例 9 float:p1.xy + p2.xy + width + color.rgba。
+   */
+  drawInstancedLines(instanceData: Float32Array | LineInstance[]): void {
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packLineInstances(instanceData)
+    this.drawInstanced(
+      'line',
+      WebGPURenderer.QUAD_LINE,
+      this.pipelineManager.getInstancedLinePipeline().pipeline,
+      data,
+      LINE_INSTANCE_STRIDE
+    )
   }
 
   /**
@@ -379,10 +502,11 @@ export class WebGPURenderer {
       this.uniformBuffer.destroy()
       this.uniformBuffer = null
     }
-    this.quadVertexBuffer?.destroy()
-    this.quadVertexBuffer = null
-    this.quadIndexBuffer?.destroy()
-    this.quadIndexBuffer = null
+    for (const { vertex, index } of this.quadBuffers.values()) {
+      vertex.destroy()
+      index.destroy()
+    }
+    this.quadBuffers.clear()
     this.instanceBuffer?.destroy()
     this.instanceBuffer = null
     this.instanceBufferCapacity = 0
