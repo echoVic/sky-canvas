@@ -79,6 +79,23 @@ describe('packCircleInstances', () => {
     expect(data[8]).toBe(5)
     expect(data[9]).toBe(6)
   })
+
+  it('CIRCLE_INSTANCE_STRIDE 为 7,且颜色四通道完整落位在 offset 3~6', () => {
+    expect(CIRCLE_INSTANCE_STRIDE).toBe(7)
+    const data = packCircleInstances([
+      { cx: 0, cy: 0, radius: 1, color: { r: 0.11, g: 0.22, b: 0.33, a: 0.44 } },
+    ])
+    expect(data[3]).toBeCloseTo(0.11, 5)
+    expect(data[4]).toBeCloseTo(0.22, 5)
+    expect(data[5]).toBeCloseTo(0.33, 5)
+    expect(data[6]).toBeCloseTo(0.44, 5)
+  })
+
+  it('空数组返回空 Float32Array', () => {
+    const data = packCircleInstances([])
+    expect(data).toBeInstanceOf(Float32Array)
+    expect(data.length).toBe(0)
+  })
 })
 
 describe('packLineInstances', () => {
@@ -89,7 +106,24 @@ describe('packLineInstances', () => {
     const data = packLineInstances(lines)
     expect(data.length).toBe(LINE_INSTANCE_STRIDE)
     expect(Array.from(data.slice(0, 5))).toEqual([0, 0, 10, 20, 2])
+    expect(data[5]).toBeCloseTo(0.5, 5)
+    expect(data[6]).toBeCloseTo(0.6, 5)
+    expect(data[7]).toBeCloseTo(0.7, 5)
     expect(data[8]).toBeCloseTo(0.8, 5)
+  })
+
+  it('LINE_INSTANCE_STRIDE 为 9,多实例连续排布,第二个从 offset 9 起', () => {
+    expect(LINE_INSTANCE_STRIDE).toBe(9)
+    const data = packLineInstances([
+      { x1: 1, y1: 2, x2: 3, y2: 4, width: 5, color: { r: 0, g: 0, b: 0, a: 1 } },
+      { x1: 11, y1: 12, x2: 13, y2: 14, width: 15, color: { r: 1, g: 1, b: 1, a: 1 } },
+    ])
+    expect(data.length).toBe(2 * LINE_INSTANCE_STRIDE)
+    expect(data[9]).toBe(11)
+    expect(data[10]).toBe(12)
+    expect(data[11]).toBe(13)
+    expect(data[12]).toBe(14)
+    expect(data[13]).toBe(15)
   })
 
   it('空数组返回空 Float32Array', () => {

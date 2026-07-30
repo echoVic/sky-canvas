@@ -149,9 +149,9 @@ export class WebGPURenderer {
   // 实例化渲染:不同图元用不同的单位 quad(rect: 0~1;circle: -1~1;line: x 0~1,y -0.5~0.5)
   // 每种 quad 的 顶点/索引缓冲只创建一次并按 key 缓存
   private quadBuffers = new Map<string, { vertex: GPUBuffer; index: GPUBuffer }>()
-  // 复用的 instance 缓冲(所有图元共用一块,容量不足时按需扩容)
-  private instanceBuffer: GPUBuffer | null = null
-  private instanceBufferCapacity = 0
+  // 每种图元一块独立的 instance 缓冲,按 key 缓存(容量不足时按需扩容)。
+  // 独立分块可避免同一帧内多种图元共用一块 buffer、后写覆盖前写导致的数据错乱。
+  private instanceBuffers = new Map<string, { buffer: GPUBuffer; capacity: number }>()
 
   // 统计信息
   private stats = {
@@ -381,25 +381,32 @@ export class WebGPURenderer {
   }
 
   /**
-   * 确保 instance buffer 容量足够并写入数据(容量不足时按 2 倍扩容,复用不重建)。
+   * 确保某图元的 instance buffer 容量足够并写入数据(容量不足时按 2 倍扩容,复用不重建),
+   * 返回该图元专属的 buffer。每种图元独立分块,避免同帧多图元互相覆盖。
    */
-  private uploadInstanceData(data: Float32Array): void {
+  private uploadInstanceData(key: string, data: Float32Array): GPUBuffer {
     const byteLength = data.byteLength
-    if (!this.instanceBuffer || this.instanceBufferCapacity < byteLength) {
-      this.instanceBuffer?.destroy()
-      const newCapacity = Math.max(byteLength, this.instanceBufferCapacity * 2)
-      this.instanceBuffer = this.device.createBuffer({
-        label: 'Instanced Instance Buffer',
-        size: newCapacity,
-        usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-      })
-      this.instanceBufferCapacity = newCapacity
+    let slot = this.instanceBuffers.get(key)
+    if (!slot || slot.capacity < byteLength) {
+      slot?.buffer.destroy()
+      const newCapacity = Math.max(byteLength, (slot?.capacity ?? 0) * 2)
+      slot = {
+        buffer: this.device.createBuffer({
+          label: `Instanced Instance Buffer (${key})`,
+          size: newCapacity,
+          usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        }),
+        capacity: newCapacity,
+      }
+      this.instanceBuffers.set(key, slot)
     }
-    this.device.queue.writeBuffer(this.instanceBuffer, 0, data, 0, data.length)
+    this.device.queue.writeBuffer(slot.buffer, 0, data, 0, data.length)
+    return slot.buffer
   }
 
   /**
    * 通用实例化绘制:一次 drawIndexed(6, count) 渲染全部实例,draw call 恒为 1。
+   * 每种图元(quadKey)使用独立的 instance buffer,同帧多图元互不覆盖。
    */
   private drawInstanced(
     quadKey: string,
@@ -413,13 +420,12 @@ export class WebGPURenderer {
     if (count === 0) return
 
     const { vertex, index } = this.getQuadBuffers(quadKey, quad)
-    this.uploadInstanceData(data)
-    if (!this.instanceBuffer) return
+    const instanceBuffer = this.uploadInstanceData(quadKey, data)
 
     this.renderPass.setPipeline(pipeline)
     this.renderPass.setBindGroup(0, this.uniformBindGroup)
     this.renderPass.setVertexBuffer(0, vertex)
-    this.renderPass.setVertexBuffer(1, this.instanceBuffer)
+    this.renderPass.setVertexBuffer(1, instanceBuffer)
     this.renderPass.setIndexBuffer(index, 'uint16')
     this.renderPass.drawIndexed(6, count)
 
@@ -507,9 +513,10 @@ export class WebGPURenderer {
       index.destroy()
     }
     this.quadBuffers.clear()
-    this.instanceBuffer?.destroy()
-    this.instanceBuffer = null
-    this.instanceBufferCapacity = 0
+    for (const { buffer } of this.instanceBuffers.values()) {
+      buffer.destroy()
+    }
+    this.instanceBuffers.clear()
     this.bufferManager.dispose()
     this.pipelineManager.dispose()
   }
