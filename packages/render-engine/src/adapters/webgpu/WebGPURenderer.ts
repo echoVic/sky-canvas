@@ -158,6 +158,9 @@ export class WebGPURenderer {
   private glyphAtlas: GlyphAtlas | null = null
   private glyphTexture: GPUTexture | null = null
   private glyphBindGroup: GPUBindGroup | null = null
+  // 帧内 drawText 调用序号:每次 drawText 用唯一的 instance buffer key,
+  // 避免同帧多段文字写入同一块 buffer 后写覆盖前写。beginFrame 时重置。
+  private glyphDrawSeq = 0
 
   // 统计信息
   private stats = {
@@ -235,6 +238,7 @@ export class WebGPURenderer {
    */
   beginFrame(): void {
     this.stats = { drawCalls: 0, triangles: 0, vertices: 0 }
+    this.glyphDrawSeq = 0
 
     this.commandEncoder = this.device.createCommandEncoder({
       label: 'Frame Command Encoder',
@@ -562,8 +566,9 @@ export class WebGPURenderer {
       data[o + 11] = color.a
     }
 
+    // quad 只读可共用 'glyph';instance buffer 每次调用用唯一 key,避免同帧多段文字互相覆盖
     const { vertex, index } = this.getQuadBuffers('glyph', WebGPURenderer.QUAD_RECT)
-    const instanceBuffer = this.uploadInstanceData('glyph', data)
+    const instanceBuffer = this.uploadInstanceData(`glyph_${this.glyphDrawSeq++}`, data)
     const { pipeline } = this.pipelineManager.getInstancedGlyphPipeline()
 
     this.renderPass.setPipeline(pipeline)
