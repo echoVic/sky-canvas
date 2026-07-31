@@ -3,8 +3,21 @@
  * 提供高效的空间查询和视锥剔除功能
  */
 
-import type { IRenderCommand } from '../commands/IRenderCommand'
 import type { IRect } from '../graphics/IGraphicsContext'
+
+/**
+ * 空间索引只依赖对象的包围盒。任何实现 `getBounds(): IRect` 的对象都可被索引,
+ * 不必是完整的 IRenderCommand——这样四叉树/哈希网格可服务于任意可定界对象
+ * (如渲染引擎的图元、上层业务对象)。IRenderCommand 结构上满足本接口。
+ */
+export interface IBoundedObject {
+  getBounds(): IRect
+  /** 可选的精确可见性判断;缺省时 CullingManager 退化为包围盒相交判断。 */
+  isVisible?(viewport: IRect): boolean
+}
+
+// 本模块内部沿用 IRenderCommand 这一名字,实际约束放宽为 IBoundedObject。
+type IRenderCommand = IBoundedObject
 
 /**
  * 空间节点接口
@@ -420,9 +433,18 @@ export class CullingManager {
       visibleObjects = this.spatialIndex.query(expandedViewport)
     }
 
-    // 精确剔除检查
+    // 精确剔除检查:对象自带 isVisible 时用之,否则退化为包围盒与视口相交判断
     const finalVisibleObjects = visibleObjects.filter((object) => {
-      return object.isVisible(viewport)
+      if (object.isVisible) {
+        return object.isVisible(viewport)
+      }
+      const b = object.getBounds()
+      return !(
+        b.x + b.width < viewport.x ||
+        b.x > viewport.x + viewport.width ||
+        b.y + b.height < viewport.y ||
+        b.y > viewport.y + viewport.height
+      )
     })
 
     // 更新统计信息

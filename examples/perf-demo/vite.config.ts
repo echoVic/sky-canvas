@@ -10,6 +10,10 @@ export default defineConfig({
         __dirname,
         '../../packages/render-engine/src/adapters/webgpu/index.ts'
       ),
+      '@sky-canvas/render-engine/culling': resolve(
+        __dirname,
+        '../../packages/render-engine/src/culling/index.ts'
+      ),
       '@sky-canvas/render-engine': resolve(__dirname, '../../packages/render-engine/src/index.ts'),
     },
   },

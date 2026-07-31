@@ -12,6 +12,7 @@ import type {
   RectInstance,
 } from '@sky-canvas/render-engine/adapters/webgpu'
 import { WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
+import { QuadTreeNode } from '@sky-canvas/render-engine/culling'
 
 const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement
 const errorEl = document.getElementById('error') as HTMLDivElement
@@ -30,7 +31,10 @@ function fail(msg: string): void {
 
 // ---- 场景数据:在一个大世界里随机撒 N 个矩形 ----
 const WORLD = 20000 // 世界坐标范围 [0, WORLD)
-interface SceneRect extends RectInstance {}
+// 场景矩形:实现 getBounds 以便放入四叉树做视口剔除
+interface SceneRect extends RectInstance {
+  getBounds(): { x: number; y: number; width: number; height: number }
+}
 
 function makeScene(n: number): SceneRect[] {
   const rects: SceneRect[] = []
@@ -42,12 +46,17 @@ function makeScene(n: number): SceneRect[] {
   }
   for (let i = 0; i < n; i++) {
     const size = 6 + rand() * 24
+    const x = rand() * WORLD
+    const y = rand() * WORLD
     rects.push({
-      x: rand() * WORLD,
-      y: rand() * WORLD,
+      x,
+      y,
       width: size,
       height: size,
       color: { r: rand(), g: rand() * 0.6 + 0.3, b: rand() * 0.6 + 0.4, a: 1 },
+      getBounds() {
+        return { x: this.x, y: this.y, width: this.width, height: this.height }
+      },
     })
   }
   return rects
@@ -140,28 +149,29 @@ async function main(): Promise<void> {
   const circles = makeCircles(200)
   const lines = makeLines(200)
 
-  // ---- 视口剔除:只把可见矩形送进 instance buffer ----
-  // 屏幕像素 = (world - viewCenter) * zoom * dpr + screenCenter
+  // 构建四叉树:一次插入全部矩形,之后每帧按视口 query,近似 O(可见数),
+  // 相比线性扫描全场景在放大(可见占比小)时优势显著。
+  function buildTree(rects: SceneRect[]): QuadTreeNode {
+    const tree = new QuadTreeNode({ x: 0, y: 0, width: WORLD, height: WORLD }, 16, 8)
+    for (const r of rects) tree.addObject(r)
+    return tree
+  }
+  let tree = buildTree(scene)
+
+  // ---- 视口剔除:用四叉树查询可见矩形,只把可见的送进 instance buffer ----
   function computeVisible(): RectInstance[] {
     const halfW = canvas.width / 2
     const halfH = canvas.height / 2
     const scale = view.zoom * dpr
-    // 反推可见世界范围(留一点边距)
     const margin = 50 / scale
-    const wLeft = view.x - halfW / scale - margin
-    const wRight = view.x + halfW / scale + margin
-    const wTop = view.y - halfH / scale - margin
-    const wBottom = view.y + halfH / scale + margin
-
-    const visible: RectInstance[] = []
-    for (let i = 0; i < scene.length; i++) {
-      const r = scene[i]
-      if (r.x + r.width < wLeft || r.x > wRight || r.y + r.height < wTop || r.y > wBottom) {
-        continue
-      }
-      visible.push(r)
+    const region = {
+      x: view.x - halfW / scale - margin,
+      y: view.y - halfH / scale - margin,
+      width: (canvas.width + 100) / scale,
+      height: (canvas.height + 100) / scale,
     }
-    return visible
+    // QuadTreeNode.query 返回落在 region 的对象(SceneRect 满足 RectInstance)
+    return tree.query(region) as unknown as RectInstance[]
   }
 
   // ---- 渲染循环 ----
@@ -254,6 +264,7 @@ async function main(): Promise<void> {
     const n = Number(countSlider.value)
     countLabel.textContent = String(n)
     scene = makeScene(n)
+    tree = buildTree(scene)
     countEl.textContent = String(scene.length)
   })
 }
