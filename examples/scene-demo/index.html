@@ -3,20 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sky Canvas · 声明式场景 Demo(JSON → 画布)</title>
+    <title>Sky Canvas · 面向 agent 的画布编辑闭环 Demo</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body { width: 100%; height: 100%; overflow: hidden; background: #0d1117; font-family: ui-monospace, Menlo, monospace; color: #e6edf3; }
       #app { display: flex; width: 100vw; height: 100vh; }
-      #left { width: 460px; display: flex; flex-direction: column; border-right: 1px solid #30363d; }
-      #toolbar { padding: 10px 12px; border-bottom: 1px solid #30363d; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-      #toolbar b { color: #58a6ff; }
-      select, button { background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 5px 10px; font-family: inherit; font-size: 12px; cursor: pointer; }
+      #left { width: 500px; display: flex; flex-direction: column; border-right: 1px solid #30363d; overflow-y: auto; }
+      section { border-bottom: 1px solid #30363d; }
+      .head { padding: 8px 12px; font-size: 12px; color: #58a6ff; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .head b { color: #58a6ff; }
+      select, button, input { background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 5px 9px; font-family: inherit; font-size: 12px; cursor: pointer; }
+      input { cursor: text; }
       button:hover, select:hover { border-color: #58a6ff; }
-      #editor { flex: 1; width: 100%; background: #010409; color: #c9d1d9; border: none; padding: 12px; font-family: inherit; font-size: 12.5px; line-height: 1.6; resize: none; outline: none; }
-      #status { padding: 8px 12px; font-size: 12px; border-top: 1px solid #30363d; min-height: 34px; }
-      #status.ok { color: #3fb950; }
-      #status.err { color: #f85149; white-space: pre-wrap; }
+      button.primary { background: #238636; border-color: #2ea043; }
+      textarea { width: 100%; background: #010409; color: #c9d1d9; border: none; padding: 10px 12px; font-family: inherit; font-size: 12px; line-height: 1.55; resize: vertical; outline: none; }
+      #editor { height: 150px; }
+      #ops { height: 96px; }
+      #snap { height: 150px; color: #7ee787; white-space: pre; overflow: auto; }
+      #llmInstr { flex: 1; min-width: 140px; }
+      .status { padding: 6px 12px; font-size: 11.5px; min-height: 28px; }
+      .status.ok { color: #3fb950; }
+      .status.err { color: #f85149; white-space: pre-wrap; }
+      .hint { color: #8b949e; font-size: 11px; padding: 0 12px 8px; line-height: 1.5; }
       #right { flex: 1; position: relative; }
       #gpu-canvas { display: block; width: 100%; height: 100%; }
       #err-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 40px; color: #f85149; line-height: 1.8; }
@@ -25,13 +33,47 @@
   <body>
     <div id="app">
       <div id="left">
-        <div id="toolbar">
-          <b>场景 JSON</b>
-          <select id="examples"></select>
-          <button id="render">渲染 ▶</button>
-        </div>
-        <textarea id="editor" spellcheck="false"></textarea>
-        <div id="status" class="ok">就绪</div>
+        <!-- 1. 全量装载:声明式 Scene JSON(阶段 B) -->
+        <section>
+          <div class="head">
+            <b>① 全量装载 Scene</b>
+            <select id="examples"></select>
+            <button id="load">装载 ▶</button>
+          </div>
+          <textarea id="editor" spellcheck="false"></textarea>
+        </section>
+
+        <!-- 2. 快照:文档当前状态(读) -->
+        <section>
+          <div class="head">
+            <b>② 快照 snapshot(读)</b>
+            <label style="font-size:11px;color:#8b949e"><input type="checkbox" id="vpOnly" style="cursor:pointer" /> 仅视口</label>
+            <button id="refresh">刷新</button>
+          </div>
+          <textarea id="snap" readonly spellcheck="false"></textarea>
+        </section>
+
+        <!-- 3. ops 控制台:增量编辑(写) -->
+        <section>
+          <div class="head"><b>③ ops 控制台(写)</b><button id="apply">应用 ops ▶</button></div>
+          <textarea id="ops" spellcheck="false" placeholder='[{"op":"move","id":"n7","dx":0,"dy":40},{"op":"update","id":"n7","patch":{"color":"#3fb950"}}]'></textarea>
+        </section>
+
+        <!-- 4. 真接 LLM:自然语言 → ops -->
+        <section>
+          <div class="head"><b>④ LLM 编辑(读快照→吐 ops)</b></div>
+          <div class="head">
+            <input id="llmKey" type="password" placeholder="Anthropic API Key (sk-ant-...)" style="flex:1;min-width:160px" />
+            <input id="llmModel" value="claude-sonnet-4-6" style="width:150px" />
+          </div>
+          <div class="head">
+            <input id="llmInstr" type="text" placeholder="例:把登录按钮改成绿色并下移 20px" />
+            <button id="llmGo" class="primary">生成并应用 ▶</button>
+          </div>
+          <div class="hint">Key 仅存本地内存、直连 Anthropic(浏览器直连模式),不经任何中转。</div>
+        </section>
+
+        <div id="status" class="status ok">就绪</div>
       </div>
       <div id="right">
         <canvas id="gpu-canvas"></canvas>
