@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type IBoundedObject, QuadTreeNode } from '../SpatialPartitioning'
+import { CullingManager, type IBoundedObject, QuadTreeNode } from '../SpatialPartitioning'
 
 // 松绑回归:四叉树应能索引任意「只实现 getBounds」的对象(不必是完整 IRenderCommand)
 interface Box extends IBoundedObject {
@@ -45,5 +45,44 @@ describe('QuadTreeNode with IBoundedObject', () => {
       const b = h.getBounds()
       expect(b.x + b.width >= region.x && b.x <= region.x + region.width).toBe(true)
     }
+  })
+})
+
+// 本轮 diff 新增:CullingManager.cull 的精确剔除对无 isVisible 的对象退化为
+// 包围盒相交判断;有 isVisible 时优先用之。此分支在既有测试中未覆盖。
+describe('CullingManager.cull isVisible 可选回退', () => {
+  it('对象无 isVisible 时,退化为包围盒与视口相交判断(相交保留,不相交剔除)', () => {
+    const tree = new QuadTreeNode({ x: 0, y: 0, width: 1000, height: 1000 }, 4, 5)
+    const inside = box(1, 100, 100, 10, 10) // 落在视口内
+    const outside = box(2, 900, 900, 10, 10) // 落在视口外
+    tree.addObject(inside)
+    tree.addObject(outside)
+
+    // cullMargin=0,使精确剔除判定不被扩展视口干扰
+    const mgr = new CullingManager(tree, 0)
+    const visible = mgr.cull({ x: 0, y: 0, width: 200, height: 200 })
+
+    expect(visible).toContain(inside)
+    expect(visible).not.toContain(outside)
+  })
+
+  it('对象自带 isVisible 时优先使用其返回值(覆盖包围盒结论)', () => {
+    const tree = new QuadTreeNode({ x: 0, y: 0, width: 1000, height: 1000 }, 4, 5)
+    // 包围盒落在视口内,但 isVisible 显式返回 false => 应被剔除
+    const obj: IBoundedObject & { id: number } = {
+      id: 1,
+      getBounds: () => ({ x: 100, y: 100, width: 10, height: 10 }),
+      isVisible: () => false,
+    }
+    tree.addObject(obj)
+
+    const mgr = new CullingManager(tree, 0)
+    const visible = mgr.cull({ x: 0, y: 0, width: 200, height: 200 })
+
+    expect(visible).not.toContain(obj)
+    // 统计:查询命中 1,精确剔除后可见 0,被剔除 1
+    const stats = mgr.getStats()
+    expect(stats.visibleObjects).toBe(0)
+    expect(stats.culledObjects).toBe(1)
   })
 })
