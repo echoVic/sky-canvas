@@ -40,9 +40,30 @@ export class SceneDocument {
   private seq = { n: 0, c: 0, g: 0 }
   viewport: SceneViewport = { x: 0, y: 0, zoom: 1 }
 
-  /** 新增节点,返回其 id(未显式给 id 时按 n{seq} 生成) */
-  add(node: SceneNode, id?: string): string {
-    const nid = id ?? `n${++this.seq.n}`
+  /**
+   * 接纳一个显式 id 时,若它形如 n{数字}/c{数字}/g{数字},抬高对应计数器,
+   * 使后续自增 id 不会再生成同名 id 覆盖它。
+   */
+  private reserveId(explicit: string, kind: 'n' | 'c' | 'g'): void {
+    const m = explicit.match(/^([ncg])(\d+)$/)
+    if (m && m[1] === kind) {
+      const num = Number.parseInt(m[2], 10)
+      if (num > this.seq[kind]) this.seq[kind] = num
+    }
+  }
+
+  /**
+   * 新增节点,返回其 id(未显式给 id 时按 n{seq} 生成)。
+   * 显式 id 已被占用时拒绝覆盖并返回 undefined,避免静默替换既有节点。
+   */
+  add(node: SceneNode, id?: string): string | undefined {
+    if (id !== undefined) {
+      if (this.nodes.has(id)) return undefined // 显式 id 已占用:拒绝覆盖
+      this.nodes.set(id, node)
+      this.reserveId(id, 'n')
+      return id
+    }
+    const nid = `n${++this.seq.n}`
     this.nodes.set(nid, node)
     return nid
   }
@@ -79,18 +100,36 @@ export class SceneDocument {
     return this.nodes.has(id)
   }
 
-  /** 连接两个已存在节点,返回连线 id;任一端不存在返回 undefined */
+  /**
+   * 连接两个已存在节点,返回连线 id;任一端不存在或显式连线 id 已占用时返回 undefined。
+   */
   connect(from: string, to: string, opts?: { width?: number; color?: string; id?: string }): string | undefined {
     if (!this.nodes.has(from) || !this.nodes.has(to)) return undefined
-    const cid = opts?.id ?? `c${++this.seq.c}`
+    if (opts?.id !== undefined) {
+      if (this.connections.has(opts.id)) return undefined // 显式 id 已占用:拒绝覆盖
+      this.connections.set(opts.id, { id: opts.id, from, to, width: opts.width, color: opts.color })
+      this.reserveId(opts.id, 'c')
+      return opts.id
+    }
+    const cid = `c${++this.seq.c}`
     this.connections.set(cid, { id: cid, from, to, width: opts?.width, color: opts?.color })
     return cid
   }
 
-  /** 把一组已存在节点归为一组,返回 group id;过滤掉不存在的成员 */
-  group(members: string[], id?: string): string {
-    const gid = id ?? `g${++this.seq.g}`
-    this.groups.set(gid, { id: gid, members: members.filter((m) => this.nodes.has(m)) })
+  /**
+   * 把一组已存在节点归为一组,返回 group id;显式分组 id 已占用时返回 undefined。
+   * 过滤掉不存在的成员。
+   */
+  group(members: string[], id?: string): string | undefined {
+    const filtered = members.filter((m) => this.nodes.has(m))
+    if (id !== undefined) {
+      if (this.groups.has(id)) return undefined // 显式 id 已占用:拒绝覆盖
+      this.groups.set(id, { id, members: filtered })
+      this.reserveId(id, 'g')
+      return id
+    }
+    const gid = `g${++this.seq.g}`
+    this.groups.set(gid, { id: gid, members: filtered })
     return gid
   }
 

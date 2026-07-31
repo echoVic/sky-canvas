@@ -70,6 +70,43 @@ describe('SceneDocument', () => {
     expect(doc.toScene().nodes).toHaveLength(2)
     expect(doc.listNodes()[0].id).toBe('n1')
   })
+
+  it('显式 id 命中已存在对象时拒绝覆盖并返回 undefined', () => {
+    const doc = new SceneDocument()
+    doc.add({ type: 'rect', x: 0, y: 0, width: 1, height: 1 }, 'a')
+    doc.add({ type: 'rect', x: 5, y: 5, width: 1, height: 1 }, 'b')
+    // add 同名:拒绝覆盖,原节点保持
+    expect(doc.add({ type: 'circle', cx: 9, cy: 9, radius: 9 }, 'a')).toBeUndefined()
+    expect(doc.get('a')?.node).toMatchObject({ type: 'rect', x: 0 })
+    // connect 同名连线 id:拒绝覆盖
+    expect(doc.connect('a', 'b', { id: 'c1' })).toBe('c1')
+    expect(doc.connect('a', 'b', { id: 'c1' })).toBeUndefined()
+    expect(doc.listConnections()).toHaveLength(1)
+    // group 同名分组 id:拒绝覆盖
+    expect(doc.group(['a'], 'g1')).toBe('g1')
+    expect(doc.group(['b'], 'g1')).toBeUndefined()
+    expect(doc.getGroup('g1')?.members).toEqual(['a'])
+  })
+
+  it('显式 id 抬高自增计数器,后续自增 id 不再与既有显式 id 相撞', () => {
+    // fromScene 装载 n1..n3 后,自增 add 应从 n4 起,不覆盖既有 n2
+    const doc = SceneDocument.fromScene({
+      nodes: [
+        { type: 'rect', x: 0, y: 0, width: 1, height: 1 },
+        { type: 'rect', x: 1, y: 1, width: 1, height: 1 },
+        { type: 'rect', x: 2, y: 2, width: 1, height: 1 },
+      ],
+    })
+    const auto = doc.add({ type: 'circle', cx: 0, cy: 0, radius: 1 })
+    expect(auto).toBe('n4')
+    expect(doc.listNodes()).toHaveLength(4)
+    // 显式高位 id 也应抬高计数器
+    doc.add({ type: 'rect', x: 0, y: 0, width: 1, height: 1 }, 'n10')
+    expect(doc.add({ type: 'rect', x: 0, y: 0, width: 1, height: 1 })).toBe('n11')
+    // 连线计数器同理
+    doc.connect('n1', 'n2', { id: 'c5' })
+    expect(doc.connect('n1', 'n2')).toBe('c6')
+  })
 })
 
 describe('applyOps', () => {
@@ -139,6 +176,20 @@ describe('applyOps', () => {
     const [r] = applyOps(doc, [{ op: 'explode', id: 'a' } as unknown as SceneOp])
     expect(r.ok).toBe(false)
     expect(r.error).toContain('未知 op')
+  })
+
+  it('add/group 显式 id 已占用时 OpResult.ok=false 且不覆盖', () => {
+    const doc = seed() // 已有 a(rect)/b(circle)
+    const res = applyOps(doc, [
+      { op: 'add', node: { type: 'text', x: 0, y: 0, size: 10, text: 'x' }, id: 'a' },
+      { op: 'group', members: ['a', 'b'], id: 'gg' },
+      { op: 'group', members: ['a'], id: 'gg' },
+    ])
+    expect(res[0]).toMatchObject({ ok: false }) // add 'a' 已占用
+    expect(res[0].error).toContain('已存在')
+    expect(doc.get('a')?.node.type).toBe('rect') // 原节点未被覆盖
+    expect(res[1].ok).toBe(true)
+    expect(res[2]).toMatchObject({ ok: false }) // group 'gg' 已占用
   })
 })
 

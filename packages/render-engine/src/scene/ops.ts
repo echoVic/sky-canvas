@@ -52,8 +52,12 @@ function moveNode(doc: SceneDocument, id: string, dx: number, dy: number): boole
 /** 应用单条 op */
 function applyOne(doc: SceneDocument, op: SceneOp): OpResult {
   switch (op.op) {
-    case 'add':
-      return { ok: true, id: doc.add(op.node, op.id) }
+    case 'add': {
+      const id = doc.add(op.node, op.id)
+      return id !== undefined
+        ? { ok: true, id }
+        : { ok: false, error: `add: id #${op.id} 已存在,拒绝覆盖` }
+    }
 
     case 'update':
       return doc.update(op.id, op.patch)
@@ -86,8 +90,12 @@ function applyOne(doc: SceneDocument, op: SceneOp): OpResult {
         : { ok: false, error: `connect: 端点 #${op.from} 或 #${op.to} 不存在` }
     }
 
-    case 'group':
-      return { ok: true, id: doc.group(op.members, op.id) }
+    case 'group': {
+      const gid = doc.group(op.members, op.id)
+      return gid !== undefined
+        ? { ok: true, id: gid }
+        : { ok: false, error: `group: id #${op.id} 已存在,拒绝覆盖` }
+    }
 
     default:
       // 未知 op:不抛错,记 error(前向兼容)
