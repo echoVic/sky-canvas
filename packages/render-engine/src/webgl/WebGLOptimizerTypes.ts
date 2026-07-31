@@ -72,6 +72,7 @@ export interface OptimizationStats {
 
 // WebGL优化器事件
 export interface WebGLOptimizerEvents {
+  [key: string]: unknown
   stateChanged: { type: string; from: unknown; to: unknown }
   batchOptimized: { before: number; after: number }
   shaderCompiled: { name: string; compileTime: number }

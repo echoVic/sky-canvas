@@ -36,7 +36,7 @@ function LayerItem({
   )
 
   const icon = SHAPE_ICONS[shape.type] || '?'
-  const name = shape.metadata?.name || `${shape.type}`
+  const name = String(shape.metadata?.name ?? '') || `${shape.type}`
 
   return (
     <div
