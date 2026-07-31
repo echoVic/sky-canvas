@@ -7,6 +7,7 @@ import type { ITransform } from '../../graphics/IGraphicsContext'
 import { WebGPUBufferManager } from './WebGPUBufferManager'
 import { type Color, WebGPUGeometry } from './WebGPUGeometry'
 import { WebGPUPipelineManager } from './WebGPUPipelineManager'
+import { type GlyphAtlas, layoutText } from './WebGPUTextSDF'
 
 /**
  * 渲染器配置
@@ -152,6 +153,11 @@ export class WebGPURenderer {
   // 每种图元一块独立的 instance 缓冲,按 key 缓存(容量不足时按需扩容)。
   // 独立分块可避免同一帧内多种图元共用一块 buffer、后写覆盖前写导致的数据错乱。
   private instanceBuffers = new Map<string, { buffer: GPUBuffer; capacity: number }>()
+
+  // SDF 文字图集资源(setTextAtlas 后可用)
+  private glyphAtlas: GlyphAtlas | null = null
+  private glyphTexture: GPUTexture | null = null
+  private glyphBindGroup: GPUBindGroup | null = null
 
   // 统计信息
   private stats = {
@@ -486,6 +492,93 @@ export class WebGPURenderer {
   }
 
   /**
+   * 设置 SDF 文字图集:把图集像素上传为纹理,建立 sampler + bind group。
+   * 调用一次即可(通常在初始化时用 buildGlyphAtlas 生成图集后传入)。
+   */
+  setTextAtlas(atlas: GlyphAtlas): void {
+    this.glyphAtlas = atlas
+    this.glyphTexture?.destroy()
+    this.glyphTexture = this.device.createTexture({
+      label: 'Glyph SDF Atlas',
+      size: { width: atlas.width, height: atlas.height },
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    })
+    this.device.queue.writeTexture(
+      { texture: this.glyphTexture },
+      atlas.data,
+      { bytesPerRow: atlas.width * 4, rowsPerImage: atlas.height },
+      { width: atlas.width, height: atlas.height }
+    )
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+    const { bindGroupLayout } = this.pipelineManager.getInstancedGlyphPipeline()
+    if (!this.uniformBuffer) return
+    this.glyphBindGroup = this.device.createBindGroup({
+      label: 'Glyph Bind Group',
+      layout: bindGroupLayout,
+      entries: [
+        { binding: 0, resource: { buffer: this.uniformBuffer } },
+        { binding: 1, resource: sampler },
+        { binding: 2, resource: this.glyphTexture.createView() },
+      ],
+    })
+  }
+
+  /**
+   * 绘制一段 SDF 文字。需先 setTextAtlas。按图集度量把文字排版成 per-glyph 实例,
+   * 一次 drawIndexed(6, glyphCount) 渲染整段文字(draw call 恒为 1)。
+   * @param text 文本
+   * @param x,y 基线左端(世界坐标)
+   * @param pxSize 目标字号(世界单位)
+   * @param color 文字颜色
+   */
+  drawText(text: string, x: number, y: number, pxSize: number, color: Color): void {
+    if (!this.renderPass || !this.uniformBindGroup) return
+    if (!this.glyphAtlas || !this.glyphBindGroup) return
+
+    const glyphs = layoutText(text, this.glyphAtlas, x, y, pxSize)
+    if (glyphs.length === 0) return
+
+    // 打包 per-glyph 实例:offset(2)+size(2)+uv(4)+color(4)=12 float
+    const data = new Float32Array(glyphs.length * 12)
+    for (let i = 0; i < glyphs.length; i++) {
+      const g = glyphs[i]
+      const o = i * 12
+      data[o] = g.x
+      data[o + 1] = g.y
+      data[o + 2] = g.width
+      data[o + 3] = g.height
+      data[o + 4] = g.u0
+      data[o + 5] = g.v0
+      data[o + 6] = g.u1
+      data[o + 7] = g.v1
+      data[o + 8] = color.r
+      data[o + 9] = color.g
+      data[o + 10] = color.b
+      data[o + 11] = color.a
+    }
+
+    const { vertex, index } = this.getQuadBuffers('glyph', WebGPURenderer.QUAD_RECT)
+    const instanceBuffer = this.uploadInstanceData('glyph', data)
+    const { pipeline } = this.pipelineManager.getInstancedGlyphPipeline()
+
+    this.renderPass.setPipeline(pipeline)
+    this.renderPass.setBindGroup(0, this.glyphBindGroup)
+    this.renderPass.setVertexBuffer(0, vertex)
+    this.renderPass.setVertexBuffer(1, instanceBuffer)
+    this.renderPass.setIndexBuffer(index, 'uint16')
+    this.renderPass.drawIndexed(6, glyphs.length)
+
+    this.stats.drawCalls++
+    this.stats.triangles += glyphs.length * 2
+    this.stats.vertices += glyphs.length * 4
+  }
+
+  /**
    * 调整大小
    */
   resize(width: number, height: number): void {
@@ -517,6 +610,10 @@ export class WebGPURenderer {
       buffer.destroy()
     }
     this.instanceBuffers.clear()
+    this.glyphTexture?.destroy()
+    this.glyphTexture = null
+    this.glyphBindGroup = null
+    this.glyphAtlas = null
     this.bufferManager.dispose()
     this.pipelineManager.dispose()
   }

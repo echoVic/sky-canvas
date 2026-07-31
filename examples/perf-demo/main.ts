@@ -11,7 +11,7 @@ import type {
   LineInstance,
   RectInstance,
 } from '@sky-canvas/render-engine/adapters/webgpu'
-import { WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
+import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
 import { QuadTreeNode } from '@sky-canvas/render-engine/culling'
 
 const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement
@@ -149,6 +149,15 @@ async function main(): Promise<void> {
   const circles = makeCircles(200)
   const lines = makeLines(200)
 
+  // SDF 文字图集:运行时用 canvas 2D + 距离变换生成,上传给渲染器
+  renderer.setTextAtlas(buildGlyphAtlas({ fontSize: 48, spread: 6 }))
+  // 在世界里撒几处文字标签,验证 SDF 文字在缩放下保持清晰
+  const labels = [
+    { text: 'Sky Canvas', x: WORLD * 0.5, y: WORLD * 0.5, size: 800 },
+    { text: 'WebGPU SDF Text', x: WORLD * 0.3, y: WORLD * 0.35, size: 500 },
+    { text: 'infinite canvas', x: WORLD * 0.6, y: WORLD * 0.65, size: 400 },
+  ]
+
   // 构建四叉树:一次插入全部矩形,之后每帧按视口 query,近似 O(可见数),
   // 相比线性扫描全场景在放大(可见占比小)时优势显著。
   function buildTree(rects: SceneRect[]): QuadTreeNode {
@@ -203,6 +212,9 @@ async function main(): Promise<void> {
     renderer.drawInstancedRects(visible)
     renderer.drawInstancedLines(lines)
     renderer.drawInstancedCircles(circles)
+    for (const l of labels) {
+      renderer.drawText(l.text, l.x, l.y, l.size, { r: 1, g: 1, b: 1, a: 1 })
+    }
     renderer.endFrame()
 
     const stats = renderer.getStats()

@@ -44,6 +44,8 @@ export {
   CIRCLE_VERTEX_SHADER,
   INSTANCED_CIRCLE_FRAGMENT_SHADER,
   INSTANCED_CIRCLE_VERTEX_SHADER,
+  INSTANCED_GLYPH_FRAGMENT_SHADER,
+  INSTANCED_GLYPH_VERTEX_SHADER,
   INSTANCED_LINE_VERTEX_SHADER,
   INSTANCED_RECT_VERTEX_SHADER,
   LINE_FRAGMENT_SHADER,
@@ -53,6 +55,16 @@ export {
   TEXTURED_FRAGMENT_SHADER,
   TEXTURED_VERTEX_SHADER,
 } from './WebGPUShaders'
+// SDF 文字图集
+export {
+  buildGlyphAtlas,
+  computeSDF,
+  encodeSDF,
+  type GlyphAtlas,
+  type GlyphInstance,
+  type GlyphMetric,
+  layoutText,
+} from './WebGPUTextSDF'
 export type {
   WebGPUContextConfig,
   WebGPUDeviceInfo,

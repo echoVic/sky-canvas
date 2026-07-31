@@ -181,7 +181,7 @@ export class WebGPUPipelineManager {
     ]
 
     // 根据着色器类型添加额外绑定
-    if (shaderType === ShaderType.TEXTURED) {
+    if (shaderType === ShaderType.TEXTURED || shaderType === ShaderType.INSTANCED_GLYPH) {
       entries.push(
         {
           binding: 1,
@@ -396,6 +396,19 @@ export class WebGPUPipelineManager {
       { shaderLocation: 2, offset: 2 * 4, format: 'float32x2' }, // i_p2
       { shaderLocation: 3, offset: 4 * 4, format: 'float32' }, // i_width
       { shaderLocation: 4, offset: 5 * 4, format: 'float32x4' }, // i_color
+    ])
+  }
+
+  /**
+   * 获取实例化 SDF 文字管线。per-instance: offset(2) + size(2) + uv(4) + color(4) = 12 float。
+   * bind group 含 sampler(1) + texture(2),由 createBindGroupLayout(INSTANCED_GLYPH) 提供。
+   */
+  getInstancedGlyphPipeline(): PipelineCacheEntry {
+    return this.buildInstancedPipeline('instancedGlyph', ShaderType.INSTANCED_GLYPH, 12, [
+      { shaderLocation: 1, offset: 0, format: 'float32x2' }, // i_offset
+      { shaderLocation: 2, offset: 2 * 4, format: 'float32x2' }, // i_size
+      { shaderLocation: 3, offset: 4 * 4, format: 'float32x4' }, // i_uv
+      { shaderLocation: 4, offset: 8 * 4, format: 'float32x4' }, // i_color
     ])
   }
 
