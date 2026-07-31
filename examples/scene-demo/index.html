@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sky Canvas · 声明式场景 Demo(JSON → 画布)</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #0d1117; font-family: ui-monospace, Menlo, monospace; color: #e6edf3; }
+      #app { display: flex; width: 100vw; height: 100vh; }
+      #left { width: 460px; display: flex; flex-direction: column; border-right: 1px solid #30363d; }
+      #toolbar { padding: 10px 12px; border-bottom: 1px solid #30363d; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      #toolbar b { color: #58a6ff; }
+      select, button { background: #21262d; color: #e6edf3; border: 1px solid #30363d; border-radius: 6px; padding: 5px 10px; font-family: inherit; font-size: 12px; cursor: pointer; }
+      button:hover, select:hover { border-color: #58a6ff; }
+      #editor { flex: 1; width: 100%; background: #010409; color: #c9d1d9; border: none; padding: 12px; font-family: inherit; font-size: 12.5px; line-height: 1.6; resize: none; outline: none; }
+      #status { padding: 8px 12px; font-size: 12px; border-top: 1px solid #30363d; min-height: 34px; }
+      #status.ok { color: #3fb950; }
+      #status.err { color: #f85149; white-space: pre-wrap; }
+      #right { flex: 1; position: relative; }
+      #gpu-canvas { display: block; width: 100%; height: 100%; }
+      #err-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 40px; color: #f85149; line-height: 1.8; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="left">
+        <div id="toolbar">
+          <b>场景 JSON</b>
+          <select id="examples"></select>
+          <button id="render">渲染 ▶</button>
+        </div>
+        <textarea id="editor" spellcheck="false"></textarea>
+        <div id="status" class="ok">就绪</div>
+      </div>
+      <div id="right">
+        <canvas id="gpu-canvas"></canvas>
+        <div id="err-overlay"></div>
+      </div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
