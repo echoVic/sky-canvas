@@ -500,6 +500,11 @@ export class WebGPURenderer {
    * 调用一次即可(通常在初始化时用 buildGlyphAtlas 生成图集后传入)。
    */
   setTextAtlas(atlas: GlyphAtlas): void {
+    // 前置校验:uniformBuffer 未就绪时直接返回,避免先分配纹理再 early-return 造成泄漏
+    if (!this.uniformBuffer) {
+      console.warn('setTextAtlas: uniformBuffer 未初始化,已跳过图集设置')
+      return
+    }
     this.glyphAtlas = atlas
     this.glyphTexture?.destroy()
     this.glyphTexture = this.device.createTexture({
@@ -520,7 +525,6 @@ export class WebGPURenderer {
       minFilter: 'linear',
     })
     const { bindGroupLayout } = this.pipelineManager.getInstancedGlyphPipeline()
-    if (!this.uniformBuffer) return
     this.glyphBindGroup = this.device.createBindGroup({
       label: 'Glyph Bind Group',
       layout: bindGroupLayout,

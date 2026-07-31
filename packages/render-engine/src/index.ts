@@ -89,8 +89,8 @@ export {
   InstancedStrategy,
   OptimizationType,
 } from './batch'
-// 基准测试
-export { PerformanceBenchmark as BenchmarkRunner } from './benchmark/index'
+// 基准测试 —— [收敛] 移出主线(与 tsconfig exclude src/benchmark/** 保持一致)
+// export { PerformanceBenchmark as BenchmarkRunner } from './benchmark/index'
 // 渲染命令实现
 export * from './commands/index'
 // 现代渲染管道实现
