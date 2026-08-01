@@ -21,7 +21,7 @@ export class ServiceCollection {
     id: ServiceIdentifier<T>,
     instanceOrDescriptor: T | SyncDescriptor<T>
   ): T | SyncDescriptor<T> {
-    const result = this._entries.get(id)
+    const result = this._entries.get(id) as T | SyncDescriptor<T>
     this._entries.set(id, instanceOrDescriptor)
     return result
   }
@@ -31,6 +31,6 @@ export class ServiceCollection {
   }
 
   get<T>(id: ServiceIdentifier<T>): T | SyncDescriptor<T> {
-    return this._entries.get(id)
+    return this._entries.get(id) as T | SyncDescriptor<T>
   }
 }

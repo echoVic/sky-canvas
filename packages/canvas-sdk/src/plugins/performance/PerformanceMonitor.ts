@@ -550,6 +550,7 @@ export class PerformanceMonitor {
     for (const [pluginId, metrics] of this.metrics) {
       plugins[pluginId] = {
         loadTime: metrics.loadTime,
+        activateTime: metrics.activateTime || 0,
         activationTime: metrics.activationTime || 0,
         memoryUsage: metrics.memoryUsage,
         apiCalls: metrics.apiCalls || 0,

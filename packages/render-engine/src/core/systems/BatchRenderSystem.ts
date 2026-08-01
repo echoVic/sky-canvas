@@ -52,6 +52,7 @@ export class BatchRenderSystem extends BaseSystem {
 
   // 智能批次合并
   private batchGroups = new Map<string, IBatchable[]>()
+  private frameObjectCount = 0
 
   // 性能统计
   private stats: BatchRenderStats = {
@@ -80,7 +81,7 @@ export class BatchRenderSystem extends BaseSystem {
 
     let renderContext: RenderContext | null
     try {
-      renderContext = this.renderer.getContext?.()
+      renderContext = this.renderer.getContext?.() ?? null
     } catch (error) {
       throw new Error(`Failed to get render context: ${error}`)
     }

@@ -12,10 +12,8 @@ export namespace _util {
   export const DI_TARGET = '$di$target'
   export const DI_DEPENDENCIES = '$di$dependencies'
 
-  export function getServiceDependencies(ctor: {
-    [DI_DEPENDENCIES]?: { id: ServiceIdentifier<unknown>; index: number }[]
-  }): { id: ServiceIdentifier<unknown>; index: number }[] {
-    return ctor[DI_DEPENDENCIES] || []
+  export function getServiceDependencies(ctor: unknown): { id: ServiceIdentifier<unknown>; index: number }[] {
+    return (ctor as { [DI_DEPENDENCIES]?: { id: ServiceIdentifier<unknown>; index: number }[] })?.[DI_DEPENDENCIES] || []
   }
 }
 

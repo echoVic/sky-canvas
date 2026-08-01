@@ -104,7 +104,7 @@ export class EventBus implements IEventBus, IDisposable {
  * 类型安全的事件发射器
  * 基于 EventEmitter3，提供更强的类型支持
  */
-export class EventEmitter<TEvents extends Record<string, unknown>> {
+export class EventEmitter<TEvents extends object = Record<string, unknown>> {
   private emitter: EventEmitter3
 
   constructor() {

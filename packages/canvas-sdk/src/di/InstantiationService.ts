@@ -16,7 +16,7 @@ import {
 import { ServiceCollection } from './ServiceCollection'
 
 class CyclicDependencyError extends Error {
-  constructor(graph: Graph<unknown>) {
+  constructor(graph: { findCycleSlow(): string | undefined; toString(): string }) {
     super('cyclic dependency between services')
     this.message =
       graph.findCycleSlow() ?? `UNABLE to detect cycle, dumping graph: \n${graph.toString()}`
@@ -123,7 +123,7 @@ export class InstantiationService implements IInstantiationService {
     ...args: GetLeadingNonServiceArgs<ConstructorParameters<Ctor>>
   ): R
   createInstance(
-    ctorOrDescriptor: SyncDescriptor<unknown> | (new (...args: unknown[]) => unknown),
+    ctorOrDescriptor: { ctor: new (...args: unknown[]) => unknown } | (new (...args: unknown[]) => unknown),
     ...rest: unknown[]
   ): unknown {
     this._throwIfDisposed()
@@ -135,7 +135,7 @@ export class InstantiationService implements IInstantiationService {
         ctorOrDescriptor.staticArguments.concat(rest)
       )
     } else {
-      result = this._createInstance(ctorOrDescriptor, rest)
+      result = this._createInstance(ctorOrDescriptor as new (...args: unknown[]) => unknown, rest)
     }
     return result
   }
@@ -226,7 +226,7 @@ export class InstantiationService implements IInstantiationService {
     const graph = new Graph<Triple>((data) => data.id.toString())
 
     let cycleCount = 0
-    const stack = [{ id, desc }]
+    const stack: Triple[] = [{ id, desc }]
     const seen = new Set<string>()
     while (stack.length) {
       const item = stack.pop()

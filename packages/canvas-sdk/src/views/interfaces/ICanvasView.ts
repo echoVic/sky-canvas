@@ -298,15 +298,19 @@ export abstract class BaseCanvasView implements ICanvasView {
   abstract exportAsImage(format?: 'png' | 'jpeg' | 'webp', quality?: number): Promise<Blob>
   abstract exportAsSVG(): Promise<string>
 
-  on(event: string, listener: CanvasViewListener): () => void {
+  on(event: 'interaction', listener: (event: ICanvasInteractionEvent) => void): () => void
+  on(event: 'resize', listener: (size: { width: number; height: number }) => void): () => void
+  on(event: 'render', listener: () => void): () => void
+  on(event: string, listener: unknown): () => void {
+    const castListener = listener as CanvasViewListener
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set())
     }
 
-    this.eventListeners.get(event)?.add(listener)
+    this.eventListeners.get(event)?.add(castListener)
 
     return () => {
-      this.eventListeners.get(event)?.delete(listener)
+      this.eventListeners.get(event)?.delete(castListener)
     }
   }
 

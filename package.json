@@ -96,6 +96,7 @@
     "@vitejs/plugin-react": "^4.0.3",
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
+    "@webgpu/types": "^0.1.68",
     "autoprefixer": "^10.4.14",
     "happy-dom": "^20.0.11",
     "jsdom": "^23.0.1",

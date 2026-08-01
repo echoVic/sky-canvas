@@ -57,7 +57,7 @@ class MemoryMemento implements IMemento {
   get<T>(key: string, defaultValue: T): T
   get<T>(key: string, defaultValue?: T): T | undefined {
     const value = this._data.get(key)
-    return value !== undefined ? value : defaultValue
+    return (value !== undefined ? value : defaultValue) as T | undefined
   }
 
   async update(key: string, value: unknown): Promise<void> {
