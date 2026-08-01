@@ -110,4 +110,40 @@ describe('renderSceneToCtx', () => {
     renderSceneToCtx({ nodes: [{ type: 'text', x: 0, y: 0, size: 12, text: 'x' }] }, ctx, opts)
     expect(ctx.textBaseline).toBe('top')
   })
+
+  it('缺省 viewport:世界原点对齐屏幕原点(不同 dpr 下 e/f 仍为 0)', () => {
+    const { ctx, calls } = makeFakeCtx()
+    // 不传 viewport:默认 center = (width/(2*dpr), height/(2*dpr)),zoom=1
+    renderSceneToCtx({ nodes: [] }, ctx, { width: 400, height: 300, dpr: 2 })
+    // scale = zoom*dpr = 2;e = w/2 - vp.x*scale = 200 - (400/4)*2 = 200 - 200 = 0;f = 150 - (300/4)*2 = 0
+    expect(calls).toContain('setTransform(2,0,0,2,0,0)')
+  })
+
+  it('缺省 dpr 时按 1 处理', () => {
+    const { ctx, calls } = makeFakeCtx()
+    renderSceneToCtx({ viewport: { x: 0, y: 0, zoom: 1 }, nodes: [] }, ctx, { width: 200, height: 100 })
+    // scale = 1;e = 100 - 0 = 100;f = 50 - 0 = 50
+    expect(calls).toContain('setTransform(1,0,0,1,100,50)')
+  })
+
+  it('空 nodes 时不产生任何图元绘制调用', () => {
+    const { ctx, calls } = makeFakeCtx()
+    renderSceneToCtx({ nodes: [] }, ctx, opts)
+    expect(calls.some((c) => c.startsWith('arc('))).toBe(false)
+    expect(calls.some((c) => c.startsWith('fillText('))).toBe(false)
+    expect(calls.some((c) => c.startsWith('stroke@'))).toBe(false)
+  })
+
+  it('line 使用节点 color 与 width 设置描边样式', () => {
+    const { ctx, calls } = makeFakeCtx()
+    renderSceneToCtx(
+      { viewport: { x: 0, y: 0, zoom: 1 }, nodes: [{ type: 'line', x1: 1, y1: 2, x2: 3, y2: 4, width: 5, color: '#0000ff' }] },
+      ctx,
+      opts
+    )
+    const joined = calls.join('\n')
+    expect(joined).toContain('moveTo(1,2)')
+    expect(joined).toContain('lineTo(3,4)')
+    expect(joined).toContain('stroke@rgba(0,0,255,1)/5')
+  })
 })
