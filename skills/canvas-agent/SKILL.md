@@ -69,6 +69,39 @@ groups: g1 [n1,n2]
 - 颜色缺省或非法**回退白色**,不会让整帧崩。
 - 所以:发完一批 ops 一定要**检查每条 OpResult**,失败的重新组织再发,别假设全成功。
 
+## 在 CLI 里用(无头,任意 agent 免 SDK 插入)
+
+你在终端里、看不见画布——用 `sky-canvas` CLI:写一段脚本,一次性调多个预注入 helper,一趟执行完再回报(而不是一个工具一次往返)。画布状态持久化在 workspace 文件里,跨多次调用累积。
+
+```bash
+sky-canvas nodejs <<'EOF'
+  loadScene({ nodes:[{ type:'rect', x:100, y:100, width:200, height:80, color:'#4a9eff' }] })
+  cliLog(snapshotText())                         // 看当前画布有什么
+  const res = applyOps([                          // 一趟发多个 ops
+    { op:'update', id:'n1', patch:{ color:'#3fb950' } },
+    { op:'add', node:{ type:'text', x:120, y:130, size:20, text:'OK', color:'#fff' } },
+  ])
+  cliLog(JSON.stringify(res))                      // 检查每条 OpResult.ok
+  await renderPNG('canvas.png')                    // 出图,回看渲染结果
+EOF
+```
+
+预注入 helper(camelCase,免 import):
+
+| helper | 作用 |
+| --- | --- |
+| `loadScene(scene)` | 全量装载一份 Scene(替换当前文档) |
+| `snapshot(opts?)` / `snapshotText(opts?)` | 读快照;`opts.scope='viewport'` 仅视口 |
+| `applyOps(ops)` | 批量应用,返回 `OpResult[]` |
+| `renderPNG(path?)` | 出图:给 `path` 写文件、否则返回 Buffer(需 `@napi-rs/canvas`,无 GPU) |
+| `getScene()` | 导出当前文档为 Scene |
+| `cliLog(...)` | 输出到 stdout(heredoc 内唯一输出通道) |
+
+要点:
+- **状态持久化**:每次调用结束自动把画布写回 workspace(默认 `.sky-canvas.json`,`-w <file>` 指定,`--no-save` 关闭)。下次调用自动接着上次的画布——`#id` 跨调用稳定。
+- **循环范式**:`loadScene/snapshotText` 看现状 → 组一批 ops → `applyOps` → `renderPNG` 回看 → 再 `snapshotText` 确认。和交互式一样,只是换到 CLI。
+- **出图零 GPU 依赖**:`renderPNG` 走 Canvas2D raster(Skia),任何环境(含 CI)都能出图。
+
 ## 典型任务
 
 - **"把登录按钮改成绿色并下移 20px"** → snapshot 找到那个 rect 的 #id → `[{"op":"update","id":"n7","patch":{"color":"#3fb950"}},{"op":"move","id":"n7","dx":0,"dy":20}]`
