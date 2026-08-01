@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sky Canvas · headless 渲染 harness</title>
+    <style>
+      html, body { margin: 0; background: #0d1117; }
+      #gpu-canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <!-- playwright 驱动的目标页:不给人看,供 WebGPUHeadlessRenderer 注入 scene、截图。 -->
+    <canvas id="gpu-canvas"></canvas>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
