@@ -30,7 +30,7 @@ export interface HeadlessRenderOptions {
   background?: string
 }
 
-/** 在无 GPU 容器里让 chromium 用 SwiftShader 软件渲染 WebGPU 的一组 flag(有 GPU 时无害) */
+/** 在无 GPU 容器里让 chromium 用 SwiftShader 软件渲染 WebGPU 的一组 flag(仅 Linux) */
 export const SWIFTSHADER_ARGS: string[] = [
   '--enable-unsafe-webgpu',
   '--enable-features=Vulkan',
@@ -41,6 +41,18 @@ export const SWIFTSHADER_ARGS: string[] = [
   '--no-sandbox',
   '--disable-gpu-sandbox',
 ]
+
+/** macOS 上用真实 GPU(Metal)的 flag */
+const MACOS_WEBGPU_ARGS: string[] = [
+  '--enable-unsafe-webgpu',
+  '--ignore-gpu-blocklist',
+  '--enable-webgpu-developer-features',
+  '--no-sandbox',
+]
+
+function platformArgs(): string[] {
+  return process.platform === 'darwin' ? MACOS_WEBGPU_ARGS : SWIFTSHADER_ARGS
+}
 
 // playwright 的最小结构类型(避免把它作为硬类型依赖)
 interface PWPage {
@@ -92,7 +104,7 @@ export class WebGPUHeadlessRenderer {
       headless: true,
       executablePath: this.opts.executablePath,
       // headless=new 用完整 chrome 栈(WebGPU 需要),叠加软件渲染/自定义 flag
-      args: ['--headless=new', ...SWIFTSHADER_ARGS, ...(this.opts.extraArgs ?? [])],
+      args: ['--headless=new', ...platformArgs(), ...(this.opts.extraArgs ?? [])],
     })
     this.page = await this.browser.newPage()
     await this.page.goto(this.opts.harnessUrl, { waitUntil: 'load', timeout })
@@ -114,9 +126,10 @@ export class WebGPUHeadlessRenderer {
         height: opts.height * dpr,
         dpr,
         background: opts.background,
-      })}); })()`
-    )
-    return this.page.locator('#gpu-canvas').screenshot({})
+      })}); })()`)
+    // headless WebGPU canvas 需要全页截图(element screenshot 在某些 chromium 版本下拿不到 GPU texture)
+    await this.page.evaluate<void>(`new Promise(r => setTimeout(r, 100))`)
+    return (this.page as unknown as { screenshot(o: { path?: string }): Promise<Buffer> }).screenshot({})
   }
 
   /** 渲染并写文件 */

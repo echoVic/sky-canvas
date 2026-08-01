@@ -49,6 +49,7 @@ async function init(): Promise<void> {
     const width = opts.width ?? canvas.width
     const height = opts.height ?? canvas.height
     const dpr = opts.dpr ?? 1
+    const background = opts.background
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width
       canvas.height = height
@@ -56,7 +57,26 @@ async function init(): Promise<void> {
       renderer.resize(width, height)
     }
     sceneRenderer.setSize(width, height, dpr)
-    sceneRenderer.render(scene)
+
+    // 如果指定了背景色,在 scene 节点前插一个全屏 rect 铺底
+    const sceneToRender = background
+      ? {
+          ...scene,
+          nodes: [
+            {
+              type: 'rect' as const,
+              x: (scene.viewport?.x ?? width / 2) - width / 2,
+              y: (scene.viewport?.y ?? height / 2) - height / 2,
+              width: width * 2,
+              height: height * 2,
+              color: background,
+            },
+            ...scene.nodes,
+          ],
+        }
+      : scene
+
+    sceneRenderer.render(sceneToRender)
     // 确保 GPU 提交完成,截图才拿得到稳定像素
     await device.queue.onSubmittedWorkDone()
   }
