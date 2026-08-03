@@ -185,6 +185,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build render-engine
+        run: pnpm -C packages/render-engine run build
+
       - name: Run tests
         run: pnpm -C packages/canvas-sdk run test
 
@@ -210,6 +213,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm -C packages/render-engine run build && pnpm -C packages/canvas-sdk run build
 
       - name: Run tests
         run: pnpm run test
