@@ -146,7 +146,7 @@ importers:
         version: 0.1.14
     devDependencies:
       '@sky-canvas/renderer':
-        specifier: workspace:^0.0.1
+        specifier: workspace:^0.1.0
         version: link:../render-engine
       '@vitest/coverage-v8':
         specifier: ^4.0.16
