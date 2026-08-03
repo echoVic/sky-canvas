@@ -7,7 +7,7 @@ export interface IDisposable {
 }
 
 export function isDisposable(thing: unknown): thing is IDisposable {
-  return typeof thing?.dispose === 'function'
+  return typeof (thing as { dispose?: unknown })?.dispose === 'function'
 }
 
 export function dispose<T extends IDisposable>(disposable: T): T

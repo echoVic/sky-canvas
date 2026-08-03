@@ -119,7 +119,7 @@ export interface PluginAPI {
     getElement(id: string): any
     getAllElements(): any[]
     setTool(tool: string): void
-    getTool(): string
+    getTool(): Tool | null
     undo(): void
     redo(): void
     zoom(factor: number): void

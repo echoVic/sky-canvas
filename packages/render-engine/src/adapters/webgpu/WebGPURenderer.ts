@@ -7,6 +7,7 @@ import type { ITransform } from '../../graphics/IGraphicsContext'
 import { WebGPUBufferManager } from './WebGPUBufferManager'
 import { type Color, WebGPUGeometry } from './WebGPUGeometry'
 import { WebGPUPipelineManager } from './WebGPUPipelineManager'
+import { type GlyphAtlas, layoutText } from './WebGPUTextSDF'
 
 /**
  * 渲染器配置
@@ -17,6 +18,112 @@ export interface WebGPURendererConfig {
   format: GPUTextureFormat
   width: number
   height: number
+}
+
+/**
+ * 实例化矩形数据(世界坐标下的位置/尺寸/颜色)
+ */
+export interface RectInstance {
+  x: number
+  y: number
+  width: number
+  height: number
+  color: Color
+}
+
+/** 每个实例的 float 数量:offset.xy + size.xy + color.rgba */
+export const RECT_INSTANCE_STRIDE = 8
+
+/**
+ * 将矩形实例数组打包为紧凑的 Float32Array(布局与 instance vertex buffer 一致)。
+ * 纯函数,便于单测:每实例 8 float = [x, y, width, height, r, g, b, a]。
+ */
+export function packRectInstances(rects: RectInstance[]): Float32Array {
+  const count = rects.length
+  const data = new Float32Array(count * RECT_INSTANCE_STRIDE)
+  for (let i = 0; i < count; i++) {
+    const r = rects[i]
+    const o = i * RECT_INSTANCE_STRIDE
+    data[o] = r.x
+    data[o + 1] = r.y
+    data[o + 2] = r.width
+    data[o + 3] = r.height
+    data[o + 4] = r.color.r
+    data[o + 5] = r.color.g
+    data[o + 6] = r.color.b
+    data[o + 7] = r.color.a
+  }
+  return data
+}
+
+/**
+ * 实例化圆形数据(世界坐标下的圆心/半径/颜色)
+ */
+export interface CircleInstance {
+  cx: number
+  cy: number
+  radius: number
+  color: Color
+}
+
+/** 每个实例的 float 数量:center.xy + radius + color.rgba */
+export const CIRCLE_INSTANCE_STRIDE = 7
+
+/**
+ * 将圆形实例数组打包为紧凑 Float32Array:每实例 7 float = [cx, cy, radius, r, g, b, a]。
+ */
+export function packCircleInstances(circles: CircleInstance[]): Float32Array {
+  const count = circles.length
+  const data = new Float32Array(count * CIRCLE_INSTANCE_STRIDE)
+  for (let i = 0; i < count; i++) {
+    const c = circles[i]
+    const o = i * CIRCLE_INSTANCE_STRIDE
+    data[o] = c.cx
+    data[o + 1] = c.cy
+    data[o + 2] = c.radius
+    data[o + 3] = c.color.r
+    data[o + 4] = c.color.g
+    data[o + 5] = c.color.b
+    data[o + 6] = c.color.a
+  }
+  return data
+}
+
+/**
+ * 实例化线段数据(世界坐标下的两端点/线宽/颜色)
+ */
+export interface LineInstance {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  width: number
+  color: Color
+}
+
+/** 每个实例的 float 数量:p1.xy + p2.xy + width + color.rgba */
+export const LINE_INSTANCE_STRIDE = 9
+
+/**
+ * 将线段实例数组打包为紧凑 Float32Array:每实例 9 float = [x1,y1,x2,y2,width,r,g,b,a]。
+ */
+export function packLineInstances(lines: LineInstance[]): Float32Array {
+  const count = lines.length
+  const data = new Float32Array(count * LINE_INSTANCE_STRIDE)
+  for (let i = 0; i < count; i++) {
+    const l = lines[i]
+    const o = i * LINE_INSTANCE_STRIDE
+    data[o] = l.x1
+    data[o + 1] = l.y1
+    data[o + 2] = l.x2
+    data[o + 3] = l.y2
+    data[o + 4] = l.width
+    data[o + 5] = l.color.r
+    data[o + 6] = l.color.g
+    data[o + 7] = l.color.b
+    data[o + 8] = l.color.a
+  }
+  return data
 }
 
 /**
@@ -39,6 +146,21 @@ export class WebGPURenderer {
   // Uniform 缓冲区
   private uniformBuffer: GPUBuffer | null = null
   private uniformBindGroup: GPUBindGroup | null = null
+
+  // 实例化渲染:不同图元用不同的单位 quad(rect: 0~1;circle: -1~1;line: x 0~1,y -0.5~0.5)
+  // 每种 quad 的 顶点/索引缓冲只创建一次并按 key 缓存
+  private quadBuffers = new Map<string, { vertex: GPUBuffer; index: GPUBuffer }>()
+  // 每种图元一块独立的 instance 缓冲,按 key 缓存(容量不足时按需扩容)。
+  // 独立分块可避免同一帧内多种图元共用一块 buffer、后写覆盖前写导致的数据错乱。
+  private instanceBuffers = new Map<string, { buffer: GPUBuffer; capacity: number }>()
+
+  // SDF 文字图集资源(setTextAtlas 后可用)
+  private glyphAtlas: GlyphAtlas | null = null
+  private glyphTexture: GPUTexture | null = null
+  private glyphBindGroup: GPUBindGroup | null = null
+  // 帧内 drawText 调用序号:每次 drawText 用唯一的 instance buffer key,
+  // 避免同帧多段文字写入同一块 buffer 后写覆盖前写。beginFrame 时重置。
+  private glyphDrawSeq = 0
 
   // 统计信息
   private stats = {
@@ -116,6 +238,7 @@ export class WebGPURenderer {
    */
   beginFrame(): void {
     this.stats = { drawCalls: 0, triangles: 0, vertices: 0 }
+    this.glyphDrawSeq = 0
 
     this.commandEncoder = this.device.createCommandEncoder({
       label: 'Frame Command Encoder',
@@ -251,6 +374,220 @@ export class WebGPURenderer {
   }
 
   /**
+   * 获取(或惰性创建)某种图元的单位 quad 顶点/索引缓冲,按 key 缓存复用。
+   * @param key 缓存键
+   * @param quad 4 个顶点的 x,y(共 8 个 float)
+   */
+  private getQuadBuffers(key: string, quad: Float32Array): { vertex: GPUBuffer; index: GPUBuffer } {
+    const cached = this.quadBuffers.get(key)
+    if (cached) return cached
+    const indices = new Uint16Array([0, 1, 2, 0, 2, 3])
+    const entry = {
+      vertex: this.bufferManager.createVertexBuffer(quad, `${key} Quad VB`),
+      index: this.bufferManager.createIndexBuffer(indices, `${key} Quad IB`),
+    }
+    this.quadBuffers.set(key, entry)
+    return entry
+  }
+
+  /**
+   * 确保某图元的 instance buffer 容量足够并写入数据(容量不足时按 2 倍扩容,复用不重建),
+   * 返回该图元专属的 buffer。每种图元独立分块,避免同帧多图元互相覆盖。
+   */
+  private uploadInstanceData(key: string, data: Float32Array): GPUBuffer {
+    const byteLength = data.byteLength
+    let slot = this.instanceBuffers.get(key)
+    if (!slot || slot.capacity < byteLength) {
+      slot?.buffer.destroy()
+      const newCapacity = Math.max(byteLength, (slot?.capacity ?? 0) * 2)
+      slot = {
+        buffer: this.device.createBuffer({
+          label: `Instanced Instance Buffer (${key})`,
+          size: newCapacity,
+          usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        }),
+        capacity: newCapacity,
+      }
+      this.instanceBuffers.set(key, slot)
+    }
+    this.device.queue.writeBuffer(slot.buffer, 0, data, 0, data.length)
+    return slot.buffer
+  }
+
+  /**
+   * 通用实例化绘制:一次 drawIndexed(6, count) 渲染全部实例,draw call 恒为 1。
+   * 每种图元(quadKey)使用独立的 instance buffer,同帧多图元互不覆盖。
+   */
+  private drawInstanced(
+    quadKey: string,
+    quad: Float32Array,
+    pipeline: GPURenderPipeline,
+    data: Float32Array,
+    strideFloats: number
+  ): void {
+    if (!this.renderPass || !this.uniformBindGroup) return
+    const count = Math.floor(data.length / strideFloats)
+    if (count === 0) return
+
+    const { vertex, index } = this.getQuadBuffers(quadKey, quad)
+    const instanceBuffer = this.uploadInstanceData(quadKey, data)
+
+    this.renderPass.setPipeline(pipeline)
+    this.renderPass.setBindGroup(0, this.uniformBindGroup)
+    this.renderPass.setVertexBuffer(0, vertex)
+    this.renderPass.setVertexBuffer(1, instanceBuffer)
+    this.renderPass.setIndexBuffer(index, 'uint16')
+    this.renderPass.drawIndexed(6, count)
+
+    this.stats.drawCalls++
+    this.stats.triangles += count * 2
+    this.stats.vertices += count * 4
+  }
+
+  // 各图元的单位 quad 定义
+  private static readonly QUAD_RECT = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1])
+  private static readonly QUAD_CIRCLE = new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1])
+  private static readonly QUAD_LINE = new Float32Array([0, -0.5, 1, -0.5, 1, 0.5, 0, 0.5])
+
+  /**
+   * 实例化绘制矩形。每实例 8 float:offset.xy + size.xy + color.rgba。
+   * 相比逐个 fillRect,draw call 恒为 1,是支撑海量对象 60fps 的关键路径。
+   */
+  drawInstancedRects(instanceData: Float32Array | RectInstance[]): void {
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packRectInstances(instanceData)
+    this.drawInstanced(
+      'rect',
+      WebGPURenderer.QUAD_RECT,
+      this.pipelineManager.getInstancedRectPipeline().pipeline,
+      data,
+      RECT_INSTANCE_STRIDE
+    )
+  }
+
+  /**
+   * 实例化绘制圆形(SDF 抗锯齿)。每实例 7 float:center.xy + radius + color.rgba。
+   */
+  drawInstancedCircles(instanceData: Float32Array | CircleInstance[]): void {
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packCircleInstances(instanceData)
+    this.drawInstanced(
+      'circle',
+      WebGPURenderer.QUAD_CIRCLE,
+      this.pipelineManager.getInstancedCirclePipeline().pipeline,
+      data,
+      CIRCLE_INSTANCE_STRIDE
+    )
+  }
+
+  /**
+   * 实例化绘制线段。每实例 9 float:p1.xy + p2.xy + width + color.rgba。
+   */
+  drawInstancedLines(instanceData: Float32Array | LineInstance[]): void {
+    const data =
+      instanceData instanceof Float32Array ? instanceData : packLineInstances(instanceData)
+    this.drawInstanced(
+      'line',
+      WebGPURenderer.QUAD_LINE,
+      this.pipelineManager.getInstancedLinePipeline().pipeline,
+      data,
+      LINE_INSTANCE_STRIDE
+    )
+  }
+
+  /**
+   * 设置 SDF 文字图集:把图集像素上传为纹理,建立 sampler + bind group。
+   * 调用一次即可(通常在初始化时用 buildGlyphAtlas 生成图集后传入)。
+   */
+  setTextAtlas(atlas: GlyphAtlas): void {
+    // 前置校验:uniformBuffer 未就绪时直接返回,避免先分配纹理再 early-return 造成泄漏
+    if (!this.uniformBuffer) {
+      console.warn('setTextAtlas: uniformBuffer 未初始化,已跳过图集设置')
+      return
+    }
+    this.glyphAtlas = atlas
+    this.glyphTexture?.destroy()
+    this.glyphTexture = this.device.createTexture({
+      label: 'Glyph SDF Atlas',
+      size: { width: atlas.width, height: atlas.height },
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    })
+    this.device.queue.writeTexture(
+      { texture: this.glyphTexture },
+      atlas.data,
+      { bytesPerRow: atlas.width * 4, rowsPerImage: atlas.height },
+      { width: atlas.width, height: atlas.height }
+    )
+
+    const sampler = this.device.createSampler({
+      magFilter: 'linear',
+      minFilter: 'linear',
+    })
+    const { bindGroupLayout } = this.pipelineManager.getInstancedGlyphPipeline()
+    this.glyphBindGroup = this.device.createBindGroup({
+      label: 'Glyph Bind Group',
+      layout: bindGroupLayout,
+      entries: [
+        { binding: 0, resource: { buffer: this.uniformBuffer } },
+        { binding: 1, resource: sampler },
+        { binding: 2, resource: this.glyphTexture.createView() },
+      ],
+    })
+  }
+
+  /**
+   * 绘制一段 SDF 文字。需先 setTextAtlas。按图集度量把文字排版成 per-glyph 实例,
+   * 一次 drawIndexed(6, glyphCount) 渲染整段文字(draw call 恒为 1)。
+   * @param text 文本
+   * @param x,y 基线左端(世界坐标)
+   * @param pxSize 目标字号(世界单位)
+   * @param color 文字颜色
+   */
+  drawText(text: string, x: number, y: number, pxSize: number, color: Color): void {
+    if (!this.renderPass || !this.uniformBindGroup) return
+    if (!this.glyphAtlas || !this.glyphBindGroup) return
+
+    const glyphs = layoutText(text, this.glyphAtlas, x, y, pxSize)
+    if (glyphs.length === 0) return
+
+    // 打包 per-glyph 实例:offset(2)+size(2)+uv(4)+color(4)=12 float
+    const data = new Float32Array(glyphs.length * 12)
+    for (let i = 0; i < glyphs.length; i++) {
+      const g = glyphs[i]
+      const o = i * 12
+      data[o] = g.x
+      data[o + 1] = g.y
+      data[o + 2] = g.width
+      data[o + 3] = g.height
+      data[o + 4] = g.u0
+      data[o + 5] = g.v0
+      data[o + 6] = g.u1
+      data[o + 7] = g.v1
+      data[o + 8] = color.r
+      data[o + 9] = color.g
+      data[o + 10] = color.b
+      data[o + 11] = color.a
+    }
+
+    // quad 只读可共用 'glyph';instance buffer 每次调用用唯一 key,避免同帧多段文字互相覆盖
+    const { vertex, index } = this.getQuadBuffers('glyph', WebGPURenderer.QUAD_RECT)
+    const instanceBuffer = this.uploadInstanceData(`glyph_${this.glyphDrawSeq++}`, data)
+    const { pipeline } = this.pipelineManager.getInstancedGlyphPipeline()
+
+    this.renderPass.setPipeline(pipeline)
+    this.renderPass.setBindGroup(0, this.glyphBindGroup)
+    this.renderPass.setVertexBuffer(0, vertex)
+    this.renderPass.setVertexBuffer(1, instanceBuffer)
+    this.renderPass.setIndexBuffer(index, 'uint16')
+    this.renderPass.drawIndexed(6, glyphs.length)
+
+    this.stats.drawCalls++
+    this.stats.triangles += glyphs.length * 2
+    this.stats.vertices += glyphs.length * 4
+  }
+
+  /**
    * 调整大小
    */
   resize(width: number, height: number): void {
@@ -273,6 +610,19 @@ export class WebGPURenderer {
       this.uniformBuffer.destroy()
       this.uniformBuffer = null
     }
+    for (const { vertex, index } of this.quadBuffers.values()) {
+      vertex.destroy()
+      index.destroy()
+    }
+    this.quadBuffers.clear()
+    for (const { buffer } of this.instanceBuffers.values()) {
+      buffer.destroy()
+    }
+    this.instanceBuffers.clear()
+    this.glyphTexture?.destroy()
+    this.glyphTexture = null
+    this.glyphBindGroup = null
+    this.glyphAtlas = null
     this.bufferManager.dispose()
     this.pipelineManager.dispose()
   }

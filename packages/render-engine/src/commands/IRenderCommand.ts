@@ -31,6 +31,8 @@ export interface MaterialKey {
   fillColor?: string
   /** 描边颜色 */
   strokeColor?: string
+  /** 线宽 */
+  lineWidth?: number
   /** 其他渲染状态 */
   [key: string]: unknown
 }

@@ -309,7 +309,7 @@ export class CanvasViewModel {
     listeners.add(listener as (data: unknown) => void)
 
     return () => {
-      listeners.delete(listener)
+      listeners.delete(listener as (data: unknown) => void)
     }
   }
 

@@ -55,7 +55,7 @@ export class ServiceCollection {
   }
 
   get<T>(id: ServiceIdentifier<T>): T | SyncDescriptor<T> | undefined {
-    return this._entries.get(id)
+    return this._entries.get(id) as T | SyncDescriptor<T> | undefined
   }
 
   getEntries(): IterableIterator<[ServiceIdentifier<unknown>, unknown]> {
@@ -82,6 +82,7 @@ export class SyncDescriptor<T> {
 }
 
 export interface IInstantiationService {
+  createInstance<T>(id: ServiceIdentifier<T>): T
   createInstance<T>(ctor: new (...args: unknown[]) => T, ...args: unknown[]): T
   createInstance<T>(descriptor: SyncDescriptor<T>): T
 }
@@ -100,13 +101,15 @@ export class InstantiationService implements IInstantiationService {
   }
 
   createInstance<T>(
-    ctorOrDescriptor: SyncDescriptor<T> | (new (...args: unknown[]) => T),
+    ctorOrDescriptor: SyncDescriptor<T> | ServiceIdentifier<T> | (new (...args: unknown[]) => T),
     ...args: unknown[]
   ): T {
     if (ctorOrDescriptor instanceof SyncDescriptor) {
       return this._createInstance(ctorOrDescriptor.ctor, ctorOrDescriptor.staticArguments)
+    } else if (typeof ctorOrDescriptor === 'function' && 'type' in ctorOrDescriptor) {
+      return this._getOrCreateService(ctorOrDescriptor as ServiceIdentifier<T>)
     } else {
-      return this._createInstance(ctorOrDescriptor, args)
+      return this._createInstance(ctorOrDescriptor as new (...args: unknown[]) => T, args)
     }
   }
 
@@ -127,7 +130,7 @@ export class InstantiationService implements IInstantiationService {
   }
 
   private _getServiceDependencies(ctor: unknown): ServiceIdentifier<unknown>[] {
-    return _serviceDependencies.get(ctor as ServiceIdentifier<unknown>) || []
+    return (_serviceDependencies.get(ctor as ServiceIdentifier<unknown>) || []) as ServiceIdentifier<unknown>[]
   }
 
   private _getOrCreateService<T>(id: ServiceIdentifier<T>): T {

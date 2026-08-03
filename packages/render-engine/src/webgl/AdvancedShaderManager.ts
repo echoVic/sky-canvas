@@ -66,6 +66,7 @@ interface ShaderMetrics {
  * 着色器管理器事件
  */
 interface ShaderManagerEvents {
+  [key: string]: unknown
   'shader-compiled': { id: string; time: number }
   'shader-cache-hit': { id: string }
   'shader-cache-miss': { id: string }

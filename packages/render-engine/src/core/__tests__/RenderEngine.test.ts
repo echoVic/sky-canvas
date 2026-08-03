@@ -3,23 +3,6 @@ import { DirtyRegionManager } from '../DirtyRegionManager'
 import { LayerCache } from '../LayerCache'
 import { RenderEngine } from '../RenderEngine'
 
-// Mock interfaces for testing
-interface MockRenderable {
-  id: string
-  visible: boolean
-  zIndex: number
-  render: ReturnType<typeof vi.fn>
-  getBounds: () => any
-}
-
-interface MockLayer {
-  id: string
-  visible: boolean
-  opacity: number
-  zIndex: number
-  getRenderables: () => MockRenderable[]
-}
-
 describe('RenderEngine Performance Features', () => {
   let renderEngine: RenderEngine
   let mockContext: any
@@ -48,7 +31,6 @@ describe('RenderEngine Performance Features', () => {
   it('should create performance optimization components', () => {
     expect((renderEngine as any).dirtyRegionManager).toBeInstanceOf(DirtyRegionManager)
     expect((renderEngine as any).layerCache).toBeInstanceOf(LayerCache)
-    expect((renderEngine as any).batchManager).toBeDefined()
   })
 
   it('should mark region as dirty', () => {

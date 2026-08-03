@@ -181,7 +181,7 @@ export class WebGPUPipelineManager {
     ]
 
     // 根据着色器类型添加额外绑定
-    if (shaderType === ShaderType.TEXTURED) {
+    if (shaderType === ShaderType.TEXTURED || shaderType === ShaderType.INSTANCED_GLYPH) {
       entries.push(
         {
           binding: 1,
@@ -302,6 +302,114 @@ export class WebGPUPipelineManager {
       shaderType: ShaderType.LINE,
       vertexLayout: VERTEX_LAYOUTS.POSITION_NORMAL,
     })
+  }
+
+  /**
+   * 构建一个实例化管线(双 vertex buffer:单位 quad + per-instance 数据)。
+   * rect/circle/line 共享此逻辑,差异仅在 instance buffer 的属性布局。
+   *
+   * @param key 缓存键
+   * @param shaderType 着色器类型
+   * @param instanceStrideFloats 每实例 float 数量(arrayStride = 该值 * 4)
+   * @param instanceAttributes instance buffer 的属性(shaderLocation 从 1 起,0 留给 quad)
+   */
+  private buildInstancedPipeline(
+    key: string,
+    shaderType: ShaderType,
+    instanceStrideFloats: number,
+    instanceAttributes: GPUVertexAttribute[]
+  ): PipelineCacheEntry {
+    const cached = this.pipelines.get(key)
+    if (cached) {
+      return cached
+    }
+
+    const shaderModules = this.getShaderModules(shaderType)
+    const bindGroupLayout = this.createBindGroupLayout(shaderType)
+    const pipelineLayout = this.device.createPipelineLayout({
+      label: `${key} Pipeline Layout`,
+      bindGroupLayouts: [bindGroupLayout],
+    })
+
+    // buffer 0: 单位 quad 顶点(每顶点 2 float,逐顶点推进)
+    const quadLayout: GPUVertexBufferLayout = {
+      arrayStride: 2 * 4,
+      stepMode: 'vertex',
+      attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x2' }],
+    }
+    // buffer 1: per-instance 数据(逐实例推进)
+    const instanceLayout: GPUVertexBufferLayout = {
+      arrayStride: instanceStrideFloats * 4,
+      stepMode: 'instance',
+      attributes: instanceAttributes,
+    }
+
+    const pipeline = this.device.createRenderPipeline({
+      label: `${key} Render Pipeline`,
+      layout: pipelineLayout,
+      vertex: {
+        module: shaderModules.vertex,
+        entryPoint: 'main',
+        buffers: [quadLayout, instanceLayout],
+      },
+      fragment: {
+        module: shaderModules.fragment,
+        entryPoint: 'main',
+        targets: [{ format: this.format, blend: this.createBlendState('normal') }],
+      },
+      primitive: { topology: 'triangle-list', cullMode: 'none' },
+    })
+
+    const entry: PipelineCacheEntry = { pipeline, bindGroupLayout }
+    this.pipelines.set(key, entry)
+    return entry
+  }
+
+  /**
+   * 获取实例化矩形管线。per-instance: offset(2) + size(2) + color(4) = 8 float。
+   */
+  getInstancedRectPipeline(): PipelineCacheEntry {
+    return this.buildInstancedPipeline('instancedRect', ShaderType.INSTANCED_RECT, 8, [
+      { shaderLocation: 1, offset: 0, format: 'float32x2' }, // i_offset
+      { shaderLocation: 2, offset: 2 * 4, format: 'float32x2' }, // i_size
+      { shaderLocation: 3, offset: 4 * 4, format: 'float32x4' }, // i_color
+    ])
+  }
+
+  /**
+   * 获取实例化圆形管线。per-instance: center(2) + radius(1) + color(4) = 7 float。
+   */
+  getInstancedCirclePipeline(): PipelineCacheEntry {
+    return this.buildInstancedPipeline('instancedCircle', ShaderType.INSTANCED_CIRCLE, 7, [
+      { shaderLocation: 1, offset: 0, format: 'float32x2' }, // i_center
+      { shaderLocation: 2, offset: 2 * 4, format: 'float32' }, // i_radius
+      { shaderLocation: 3, offset: 3 * 4, format: 'float32x4' }, // i_color
+    ])
+  }
+
+  /**
+   * 获取实例化线段管线。per-instance: p1(2) + p2(2) + width(1) + color(4) = 9 float。
+   */
+  getInstancedLinePipeline(): PipelineCacheEntry {
+    return this.buildInstancedPipeline('instancedLine', ShaderType.INSTANCED_LINE, 9, [
+      { shaderLocation: 1, offset: 0, format: 'float32x2' }, // i_p1
+      { shaderLocation: 2, offset: 2 * 4, format: 'float32x2' }, // i_p2
+      { shaderLocation: 3, offset: 4 * 4, format: 'float32' }, // i_width
+      { shaderLocation: 4, offset: 5 * 4, format: 'float32x4' }, // i_color
+    ])
+  }
+
+  /**
+   * 获取实例化 SDF 文字管线。per-instance: offset(2) + size(2) + uv(4) + color(4) = 12 float。
+   * bind group 含 sampler(1) + texture(2),由 createBindGroupLayout(INSTANCED_GLYPH) 提供。
+   */
+  getInstancedGlyphPipeline(): PipelineCacheEntry {
+    return this.buildInstancedPipeline('instancedGlyph', ShaderType.INSTANCED_GLYPH, 12, [
+      { shaderLocation: 1, offset: 0, format: 'float32x2' }, // i_offset
+      { shaderLocation: 2, offset: 2 * 4, format: 'float32x2' }, // i_size
+      { shaderLocation: 3, offset: 4 * 4, format: 'float32x4' }, // i_uv
+      { shaderLocation: 4, offset: 8 * 4, format: 'float32x4' }, // i_color
+    ])
   }
 
   /**

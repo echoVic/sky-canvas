@@ -71,8 +71,8 @@ export type {
 
 // 渲染适配器
 export * from './adapters/index'
-// 动画系统
-export * from './animation/index'
+// 动画系统 —— [收敛] 移出 WebGPU 无限画布主线
+// export * from './animation/index'
 // 统一批处理系统实现
 export {
   BasicStrategy,
@@ -89,8 +89,8 @@ export {
   InstancedStrategy,
   OptimizationType,
 } from './batch'
-// 基准测试
-export { PerformanceBenchmark as BenchmarkRunner } from './benchmark/index'
+// 基准测试 —— [收敛] 移出主线(与 tsconfig exclude src/benchmark/** 保持一致)
+// export { PerformanceBenchmark as BenchmarkRunner } from './benchmark/index'
 // 渲染命令实现
 export * from './commands/index'
 // 现代渲染管道实现
@@ -101,26 +101,26 @@ export { RenderEngine } from './core/RenderEngine'
 export { Circle, Line, Rectangle, Shape, Text } from './core/shapes'
 // 空间分割和剔除实现
 export * from './culling/index'
-// 调试工具
-export { DebugRenderer } from './debug/index'
-// 场景编辑器
-export * from './editor/index'
-// 滤镜系统
-export * from './effects/index'
+// 调试工具 —— [收敛] 移出主线
+// export { DebugRenderer } from './debug/index'
+// 场景编辑器 —— [收敛] 移出主线
+// export * from './editor/index'
+// 滤镜系统 —— [收敛] 移出主线
+// export * from './effects/index'
 // 事件系统
 export * from './events/index'
 // 数学库
 export * from './math/index'
-// 粒子系统
-export * from './particles/index'
-// 高级路径操作
-export * from './paths/index'
-// 性能监控
-export { UnifiedPerformanceMonitor } from './performance/index'
-// 物理引擎
-export * from './physics/index'
-// 插件系统
-export * from './plugins/index'
+// 粒子系统 —— [收敛] 移出主线
+// export * from './particles/index'
+// 高级路径操作 —— [收敛] 移出主线
+// export * from './paths/index'
+// 性能监控 —— [收敛] 移出主线
+// export { UnifiedPerformanceMonitor } from './performance/index'
+// 物理引擎 —— [收敛] 移出主线
+// export * from './physics/index'
+// 插件系统 —— [收敛] 移出主线
+// export * from './plugins/index'
 // 图形原语
 export type {
   GraphicPrimitiveType,
@@ -132,10 +132,10 @@ export type {
 // 图形原语实现
 export * from './primitives/index'
 export type { PrimitiveCreateOptions } from './primitives/PrimitiveFactory'
-// 资源管理
-export * from './resources/index'
-// 文本渲染
-export * from './text/index'
+// 资源管理 —— [收敛] 移出主线
+// export * from './resources/index'
+// 文本渲染 —— [收敛] 移出主线(v0.2 再以 SDF/图集方式重做)
+// export * from './text/index'
 // 工具函数
 export * from './utils/index'
 // WebGL 实现 - 具体导出避免冲突

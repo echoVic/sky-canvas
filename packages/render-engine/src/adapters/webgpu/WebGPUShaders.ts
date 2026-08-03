@@ -57,6 +57,226 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
 `
 
 /**
+ * 实例化矩形顶点着色器
+ * 一次 drawIndexed 渲染海量矩形:共享单位 quad,per-instance 传 offset/size/color。
+ * 顶点世界坐标 = i_offset + position * i_size,再过 model/projection。
+ */
+export const INSTANCED_RECT_VERTEX_SHADER = /* wgsl */ `
+struct Uniforms {
+  projectionMatrix: mat3x3<f32>,
+  modelMatrix: mat3x3<f32>,
+}
+
+struct VertexInput {
+  @location(0) position: vec2<f32>,
+  @location(1) i_offset: vec2<f32>,
+  @location(2) i_size: vec2<f32>,
+  @location(3) i_color: vec4<f32>,
+}
+
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) color: vec4<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+
+  let worldPos = input.i_offset + input.position * input.i_size;
+  let modelPos = uniforms.modelMatrix * vec3<f32>(worldPos, 1.0);
+  let projPos = uniforms.projectionMatrix * modelPos;
+
+  output.position = vec4<f32>(projPos.xy, 0.0, 1.0);
+  output.color = input.i_color;
+
+  return output;
+}
+`
+
+/**
+ * 实例化圆形顶点着色器
+ * per-instance 传 center/radius/color;单位 quad 顶点为 (-1,-1)~(1,1),
+ * 缩放到半径后覆盖圆的包围盒,localPos 传给片段做 SDF 抗锯齿。
+ */
+export const INSTANCED_CIRCLE_VERTEX_SHADER = /* wgsl */ `
+struct Uniforms {
+  projectionMatrix: mat3x3<f32>,
+  modelMatrix: mat3x3<f32>,
+}
+
+struct VertexInput {
+  @location(0) position: vec2<f32>,   // 单位 quad (-1,-1)~(1,1)
+  @location(1) i_center: vec2<f32>,
+  @location(2) i_radius: f32,
+  @location(3) i_color: vec4<f32>,
+}
+
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) localPos: vec2<f32>,   // -1~1,片段里 length() 即归一化距离
+  @location(1) color: vec4<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+
+  let worldPos = input.i_center + input.position * input.i_radius;
+  let modelPos = uniforms.modelMatrix * vec3<f32>(worldPos, 1.0);
+  let projPos = uniforms.projectionMatrix * modelPos;
+
+  output.position = vec4<f32>(projPos.xy, 0.0, 1.0);
+  output.localPos = input.position;
+  output.color = input.i_color;
+
+  return output;
+}
+`
+
+/**
+ * 实例化圆形片段着色器:用归一化距离做 SDF 抗锯齿填充。
+ */
+export const INSTANCED_CIRCLE_FRAGMENT_SHADER = /* wgsl */ `
+struct FragmentInput {
+  @location(0) localPos: vec2<f32>,
+  @location(1) color: vec4<f32>,
+}
+
+@fragment
+fn main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let dist = length(input.localPos);      // 0(圆心)~ 1(半径处)
+  let aa = fwidth(dist);
+  let alpha = 1.0 - smoothstep(1.0 - aa, 1.0, dist);
+  if (alpha < 0.001) {
+    discard;
+  }
+  return vec4<f32>(input.color.rgb, input.color.a * alpha);
+}
+`
+
+/**
+ * 实例化线段顶点着色器
+ * per-instance 传 p1/p2/width/color;单位 quad (0,-0.5)~(1,0.5) 沿线段方向拉伸+旋转
+ * 成一个宽度为 width 的矩形条带。
+ */
+export const INSTANCED_LINE_VERTEX_SHADER = /* wgsl */ `
+struct Uniforms {
+  projectionMatrix: mat3x3<f32>,
+  modelMatrix: mat3x3<f32>,
+}
+
+struct VertexInput {
+  @location(0) position: vec2<f32>,   // 单位 quad x:0~1(沿线), y:-0.5~0.5(垂直)
+  @location(1) i_p1: vec2<f32>,
+  @location(2) i_p2: vec2<f32>,
+  @location(3) i_width: f32,
+  @location(4) i_color: vec4<f32>,
+}
+
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) color: vec4<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+
+  let dir = input.i_p2 - input.i_p1;
+  let len = length(dir);
+  // 退化线段(长度为 0)避免 NaN
+  let axis = select(vec2<f32>(1.0, 0.0), dir / len, len > 0.0001);
+  let normal = vec2<f32>(-axis.y, axis.x);
+
+  // position.x 沿线段方向 [0,1],position.y 垂直方向 [-0.5,0.5]
+  let worldPos = input.i_p1 + axis * (input.position.x * len) + normal * (input.position.y * input.i_width);
+  let modelPos = uniforms.modelMatrix * vec3<f32>(worldPos, 1.0);
+  let projPos = uniforms.projectionMatrix * modelPos;
+
+  output.position = vec4<f32>(projPos.xy, 0.0, 1.0);
+  output.color = input.i_color;
+
+  return output;
+}
+`
+
+/**
+ * 实例化 SDF 文字顶点着色器
+ * per-instance: offset(2)/size(2)/uvRect(4)/color(4)。单位 quad (0,0)~(1,1)
+ * 展开为字形包围盒,uv 在 uvRect 内插值,片段采样 SDF 图集。
+ */
+export const INSTANCED_GLYPH_VERTEX_SHADER = /* wgsl */ `
+struct Uniforms {
+  projectionMatrix: mat3x3<f32>,
+  modelMatrix: mat3x3<f32>,
+}
+
+struct VertexInput {
+  @location(0) position: vec2<f32>,
+  @location(1) i_offset: vec2<f32>,
+  @location(2) i_size: vec2<f32>,
+  @location(3) i_uv: vec4<f32>,      // u0,v0,u1,v1
+  @location(4) i_color: vec4<f32>,
+}
+
+struct VertexOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) uv: vec2<f32>,
+  @location(1) color: vec4<f32>,
+}
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+@vertex
+fn main(input: VertexInput) -> VertexOutput {
+  var output: VertexOutput;
+
+  let worldPos = input.i_offset + input.position * input.i_size;
+  let modelPos = uniforms.modelMatrix * vec3<f32>(worldPos, 1.0);
+  let projPos = uniforms.projectionMatrix * modelPos;
+
+  output.position = vec4<f32>(projPos.xy, 0.0, 1.0);
+  output.uv = mix(input.i_uv.xy, input.i_uv.zw, input.position);
+  output.color = input.i_color;
+
+  return output;
+}
+`
+
+/**
+ * 实例化 SDF 文字片段着色器:采样图集距离场,用 smoothstep 得到与缩放无关的清晰边缘。
+ * 图集编码:边缘=0.5,内部>0.5,外部<0.5(见 WebGPUTextSDF.encodeSDF)。
+ */
+export const INSTANCED_GLYPH_FRAGMENT_SHADER = /* wgsl */ `
+@group(0) @binding(1) var atlasSampler: sampler;
+@group(0) @binding(2) var atlasTexture: texture_2d<f32>;
+
+struct FragmentInput {
+  @location(0) uv: vec2<f32>,
+  @location(1) color: vec4<f32>,
+}
+
+@fragment
+fn main(input: FragmentInput) -> @location(0) vec4<f32> {
+  let dist = textureSample(atlasTexture, atlasSampler, input.uv).a;
+  // 屏幕空间抗锯齿宽度
+  let aa = fwidth(dist);
+  let alpha = smoothstep(0.5 - aa, 0.5 + aa, dist);
+  if (alpha < 0.001) {
+    discard;
+  }
+  return vec4<f32>(input.color.rgb, input.color.a * alpha);
+}
+`
+
+/**
  * 带纹理的顶点着色器
  */
 export const TEXTURED_VERTEX_SHADER = /* wgsl */ `
@@ -274,6 +494,10 @@ fn main(input: FragmentInput) -> @location(0) vec4<f32> {
  */
 export enum ShaderType {
   BASIC_2D = 'basic2d',
+  INSTANCED_RECT = 'instancedRect',
+  INSTANCED_CIRCLE = 'instancedCircle',
+  INSTANCED_LINE = 'instancedLine',
+  INSTANCED_GLYPH = 'instancedGlyph',
   TEXTURED = 'textured',
   CIRCLE = 'circle',
   LINE = 'line',
@@ -286,6 +510,22 @@ export const SHADER_SOURCES: Record<ShaderType, { vertex: string; fragment: stri
   [ShaderType.BASIC_2D]: {
     vertex: BASIC_2D_VERTEX_SHADER,
     fragment: BASIC_FRAGMENT_SHADER,
+  },
+  [ShaderType.INSTANCED_RECT]: {
+    vertex: INSTANCED_RECT_VERTEX_SHADER,
+    fragment: BASIC_FRAGMENT_SHADER,
+  },
+  [ShaderType.INSTANCED_CIRCLE]: {
+    vertex: INSTANCED_CIRCLE_VERTEX_SHADER,
+    fragment: INSTANCED_CIRCLE_FRAGMENT_SHADER,
+  },
+  [ShaderType.INSTANCED_LINE]: {
+    vertex: INSTANCED_LINE_VERTEX_SHADER,
+    fragment: BASIC_FRAGMENT_SHADER,
+  },
+  [ShaderType.INSTANCED_GLYPH]: {
+    vertex: INSTANCED_GLYPH_VERTEX_SHADER,
+    fragment: INSTANCED_GLYPH_FRAGMENT_SHADER,
   },
   [ShaderType.TEXTURED]: {
     vertex: TEXTURED_VERTEX_SHADER,

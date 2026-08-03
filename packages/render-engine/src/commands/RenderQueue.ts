@@ -343,8 +343,9 @@ export class RenderQueue implements IRenderQueue {
 
   private cullCommands(commands: IRenderCommand[]): IRenderCommand[] {
     if (!this.viewport) return commands
+    const viewport = this.viewport
 
-    return commands.filter((command) => command.isVisible(this.viewport))
+    return commands.filter((command) => command.isVisible(viewport))
   }
 
   private executeBatched(context: IGraphicsContext, commands: IRenderCommand[]): void {

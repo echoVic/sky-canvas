@@ -51,6 +51,8 @@ export class GestureRecognizer extends EventDispatcher {
 
   // 触摸状态
   private _activeTouches: Map<number, IPoint> = new Map()
+  private _lastTouchPositions: IPoint[] = []
+  private _initialCenter: IPoint = { x: 0, y: 0 }
   private _lastDistance = 0
   private _lastAngle = 0
   private _lastCenter: IPoint = { x: 0, y: 0 }

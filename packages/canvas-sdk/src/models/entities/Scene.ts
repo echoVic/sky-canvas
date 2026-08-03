@@ -55,7 +55,7 @@ type SceneJSON = Omit<ISceneEntity, 'metadata' | 'shapes'> & {
     updatedAt: string
     lastAccessedAt?: string
   }
-  shapes: Array<ShapeEntity & { createdAt: string; updatedAt: string }>
+  shapes: Array<Omit<ShapeEntity, 'createdAt' | 'updatedAt'> & { createdAt: string; updatedAt: string }>
 }
 
 /**
@@ -113,6 +113,11 @@ export class SceneEntityFactory {
   static fromJSON(jsonData: SceneJSON): ISceneEntity {
     return {
       ...jsonData,
+      shapes: jsonData.shapes.map((shape) => ({
+        ...shape,
+        createdAt: new Date(shape.createdAt),
+        updatedAt: new Date(shape.updatedAt),
+      })) as ShapeEntity[],
       metadata: {
         ...jsonData.metadata,
         createdAt: new Date(jsonData.metadata.createdAt),

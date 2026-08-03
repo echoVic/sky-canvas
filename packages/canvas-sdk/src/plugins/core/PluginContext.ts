@@ -163,7 +163,7 @@ class PluginAPIImpl implements PluginAPI {
       this.checkPermission('canvas.getShapes')
       // 获取元素（兼容方法）
       const shapes = getPluginWindow().currentShapes || []
-      return shapes.find((shape) => hasId(shape) && shape.id === id) || null
+      return shapes.find((shape) => typeof shape === 'object' && shape !== null && 'id' in shape && (shape as { id: string }).id === id) || null
     },
 
     getAllElements: () => {
@@ -462,7 +462,7 @@ class PluginConfigImpl implements PluginConfig {
   }
 
   get<T = unknown>(key: string, defaultValue?: T): T {
-    return this.storage.has(key) ? this.storage.get(key) : (defaultValue as T)
+    return (this.storage.has(key) ? this.storage.get(key) : defaultValue) as T
   }
 
   set(key: string, value: unknown): void {
@@ -630,8 +630,8 @@ class PluginResourceManagerImpl implements PluginResourceManager {
     const resource = this.resources.get(key)
     if (resource) {
       try {
-        if (typeof resource.dispose === 'function') {
-          resource.dispose()
+        if (typeof (resource as { dispose?: unknown }).dispose === 'function') {
+          (resource as { dispose(): void }).dispose()
         }
       } catch {}
       this.resources.delete(key)

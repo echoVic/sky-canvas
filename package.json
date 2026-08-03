@@ -39,6 +39,9 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:demo": "vite --config examples/perf-demo/vite.config.ts",
+    "dev:shapes": "vite --config examples/shapes-verify/vite.config.ts",
+    "build:demo": "vite build --config examples/perf-demo/vite.config.ts",
     "dev:full": "pnpm build:packages && pnpm dev",
     "build": "tsc && vite build",
     "build:packages": "tsc && pnpm -r build",
@@ -93,14 +96,17 @@
     "@vitejs/plugin-react": "^4.0.3",
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
+    "@webgpu/types": "^0.1.68",
     "autoprefixer": "^10.4.14",
     "happy-dom": "^20.0.11",
     "jsdom": "^23.0.1",
+    "playwright": "^1.62.1",
     "postcss": "^8.4.24",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.20.4",
     "typescript": "~5.8.3",
     "vite": "^7.3.0",
     "vitest": "^4.0.16"
-  }
+  },
+  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8"
 }

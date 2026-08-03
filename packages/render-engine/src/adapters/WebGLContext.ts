@@ -56,6 +56,9 @@ export class WebGLContext implements IWebGLContext {
   private strokeStyle: string = '#000000'
   private lineWidth: number = 1
   private globalAlpha: number = 1
+  private textAlign: 'left' | 'center' | 'right' | 'start' | 'end' = 'start'
+  private textBaseline: 'top' | 'middle' | 'bottom' | 'alphabetic' | 'hanging' = 'alphabetic'
+  private currentFont: string = '10px sans-serif'
 
   // 管理器
   private shaderManager: ShaderManager

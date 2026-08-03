@@ -98,7 +98,7 @@ class ModuleCache {
   }
 
   get<T>(modulePath: string): T | undefined {
-    return this._cache.get(modulePath)
+    return this._cache.get(modulePath) as T | undefined
   }
 
   has(modulePath: string): boolean {
@@ -110,7 +110,7 @@ class ModuleCache {
   }
 
   getLoadingPromise<T>(modulePath: string): Promise<T> | undefined {
-    return this._loadingPromises.get(modulePath)
+    return this._loadingPromises.get(modulePath) as Promise<T> | undefined
   }
 
   removeLoadingPromise(modulePath: string): void {
