@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0
+
+### Minor Changes
+
+- a1e6d47: WebGPU 实例化渲染路径与性能优化
+
+  - 新增 WebGPU instanced rendering pipeline，支持 50 万对象 60fps
+  - 完善 DI 系统类型安全，修复泛型推断问题
+  - CI 流程升级：Node 22、pnpm 10、GitHub Actions v4
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -8,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial open source preparation
 - Complete project documentation
 - Contributing guidelines
@@ -16,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2026-01-03
 
 ### Added
+
 - 🚀 Framework-agnostic rendering engine
 - 🎨 Multi-adapter support (Canvas2D, WebGL, WebGPU)
 - ⚡ High-performance batch rendering system
@@ -25,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ⚙️ Modular architecture
 
 #### Core Features
+
 - **Rendering Engine**: Main rendering loop with FPS control and VSync
 - **Graphics Context**: Unified interface for different rendering backends
 - **Batch System**: Optimized batch rendering with multiple strategies
@@ -32,15 +45,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Command System**: Command pattern for render operations
 
 #### Adapters
+
 - **Canvas2D Adapter**: Full Canvas 2D API implementation
 - **WebGL Adapter**: Hardware-accelerated WebGL rendering
 - **WebGPU Adapter**: Next-generation WebGPU support (partial)
 
 #### Features
+
 - **Animation System**: Property animations, path animations, easing functions
 - **Particle System**: GPU-accelerated particle effects
 - **Text Rendering**: Advanced text layout with font management and i18n support
-- **Effects System**: 
+- **Effects System**:
   - Filters (blur, brightness, contrast, etc.)
   - Blend modes
   - Lighting (point light, directional light)
@@ -52,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance Monitoring**: Unified performance tracking and analysis
 
 #### Math Library
+
 - Vector2 operations
 - Matrix transformations
 - Geometry utilities
@@ -59,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coordinate system conversions
 
 #### Resource Management
+
 - Texture loading and management
 - Texture atlas support
 - Resource pooling
@@ -66,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LRU cache implementation
 
 #### Performance Optimizations
+
 - Batch rendering
 - Frustum culling
 - Object pooling
@@ -74,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GPU memory optimization
 
 ### Documentation
+
 - Comprehensive README with examples
 - API documentation
 - Architecture overview
@@ -82,6 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Font loading guide
 
 ### Development
+
 - TypeScript 5.8+ support
 - Vitest testing framework
 - Source maps for debugging

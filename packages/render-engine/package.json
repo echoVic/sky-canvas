@@ -1,6 +1,6 @@
 {
   "name": "@sky-canvas/renderer",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "高性能的框架无关图形渲染引擎",
   "type": "module",
   "main": "dist/index.js",
