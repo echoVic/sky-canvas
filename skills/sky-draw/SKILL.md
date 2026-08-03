@@ -1,9 +1,9 @@
 ---
-name: canvas-agent
+name: sky-draw
 description: 用 Sky Canvas 的声明式场景 SDK 操作画布——先读 snapshot,再按稳定 id 发一组 ops 增量编辑,再读 snapshot 验证。适用于 agent 需要生成或持续编辑一张画布(卡片/图表/流程图/节点图)的场景。
 ---
 
-# canvas-agent
+# sky-draw
 
 教 agent 用 Sky Canvas 的场景 SDK 把一张画布"画出来并持续改"。核心是一个循环:**观察 → 引用 → 编辑 → 再观察**——而不是每次重发整份 JSON。
 

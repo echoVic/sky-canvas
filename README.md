@@ -9,11 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@sky-canvas/render-engine"><img src="https://img.shields.io/npm/v/@sky-canvas/render-engine.svg" alt="npm version" /></a>
-  <a href="https://github.com/sky-canvas/sky-canvas/actions/workflows/render-engine-ci.yml"><img src="https://github.com/sky-canvas/sky-canvas/actions/workflows/render-engine-ci.yml/badge.svg" alt="CI Status" /></a>
-  <a href="https://codecov.io/gh/sky-canvas/sky-canvas"><img src="https://codecov.io/gh/sky-canvas/sky-canvas/branch/main/graph/badge.svg" alt="Coverage" /></a>
-  <a href="https://github.com/sky-canvas/sky-canvas/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@sky-canvas/render-engine.svg" alt="License" /></a>
+  <a href="https://www.npmjs.com/package/@sky-canvas/renderer"><img src="https://img.shields.io/npm/v/@sky-canvas/renderer.svg" alt="npm version" /></a>
+  <a href="https://github.com/echoVic/sky-canvas/actions/workflows/render-engine-ci.yml"><img src="https://github.com/echoVic/sky-canvas/actions/workflows/render-engine-ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/echoVic/sky-canvas/blob/main/LICENSE"><img src="https://img.shields.io/npm/l/@sky-canvas/renderer.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/TypeScript-100%25-blue" alt="TypeScript" />
+  <a href="https://skills.sh/echoVic/sky-canvas"><img src="https://skills.sh/b/echoVic/sky-canvas" alt="skills.sh" /></a>
 </p>
 
 <p align="center">
@@ -60,10 +60,18 @@
 
 ```bash
 # 安装渲染引擎
-pnpm add @sky-canvas/render-engine
+pnpm add @sky-canvas/renderer
 
 # 安装画布 SDK（包含渲染引擎）
-pnpm add @sky-canvas/canvas-sdk
+pnpm add @sky-canvas/sdk
+```
+
+### Agent Skill
+
+为 AI Agent 提供画布绘制能力（支持 Claude Code / OpenCode / Codex）：
+
+```bash
+npx skills add echoVic/sky-canvas --skill sky-draw
 ```
 
 ## 🚀 快速开始
@@ -75,7 +83,7 @@ import {
   RenderEngine, 
   Canvas2DContextFactory,
   Rectangle 
-} from '@sky-canvas/render-engine';
+} from '@sky-canvas/renderer';
 
 // 获取 canvas 元素
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -115,7 +123,7 @@ engine.start();
 ### 使用画布 SDK
 
 ```typescript
-import { CanvasSDK } from '@sky-canvas/canvas-sdk';
+import { CanvasSDK } from '@sky-canvas/sdk';
 
 // 创建 SDK 实例
 const sdk = new CanvasSDK();
@@ -152,7 +160,7 @@ import {
   PropertyAnimation,
   EasingFunctions,
   EasingType 
-} from '@sky-canvas/render-engine';
+} from '@sky-canvas/renderer';
 
 const animationManager = new AnimationManager();
 
@@ -173,7 +181,7 @@ animationManager.start();
 ### 使用粒子系统
 
 ```typescript
-import { ParticleSystem } from '@sky-canvas/render-engine';
+import { ParticleSystem } from '@sky-canvas/renderer';
 
 const particles = new ParticleSystem({
   maxParticles: 1000,
@@ -200,7 +208,7 @@ import {
   FilterManager, 
   GaussianBlurFilter,
   BrightnessFilter 
-} from '@sky-canvas/render-engine';
+} from '@sky-canvas/renderer';
 
 const filterManager = new FilterManager();
 
@@ -217,8 +225,8 @@ const result = await filterManager.applyFilterChain(
 
 | 包 | 描述 | 版本 |
 |---|------|------|
-| [@sky-canvas/render-engine](./packages/render-engine) | 核心渲染引擎 | ![npm](https://img.shields.io/npm/v/@sky-canvas/render-engine) |
-| [@sky-canvas/canvas-sdk](./packages/canvas-sdk) | 画布 SDK | ![npm](https://img.shields.io/npm/v/@sky-canvas/canvas-sdk) |
+| [@sky-canvas/renderer](./packages/render-engine) | 核心渲染引擎 | ![npm](https://img.shields.io/npm/v/@sky-canvas/renderer) |
+| [@sky-canvas/sdk](./packages/canvas-sdk) | 画布 SDK | ![npm](https://img.shields.io/npm/v/@sky-canvas/sdk) |
 
 ## 🏗️ 架构
 
@@ -326,7 +334,7 @@ const result = await filterManager.applyFilterChain(
 
 ```bash
 # 克隆仓库
-git clone https://github.com/sky-canvas/sky-canvas.git
+git clone https://github.com/echoVic/sky-canvas.git
 cd sky-canvas
 
 # 安装依赖（需要 pnpm 8.0+）
