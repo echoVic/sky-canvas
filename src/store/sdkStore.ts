@@ -6,7 +6,7 @@ import {
   type IShapeEntity,
   type IToolManager,
   type ShapeEntity,
-} from '@sky-canvas/canvas-sdk'
+} from '@sky-canvas/sdk'
 import { create } from 'zustand'
 
 interface SDKState {

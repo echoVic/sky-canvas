@@ -3,7 +3,7 @@
  * 使用 Valtio 实现响应式状态管理
  */
 
-import type { IPoint } from '@sky-canvas/render-engine'
+import type { IPoint } from '@sky-canvas/renderer'
 import type { ShapeEntity } from '../../models/entities/Shape'
 
 /**

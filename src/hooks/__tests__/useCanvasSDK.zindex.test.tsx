@@ -2,13 +2,13 @@
  * useCanvasSDK Hook Z轴管理功能测试
  */
 
-import { createCanvasSDK } from '@sky-canvas/canvas-sdk'
+import { createCanvasSDK } from '@sky-canvas/sdk'
 import { renderHook } from '@testing-library/react'
 import { vi } from 'vitest'
 import { useCanvasSDK } from '../useCanvasSDK'
 
 // Mock Canvas SDK
-vi.mock('@sky-canvas/canvas-sdk', () => ({
+vi.mock('@sky-canvas/sdk', () => ({
   createCanvasSDK: vi.fn(),
 }))
 

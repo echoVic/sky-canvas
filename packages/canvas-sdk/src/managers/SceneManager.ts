@@ -3,7 +3,7 @@
  * 纯业务协调单元，不直接依赖 DI 容器
  */
 
-import type { IRenderable } from '@sky-canvas/render-engine'
+import type { IRenderable } from '@sky-canvas/renderer'
 import { subscribe } from 'valtio/vanilla'
 import { createDecorator } from '../di'
 import { ICanvasRenderingService, IConfigurationService, ILogService } from '../services'

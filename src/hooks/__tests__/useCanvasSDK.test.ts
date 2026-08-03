@@ -39,7 +39,7 @@ const { mockCanvasManager, mockToolManager, mockSDK } = vi.hoisted(() => {
   return { mockCanvasManager, mockToolManager, mockSDK }
 })
 
-vi.mock('@sky-canvas/canvas-sdk', () => ({
+vi.mock('@sky-canvas/sdk', () => ({
   createCanvasSDK: vi.fn(() => Promise.resolve(mockSDK)),
 }))
 

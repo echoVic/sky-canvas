@@ -24,8 +24,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@sky-canvas/canvas-sdk": ["packages/canvas-sdk/src/index.ts"],
-      "@sky-canvas/render-engine": ["packages/render-engine/src/index.ts"]
+      "@sky-canvas/sdk": ["packages/canvas-sdk/src/index.ts"],
+      "@sky-canvas/renderer": ["packages/render-engine/src/index.ts"]
     }
   },
   "include": ["src"],

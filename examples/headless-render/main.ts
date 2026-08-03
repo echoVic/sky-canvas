@@ -11,9 +11,9 @@
  *   window.__error: string | undefined —— 初始化失败原因
  *   window.__renderScene(scene, {width,height,dpr,background}): Promise<void>
  */
-import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
-import type { Scene } from '@sky-canvas/render-engine/scene'
-import { SceneRenderer } from '@sky-canvas/render-engine/scene'
+import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/renderer/adapters/webgpu'
+import type { Scene } from '@sky-canvas/renderer/scene'
+import { SceneRenderer } from '@sky-canvas/renderer/scene'
 
 interface HeadlessWindow extends Window {
   __ready?: boolean

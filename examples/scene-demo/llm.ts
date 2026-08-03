@@ -4,7 +4,7 @@
  * 这是阶段 C 闭环的最后一环——证明 LLM 能读 snapshot、吐合法 ops。
  * 仅用于本地 demo:Key 存内存、直连官方 API(需开启 anthropic-dangerous-direct-browser-access)。
  */
-import type { SceneOp } from '@sky-canvas/render-engine/scene'
+import type { SceneOp } from '@sky-canvas/renderer/scene'
 
 const SYSTEM = `你是画布编辑助手。用户给你一份画布快照和一句编辑指令,你只输出一个 JSON 数组,数组元素是编辑操作(op)。
 

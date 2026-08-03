@@ -2,7 +2,7 @@
  * Canvas 管理器接口定义
  */
 
-import type { IRenderable } from '@sky-canvas/render-engine'
+import type { IRenderable } from '@sky-canvas/renderer'
 import { createDecorator } from '../di'
 import type { IShapeEntity, ShapeEntity } from '../models/entities/Shape'
 

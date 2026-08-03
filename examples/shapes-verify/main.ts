@@ -6,8 +6,8 @@
  * - drawInstancedLines: 实例化线段
  * - drawText (SDF): SDF 文本渲染
  */
-import type { CircleInstance, LineInstance } from '@sky-canvas/render-engine/adapters/webgpu'
-import { WebGPURenderer, buildGlyphAtlas } from '@sky-canvas/render-engine/adapters/webgpu'
+import type { CircleInstance, LineInstance } from '@sky-canvas/renderer/adapters/webgpu'
+import { WebGPURenderer, buildGlyphAtlas } from '@sky-canvas/renderer/adapters/webgpu'
 
 const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement
 const errorEl = document.getElementById('error') as HTMLDivElement

@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@sky-canvas/canvas-sdk': resolve(__dirname, 'packages/canvas-sdk/src'),
+      '@sky-canvas/sdk': resolve(__dirname, 'packages/canvas-sdk/src'),
     },
   },
   esbuild: {
@@ -21,7 +21,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     // 排除包含装饰器的包，让它们通过 TypeScript 编译
-    exclude: ['@sky-canvas/canvas-sdk'],
+    exclude: ['@sky-canvas/sdk'],
     esbuildOptions: {
       tsconfigRaw: {
         compilerOptions: {

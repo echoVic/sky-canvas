@@ -2,7 +2,7 @@
  * 预置示例场景:模拟 agent/LLM 会产出的声明式 JSON,证明该 schema 是 LLM 能生成的形态。
  * 每个示例是"给一句自然语言 prompt,LLM 可能吐出的场景 JSON"。
  */
-import type { Scene } from '@sky-canvas/render-engine/scene'
+import type { Scene } from '@sky-canvas/renderer/scene'
 
 export interface Example {
   label: string

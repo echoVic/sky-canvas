@@ -14,12 +14,12 @@ importers:
       '@heroui/react':
         specifier: ^2.2.9
         version: 2.8.2(@types/react@18.3.24)(framer-motion@12.23.12(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwindcss@4.1.18)
-      '@sky-canvas/canvas-sdk':
-        specifier: workspace:^0.0.1
-        version: link:packages/canvas-sdk
-      '@sky-canvas/render-engine':
+      '@sky-canvas/renderer':
         specifier: workspace:^0.0.1
         version: link:packages/render-engine
+      '@sky-canvas/sdk':
+        specifier: workspace:^0.0.1
+        version: link:packages/canvas-sdk
       '@types/matter-js':
         specifier: ^0.20.0
         version: 0.20.0
@@ -145,7 +145,7 @@ importers:
         specifier: ^0.1.14
         version: 0.1.14
     devDependencies:
-      '@sky-canvas/render-engine':
+      '@sky-canvas/renderer':
         specifier: workspace:^0.0.1
         version: link:../render-engine
       '@vitest/coverage-v8':

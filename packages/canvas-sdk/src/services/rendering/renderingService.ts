@@ -112,7 +112,7 @@ export class CanvasRenderingService implements ICanvasRenderingService {
 
     try {
       const { RenderEngine, WebGLContextFactory, Canvas2DContextFactory, WebGPUContextFactory } =
-        await import('@sky-canvas/render-engine')
+        await import('@sky-canvas/renderer')
 
       let factory: unknown
       const renderType = config.renderEngine || 'webgl'

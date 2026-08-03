@@ -2,7 +2,7 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src/index.ts"],
   "out": "./docs/api",
-  "name": "@sky-canvas/render-engine",
+  "name": "@sky-canvas/renderer",
   "readme": "./README.md",
   "includeVersion": true,
   "excludePrivate": true,

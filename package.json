@@ -68,8 +68,8 @@
   "dependencies": {
     "@heroicons/react": "^2.0.18",
     "@heroui/react": "^2.2.9",
-    "@sky-canvas/canvas-sdk": "workspace:^0.0.1",
-    "@sky-canvas/render-engine": "workspace:^0.0.1",
+    "@sky-canvas/sdk": "workspace:^0.0.1",
+    "@sky-canvas/renderer": "workspace:^0.0.1",
     "@types/matter-js": "^0.20.0",
     "@types/node": "^24.3.0",
     "ahooks": "^3.7.8",

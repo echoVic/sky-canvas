@@ -3,7 +3,7 @@
  * MVVM 中的 View 层 - 实现 IRenderable，知道如何渲染 Model 数据
  */
 
-import type { IGraphicsContext, IPoint, IRect, IRenderable } from '@sky-canvas/render-engine'
+import type { IGraphicsContext, IPoint, IRect, IRenderable } from '@sky-canvas/renderer'
 import type {
   ICircleEntity,
   IEllipseEntity,

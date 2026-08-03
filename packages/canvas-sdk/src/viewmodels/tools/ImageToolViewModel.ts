@@ -1,4 +1,4 @@
-import type { IPoint } from '@sky-canvas/render-engine'
+import type { IPoint } from '@sky-canvas/renderer'
 import { proxy } from 'valtio'
 import { createDecorator } from '../../di'
 import { ICanvasManager } from '../../managers/CanvasManager'

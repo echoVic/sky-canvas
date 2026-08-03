@@ -9,9 +9,9 @@
  *
  * 渲染仍复用阶段 B 的 SceneRenderer(doc.toScene() 摊平后交给它)。
  */
-import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
-import type { Bounds, SceneOp } from '@sky-canvas/render-engine/scene'
-import { applyOps, SceneDocument, SceneRenderer, snapshotText } from '@sky-canvas/render-engine/scene'
+import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/renderer/adapters/webgpu'
+import type { Bounds, SceneOp } from '@sky-canvas/renderer/scene'
+import { applyOps, SceneDocument, SceneRenderer, snapshotText } from '@sky-canvas/renderer/scene'
 import { EXAMPLES } from './examples'
 import { requestOps } from './llm'
 

@@ -25,7 +25,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@sky-canvas/render-engine': resolve(__dirname, '../render-engine/src'),
+      '@sky-canvas/renderer': resolve(__dirname, '../render-engine/src'),
     },
   },
 })

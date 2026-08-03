@@ -7,7 +7,7 @@ description: 用 Sky Canvas 的声明式场景 SDK 操作画布——先读 snap
 
 教 agent 用 Sky Canvas 的场景 SDK 把一张画布"画出来并持续改"。核心是一个循环:**观察 → 引用 → 编辑 → 再观察**——而不是每次重发整份 JSON。
 
-> 这份 skill 是「怎么用」的知识层;能力(runtime)由 `@sky-canvas/render-engine/scene` 提供。站点/领域经验沉淀在 `learnings/`,每次编辑前值得先扫一眼。
+> 这份 skill 是「怎么用」的知识层;能力(runtime)由 `@sky-canvas/renderer/scene` 提供。站点/领域经验沉淀在 `learnings/`,每次编辑前值得先扫一眼。
 
 ## 心智模型
 

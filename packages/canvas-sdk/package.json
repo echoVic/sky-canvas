@@ -1,5 +1,5 @@
 {
-  "name": "@sky-canvas/canvas-sdk",
+  "name": "@sky-canvas/sdk",
   "version": "0.0.1",
   "description": "框架无关的画布功能SDK，提供完整的画布绘制和交互能力",
   "type": "module",
@@ -49,10 +49,10 @@
     "reflect-metadata": "^0.1.14"
   },
   "peerDependencies": {
-    "@sky-canvas/render-engine": "workspace:^0.0.1"
+    "@sky-canvas/renderer": "workspace:^0.0.1"
   },
   "devDependencies": {
-    "@sky-canvas/render-engine": "workspace:^0.0.1",
+    "@sky-canvas/renderer": "workspace:^0.0.1",
     "@vitest/coverage-v8": "^4.0.16",
     "@vitest/ui": "^4.0.16",
     "jsdom": "^23.0.1",

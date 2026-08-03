@@ -6,19 +6,19 @@ export default defineConfig({
   root: __dirname,
   resolve: {
     alias: {
-      '@sky-canvas/render-engine/adapters/webgpu': resolve(
+      '@sky-canvas/renderer/adapters/webgpu': resolve(
         __dirname,
         '../../packages/render-engine/src/adapters/webgpu/index.ts'
       ),
-      '@sky-canvas/render-engine/culling': resolve(
+      '@sky-canvas/renderer/culling': resolve(
         __dirname,
         '../../packages/render-engine/src/culling/index.ts'
       ),
-      '@sky-canvas/render-engine/scene': resolve(
+      '@sky-canvas/renderer/scene': resolve(
         __dirname,
         '../../packages/render-engine/src/scene/index.ts'
       ),
-      '@sky-canvas/render-engine': resolve(__dirname, '../../packages/render-engine/src/index.ts'),
+      '@sky-canvas/renderer': resolve(__dirname, '../../packages/render-engine/src/index.ts'),
     },
   },
   server: { open: false, port: 5180 },

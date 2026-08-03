@@ -45,8 +45,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@sky-canvas/render-engine': resolve(__dirname, 'packages/render-engine/src'),
-      '@sky-canvas/canvas-sdk': resolve(__dirname, 'packages/canvas-sdk/src'),
+      '@sky-canvas/renderer': resolve(__dirname, 'packages/render-engine/src'),
+      '@sky-canvas/sdk': resolve(__dirname, 'packages/canvas-sdk/src'),
       // 可选原生依赖(未安装):别名到测试桩,使 Vite 静态分析可解析;
       // 真实行为由各测试的 vi.mock 覆盖(含"未安装"报错分支)。
       '@napi-rs/canvas': resolve(

@@ -3,7 +3,7 @@
  * 通过构造函数注入使用依赖服务
  */
 
-import type { IRenderable } from '@sky-canvas/render-engine'
+import type { IRenderable } from '@sky-canvas/renderer'
 import { proxy } from 'valtio'
 import {
   type ICircleEntity,

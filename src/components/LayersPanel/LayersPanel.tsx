@@ -1,4 +1,4 @@
-import type { IShapeEntity } from '@sky-canvas/canvas-sdk'
+import type { IShapeEntity } from '@sky-canvas/sdk'
 import { Eye, EyeOff, Lock, Trash2, Unlock } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo } from 'react'

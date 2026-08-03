@@ -2,7 +2,7 @@
  * 选择工具类型定义
  */
 
-import type { IPoint } from '@sky-canvas/render-engine'
+import type { IPoint } from '@sky-canvas/renderer'
 import type { ShapeEntity } from '../../../models/entities/Shape'
 import type { IViewModel } from '../../interfaces/IViewModel'
 

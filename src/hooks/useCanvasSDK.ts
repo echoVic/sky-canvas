@@ -6,7 +6,7 @@ import {
   type IShapeEntity,
   type IToolManager,
   type ShapeEntity,
-} from '@sky-canvas/canvas-sdk'
+} from '@sky-canvas/sdk'
 import { useMemoizedFn } from 'ahooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 

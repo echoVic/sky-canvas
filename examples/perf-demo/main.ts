@@ -10,9 +10,9 @@ import type {
   CircleInstance,
   LineInstance,
   RectInstance,
-} from '@sky-canvas/render-engine/adapters/webgpu'
-import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/render-engine/adapters/webgpu'
-import { QuadTreeNode } from '@sky-canvas/render-engine/culling'
+} from '@sky-canvas/renderer/adapters/webgpu'
+import { buildGlyphAtlas, WebGPURenderer } from '@sky-canvas/renderer/adapters/webgpu'
+import { QuadTreeNode } from '@sky-canvas/renderer/culling'
 
 const canvas = document.getElementById('gpu-canvas') as HTMLCanvasElement
 const errorEl = document.getElementById('error') as HTMLDivElement

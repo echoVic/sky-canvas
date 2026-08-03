@@ -2,7 +2,7 @@
  * 工具系统类型定义
  */
 
-import type { IPoint } from '@sky-canvas/render-engine'
+import type { IPoint } from '@sky-canvas/renderer'
 
 /**
  * 交互模式枚举

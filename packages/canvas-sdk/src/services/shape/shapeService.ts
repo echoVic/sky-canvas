@@ -2,7 +2,7 @@
  * 形状服务 - 单一职责：管理形状实体的存储和 CRUD 操作
  */
 
-import type { IRenderable } from '@sky-canvas/render-engine'
+import type { IRenderable } from '@sky-canvas/renderer'
 import { createDecorator } from '../../di'
 import type { ShapeEntity } from '../../models/entities/Shape'
 import { RenderableShapeView } from '../../views/RenderableShapeView'

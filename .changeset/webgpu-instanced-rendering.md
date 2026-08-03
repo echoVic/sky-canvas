@@ -1,6 +1,6 @@
 ---
-"@sky-canvas/render-engine": minor
-"@sky-canvas/canvas-sdk": minor
+"@sky-canvas/renderer": minor
+"@sky-canvas/sdk": minor
 ---
 
 WebGPU 实例化渲染路径与性能优化

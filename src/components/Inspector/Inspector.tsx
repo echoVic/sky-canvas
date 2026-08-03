@@ -1,4 +1,4 @@
-import type { ShapeEntity } from '@sky-canvas/canvas-sdk'
+import type { ShapeEntity } from '@sky-canvas/sdk'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'

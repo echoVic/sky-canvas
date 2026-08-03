@@ -1,5 +1,5 @@
 {
-  "name": "@sky-canvas/render-engine",
+  "name": "@sky-canvas/renderer",
   "version": "0.0.1",
   "description": "高性能的框架无关图形渲染引擎",
   "type": "module",
