@@ -1,7 +1,7 @@
 # Sky Canvas
 
 <p align="center">
-  <strong>WebGPU Instanced Rendering Engine + AI Agent Canvas Editing Protocol</strong>
+  <strong>WebGPU 实例化渲染引擎 + 面向 AI Agent 的画布编辑协议</strong>
 </p>
 
 <p align="center">
@@ -13,36 +13,36 @@
 </p>
 
 <p align="center">
-  <a href="./README.zh-CN.md">中文</a> | English
+  中文 | <a href="./README.md">English</a>
 </p>
 
 ---
 
-## Highlights
+## 核心能力
 
-- **WebGPU Instanced Rendering** — 500K rectangles at stable 60fps; circles, lines, SDF text
-- **Snapshot-Ops Protocol** — AI agents edit the canvas via "read snapshot → reference #id → send ops"
-- **Multi-backend Fallback** — WebGPU → WebGL → Canvas2D, zero-config
-- **Viewport Culling + Batching** — QuadTree spatial index, only visible objects get rendered
+- **WebGPU 实例化渲染** — 50 万矩形对象稳定 60fps，支持圆、线段、SDF 文本
+- **Snapshot-Ops 编辑协议** — AI Agent 通过"观察快照 → 引用 #id → 增量 Ops"闭环操作画布
+- **多后端自动降级** — WebGPU → WebGL → Canvas2D，零配置 fallback
+- **视口剔除 + 批处理** — QuadTree 空间索引，仅渲染可见区域
 
-## Install
+## 安装
 
 ```bash
-pnpm add @sky-canvas/renderer    # rendering engine
-pnpm add @sky-canvas/sdk         # canvas SDK (includes renderer)
+pnpm add @sky-canvas/renderer    # 渲染引擎
+pnpm add @sky-canvas/sdk         # 画布 SDK（含渲染引擎）
 ```
 
 ### Agent Skill
 
-Give AI agents the ability to draw on canvas (Claude Code / OpenCode / Codex):
+让 AI Agent 具备画布绘制能力（Claude Code / OpenCode / Codex）：
 
 ```bash
 npx skills add echoVic/sky-canvas --skill sky-draw
 ```
 
-## Quick Start
+## 快速开始
 
-### WebGPU Rendering
+### WebGPU 渲染
 
 ```typescript
 import { WebGPURenderer, buildGlyphAtlas } from '@sky-canvas/renderer/adapters/webgpu'
@@ -66,16 +66,16 @@ renderer.render({
 })
 ```
 
-### Scene SDK (for Agents)
+### Scene SDK（面向 Agent）
 
-Agents manipulate the canvas through declarative ops — no rendering knowledge needed:
+Agent 通过声明式 Ops 操控画布，无需了解渲染细节：
 
 ```typescript
 import { SceneDocument, SceneRenderer, applyOps, snapshotText } from '@sky-canvas/renderer/scene'
 
 const doc = new SceneDocument()
 
-// 1. Describe changes with ops
+// 1. 用 ops 描述变更
 applyOps(doc, [
   { op: 'add', id: 'title', type: 'text', x: 100, y: 50, text: 'Architecture', fontSize: 24 },
   { op: 'add', id: 'box1', type: 'rect', x: 80, y: 100, w: 200, h: 80, fill: '#4285f4' },
@@ -83,43 +83,43 @@ applyOps(doc, [
   { op: 'connect', from: 'box1', to: 'box2' },
 ])
 
-// 2. Read snapshot to verify
+// 2. 读取快照验证
 console.log(snapshotText(doc))
 // @1 #title text (100,50) "Architecture"
 // @2 #box1 rect (80,100,200,80) #4285f4
 // @3 #box2 rect (400,100,200,80) #34a853
 // @4 edge box1→box2
 
-// 3. Render to canvas
+// 3. 渲染到 canvas
 const sceneRenderer = new SceneRenderer(renderer)
 sceneRenderer.render(doc.scene)
 ```
 
-## Packages
+## 包结构
 
-| Package | Description | Version |
-|---------|-------------|---------|
-| [`@sky-canvas/renderer`](./packages/render-engine) | Rendering engine (WebGPU/WebGL/Canvas2D) | ![npm](https://img.shields.io/npm/v/@sky-canvas/renderer) |
-| [`@sky-canvas/sdk`](./packages/canvas-sdk) | Canvas SDK (interaction, tools, history) | ![npm](https://img.shields.io/npm/v/@sky-canvas/sdk) |
+| 包 | 描述 | 版本 |
+|---|------|------|
+| [`@sky-canvas/renderer`](./packages/render-engine) | 渲染引擎（WebGPU/WebGL/Canvas2D） | ![npm](https://img.shields.io/npm/v/@sky-canvas/renderer) |
+| [`@sky-canvas/sdk`](./packages/canvas-sdk) | 画布 SDK（交互、工具、历史记录） | ![npm](https://img.shields.io/npm/v/@sky-canvas/sdk) |
 
-## Development
+## 开发
 
 ```bash
 git clone https://github.com/echoVic/sky-canvas.git && cd sky-canvas
 pnpm install
-pnpm dev:full          # build packages + start dev server
-pnpm test              # run all tests
-pnpm build:packages    # build all packages
+pnpm dev:full          # 构建 packages + 启动 dev server
+pnpm test              # 运行全部测试
+pnpm build:packages    # 构建所有包
 ```
 
-Requires Node >= 22, pnpm >= 10.
+要求 Node >= 22，pnpm >= 10。
 
-## Docs
+## 文档
 
-- [Architecture Overview](./docs/architecture/README.md)
-- [Render Pipeline](./docs/architecture/render-pipeline.md)
-- [Canvas SDK Architecture](./packages/canvas-sdk/docs/ARCHITECTURE.md)
-- [Contributing](./CONTRIBUTING.md)
+- [架构概述](./docs/architecture/README.md)
+- [渲染管线](./docs/architecture/render-pipeline.md)
+- [Canvas SDK 架构](./packages/canvas-sdk/docs/ARCHITECTURE.md)
+- [贡献指南](./CONTRIBUTING.md)
 
 ## License
 
